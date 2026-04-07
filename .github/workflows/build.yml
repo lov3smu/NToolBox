@@ -1,0 +1,107 @@
+name: SQL Script Generator Build
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:    
+  build-all:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: linux-build
+            targets: "AppImage deb"
+          - os: windows-latest
+            platform: win
+            artifact: windows-build
+            targets: "nsis portable"
+          - os: macos-latest
+            platform: mac
+            artifact: macos-build
+            targets: "dmg zip"
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+    
+    - run: npm ci
+    
+    - name: Build
+      run: npx electron-builder --${{ matrix.platform }} --x64
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: dist/
+        retention-days: 7
+  
+  release:
+    if: github.event_name == 'release'
+    needs: build-all
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Select only main files
+      run: |
+        # 创建发布目录
+        mkdir -p release
+        
+        # 只选择主要的安装文件
+        # Linux: 保留 AppImage 和 deb
+        find artifacts -type f \( -name "*AppImage*" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.rpm" \) -exec cp {} release/ \;
+        
+        # Windows: 保留 nsis 和 portable
+        find artifacts -type f \( -name "*.exe" \) -exec cp {} release/ \;
+        
+        # macOS: 保留 dmg
+        find artifacts -type f -name "*.dmg" -exec cp {} release/ \;
+
+        # 创建清晰的README
+        cat > release/README.md << 'EOF'
+        # SQL Script Generator
+        
+        ## 下载
+        
+        选择适合您操作系统的安装包：
+        
+        ### 🪟 Windows 用户
+        下载: `SQL-Script-Generator-Setup-*.exe`
+        - 双击运行安装程序
+        - 按向导完成安装
+        
+        ### 🍎 macOS 用户
+        下载: `SQL-Script-Generator-*.dmg`
+        - 打开dmg文件
+        - 将应用拖到"应用程序"文件夹
+        
+        ### 🐧 Linux 用户
+        下载: `SQL-Script-Generator-*.AppImage` \;
+        
+        echo "Selected files for release:"
+        ls -la release/
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/*
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,223 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+header h1 { font-size: 28px; margin-bottom: 10px; }
+.subtitle { font-size: 14px; opacity: 0.9; }
+
+.main-content { padding: 30px; }
+
+.section { margin-bottom: 25px; }
+.section-label { display: block; font-weight: 600; color: #333; margin-bottom: 10px; font-size: 14px; }
+
+.button-group { display: flex; gap: 15px; }
+.type-btn {
+    flex: 1; padding: 12px; border: 2px solid #e0e0e0; background: white; border-radius: 10px;
+    cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;
+}
+.type-btn:hover { border-color: #667eea; transform: translateY(-2px); }
+.type-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: transparent; }
+
+.input-field, .select-field {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: all 0.3s;
+    background-color: white;
+}
+
+.input-field:focus, .select-field:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+}
+
+/* 错误输入框样式 */
+.input-field.error, .config-item.error input {
+    border-color: #dc3545 !important;
+    background-color: #fff5f5 !important;
+}
+
+.select-field option {
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5;
+}
+
+.action-buttons { display: flex; gap: 15px; margin-top: 30px; }
+.btn {
+    flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 16px;
+    font-weight: 600; cursor: pointer; transition: all 0.3s;
+}
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+.btn-secondary { background: #f5f5f5; color: #666; }
+.btn-secondary:hover { background: #e0e0e0; }
+
+.btn-small { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; background: #667eea; color: white; font-size: 12px; transition: all 0.3s; }
+.btn-small:hover { background: #764ba2; }
+
+.result-section {
+    margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;
+    animation: fadeIn 0.5s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.result-section h3 { color: #333; margin-bottom: 15px; }
+.result-content { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; word-break: break-all; }
+.success-message { color: #28a745; font-weight: 600; margin-bottom: 10px; }
+.error-message { color: #dc3545; font-weight: 600; margin-bottom: 10px; }
+.file-path { font-family: 'Courier New', monospace; font-size: 12px; background: #f1f3f4; padding: 10px; border-radius: 5px; margin-top: 10px; }
+
+/* 模态框样式 - 绝对居中 + 可拖动 */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+    z-index: 1000; animation: fadeIn 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    position: relative;
+    background: white;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80%;
+    border-radius: 15px;
+    overflow: hidden;
+    animation: slideIn 0.3s;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    /* 拖动时使用 */
+    user-select: none;
+}
+.modal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;  /* 可拖动光标 */
+}
+.modal-header h2 { font-size: 20px; }
+.close { font-size: 28px; font-weight: bold; cursor: pointer; }
+.modal-body {
+    display: flex;
+    padding: 0;
+    flex: 1;
+    overflow: hidden;
+}
+.settings-sidebar {
+    width: 200px;
+    background: #f8f9fa;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+.settings-menu-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+    color: #555;
+    border-left: 3px solid transparent;
+}
+.settings-menu-item:hover {
+    background: #e9ecef;
+    color: #667eea;
+}
+.settings-menu-item.active {
+    background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0) 100%);
+    color: #667eea;
+    border-left-color: #667eea;
+    font-weight: 600;
+}
+.settings-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+.settings-tab {
+    display: none;
+    animation: fadeIn 0.3s;
+}
+.settings-tab.active {
+    display: block;
+}
+.modal-footer { padding: 20px; display: flex; gap: 15px; border-top: 1px solid #e0e0e0; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+.path-input-group { display: flex; gap: 10px; }
+.path-input-group .input-field { flex: 1; }
+
+.config-list {
+    margin-bottom: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+}
+.config-item {
+    background: #f8f9fa;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.config-item-info {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.config-item-actions button {
+    margin-left: 5px;
+    padding: 4px 8px;
+    font-size: 11px;
+}
+.loading { text-align: center; padding: 20px; color: #667eea; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }

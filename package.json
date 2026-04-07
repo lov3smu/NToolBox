@@ -1,0 +1,53 @@
+{
+  "name": "sql-script-generator",
+  "version": "1.0.0",
+  "description": "SQL Script Generator Tool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "echo 'Building...'",
+    "build:linux": "electron-builder --linux --x64",
+    "build:win": "electron-builder --win --x64",
+    "build:mac": "electron-builder --mac --x64"
+  },
+  "author": "lov3smu <imancoka@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.3.11",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.ancoka.sql-script-generator",
+    "productName": "SQL Script Generator",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,docs,doc,.idea,.editorconfig,.eslintrc}",
+      "!**/node_modules/*/.{git,DS_Store}",
+      "!**/{.git,.github,.vscode,.idea,node_modules}"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "publisherName": "lov3smu"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm", "tar.gz"],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

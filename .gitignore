@@ -1,0 +1,24 @@
+**/dist/
+**/node_modules/
+
+# IntelliJ project files
+.idea
+*.iml
+**/out
+html
+
+# Eclipse project files
+**/.classpath
+**/.project
+**/.settings/
+**/bin/
+**/data/
+
+# gradle
+.gradle
+**/build
+
+# MacOS
+.DS_Store
+
+config.json
