@@ -14,15 +14,13 @@ const resultDiv = document.getElementById('result');
 const resultContent = document.getElementById('resultContent');
 const scriptTypeSection = document.getElementById('scriptTypeSection');
 
-// 拖动相关变量
-let dragActive = false;
-let dragStartX = 0, dragStartY = 0;
-let dragInitialLeft = 0, dragInitialTop = 0;
-let dragModalContent = null;
-let dragMouseMoveHandler = null;
-let dragMouseUpHandler = null;
+// 前端日志函数
+function logInfo(...args) { console.log('[INFO]', ...args); }
+function logError(...args) { console.error('[ERROR]', ...args); }
+function logDebug(...args) { console.debug('[DEBUG]', ...args); }
 
 async function init() {
+    logInfo('渲染进程初始化');
     await loadConfig();
     setupEventListeners();
     updateDefaultDirName(true);
@@ -31,6 +29,7 @@ async function init() {
 async function loadConfig() {
     try {
         currentConfig = await window.electronAPI.getConfig();
+        logInfo('配置加载成功', { databases: currentConfig.databases?.length, scriptTypes: currentConfig.script_types?.length });
         
         databaseSelect.innerHTML = '<option value="">请选择数据库</option>';
         if (currentConfig.databases && currentConfig.databases.length > 0) {
@@ -41,6 +40,7 @@ async function loadConfig() {
                 databaseSelect.appendChild(option);
             });
         }
+        databaseSelect.size = 1;
         
         scriptTypeSelect.innerHTML = '<option value="">请选择脚本类型</option>';
         if (currentConfig.script_types && currentConfig.script_types.length > 0) {
@@ -51,10 +51,11 @@ async function loadConfig() {
                 scriptTypeSelect.appendChild(option);
             });
         }
+        scriptTypeSelect.size = 1;
         
         updateDefaultDirName(true);
     } catch (error) {
-        console.error('加载配置失败:', error);
+        logError('加载配置失败:', error);
         showError('加载配置失败: ' + error.message);
     }
 }
@@ -68,6 +69,7 @@ function updateDefaultDirName(force = false) {
     if (force || dirNameInput.value === '' || dirNameInput.value === lastAutoDirName) {
         dirNameInput.value = newAutoName;
         lastAutoDirName = newAutoName;
+        logDebug('自动更新目录名:', newAutoName);
     }
 }
 
@@ -77,6 +79,7 @@ function setupEventListeners() {
             document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentOperateType = btn.dataset.type;
+            logInfo('操作类型变更:', currentOperateType);
             
             if (currentOperateType === 'QUERY') {
                 scriptTypeSection.style.display = 'none';
@@ -88,13 +91,11 @@ function setupEventListeners() {
     });
     
     usageInput.addEventListener('input', () => updateDefaultDirName(true));
-    
     dirNameInput.addEventListener('input', () => {
         if (dirNameInput.value !== lastAutoDirName) {
             lastAutoDirName = dirNameInput.value;
         }
     });
-    
     generateBtn.addEventListener('click', generateScript);
     settingsBtn.addEventListener('click', showSettings);
 }
@@ -133,22 +134,23 @@ async function generateScript() {
     
     generateBtn.disabled = true;
     generateBtn.textContent = '生成中...';
+    logInfo('开始生成脚本', { operateType: currentOperateType, usage, database, scriptType, dirName });
     
     try {
         const result = await window.electronAPI.generateScript({
             operateType: currentOperateType,
-            usage: usage,
-            database: database,
-            scriptType: scriptType,
-            dirName: dirName
+            usage, database, scriptType, dirName
         });
         
         if (result.success) {
+            logInfo('脚本生成成功', result.filePath);
             showSuccess(result);
         } else {
+            logError('脚本生成失败', result.error);
             showError('生成失败: ' + result.error);
         }
     } catch (error) {
+        logError('生成脚本异常:', error);
         showError('生成失败: ' + error.message);
     } finally {
         generateBtn.disabled = false;
@@ -167,13 +169,13 @@ function showSuccess(result) {
     `;
     
     document.getElementById('openFileBtn')?.addEventListener('click', async () => {
+        logInfo('用户点击打开文件', result.filePath);
         await window.electronAPI.openFile(result.filePath);
     });
-    
     document.getElementById('openFolderBtn')?.addEventListener('click', async () => {
+        logInfo('用户点击打开文件夹', result.targetPath);
         await window.electronAPI.openFolder(result.targetPath);
     });
-    
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -183,7 +185,13 @@ function showError(message) {
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// 清理拖动监听器
+// 拖动相关变量
+let dragStartX = 0, dragStartY = 0;
+let dragInitialLeft = 0, dragInitialTop = 0;
+let dragModalContent = null;
+let dragMouseMoveHandler = null;
+let dragMouseUpHandler = null;
+
 function cleanupDragListeners() {
     if (dragMouseMoveHandler) {
         document.removeEventListener('mousemove', dragMouseMoveHandler);
@@ -202,10 +210,8 @@ function cleanupDragListeners() {
     }
 }
 
-// 启用模态框拖动（不修改 userSelect，避免影响输入框）
 function makeDraggable(modalContent, handle) {
-    cleanupDragListeners(); // 先清理旧的
-    
+    cleanupDragListeners();
     let isDragging = false;
     
     const onMouseMove = (e) => {
@@ -243,17 +249,15 @@ function makeDraggable(modalContent, handle) {
     dragModalContent = modalContent;
 }
 
-// 关闭设置模态框
 function closeSettingsModal(modal) {
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
     cleanupDragListeners();
 }
 
 async function showSettings() {
     const modal = document.getElementById('settingsModal');
     const config = await window.electronAPI.getConfig();
+    logInfo('打开设置窗口');
     
     document.getElementById('basePath').value = config.base_path || '';
     document.getElementById('devChName').value = config.developer_ch_name || '';
@@ -262,17 +266,13 @@ async function showSettings() {
     
     renderDatabasesConfig(config.databases || []);
     renderScriptTypesConfig(config.script_types || []);
-    
     initSettingsTabs();
     
     modal.style.display = 'flex';
-    
-    // 启用拖动
     const modalContent = modal.querySelector('.modal-content');
     const modalHeader = modal.querySelector('.modal-header');
     makeDraggable(modalContent, modalHeader);
     
-    // 关闭事件
     const closeModal = () => closeSettingsModal(modal);
     document.querySelector('.close').onclick = closeModal;
     document.getElementById('cancelSettingsBtn').onclick = closeModal;
@@ -295,21 +295,18 @@ async function showSettings() {
     document.getElementById('addScriptTypeBtn').onclick = () => addScriptTypeItem();
 }
 
-// 验证配置（重名校验，标红）
 function validateSettings() {
     let isValid = true;
     let errorMessages = [];
-    // 清除所有错误样式
     document.querySelectorAll('.config-item').forEach(item => {
         item.classList.remove('error');
         const inputs = item.querySelectorAll('input');
         inputs.forEach(input => input.classList.remove('error'));
     });
     
-    // 校验数据库名称重复
     const dbNames = [];
     const dbItems = document.querySelectorAll('#databasesConfig .config-item');
-    dbItems.forEach((item, idx) => {
+    dbItems.forEach(item => {
         const input = item.querySelector('input');
         const name = input.value.trim();
         if (!name) {
@@ -325,10 +322,9 @@ function validateSettings() {
         }
     });
     
-    // 校验脚本类型名称重复
     const typeNames = [];
     const typeItems = document.querySelectorAll('#scriptTypesConfig .config-item');
-    typeItems.forEach((item, idx) => {
+    typeItems.forEach(item => {
         const nameInput = item.querySelector('input:first-child');
         const name = nameInput.value.trim();
         if (!name) {
@@ -345,6 +341,7 @@ function validateSettings() {
     });
     
     if (!isValid) {
+        logError('配置验证失败:', errorMessages[0]);
         showError(errorMessages[0]);
     }
     return isValid;
@@ -353,6 +350,7 @@ function validateSettings() {
 function initSettingsTabs() {
     const menuItems = document.querySelectorAll('.settings-menu-item');
     const tabs = document.querySelectorAll('.settings-tab');
+    const settingsContent = document.querySelector('.settings-content');
     
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -361,7 +359,12 @@ function initSettingsTabs() {
             tabs.forEach(tab => tab.classList.remove('active'));
             item.classList.add('active');
             const targetTab = document.getElementById(`tab-${tabId}`);
-            if (targetTab) targetTab.classList.add('active');
+            if (targetTab) {
+                targetTab.classList.add('active');
+                if (settingsContent) {
+                    settingsContent.scrollTop = 0;
+                }
+            }
         });
     });
 }
@@ -393,7 +396,7 @@ function renderScriptTypesConfig(scriptTypes) {
         div.className = 'config-item';
         div.innerHTML = `
             <div class="config-item-info">
-                <input type="text" placeholder="名称" value="${st.name}" class="input-field" style="width: 150px; margin-right: 10px;">
+                <input type="text" placeholder="名称" value="${st.name}" class="input-field" style="width: 120px; margin-right: 10px;">
                 <input type="text" placeholder="描述" value="${st.description}" class="input-field" style="width: 300px;">
             </div>
             <div class="config-item-actions">
@@ -427,7 +430,7 @@ function addScriptTypeItem() {
     div.className = 'config-item';
     div.innerHTML = `
         <div class="config-item-info">
-            <input type="text" placeholder="名称" class="input-field" style="width: 150px; margin-right: 10px;">
+            <input type="text" placeholder="名称" class="input-field" style="width: 120px; margin-right: 10px;">
             <input type="text" placeholder="描述" class="input-field" style="width: 300px;">
         </div>
         <div class="config-item-actions">
@@ -458,14 +461,14 @@ async function saveSettings() {
         developer_ch_name: document.getElementById('devChName').value,
         developer_en_name: document.getElementById('devEnName').value,
         text_edit_app: document.getElementById('textEditor').value,
-        databases: databases,
-        script_types: scriptTypes
+        databases, script_types: scriptTypes
     };
     
+    logInfo('保存配置', { databases: databases.length, scriptTypes: scriptTypes.length });
     const success = await window.electronAPI.saveConfig(newConfig);
     if (success) {
-        await loadConfig();
-        alert('设置已保存');
+        // 手动保存配置后刷新页面，使所有更改完全生效
+        location.reload();
     } else {
         alert('保存失败');
     }

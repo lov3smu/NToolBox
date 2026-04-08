@@ -16,6 +16,9 @@
       "electron": "^27.3.11",
       "electron-builder": "^24.6.4"
   },
+  "dependencies": {
+    "electron-log": "^5.0.1"
+  },
   "build": {
     "appId": "com.ancoka.sql-script-generator",
     "productName": "SQL Script Generator",
@@ -26,7 +29,10 @@
       "**/*",
       "!**/*.log",
       "!**/.env",
-      "!**/.md"
+      "!**/.md",
+      "!assets/icon.icns",
+      "!assets/icon.png",
+      "!assets/icon.ico"
     ],
     "extraResources": [
       {
