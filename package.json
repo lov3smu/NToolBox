@@ -22,7 +22,8 @@
   },
   "build": {
     "appId": "com.ancoka.sql-script-generator",
-    "productName": "SQL Script Generator",
+    "productName": "SqlScriptGenerator",
+    "artifactName": "${productName}-${version}.${ext}",
     "directories": {
       "output": "dist"
     },
@@ -33,8 +34,7 @@
       "!**/.md",
       "assets/icon.icns",
       "assets/icon.png",
-      "assets/icon.ico",
-      "assets/installerSidebar.bmp"
+      "assets/icon.ico"
     ],
     "extraResources": [
       {
@@ -67,8 +67,6 @@
       "runAfterFinish": true,
       "perMachine": true,
       "installerHeaderIcon": "assets/icon.ico",
-      "installerSidebar": "assets/installerSidebar.bmp",
-      "uninstallerSidebar": "assets/installerSidebar.bmp",
       "license": "LICENSE.txt",
       "include": "installer.nsh"
     },

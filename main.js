@@ -57,20 +57,83 @@ appAuthor = appAuthor.replace(/<[^>]*>/g, '').trim();
 
 // ========== 获取图标路径 ==========
 function getIconPath() {
-    const icoPath = path.join(installDir, 'assets', 'icon.ico');
-    const pngPath = path.join(installDir, 'assets', 'icon.png');
-    if (fs.existsSync(icoPath)) return icoPath;
-    if (fs.existsSync(pngPath)) return pngPath;
-    return null;
+    let iconPath = null;
+    
+    if (app.isPackaged) {
+        // 生产环境：从 resources 目录读取
+        const resourcesDir = process.resourcesPath;
+        
+        // 尝试多个可能的路径
+        const possiblePaths = [
+            path.join(resourcesDir, 'assets', 'icon.ico'),
+            path.join(resourcesDir, 'assets', 'icon.png'),
+            path.join(__dirname, 'assets', 'icon.ico'),
+            path.join(__dirname, 'assets', 'icon.png')
+        ];
+        
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                iconPath = p;
+                log.info('找到图标:', iconPath);
+                break;
+            }
+        }
+    } else {
+        // 开发环境
+        const devPath = path.join(__dirname, 'assets', 'icon.ico');
+        if (fs.existsSync(devPath)) {
+            iconPath = devPath;
+        } else {
+            const devPngPath = path.join(__dirname, 'assets', 'icon.png');
+            if (fs.existsSync(devPngPath)) {
+                iconPath = devPngPath;
+            }
+        }
+    }
+    
+    if (!iconPath) {
+        log.warn('未找到图标文件');
+    }
+    
+    return iconPath;
 }
 
 // ========== 获取托盘图标路径 ==========
 function getTrayIconPath() {
-    const pngPath = path.join(installDir, 'assets', 'icon.png');
-    if (fs.existsSync(pngPath)) return pngPath;
-    const icoPath = path.join(installDir, 'assets', 'icon.ico');
-    if (fs.existsSync(icoPath)) return icoPath;
-    return null;
+    let iconPath = null;
+    
+    if (app.isPackaged) {
+        // 生产环境：从 resources 目录读取
+        const resourcesDir = process.resourcesPath;
+        
+        const possiblePaths = [
+            path.join(resourcesDir, 'assets', 'icon.png'),
+            path.join(resourcesDir, 'assets', 'icon.ico'),
+            path.join(__dirname, 'assets', 'icon.png'),
+            path.join(__dirname, 'assets', 'icon.ico')
+        ];
+        
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                iconPath = p;
+                log.info('找到托盘图标:', iconPath);
+                break;
+            }
+        }
+    } else {
+        // 开发环境
+        const devPngPath = path.join(__dirname, 'assets', 'icon.png');
+        if (fs.existsSync(devPngPath)) {
+            iconPath = devPngPath;
+        } else {
+            const devIcoPath = path.join(__dirname, 'assets', 'icon.ico');
+            if (fs.existsSync(devIcoPath)) {
+                iconPath = devIcoPath;
+            }
+        }
+    }
+    
+    return iconPath;
 }
 
 // ========== 默认配置 ==========
