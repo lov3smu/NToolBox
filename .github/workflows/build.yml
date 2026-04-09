@@ -71,6 +71,8 @@ jobs:
         
         # macOS: 保留 dmg
         find artifacts -type f -name "*.dmg" -exec cp {} release/ \;
+
+        find artifacts -type f -name "latest.yml" -exec cp {} release/ \;
         
         echo "Selected files for release:"
         ls -la release/
