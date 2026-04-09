@@ -1,8 +1,10 @@
 {
   "name": "sql-script-generator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SQL Script Generator Tool",
   "main": "main.js",
+  "author": "lov3smu <imancoka@gmail.com>",
+  "license": "MIT",
   "scripts": {
       "start": "electron .",
       "build": "echo 'Building...'",
@@ -10,8 +12,6 @@
       "build:win": "electron-builder --win --x64",
       "build:mac": "electron-builder --mac --x64"
   },
-  "author": "lov3smu <imancoka@gmail.com>",
-  "license": "MIT",
   "devDependencies": {
       "electron": "^27.3.11",
       "electron-builder": "^24.6.4"
@@ -31,9 +31,10 @@
       "!**/*.log",
       "!**/.env",
       "!**/.md",
-      "!assets/icon.icns",
-      "!assets/icon.png",
-      "!assets/icon.ico"
+      "assets/icon.icns",
+      "assets/icon.png",
+      "assets/icon.ico",
+      "assets/installerSidebar.bmp"
     ],
     "extraResources": [
       {
@@ -60,7 +61,16 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "perMachine": true,
+      "installerHeaderIcon": "assets/icon.ico",
+      "installerSidebar": "assets/installerSidebar.bmp",
+      "uninstallerSidebar": "assets/installerSidebar.bmp",
+      "license": "LICENSE.txt",
+      "include": "installer.nsh"
     },
     "publish": {
       "provider": "github",

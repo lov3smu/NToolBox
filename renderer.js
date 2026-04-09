@@ -14,6 +14,10 @@ const resultDiv = document.getElementById('result');
 const resultContent = document.getElementById('resultContent');
 const scriptTypeSection = document.getElementById('scriptTypeSection');
 
+// 设置页面元素
+const autoUpdateCheckbox = document.getElementById('autoUpdateCheckbox');
+const autoStartCheckbox = document.getElementById('autoStartCheckbox');
+
 // 前端日志函数
 function logInfo(...args) { console.log('[INFO]', ...args); }
 function logError(...args) { console.error('[ERROR]', ...args); }
@@ -259,13 +263,27 @@ async function showSettings() {
     const config = await window.electronAPI.getConfig();
     logInfo('打开设置窗口');
     
+    // 通用配置
     document.getElementById('basePath').value = config.base_path || '';
     document.getElementById('devChName').value = config.developer_ch_name || '';
     document.getElementById('devEnName').value = config.developer_en_name || '';
     document.getElementById('textEditor').value = config.text_edit_app || '';
+    autoUpdateCheckbox.checked = config.auto_update !== false; // 默认开启
+    autoStartCheckbox.checked = config.auto_start === true;
     
+    // 数据库和脚本类型配置
     renderDatabasesConfig(config.databases || []);
     renderScriptTypesConfig(config.script_types || []);
+    
+    // 关于页面信息
+    const packageJson = await window.electronAPI.getPackageInfo();
+    document.getElementById('aboutVersion').textContent = `版本: ${packageJson.version || '1.0.0'}`;
+    let author = packageJson.author || '未知作者';
+    author = author.replace(/<[^>]*>/g, '').trim();
+    document.getElementById('aboutAuthor').textContent = `作者: ${author}`;
+    const year = new Date().getFullYear();
+    document.getElementById('aboutCopyright').textContent = `© ${year} ${author}. All rights reserved.`;
+    
     initSettingsTabs();
     
     modal.style.display = 'flex';
@@ -280,6 +298,14 @@ async function showSettings() {
         if (validateSettings()) {
             await saveSettings();
             closeModal();
+        }
+    };
+    
+    // 检查更新按钮
+    document.getElementById('checkUpdateBtn').onclick = async () => {
+        const result = await window.electronAPI.checkForUpdates(true);
+        if (result && result.status === 'update-not-available') {
+            alert('当前已是最新版本');
         }
     };
     
@@ -461,13 +487,17 @@ async function saveSettings() {
         developer_ch_name: document.getElementById('devChName').value,
         developer_en_name: document.getElementById('devEnName').value,
         text_edit_app: document.getElementById('textEditor').value,
-        databases, script_types: scriptTypes
+        auto_update: autoUpdateCheckbox.checked,
+        auto_start: autoStartCheckbox.checked,
+        databases: databases,
+        script_types: scriptTypes
     };
     
     logInfo('保存配置', { databases: databases.length, scriptTypes: scriptTypes.length });
     const success = await window.electronAPI.saveConfig(newConfig);
     if (success) {
-        // 手动保存配置后刷新页面，使所有更改完全生效
+        // 应用开机启动设置
+        await window.electronAPI.setAutoStart(autoStartCheckbox.checked);
         location.reload();
     } else {
         alert('保存失败');
@@ -475,3 +505,8 @@ async function saveSettings() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// 监听主进程打开设置页面的消息
+window.electronAPI.onOpenSettings(() => {
+    showSettings();
+});
