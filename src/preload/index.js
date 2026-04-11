@@ -13,5 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setAutoStart: (enable) => ipcRenderer.invoke('set-auto-start', enable),
     getAutoStart: () => ipcRenderer.invoke('get-auto-start'),
     checkForUpdates: (manual) => ipcRenderer.invoke('check-for-updates', manual),
-    onOpenSettings: (callback) => ipcRenderer.on('open-settings', callback)
+    openSettings: () => ipcRenderer.invoke('open-settings'),
+    onConfigChanged: (callback) => {
+        ipcRenderer.removeAllListeners('config-changed');
+        ipcRenderer.on('config-changed', callback);
+    },
 });

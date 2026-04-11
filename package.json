@@ -1,8 +1,8 @@
 {
   "name": "sql-script-generator",
   "version": "1.0.1",
-  "description": "SQL Script Generator Tool",
-  "main": "main.js",
+  "description": "SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。",
+  "main": "src/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
   "license": "MIT",
   "scripts": {
@@ -28,10 +28,11 @@
       "output": "dist"
     },
     "files": [
-      "**/*",
+      "src/**/*",
+      "package.json",
       "!**/*.log",
       "!**/.env",
-      "!**/.md",
+      "!**/*.md",
       "assets/icon.icns",
       "assets/icon.png",
       "assets/icon.ico"
@@ -67,8 +68,7 @@
       "runAfterFinish": true,
       "perMachine": true,
       "installerHeaderIcon": "assets/icon.ico",
-      "license": "LICENSE.txt",
-      "include": "installer.nsh"
+      "license": "LICENSE.txt"
     },
     "publish": {
       "provider": "github",

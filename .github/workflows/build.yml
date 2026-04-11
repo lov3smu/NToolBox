@@ -70,8 +70,8 @@ jobs:
         # Linux: 保留 AppImage 和 deb
         find artifacts -type f \( -name "*AppImage*" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.rpm" \) -exec cp {} release/ \;
         
-        # Windows: 保留 nsis 和 portable
-        find artifacts -type f \( -name "*Setup*.exe" \) -exec cp {} release/ \;
+        # Windows: 保留 nsis 和 portable exe
+        find artifacts -type f \( -name "*.exe" \) ! -name "*.exe.blockmap" -exec cp {} release/ \;
         
         # macOS: 保留 dmg
         find artifacts -type f -name "*.dmg" -exec cp {} release/ \;

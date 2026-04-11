@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Script Generator</title>
+    <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 SQL Script Generator</h1>
+            <div class="subtitle">SQL脚本生成工具</div>
+        </header>
+
+        <div class="main-content">
+            <!-- 操作类型 -->
+            <div class="section">
+                <label class="section-label">操作类型</label>
+                <div class="button-group">
+                    <button class="type-btn" data-type="FIX">🔧 FIX</button>
+                    <button class="type-btn active" data-type="PUBLISH">📦 PUBLISH</button>
+                    <button class="type-btn" data-type="QUERY">🔍 QUERY</button>
+                </div>
+            </div>
+
+            <!-- 脚本用途 -->
+            <div class="section">
+                <label class="section-label">脚本用途</label>
+                <input type="text" id="usage" placeholder="请输入脚本用途" class="input-field">
+            </div>
+
+            <!-- 数据库 -->
+            <div class="section">
+                <label class="section-label">数据库</label>
+                <select id="database" class="select-field">
+                    <option value="">请选择数据库</option>
+                </select>
+            </div>
+
+            <!-- 脚本类型（QUERY时隐藏） -->
+            <div class="section" id="scriptTypeSection">
+                <label class="section-label">脚本类型</label>
+                <select id="scriptType" class="select-field">
+                    <option value="">请选择脚本类型</option>
+                </select>
+            </div>
+
+            <!-- 目录名 -->
+            <div class="section">
+                <label class="section-label">目录名</label>
+                <input type="text" id="dirName" placeholder="目录名（留空自动生成）" class="input-field">
+            </div>
+
+            <!-- 按钮 -->
+            <div class="action-buttons">
+                <button id="generateBtn" class="btn btn-primary">🚀 生成脚本</button>
+                <button id="settingsBtn" class="btn btn-secondary">⚙️ 设置</button>
+            </div>
+
+            <!-- 结果 -->
+            <div id="result" class="result-section" style="display: none;">
+                <h3>生成结果</h3>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../renderer/utils.js"></script>
+    <script src="../renderer/logger.js"></script>
+    <script src="../renderer/config-loader.js"></script>
+    <script src="../renderer/generator.js"></script>
+    <script src="../renderer/index.js"></script>
+</body>
+</html>
