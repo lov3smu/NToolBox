@@ -1,77 +1,93 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* ========================================
+   SQL Script Generator - 设置页样式 (毛玻璃版本)
+   ======================================== */
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f5f5f5;
+    background: var(--primary-gradient);
     height: 100vh;
     display: flex;
     overflow: hidden;
+    position: relative;
 }
 
-/* ========== 布局 ========== */
+/* 背景图案继承自 base.css */
+
+/* ---------- 布局 ---------- */
 .settings-layout {
     display: flex;
     width: 100%;
     height: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
 }
 
+/* ---------- 侧边栏 (毛玻璃) ---------- */
 .settings-sidebar {
-    width: 200px;
-    background: #f8f9fa;
-    border-right: 1px solid #e0e0e0;
+    width: 220px;
+    background: rgba(248, 249, 250, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-right: 1px solid var(--border-color);
     padding: 20px 0;
     flex-shrink: 0;
     overflow-y: auto;
 }
 
 .settings-menu-item {
-    padding: 12px 20px;
+    padding: 14px 24px;
     cursor: pointer;
-    transition: all 0.3s;
     font-size: 14px;
-    color: #555;
+    color: var(--text-secondary);
     border-left: 3px solid transparent;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    margin: 0 8px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .menu-icon {
-    font-size: 16px;
+    font-size: 18px;
     width: 24px;
     text-align: center;
 }
 
 .menu-text {
     flex: 1;
+    font-weight: 500;
 }
 
 .settings-menu-item:hover {
-    background: #e9ecef;
-    color: #667eea;
+    background: rgba(102, 126, 234, 0.08);
+    color: var(--primary-color);
 }
 
 .settings-menu-item.active {
-    background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0) 100%);
-    color: #667eea;
-    border-left-color: #667eea;
+    background: rgba(102, 126, 234, 0.12);
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
     font-weight: 600;
 }
 
+/* ---------- 主内容区 ---------- */
 .settings-main {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.4);
 }
 
 .settings-content {
     flex: 1;
-    padding: 24px;
+    padding: 30px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -85,207 +101,168 @@ body {
     display: block;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
+/* ---------- 底部按钮 ---------- */
 .settings-footer {
-    padding: 16px 24px;
+    padding: 20px 30px;
     display: flex;
     gap: 15px;
-    border-top: 1px solid #e0e0e0;
-    background: white;
+    border-top: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.6);
     flex-shrink: 0;
 }
 
-/* ========== 表单 ========== */
-.form-group {
-    margin-bottom: 20px;
+.settings-footer .btn {
+    min-width: 100px;
+    padding: 12px 24px;
 }
 
-.form-group label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #333;
-    cursor: pointer;
-}
-
-.form-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-
-.input-field {
-    width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 14px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    transition: all 0.3s;
-    background-color: white;
-}
-
-.input-field:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-}
-
-.input-field.error, .config-item.error input {
-    border-color: #dc3545 !important;
-    background-color: #fff5f5 !important;
-}
-
-select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 14px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: white;
-    transition: all 0.3s;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-}
-
-select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-}
-
-.path-input-group { display: flex; gap: 10px; }
-.path-input-group .input-field { flex: 1; }
-
-.setting-hint {
-    font-size: 12px;
-    color: #999;
-    margin-top: 4px;
-}
-
-/* ========== 按钮 ========== */
-.btn {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(102,126,234,0.4);
-}
-
-.btn-secondary {
-    background: #f5f5f5;
-    color: #666;
-}
-
-.btn-secondary:hover {
-    background: #e0e0e0;
-}
-
-.btn-small {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #667eea;
-    color: white;
-    font-size: 12px;
-    transition: all 0.3s;
-}
-
-.btn-small:hover {
-    background: #764ba2;
-}
-
-/* ========== 配置列表 ========== */
+/* ---------- 配置列表 ---------- */
 .config-list {
     margin-bottom: 15px;
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .config-item {
-    background: #f8f9fa;
-    padding: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 14px;
     margin-bottom: 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border: 1px solid rgba(224, 224, 224, 0.5);
+    box-shadow: var(--shadow-sm);
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 10px;
 }
 
+.config-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* 配置项信息区域 */
 .config-item-info {
     flex: 1;
     display: flex;
     gap: 10px;
     flex-wrap: nowrap;
     align-items: center;
+    min-width: 0;
+    overflow: hidden;
 }
 
-.config-item-info input[placeholder="数据库名"] { width: 100%; }
-.config-item-info input[placeholder="名称"] { width: 120px; flex-shrink: 0; }
-.config-item-info input[placeholder="描述"] { width: 300px; flex-shrink: 1; min-width: 150px; }
+.config-item-info input {
+    min-width: 60px;
+    flex-shrink: 1;
+}
+
+.config-item-info input[placeholder="数据库名"] { flex: 2; }
+.config-item-info input[placeholder="名称"] { flex: 0 0 100px; }
+.config-item-info input[placeholder="描述"] { flex: 3; }
+
+/* 操作按钮区域 */
+.config-item-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 5px;
+}
 
 .config-item-actions button {
-    margin-left: 5px;
     padding: 4px 8px;
     font-size: 11px;
+    white-space: nowrap;
 }
 
-/* ========== 关于页面 ========== */
-.about-section { text-align: center; padding: 20px; }
-.about-icon { font-size: 64px; margin-bottom: 16px; }
-.about-name { font-size: 24px; font-weight: 600; color: #333; margin-bottom: 8px; }
-.about-version { font-size: 14px; color: #666; margin-bottom: 16px; }
-.about-description { font-size: 14px; color: #555; margin-bottom: 16px; line-height: 1.5; }
-.about-author { font-size: 14px; color: #666; margin-bottom: 8px; }
-.about-copyright { font-size: 12px; color: #999; margin-bottom: 24px; }
-.about-buttons { display: flex; justify-content: center; gap: 16px; }
+/* ---------- 关于页面 ---------- */
+.about-section {
+    text-align: center;
+    padding: 40px 20px;
+}
 
-/* ========== 错误提示 ========== */
-.error-toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #dc3545;
-    color: white;
-    padding: 10px 24px;
-    border-radius: 8px;
+.about-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+.about-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-version {
     font-size: 14px;
-    z-index: 1000;
-    animation: fadeIn 0.3s;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+    font-weight: 500;
 }
 
-/* ========== 滚动条 ========== */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+.about-description {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.6;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.about-author {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.about-copyright {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 30px;
+}
+
+.about-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 768px) {
+    .settings-layout {
+        border-radius: 0;
+        margin: 0;
+    }
+    
+    .settings-sidebar {
+        width: 180px;
+    }
+    
+    .settings-menu-item {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+    
+    .menu-icon {
+        font-size: 16px;
+    }
+    
+    .settings-content {
+        padding: 20px;
+    }
+    
+    .about-name {
+        font-size: 24px;
+    }
+}

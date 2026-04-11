@@ -2,7 +2,7 @@
  * 应用菜单模块
  */
 const { app, Menu, dialog } = require('electron');
-const { getIconPath, createSettingsWindow } = require('./window');
+const { getIconPath, createSettingsWindow, createPasswordWindow } = require('./window');
 const { destroyTray } = require('./tray');
 
 const packageJson = require('../../package.json');
@@ -56,6 +56,11 @@ function createAppMenu(mainWindow, checkForUpdatesFn) {
         {
             label: '工具',
             submenu: [
+                {
+                    label: '密码生成器',
+                    accelerator: 'CmdOrCtrl+P',
+                    click: () => createPasswordWindow(),
+                },
                 {
                     label: '设置',
                     accelerator: 'CmdOrCtrl+,',

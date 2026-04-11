@@ -5,7 +5,7 @@ const { app, Menu, Tray, nativeImage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const log = require('electron-log');
-const { getIconPath, getTrayIconPath, createSettingsWindow } = require('./window');
+const { getIconPath, getTrayIconPath, createSettingsWindow, createPasswordWindow } = require('./window');
 
 let tray = null;
 

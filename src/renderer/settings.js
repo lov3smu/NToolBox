@@ -74,7 +74,7 @@ function renderDatabasesConfig(databases) {
                 <input type="text" placeholder="数据库名" value="${escapeHtml(dbName)}" class="input-field" style="width: 100%;">
             </div>
             <div class="config-item-actions">
-                <button class="btn-small delete-btn">删除</button>
+                <button class="btn-small btn-danger delete-btn">删除</button>
             </div>
         `;
         div.querySelector('.delete-btn').onclick = () => div.remove();
@@ -95,7 +95,7 @@ function renderScriptTypesConfig(scriptTypes) {
                 <input type="text" placeholder="描述" value="${escapeHtml(st.description)}" class="input-field" style="width: 300px;">
             </div>
             <div class="config-item-actions">
-                <button class="btn-small delete-btn">删除</button>
+                <button class="btn-small btn-danger delete-btn">删除</button>
             </div>
         `;
         div.querySelector('.delete-btn').onclick = () => div.remove();
@@ -113,7 +113,7 @@ function addDatabaseItem() {
             <input type="text" placeholder="数据库名" class="input-field" style="width: 100%;">
         </div>
         <div class="config-item-actions">
-            <button class="btn-small delete-btn">删除</button>
+            <button class="btn-small btn-danger delete-btn">删除</button>
         </div>
     `;
     div.querySelector('.delete-btn').onclick = () => div.remove();
@@ -131,7 +131,7 @@ function addScriptTypeItem() {
             <input type="text" placeholder="描述" class="input-field" style="width: 300px;">
         </div>
         <div class="config-item-actions">
-            <button class="btn-small delete-btn">删除</button>
+            <button class="btn-small btn-danger delete-btn">删除</button>
         </div>
     `;
     div.querySelector('.delete-btn').onclick = () => div.remove();

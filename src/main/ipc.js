@@ -8,7 +8,7 @@ const { getConfig, saveConfig, loadConfig } = require('./config');
 const { generateSQLFile, openFile, openFolder } = require('./generator');
 const { setAutoStart, getAutoStart } = require('./autostart');
 const { isPathWithinBase } = require('../common/sanitize');
-const { createSettingsWindow } = require('./window');
+const { createSettingsWindow, createPasswordWindow } = require('./window');
 
 const packageJson = require('../../package.json');
 
@@ -23,6 +23,13 @@ function setupIPCHandlers(getMainWindow, checkForUpdatesFn) {
         createSettingsWindow();
         return true;
     });
+
+    // 打开密码工具窗口
+    ipcMain.handle('open-password-generator', async () => {
+        createPasswordWindow();
+        return true;
+    });
+
     ipcMain.handle('get-config', async () => getConfig());
 
     ipcMain.handle('get-package-info', async () => ({

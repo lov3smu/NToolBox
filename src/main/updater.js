@@ -12,6 +12,18 @@ autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 autoUpdater.logger.transports.console.level = 'debug';
 
+// 禁用签名验证（仅用于测试，生产环境应使用正式代码签名证书）
+// Windows 上需要代码签名证书，否则会出现 "is not signed by the application owner" 错误
+if (process.platform === 'win32') {
+    autoUpdater.autoDownload = false; // 禁用自动下载，改为手动确认
+    autoUpdater.allowPrerelease = false;
+    
+    // 注意：electron-updater 在 Windows 上强制要求签名
+    // 如需在无签名情况下测试，请使用以下环境变量运行：
+    // set NODE_ENV=development
+    // 或使用 electron-builder 的 --publish=never 选项构建
+}
+
 const packageJson = require('../../package.json');
 const appVersion = packageJson.version;
 
@@ -90,6 +102,34 @@ function checkForUpdates(manual = true, mainWindow = null) {
 
         autoUpdater.once('error', (err) => {
             log.error('更新出错:', err);
+            
+            // 处理签名验证错误
+            if (err.message && err.message.includes('not signed')) {
+                log.warn('更新包签名验证失败，这可能是因为：');
+                log.warn('1. 更新包未使用代码签名证书签名');
+                log.warn('2. 签名证书与当前版本不匹配');
+                log.warn('解决方案：购买代码签名证书或使用自签名证书');
+                
+                if (manual && mainWindow && !mainWindow.isDestroyed()) {
+                    dialog.showMessageBox(mainWindow, {
+                        type: 'warning',
+                        title: '更新失败',
+                        message: '无法安装更新：更新包签名验证失败。\n\n' +
+                                 '这通常是因为应用未使用代码签名证书。\n\n' +
+                                 '请前往 GitHub Releases 页面手动下载最新版本。',
+                        buttons: ['前往下载', '取消'],
+                    }).then(result => {
+                        if (result.response === 0) {
+                            require('electron').shell.openExternal(
+                                'https://github.com/lov3smu/sql-script-generator/releases'
+                            );
+                        }
+                    });
+                }
+                resolve({ status: 'error', error: err });
+                return;
+            }
+            
             if (manual && mainWindow && !mainWindow.isDestroyed()) {
                 dialog.showErrorBox('检查更新失败', `无法检查更新：${err.message}`);
             }

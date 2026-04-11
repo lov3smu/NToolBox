@@ -1,6 +1,6 @@
 {
   "name": "sql-script-generator",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。",
   "main": "src/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
@@ -27,6 +27,7 @@
     "directories": {
       "output": "dist"
     },
+    "asar": true,
     "files": [
       "src/**/*",
       "package.json",
@@ -45,12 +46,24 @@
       }
     ],
     "win": {
-      "target": "nsis",
+      "target": {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
       "icon": "assets/icon.ico",
       "publisherName": "lov3smu"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
@@ -58,7 +71,8 @@
     },
     "linux": {
       "target": ["AppImage", "deb", "rpm", "tar.gz"],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "category": "Development"
     },
     "nsis": {
       "oneClick": false,
@@ -66,7 +80,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
-      "perMachine": true,
+       "perMachine": true,
       "installerHeaderIcon": "assets/icon.ico",
       "license": "LICENSE.txt"
     },
@@ -75,6 +89,24 @@
       "owner": "lov3smu",
       "repo": "sql-script-generator",
       "releaseType": "release"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     }
   }
 }

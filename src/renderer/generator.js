@@ -21,26 +21,41 @@ function updateDefaultDirName(force = false) {
 }
 
 function setupEventListeners() {
+    // 缓存 DOM 元素引用
     const usageInput = document.getElementById('usage');
     const dirNameInput = document.getElementById('dirName');
     const generateBtn = document.getElementById('generateBtn');
     const settingsBtn = document.getElementById('settingsBtn');
     const scriptTypeSection = document.getElementById('scriptTypeSection');
+    const typeBtns = document.querySelectorAll('.type-btn');
 
-    // 操作类型按钮
-    document.querySelectorAll('.type-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentOperateType = btn.dataset.type;
+    // 操作类型按钮 - 使用事件委托优化
+    const buttonGroup = document.querySelector('.button-group');
+    if (buttonGroup) {
+        buttonGroup.addEventListener('click', (e) => {
+            const btn = e.target.closest('.type-btn');
+            if (!btn) return;
+            
+            // 使用 requestAnimationFrame 优化 DOM 操作
+            requestAnimationFrame(() => {
+                typeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentOperateType = btn.dataset.type;
+                
+                scriptTypeSection.style.display = currentOperateType === 'QUERY' ? 'none' : 'block';
+            });
+            
             logInfo('操作类型变更:', currentOperateType);
-
-            scriptTypeSection.style.display = currentOperateType === 'QUERY' ? 'none' : 'block';
             updateDefaultDirName(true);
         });
-    });
+    }
 
-    usageInput.addEventListener('input', () => updateDefaultDirName(true));
+    // 防抖处理的 input 事件
+    let inputTimeout;
+    usageInput.addEventListener('input', () => {
+        clearTimeout(inputTimeout);
+        inputTimeout = setTimeout(() => updateDefaultDirName(true), 100);
+    });
 
     dirNameInput.addEventListener('input', () => {
         if (dirNameInput.value !== lastAutoDirName) {
@@ -126,6 +141,7 @@ function showSuccess(result) {
     const resultContent = document.getElementById('resultContent');
 
     resultDiv.style.display = 'block';
+    resultDiv.className = 'result-section result-success';
     resultContent.innerHTML = `
         <div class="success-message">✓ 脚本生成成功！</div>
         <div><strong>文件名：</strong> ${escapeHtml(result.filename)}</div>
@@ -152,6 +168,7 @@ function showError(message) {
     const resultContent = document.getElementById('resultContent');
 
     resultDiv.style.display = 'block';
-    resultContent.innerHTML = `<div class="error-message">✗ 错误</div><div>${escapeHtml(message)}</div>`;
+    resultDiv.className = 'result-section result-error';
+    resultContent.innerHTML = `<div class="error-message">✗ ${escapeHtml(message)}</div>`;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }

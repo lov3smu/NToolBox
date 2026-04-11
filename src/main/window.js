@@ -10,6 +10,7 @@ const { getConfig, saveConfig } = require('./config');
 
 let mainWindow = null;
 let settingsWindow = null;
+let passwordWindow = null;
 let splashWindow = null;
 let splashStartTime = null;
 let isTransitioning = false;
@@ -291,6 +292,8 @@ function createSettingsWindow() {
         parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined,
         modal: false,
         show: false,
+        minimizable: false,
+        maximizable: false,
         icon: iconPath,
         backgroundColor: '#f5f5f5',
         webPreferences: {
@@ -323,6 +326,58 @@ function createSettingsWindow() {
     return settingsWindow;
 }
 
+// ========== 密码工具窗口 ==========
+function createPasswordWindow() {
+    // 如果已存在，聚焦而非重复创建
+    if (passwordWindow && !passwordWindow.isDestroyed()) {
+        passwordWindow.focus();
+        return passwordWindow;
+    }
+
+    const iconPath = getIconPath();
+
+    passwordWindow = new BrowserWindow({
+        width: 750,
+        height: 550,
+        minWidth: 600,
+        minHeight: 400,
+        parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined,
+        modal: false,
+        show: false,
+        minimizable: false,
+        maximizable: false,
+        icon: iconPath,
+        backgroundColor: '#667eea',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, '..', 'preload', 'index.js'),
+        },
+        title: '密码生成器',
+    });
+
+    passwordWindow.setMenuBarVisibility(false);
+    passwordWindow.loadFile(path.join(__dirname, '..', 'pages', 'password.html'));
+
+    passwordWindow.once('ready-to-show', () => {
+        if (passwordWindow && !passwordWindow.isDestroyed()) {
+            passwordWindow.show();
+        }
+    });
+
+    passwordWindow.on('closed', () => {
+        passwordWindow = null;
+        log.info('密码工具窗口已关闭');
+    });
+
+    log.info('密码工具窗口已创建');
+    return passwordWindow;
+}
+
+function getPasswordWindow() {
+    return passwordWindow;
+}
+
 function getMainWindow() {
     return mainWindow;
 }
@@ -341,8 +396,10 @@ module.exports = {
     createSplashWindow,
     createMainWindow,
     createSettingsWindow,
+    createPasswordWindow,
     setupSplashTimeout,
     getMainWindow,
     getSettingsWindow,
+    getPasswordWindow,
     getSplashWindow,
 };
