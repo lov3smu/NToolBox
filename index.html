@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cron表达式生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .header h1 {
+            color: #1890ff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e8e8e8;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            color: #666;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: #1890ff;
+        }
+
+        .tab.active {
+            color: #1890ff;
+            font-weight: 500;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #1890ff;
+        }
+
+        /* 内容区域 */
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 选项组样式 */
+        .option-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        input[type="radio"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        label {
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .tips {
+            color: #999;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #1890ff;
+        }
+
+        /* 复选框区域 */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 4px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: #e6f7ff;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 4px;
+        }
+
+        .checkbox-item.checked {
+            background: #1890ff;
+            color: #fff;
+        }
+
+        /* 表达式展示区 */
+        .expression-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 6px;
+        }
+
+        .expression-section h3 {
+            color: #52c41a;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .field-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .field-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .field-label {
+            background: #1890ff;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .field-value {
+            width: 80px;
+            text-align: center;
+            padding: 6px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background: #fff;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .cron-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        #cronExpression {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-family: monospace;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #1890ff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #73d13d;
+        }
+
+        /* 执行时间预览 */
+        .preview-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 4px;
+        }
+
+        .preview-section h4 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .preview-list {
+            list-style: none;
+        }
+
+        .preview-list li {
+            padding: 6px 0;
+            color: #333;
+            font-family: monospace;
+            border-bottom: 1px dashed #e8e8e8;
+        }
+
+        .preview-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* 说明区域 */
+        .explain-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 6px;
+        }
+
+        .explain-section h3 {
+            color: #faad14;
+            margin-bottom: 15px;
+        }
+
+        .explain-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .explain-content pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .explain-content ul {
+            margin: 10px 0 10px 20px;
+        }
+
+        .explain-content li {
+            margin: 5px 0;
+        }
+
+        .explain-content code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #cf1322;
+        }
+
+        /* 分隔线 */
+        hr {
+            border: none;
+            border-top: 1px solid #e8e8e8;
+            margin: 15px 0;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+
+            .field-box {
+                justify-content: center;
+            }
+
+            .cron-box {
+                flex-direction: column;
+            }
+
+            #cronExpression {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cron 表达式生成器</h1>
+            <p>在线生成任务调度的 Cron 表达式，支持 Quartz 格式的可视化双向解析和生成</p>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab active" data-tab="second">秒</button>
+            <button class="tab" data-tab="minute">分钟</button>
+            <button class="tab" data-tab="hour">小时</button>
+            <button class="tab" data-tab="day">日</button>
+            <button class="tab" data-tab="month">月</button>
+            <button class="tab" data-tab="week">周</button>
+            <button class="tab" data-tab="year">年</button>
+        </div>
+
+        <!-- 秒 -->
+        <div id="second" class="tab-content active">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="secondType" id="secondEvery" value="every" checked>
+                    <label for="secondEvery">每秒</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="secondType" id="secondCycle" value="cycle">
+                    <label for="secondCycle">周期从</label>
+                    <input type="number" id="secondCycleStart" value="1" min="0" max="59">
+                    <label>到</label>
+                    <input type="number" id="secondCycleEnd" value="2" min="0" max="59">
+                    <label>秒</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="secondType" id="secondStart" value="start">
+                    <label for="secondStart">从</label>
+                    <input type="number" id="secondStartFrom" value="0" min="0" max="59">
+                    <label>秒开始，每</label>
+                    <input type="number" id="secondStartInterval" value="1" min="1" max="59">
+                    <label>秒执行一次</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="secondType" id="secondAppoint" value="appoint">
+                    <label for="secondAppoint">指定</label>
+                </div>
+                <div class="checkbox-group" id="secondCheckbox">
+                    <!-- 动态生成 0-59 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 分钟 -->
+        <div id="minute" class="tab-content">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="minuteType" id="minuteEvery" value="every" checked>
+                    <label for="minuteEvery">每分钟</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="minuteType" id="minuteCycle" value="cycle">
+                    <label for="minuteCycle">周期从</label>
+                    <input type="number" id="minuteCycleStart" value="1" min="0" max="59">
+                    <label>到</label>
+                    <input type="number" id="minuteCycleEnd" value="2" min="0" max="59">
+                    <label>分钟</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="minuteType" id="minuteStart" value="start">
+                    <label for="minuteStart">从</label>
+                    <input type="number" id="minuteStartFrom" value="0" min="0" max="59">
+                    <label>分钟开始，每</label>
+                    <input type="number" id="minuteStartInterval" value="1" min="1" max="59">
+                    <label>分钟执行一次</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="minuteType" id="minuteAppoint" value="appoint">
+                    <label for="minuteAppoint">指定</label>
+                </div>
+                <div class="checkbox-group" id="minuteCheckbox"></div>
+            </div>
+        </div>
+
+        <!-- 小时 -->
+        <div id="hour" class="tab-content">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="hourType" id="hourEvery" value="every" checked>
+                    <label for="hourEvery">每小时</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="hourType" id="hourCycle" value="cycle">
+                    <label for="hourCycle">周期从</label>
+                    <input type="number" id="hourCycleStart" value="0" min="0" max="23">
+                    <label>到</label>
+                    <input type="number" id="hourCycleEnd" value="2" min="0" max="23">
+                    <label>小时</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="hourType" id="hourStart" value="start">
+                    <label for="hourStart">从</label>
+                    <input type="number" id="hourStartFrom" value="0" min="0" max="23">
+                    <label>小时开始，每</label>
+                    <input type="number" id="hourStartInterval" value="1" min="1" max="23">
+                    <label>小时执行一次</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="hourType" id="hourAppoint" value="appoint">
+                    <label for="hourAppoint">指定</label>
+                </div>
+                <div class="checkbox-group" id="hourCheckbox"></div>
+            </div>
+        </div>
+
+        <!-- 日 -->
+        <div id="day" class="tab-content">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayEvery" value="every" checked>
+                    <label for="dayEvery">每日</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayNone" value="none">
+                    <label for="dayNone">不指定</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayCycle" value="cycle">
+                    <label for="dayCycle">周期从</label>
+                    <input type="number" id="dayCycleStart" value="1" min="1" max="31">
+                    <label>到</label>
+                    <input type="number" id="dayCycleEnd" value="2" min="1" max="31">
+                    <label>日</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayStart" value="start">
+                    <label for="dayStart">从</label>
+                    <input type="number" id="dayStartFrom" value="1" min="1" max="31">
+                    <label>日开始，每</label>
+                    <input type="number" id="dayStartInterval" value="1" min="1" max="31">
+                    <label>日执行一次</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayWork" value="work">
+                    <label for="dayWork">每月</label>
+                    <input type="number" id="dayWorkDay" value="1" min="1" max="31">
+                    <label>号最近的那个工作日</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayLast" value="last">
+                    <label for="dayLast">本月最后一天</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="dayType" id="dayAppoint" value="appoint">
+                    <label for="dayAppoint">指定</label>
+                </div>
+                <div class="checkbox-group" id="dayCheckbox"></div>
+            </div>
+        </div>
+
+        <!-- 月 -->
+        <div id="month" class="tab-content">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="monthType" id="monthEvery" value="every" checked>
+                    <label for="monthEvery">每月</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="monthType" id="monthNone" value="none">
+                    <label for="monthNone">不指定</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="monthType" id="monthCycle" value="cycle">
+                    <label for="monthCycle">周期从</label>
+                    <input type="number" id="monthCycleStart" value="1" min="1" max="12">
+                    <label>到</label>
+                    <input type="number" id="monthCycleEnd" value="2" min="1" max="12">
+                    <label>月</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="monthType" id="monthStart" value="start">
+                    <label for="monthStart">从</label>
+                    <input type="number" id="monthStartFrom" value="1" min="1" max="12">
+                    <label>月开始，每</label>
+                    <input type="number" id="monthStartInterval" value="1" min="1" max="12">
+                    <label>月执行一次</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="monthType" id="monthAppoint" value="appoint">
+                    <label for="monthAppoint">指定</label>
+                </div>
+                <div class="checkbox-group" id="monthCheckbox"></div>
+            </div>
+        </div>
+
+        <!-- 周 -->
+        <div id="week" class="tab-content">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="weekType" id="weekEvery" value="every">
+                    <label for="weekEvery">每周</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="weekType" id="weekNone" value="none" checked>
+                    <label for="weekNone">不指定</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="weekType" id="weekCycle" value="cycle">
+                    <label for="weekCycle">周期从星期</label>
+                    <input type="number" id="weekCycleStart" value="1" min="1" max="7">
+                    <label>到星期</label>
+                    <input type="number" id="weekCycleEnd" value="2" min="1" max="7">
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="weekType" id="weekNth" value="nth">
+                    <label for="weekNth">第</label>
+                    <input type="number" id="weekNthNum" value="1" min="1" max="5">
+                    <label>周的星期</label>
+                    <input type="number" id="weekNthDay" value="1" min="1" max="7">
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="weekType" id="weekLast" value="last">
+                    <label for="weekLast">本月最后一个星期</label>
+                    <input type="number" id="weekLastDay" value="1" min="1" max="7">
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="weekType" id="weekAppoint" value="appoint">
+                    <label for="weekAppoint">指定</label>
+                </div>
+                <div class="checkbox-group" id="weekCheckbox"></div>
+            </div>
+        </div>
+
+        <!-- 年 -->
+        <div id="year" class="tab-content">
+            <div class="option-group">
+                <div class="option-row">
+                    <input type="radio" name="yearType" id="yearNone" value="none" checked>
+                    <label for="yearNone">不指定</label>
+                    <span class="tips">允许的通配符 [, - * /]</span>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="yearType" id="yearEvery" value="every">
+                    <label for="yearEvery">每年</label>
+                </div>
+                <div class="option-row">
+                    <input type="radio" name="yearType" id="yearCycle" value="cycle">
+                    <label for="yearCycle">周期从</label>
+                    <input type="number" id="yearCycleStart" value="2024" min="2000" max="2100">
+                    <label>到</label>
+                    <input type="number" id="yearCycleEnd" value="2025" min="2000" max="2100">
+                </div>
+            </div>
+        </div>
+
+        <!-- 表达式展示 -->
+        <div class="expression-section">
+            <h3>Cron 表达式字段</h3>
+            <div class="field-box">
+                <div class="field-item">
+                    <span class="field-label">秒</span>
+                    <input type="text" class="field-value" id="v_second" value="*" readonly>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">分钟</span>
+                    <input type="text" class="field-value" id="v_minute" value="*" readonly>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">小时</span>
+                    <input type="text" class="field-value" id="v_hour" value="*" readonly>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">日</span>
+                    <input type="text" class="field-value" id="v_day" value="*" readonly>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">月</span>
+                    <input type="text" class="field-value" id="v_month" value="*" readonly>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">星期</span>
+                    <input type="text" class="field-value" id="v_week" value="?" readonly>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">年</span>
+                    <input type="text" class="field-value" id="v_year" value="" readonly>
+                </div>
+            </div>
+
+            <div class="cron-box">
+                <input type="text" id="cronExpression" placeholder="* * * * * ?" value="* * * * * ?">
+                <button class="btn btn-primary" onclick="parseCron()">反解析</button>
+                <button class="btn btn-success" onclick="copyCron()">复制</button>
+            </div>
+
+            <div class="preview-section">
+                <h4>最近5次运行时间：</h4>
+                <ul class="preview-list" id="previewList">
+                    <li>请点击"解析"查看运行时间</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="explain-section">
+            <h3>Cron 表达式说明</h3>
+            <div class="explain-content">
+                <p>Cron 表达式是一种用于指定定时任务执行时间的字符串表达式。它由 6-7 个字段组成，分别表示秒、分钟、小时、天数、月份、星期几和年（可选）。</p>
+                
+                <pre>
+            ┌──────────── [可选] 秒 (0 - 59)
+            │ ┌────────── 分钟 (0 - 59)
+            │ │ ┌──────── 小时 (0 - 23)
+            │ │ │ ┌────── 天数 (1 - 31)
+            │ │ │ │ ┌──── 月份 (1 - 12) OR jan,feb,mar,apr ...
+            │ │ │ │ │ ┌── 星期几 (1 - 7, 1=星期日) OR sun,mon ...
+            │ │ │ │ │ │
+            * * * * * * ? 命令
+                </pre>
+
+                <hr>
+
+                <p><strong>特殊字符说明：</strong></p>
+                <ul>
+                    <li><code>*</code>：表示匹配任意值。例如，* 在分钟字段中表示每分钟都执行。</li>
+                    <li><code>,</code>：用于分隔多个值。例如，1,3,5 在小时字段中表示 1 点、3 点和 5 点执行。</li>
+                    <li><code>/</code>：用于指定间隔值。例如，*/5 在分钟字段中表示每 5 分钟执行一次。</li>
+                    <li><code>-</code>：用于指定范围。例如，10-20 在日期字段中表示从 10 号到 20 号。</li>
+                    <li><code>?</code>：仅用于日期和星期几字段，表示不指定具体值。通常用于避免冲突。</li>
+                    <li><code>L</code>：表示最后。例如，L 在日期字段中表示月末最后一天。</li>
+                    <li><code>W</code>：表示最近的工作日。例如，15W 表示每月 15 号最近的工作日。</li>
+                    <li><code>#</code>：用于指定第几个星期几。例如，2#3 表示每月第 3 个星期一。</li>
+                </ul>
+
+                <hr>
+
+                <p><strong>常用示例：</strong></p>
+                <ul>
+                    <li><code>0 0 12 * * ?</code>：每天中午 12 点执行</li>
+                    <li><code>0 0/5 * * * ?</code>：每 5 分钟执行一次</li>
+                    <li><code>0 0 8-18 ? * MON-FRI</code>：周一至周五的 8 点到 18 点之间每小时执行一次</li>
+                    <li><code>0 0 0 1 * ?</code>：每月 1 号 0 点执行</li>
+                    <li><code>0 0 0 ? * 1</code>：每周日 0 点执行</li>
+                    <li><code>0 0 0 L * ?</code>：每月最后一天 0 点执行</li>
+                    <li><code>0 0 0 ? * 2#1</code>：每月第 1 个星期一 0 点执行</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化复选框
+        function initCheckboxes(id, start, end, pad = true) {
+            const container = document.getElementById(id);
+            for (let i = start; i <= end; i++) {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                const value = pad ? String(i).padStart(2, '0') : String(i);
+                label.innerHTML = `
+                    <input type="checkbox" value="${value}" onchange="updateCron()">
+                    <span>${value}</span>
+                `;
+                label.querySelector('input').addEventListener('change', function() {
+                    label.classList.toggle('checked', this.checked);
+                });
+                container.appendChild(label);
+            }
+        }
+
+        // 初始化所有复选框
+        initCheckboxes('secondCheckbox', 0, 59);
+        initCheckboxes('minuteCheckbox', 0, 59);
+        initCheckboxes('hourCheckbox', 0, 23);
+        initCheckboxes('dayCheckbox', 1, 31);
+        initCheckboxes('monthCheckbox', 1, 12);
+        initCheckboxes('weekCheckbox', 1, 7, false);
+
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+
+        // 监听所有输入变化
+        document.querySelectorAll('input[type="radio"], input[type="number"]').forEach(input => {
+            input.addEventListener('change', updateCron);
+            input.addEventListener('input', updateCron);
+        });
+
+        // 获取字段值
+        function getFieldValue(type) {
+            const radioName = type + 'Type';
+            const checked = document.querySelector(`input[name="${radioName}"]:checked`);
+            if (!checked) return '*';
+
+            const value = checked.value;
+            
+            switch (value) {
+                case 'every':
+                    return '*';
+                case 'none':
+                    return '?';
+                case 'cycle':
+                    const start = document.getElementById(type + 'CycleStart').value;
+                    const end = document.getElementById(type + 'CycleEnd').value;
+                    return `${start}-${end}`;
+                case 'start':
+                    const from = document.getElementById(type + 'StartFrom').value;
+                    const interval = document.getElementById(type + 'StartInterval').value;
+                    return `${from}/${interval}`;
+                case 'appoint':
+                    const checked = document.querySelectorAll(`#${type}Checkbox input:checked`);
+                    if (checked.length === 0) return '*';
+                    return Array.from(checked).map(cb => cb.value).join(',');
+                case 'work':
+                    const workDay = document.getElementById(type + 'WorkDay')?.value;
+                    return workDay ? workDay + 'W' : '1W';
+                case 'last':
+                    return 'L';
+                case 'nth':
+                    const nthNum = document.getElementById(type + 'NthNum')?.value;
+                    const nthDay = document.getElementById(type + 'NthDay')?.value;
+                    return nthNum && nthDay ? `${nthDay}#${nthNum}` : '1#1';
+                case 'lastDay':
+                    const lastDay = document.getElementById(type + 'LastDay')?.value;
+                    return lastDay ? lastDay + 'L' : '1L';
+                default:
+                    return '*';
+            }
+        }
+
+        // 更新 Cron 表达式
+        function updateCron() {
+            const second = getFieldValue('second');
+            const minute = getFieldValue('minute');
+            const hour = getFieldValue('hour');
+            const day = getFieldValue('day');
+            const month = getFieldValue('month');
+            const week = getFieldValue('week');
+            const year = getFieldValue('year');
+
+            // 更新字段显示
+            document.getElementById('v_second').value = second;
+            document.getElementById('v_minute').value = minute;
+            document.getElementById('v_hour').value = hour;
+            document.getElementById('v_day').value = day;
+            document.getElementById('v_month').value = month;
+            document.getElementById('v_week').value = week;
+            document.getElementById('v_year').value = year;
+
+            // 更新表达式
+            let cron = `${second} ${minute} ${hour} ${day} ${month} ${week}`;
+            if (year && year !== '?') {
+                cron += ` ${year}`;
+            }
+            document.getElementById('cronExpression').value = cron;
+
+            // 计算执行时间
+            calculateNextExecutions(cron);
+        }
+
+        // 计算下次执行时间
+        function calculateNextExecutions(cron) {
+            const list = document.getElementById('previewList');
+            try {
+                const executions = getNextExecutions(cron, 5);
+                if (executions.length > 0) {
+                    list.innerHTML = executions.map(t => `<li>${t}</li>`).join('');
+                } else {
+                    list.innerHTML = '<li>无法计算执行时间，请检查表达式</li>';
+                }
+            } catch (e) {
+                list.innerHTML = '<li>表达式格式错误</li>';
+            }
+        }
+
+        // 简化的 Cron 解析（仅用于预览）
+        function getNextExecutions(cron, count) {
+            const parts = cron.split(' ');
+            if (parts.length < 6) return [];
+
+            const now = new Date();
+            const executions = [];
+            let checkDate = new Date(now);
+            checkDate.setSeconds(0);
+            checkDate.setMilliseconds(0);
+
+            // 简单实现：检查接下来的时间
+            for (let i = 0; i < 525600 && executions.length < count; i++) {
+                checkDate.setMinutes(checkDate.getMinutes() + 1);
+                if (matchesCron(checkDate, parts)) {
+                    executions.push(formatDate(checkDate));
+                }
+            }
+
+            return executions;
+        }
+
+        function matchesCron(date, parts) {
+            const second = date.getSeconds();
+            const minute = date.getMinutes();
+            const hour = date.getHours();
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const week = date.getDay() === 0 ? 7 : date.getDay();
+
+            return matchField(second, parts[0], 0, 59) &&
+                   matchField(minute, parts[1], 0, 59) &&
+                   matchField(hour, parts[2], 0, 23) &&
+                   matchField(day, parts[3], 1, 31) &&
+                   matchField(month, parts[4], 1, 12) &&
+                   (parts[5] === '?' || parts[5] === '*' || matchField(week, parts[5], 1, 7));
+        }
+
+        function matchField(value, pattern, min, max) {
+            if (pattern === '*' || pattern === '?') return true;
+            
+            // 逗号分隔
+            if (pattern.includes(',')) {
+                return pattern.split(',').some(p => matchField(value, p.trim(), min, max));
+            }
+            
+            // 范围
+            if (pattern.includes('-')) {
+                const [start, end] = pattern.split('-').map(Number);
+                return value >= start && value <= end;
+            }
+            
+            // 间隔
+            if (pattern.includes('/')) {
+                const [start, interval] = pattern.split('/');
+                const startVal = start === '*' ? 0 : Number(start);
+                return (value - startVal) % Number(interval) === 0 && value >= startVal;
+            }
+            
+            // 最后
+            if (pattern === 'L') {
+                return true; // 简化处理
+            }
+            
+            // 工作日
+            if (pattern.endsWith('W')) {
+                return true; // 简化处理
+            }
+            
+            // 第几个星期几
+            if (pattern.includes('#')) {
+                return true; // 简化处理
+            }
+            
+            return Number(pattern) === value;
+        }
+
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const h = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            return `${y}-${m}-${d} ${h}:${min}:${s}`;
+        }
+
+        // 反解析
+        function parseCron() {
+            const cron = document.getElementById('cronExpression').value.trim();
+            if (!cron) return;
+
+            const parts = cron.split(' ');
+            if (parts.length < 6) {
+                alert('Cron 表达式格式错误，至少需要6个字段');
+                return;
+            }
+
+            // 设置各字段值
+            setFieldValue('second', parts[0]);
+            setFieldValue('minute', parts[1]);
+            setFieldValue('hour', parts[2]);
+            setFieldValue('day', parts[3]);
+            setFieldValue('month', parts[4]);
+            setFieldValue('week', parts[5]);
+            if (parts[6]) {
+                setFieldValue('year', parts[6]);
+            }
+
+            // 更新预览
+            calculateNextExecutions(cron);
+        }
+
+        function setFieldValue(type, value) {
+            document.getElementById('v_' + type).value = value;
+
+            // 判断类型并设置
+            const radioName = type + 'Type';
+            
+            if (value === '*' || value === '?') {
+                document.getElementById(type + (value === '*' ? 'Every' : 'None')).checked = true;
+            } else if (value.includes('-')) {
+                document.getElementById(type + 'Cycle').checked = true;
+                const [start, end] = value.split('-');
+                document.getElementById(type + 'CycleStart').value = start;
+                document.getElementById(type + 'CycleEnd').value = end;
+            } else if (value.includes('/')) {
+                document.getElementById(type + 'Start').checked = true;
+                const [from, interval] = value.split('/');
+                document.getElementById(type + 'StartFrom').value = from;
+                document.getElementById(type + 'StartInterval').value = interval;
+            } else if (value.includes(',')) {
+                document.getElementById(type + 'Appoint').checked = true;
+                const values = value.split(',');
+                document.querySelectorAll(`#${type}Checkbox input`).forEach(cb => {
+                    cb.checked = values.includes(cb.value);
+                    cb.parentElement.classList.toggle('checked', cb.checked);
+                });
+            } else if (value === 'L') {
+                document.getElementById(type + 'Last')?.click();
+            } else if (value.endsWith('W')) {
+                document.getElementById(type + 'Work')?.click();
+                document.getElementById(type + 'WorkDay').value = value.slice(0, -1);
+            } else if (value.includes('#')) {
+                document.getElementById(type + 'Nth')?.click();
+                const [day, nth] = value.split('#');
+                document.getElementById(type + 'NthNum').value = nth;
+                document.getElementById(type + 'NthDay').value = day;
+            } else if (value.endsWith('L') && value.length > 1) {
+                document.getElementById(type + 'Last')?.click();
+                document.getElementById(type + 'LastDay').value = value.slice(0, -1);
+            } else if (/^\d+$/.test(value)) {
+                document.getElementById(type + 'Appoint').checked = true;
+                document.querySelectorAll(`#${type}Checkbox input`).forEach(cb => {
+                    cb.checked = cb.value === value.padStart(2, '0');
+                    cb.parentElement.classList.toggle('checked', cb.checked);
+                });
+            }
+        }
+
+        // 复制功能
+        function copyCron() {
+            const cron = document.getElementById('cronExpression');
+            cron.select();
+            document.execCommand('copy');
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '已复制!';
+            setTimeout(() => btn.textContent = originalText, 1500);
+        }
+
+        // 初始化
+        updateCron();
+    </script>
+</body>
+</html>

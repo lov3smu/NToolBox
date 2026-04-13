@@ -8,7 +8,7 @@ const { getConfig, saveConfig, loadConfig } = require('./config');
 const { generateSQLFile, openFile, openFolder } = require('./generator');
 const { setAutoStart, getAutoStart } = require('./autostart');
 const { isPathWithinBase } = require('../common/sanitize');
-const { createSettingsWindow, createPasswordWindow } = require('./window');
+const { createSettingsWindow, createPasswordWindow, createCronWindow } = require('./window');
 
 const packageJson = require('../../package.json');
 
@@ -27,6 +27,12 @@ function setupIPCHandlers(getMainWindow, checkForUpdatesFn) {
     // 打开密码工具窗口
     ipcMain.handle('open-password-generator', async () => {
         createPasswordWindow();
+        return true;
+    });
+
+    // 打开 Cron 表达式生成器窗口
+    ipcMain.handle('open-cron-generator', async () => {
+        createCronWindow();
         return true;
     });
 

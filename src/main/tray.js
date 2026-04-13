@@ -5,7 +5,7 @@ const { app, Menu, Tray, nativeImage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const log = require('electron-log');
-const { getIconPath, getTrayIconPath, createSettingsWindow, createPasswordWindow } = require('./window');
+const { getIconPath, getTrayIconPath, createSettingsWindow, createPasswordWindow, createCronWindow } = require('./window');
 
 let tray = null;
 
@@ -46,6 +46,18 @@ function createTray(mainWindow, checkForUpdatesFn) {
             },
         },
         { type: 'separator' },
+        {
+            label: '密码生成器',
+            click: () => {
+                createPasswordWindow();
+            },
+        },
+        {
+            label: 'Cron表达式生成器',
+            click: () => {
+                createCronWindow();
+            },
+        },
         {
             label: '设置',
             click: () => {

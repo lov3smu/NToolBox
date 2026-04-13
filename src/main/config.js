@@ -91,22 +91,33 @@ function validateConfig(cfg) {
 // ========== 加载 / 保存 ==========
 async function loadConfig() {
     try {
-        const data = await fsPromises.readFile(configPath, 'utf8');
-        config = JSON.parse(data);
-        log.info('配置文件加载成功');
+        let data;
+        try {
+            data = await fsPromises.readFile(configPath, 'utf8');
+        } catch (readError) {
+            if (readError.code === 'ENOENT') {
+                log.info('配置文件不存在，创建默认配置');
+                config = await createDefaultConfig();
+                return config;
+            }
+            throw readError;
+        }
 
+        const loadedConfig = JSON.parse(data);
+        const defaultConfig = getDefaultConfigContent();
+        
+        // 合并默认配置，确保所有字段存在
+        config = { ...defaultConfig, ...loadedConfig };
+        
+        // 确保必需字段有默认值
         if (config.auto_update === undefined) config.auto_update = true;
         if (config.auto_start === undefined) config.auto_start = true;
         if (config.first_launch_done === undefined) config.first_launch_done = false;
         if (config.close_action === undefined) config.close_action = 'ask';
 
+        log.info('配置文件加载成功');
         return config;
     } catch (error) {
-        if (error.code === 'ENOENT') {
-            log.info('配置文件不存在，创建默认配置');
-            config = await createDefaultConfig();
-            return config;
-        }
         if (error instanceof SyntaxError) {
             log.error('配置文件 JSON 格式错误:', error);
             dialog.showErrorBox('配置错误', `配置文件 config.json 格式错误，请检查 JSON 语法：\n${error.message}`);

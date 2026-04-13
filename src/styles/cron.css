@@ -1,0 +1,683 @@
+/* ========================================
+   Cron表达式生成器页面样式 - Tab 布局版
+   参考 cron.ciding.cc 设计 + 毛玻璃风格
+   ======================================== */
+
+body {
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.cron-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* ---------- 顶部字段 Tab 导航 ---------- */
+.field-tabs {
+    display: flex;
+    background: var(--primary-gradient);
+    padding: 12px 16px;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    flex-shrink: 0;
+}
+
+.field-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.9);
+    min-width: 60px;
+}
+
+.field-tab:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.field-tab.active {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 600;
+}
+
+.tab-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.tab-text {
+    font-size: 13px;
+}
+
+/* ---------- 字段内容区域 ---------- */
+.cron-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: rgba(248, 249, 250, 0.5);
+}
+
+.field-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: none;
+}
+
+.field-panel.active {
+    display: block;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.panel-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* ---------- 规则选项 ---------- */
+.rule-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rule-option {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rule-option:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.rule-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.option-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.option-text span {
+    color: var(--text-secondary);
+}
+
+.inline-input {
+    min-width: 80px;
+    max-width: 120px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    color: var(--text-primary);
+    background: var(--glass-bg);
+}
+
+.inline-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--glass-bg-hover);
+}
+
+.inline-select {
+    min-width: 80px;
+    max-width: 120px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--glass-bg);
+    cursor: pointer;
+}
+
+.inline-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* 周选项特殊样式 */
+.week-nth .option-text {
+    gap: 6px;
+}
+
+/* ---------- 指定值网格 ---------- */
+.specific-grid {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.specific-grid.show {
+    display: grid;
+}
+
+/* 通用数字网格 */
+#secondSpecificGrid,
+#minuteSpecificGrid {
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+}
+
+#daySpecificGrid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+#monthSpecificGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+/* 小时网格 */
+.hour-grid {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hour-grid.show {
+    display: flex;
+}
+
+.time-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.time-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-color);
+    padding-left: 4px;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 6px;
+}
+
+/* 日月复选框样式 */
+.day-grid,
+.month-grid {
+    display: none;
+    gap: 8px;
+}
+
+.day-grid.show {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.month-grid.show {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* 周网格 */
+.week-grid {
+    display: none;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.week-grid.show {
+    display: flex;
+}
+
+/* 复选框项 */
+.specific-grid label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--glass-bg);
+    min-height: 40px;
+}
+
+.specific-grid label:hover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.specific-grid label:has(input:checked) {
+    background: var(--primary-gradient);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.specific-grid input {
+    display: none;
+}
+
+.specific-grid span {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* 周复选框特殊样式 */
+.week-checkbox {
+    flex: 1;
+    min-width: 80px;
+}
+
+/* 年份指定输入 */
+.specific-input-row {
+    display: none;
+    margin-top: 16px;
+}
+
+.specific-input-row.show {
+    display: block;
+}
+
+.year-specific-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--glass-bg);
+}
+
+.year-specific-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* ---------- 底部区域 ---------- */
+.bottom-section {
+    flex-shrink: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.7);
+    border-top: 1px solid var(--border-color);
+    padding: 20px 24px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* 表达式盒子 */
+.expression-box {
+    background: linear-gradient(135deg, rgba(248, 249, 255, 0.9) 0%, rgba(240, 244, 255, 0.9) 100%);
+    border: 1px solid rgba(224, 232, 255, 0.8);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.expression-row {
+    margin-bottom: 16px;
+}
+
+.expression-row:last-child {
+    margin-bottom: 0;
+}
+
+.field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.expression-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.field-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.field-tag {
+    padding: 6px 14px;
+    background: var(--glass-bg);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.expression-input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.expression-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--glass-bg);
+    letter-spacing: 1px;
+}
+
+.expression-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.expression-desc {
+    padding: 10px 14px;
+    background: var(--glass-bg);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    border-left: 3px solid var(--primary-color);
+}
+
+/* 执行时间盒子 */
+.schedule-box {
+    margin-bottom: 20px;
+}
+
+.schedule-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.schedule-item .index {
+    width: 24px;
+    height: 24px;
+    background: var(--primary-gradient);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 12px;
+}
+
+.schedule-item .time {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.schedule-item .remaining {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.schedule-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-tertiary);
+    font-size: 14px;
+}
+
+/* 帮助区域 */
+.help-section {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.help-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.help-content {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+}
+
+.help-content p {
+    margin-bottom: 12px;
+}
+
+.help-content ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.help-content li {
+    margin-bottom: 6px;
+}
+
+.help-content code {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    color: var(--primary-color);
+}
+
+.help-content strong {
+    color: var(--text-primary);
+}
+
+.cron-structure {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+}
+
+.cron-structure pre {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ---------- Toast 提示 ---------- */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--success-color);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.toast.show {
+    animation: toastSlideIn 0.3s ease forwards;
+}
+
+@keyframes toastSlideIn {
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+.toast-icon {
+    width: 20px;
+    height: 20px;
+    background: white;
+    color: var(--success-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+    .field-tabs {
+        padding: 10px;
+    }
+    
+    .tab-icon {
+        font-size: 16px;
+    }
+    
+    .tab-text {
+        font-size: 12px;
+    }
+    
+    .time-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .field-tab {
+        padding: 8px 4px;
+        min-width: 50px;
+    }
+    
+    .tab-icon {
+        font-size: 14px;
+    }
+    
+    .tab-text {
+        font-size: 11px;
+    }
+    
+    .expression-input-wrapper {
+        flex-direction: column;
+    }
+    
+    .expression-input-wrapper .btn {
+        width: 100%;
+    }
+    
+    .time-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .field-panel {
+        padding: 16px;
+    }
+    
+    .specific-grid label {
+        min-height: 36px;
+        padding: 8px 4px;
+    }
+    
+    .specific-grid span {
+        font-size: 12px;
+    }
+}

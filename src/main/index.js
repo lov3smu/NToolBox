@@ -8,7 +8,7 @@ const fs = require('fs');
 const log = require('electron-log');
 
 const { installDir, loadConfig } = require('./config');
-const { createSplashWindow, createMainWindow, setupSplashTimeout, getMainWindow, getSplashWindow } = require('./window');
+const { createSplashWindow, createMainWindow, setupSplashTimeout, getMainWindow, getSplashWindow, getSettingsWindow, getPasswordWindow, getCronWindow } = require('./window');
 const { createTray, destroyTray } = require('./tray');
 const { createAppMenu } = require('./menu');
 const { setupIPCHandlers } = require('./ipc');
@@ -32,14 +32,18 @@ log.info('========================================');
 app.on('before-quit', () => {
     app.isQuitting = true;
     destroyTray();
+    
+    const windows = [getMainWindow(), getSettingsWindow(), getPasswordWindow(), getCronWindow(), getSplashWindow()];
+    windows.forEach(win => {
+        if (win && !win.isDestroyed()) {
+            win.destroy();
+        }
+    });
+    log.info('所有窗口已关闭');
 });
 
 app.on('window-all-closed', () => {
     // 不退出应用，保持在托盘运行
-});
-
-app.on('will-quit', () => {
-    destroyTray();
 });
 
 // ========== 应用启动 ==========
@@ -51,19 +55,10 @@ app.whenReady().then(async () => {
     const shouldHide = process.argv.includes('--hidden');
     log.info('启动模式:', shouldHide ? '隐藏（开机自启）' : '正常');
 
-    // 正常模式下显示 splash
-    if (!shouldHide) {
-        createSplashWindow();
-    }
-
     // 加载配置
     const loadedConfig = await loadConfig();
     if (!loadedConfig) {
         log.error('配置加载失败，应用即将退出');
-        const splash = getSplashWindow();
-        if (splash && !splash.isDestroyed()) {
-            splash.close();
-        }
         return;
     }
 
@@ -71,29 +66,39 @@ app.whenReady().then(async () => {
     setupIPCHandlers(getMainWindow, checkForUpdates);
 
     // 创建托盘
-    createTray(null, checkForUpdates); // 先传 null，主窗口创建后更新
+    createTray(null, checkForUpdates);
 
-    // 创建主窗口
-    const mainWindow = createMainWindow({
-        shouldHide,
-        onReady: (win) => {
-            setTimeout(() => promptAutoStartOnFirstLaunch(win), 1000);
-        },
-    });
-
-    // 更新托盘引用（重新创建以绑定正确的 mainWindow）
-    createTray(mainWindow, checkForUpdates);
-
-    // 创建菜单
-    createAppMenu(mainWindow, checkForUpdates);
-
-    // 启动定时更新
-    startAutoUpdateCheck(mainWindow);
-
-    // splash 超时保护
+    // 正常模式下显示 splash，等 splash 显示后再创建主窗口
     if (!shouldHide) {
-        setupSplashTimeout();
+        createSplashWindow(async () => {
+            setupSplashTimeout();
+            
+            const mainWindow = createMainWindow({
+                shouldHide,
+                onReady: (win) => {
+                    setTimeout(() => promptAutoStartOnFirstLaunch(win), 1000);
+                },
+            });
+            
+            createTray(mainWindow, checkForUpdates);
+            createAppMenu(mainWindow, checkForUpdates);
+            startAutoUpdateCheck(mainWindow);
+            
+            log.info('应用启动完成');
+        });
+    } else {
+        // 隐藏模式下直接创建主窗口
+        const mainWindow = createMainWindow({
+            shouldHide,
+            onReady: (win) => {
+                setTimeout(() => promptAutoStartOnFirstLaunch(win), 1000);
+            },
+        });
+        
+        createTray(mainWindow, checkForUpdates);
+        createAppMenu(mainWindow, checkForUpdates);
+        startAutoUpdateCheck(mainWindow);
+        
+        log.info('应用启动完成（隐藏模式）');
     }
-
-    log.info('应用启动完成');
 });

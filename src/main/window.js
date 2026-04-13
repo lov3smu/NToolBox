@@ -11,6 +11,7 @@ const { getConfig, saveConfig } = require('./config');
 let mainWindow = null;
 let settingsWindow = null;
 let passwordWindow = null;
+let cronWindow = null;
 let splashWindow = null;
 let splashStartTime = null;
 let isTransitioning = false;
@@ -63,13 +64,12 @@ function getTrayIconPath() {
 }
 
 // ========== 启动画面 ==========
-function createSplashWindow() {
-    splashStartTime = Date.now();
+function createSplashWindow(onReady) {
     log.info('创建启动画面');
 
     splashWindow = new BrowserWindow({
-        width: 400,
-        height: 300,
+        width: 500,
+        height: 400,
         frame: false,
         transparent: true,
         alwaysOnTop: true,
@@ -89,7 +89,11 @@ function createSplashWindow() {
     splashWindow.once('ready-to-show', () => {
         if (splashWindow && !splashWindow.isDestroyed()) {
             splashWindow.show();
+            splashStartTime = Date.now();
             log.info('启动画面内容就绪，已显示');
+            if (onReady) {
+                setTimeout(onReady, 100);
+            }
         }
     });
 
@@ -112,6 +116,7 @@ function smoothTransitionToMain() {
     if (!splashWindow || splashWindow.isDestroyed()) {
         log.info('启动画面已不存在，直接显示主窗口');
         if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+            mainWindow.maximize();
             mainWindow.show();
         }
         return;
@@ -127,18 +132,20 @@ function smoothTransitionToMain() {
             isTransitioning = false;
             return;
         }
-        if (!mainWindow.isVisible()) {
-            mainWindow.show();
-            log.info('主窗口已显示（在 splash 下方）');
+
+        // 先关闭启动画面
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.close();
+            splashWindow = null;
+            log.info('启动画面已关闭');
         }
-        setTimeout(() => {
-            if (splashWindow && !splashWindow.isDestroyed()) {
-                splashWindow.close();
-                splashWindow = null;
-                log.info('启动画面已销毁');
-            }
-            isTransitioning = false;
-        }, 300);
+
+        // 然后最大化并显示主窗口
+        mainWindow.maximize();
+        mainWindow.show();
+        log.info('主窗口已最大化并显示');
+        
+        isTransitioning = false;
     };
 
     if (remainingTime > 0) {
@@ -266,10 +273,7 @@ function setupSplashTimeout() {
     setTimeout(() => {
         if (splashWindow && !splashWindow.isDestroyed() && !isTransitioning && !isMainWindowReady) {
             log.warn('启动画面超时，强制过渡');
-            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
-            splashWindow.close();
-            splashWindow = null;
-            isTransitioning = false;
+            smoothTransitionToMain();
         }
     }, 10000);
 }
@@ -317,7 +321,7 @@ function createSettingsWindow() {
         settingsWindow = null;
         log.info('设置窗口已关闭');
         // 通知主窗口重新加载配置
-        if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
             mainWindow.webContents.send('config-changed');
         }
     });
@@ -378,6 +382,58 @@ function getPasswordWindow() {
     return passwordWindow;
 }
 
+function getCronWindow() {
+    return cronWindow;
+}
+
+// ========== Cron表达式生成器窗口 ==========
+function createCronWindow() {
+    // 如果已存在，聚焦而非重复创建
+    if (cronWindow && !cronWindow.isDestroyed()) {
+        cronWindow.focus();
+        return cronWindow;
+    }
+
+    const iconPath = getIconPath();
+
+    cronWindow = new BrowserWindow({
+        width: 850,
+        height: 700,
+        minWidth: 700,
+        minHeight: 550,
+        parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined,
+        modal: false,
+        show: false,
+        minimizable: false,
+        maximizable: false,
+        icon: iconPath,
+        backgroundColor: '#667eea',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, '..', 'preload', 'index.js'),
+        },
+        title: 'Cron表达式生成器',
+    });
+
+    cronWindow.setMenuBarVisibility(false);
+    cronWindow.loadFile(path.join(__dirname, '..', 'pages', 'cron.html'));
+
+    cronWindow.once('ready-to-show', () => {
+        if (cronWindow && !cronWindow.isDestroyed()) {
+            cronWindow.show();
+        }
+    });
+
+    cronWindow.on('closed', () => {
+        cronWindow = null;
+        log.info('Cron表达式生成器窗口已关闭');
+    });
+
+    log.info('Cron表达式生成器窗口已创建');
+    return cronWindow;
+}
+
 function getMainWindow() {
     return mainWindow;
 }
@@ -397,9 +453,11 @@ module.exports = {
     createMainWindow,
     createSettingsWindow,
     createPasswordWindow,
+    createCronWindow,
     setupSplashTimeout,
     getMainWindow,
     getSettingsWindow,
     getPasswordWindow,
+    getCronWindow,
     getSplashWindow,
 };

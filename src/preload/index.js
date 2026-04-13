@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     checkForUpdates: (manual) => ipcRenderer.invoke('check-for-updates', manual),
     openSettings: () => ipcRenderer.invoke('open-settings'),
     openPasswordGenerator: () => ipcRenderer.invoke('open-password-generator'),
+    openCronGenerator: () => ipcRenderer.invoke('open-cron-generator'),
     onConfigChanged: (callback) => {
         ipcRenderer.removeAllListeners('config-changed');
         ipcRenderer.on('config-changed', callback);

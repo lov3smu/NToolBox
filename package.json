@@ -80,9 +80,10 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
-       "perMachine": true,
+      "perMachine": true,
       "installerHeaderIcon": "assets/icon.ico",
-      "license": "LICENSE.txt"
+      "license": "LICENSE.txt",
+      "deleteAppDataOnUninstall": true
     },
     "publish": {
       "provider": "github",

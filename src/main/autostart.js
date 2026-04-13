@@ -21,12 +21,10 @@ async function setAutoStart(enable) {
         app.setLoginItemSettings({
             openAtLogin: enable,
             path: exePath,
-            args: enable ? ['--hidden'] : [],
         });
 
         const settings = app.getLoginItemSettings({
             path: exePath,
-            args: enable ? ['--hidden'] : [],
         });
         log.info(`开机启动验证: openAtLogin=${settings.openAtLogin}`);
 

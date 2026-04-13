@@ -3,7 +3,7 @@
  */
 
 /** 启动画面最短显示时间（毫秒） */
-const MIN_SPLASH_DISPLAY_TIME = 1500;
+const MIN_SPLASH_DISPLAY_TIME = 3000;
 
 /** 自动更新检查间隔（毫秒），12 小时 */
 const UPDATE_CHECK_INTERVAL = 12 * 60 * 60 * 1000;
