@@ -71,24 +71,14 @@ body {
 /* ---------- 字段内容区域 ---------- */
 .cron-content {
     flex: 1;
-    overflow: hidden;
-    position: relative;
+    overflow-y: auto;
     background: rgba(248, 249, 250, 0.5);
+    padding: 20px;
 }
 
 .field-panel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     padding: 20px 24px;
     overflow-y: auto;
-    display: none;
-}
-
-.field-panel.active {
-    display: block;
 }
 
 .panel-header {
@@ -202,16 +192,14 @@ body {
 
 /* ---------- 指定值网格 ---------- */
 .specific-grid {
-    display: none;
     margin-top: 16px;
     padding: 16px;
     background: var(--glass-bg);
     border: 1px solid var(--border-color);
     border-radius: 10px;
-}
-
-.specific-grid.show {
     display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
 }
 
 /* 通用数字网格 */
@@ -233,13 +221,8 @@ body {
 
 /* 小时网格 */
 .hour-grid {
-    display: none;
     flex-direction: column;
     gap: 16px;
-}
-
-.hour-grid.show {
-    display: flex;
 }
 
 .time-section {
@@ -264,28 +247,22 @@ body {
 /* 日月复选框样式 */
 .day-grid,
 .month-grid {
-    display: none;
     gap: 8px;
+    display: grid;
 }
 
-.day-grid.show {
-    display: grid;
+.day-grid {
     grid-template-columns: repeat(7, 1fr);
 }
 
-.month-grid.show {
-    display: grid;
+.month-grid {
     grid-template-columns: repeat(4, 1fr);
 }
 
 /* 周网格 */
 .week-grid {
-    display: none;
     flex-wrap: wrap;
     gap: 10px;
-}
-
-.week-grid.show {
     display: flex;
 }
 
@@ -332,11 +309,7 @@ body {
 
 /* 年份指定输入 */
 .specific-input-row {
-    display: none;
     margin-top: 16px;
-}
-
-.specific-input-row.show {
     display: block;
 }
 

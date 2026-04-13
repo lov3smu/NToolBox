@@ -1,23 +1,19 @@
-/* ========================================
-   SQL Script Generator - 主界面样式 (毛玻璃版本)
-   ======================================== */
-
 body {
-    padding: 20px;
+    padding: 0;
+    min-height: 100vh;
 }
 
 .container {
-    max-width: 800px;
+    width: 100%;
+    min-height: 100vh;
     margin: 0 auto;
     background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--glass-shadow);
-    overflow: hidden;
+    border-radius: 0;
+    box-shadow: none;
+    overflow-y: auto;
 }
 
-/* ---------- Header (渐变 + 毛玻璃叠加) ---------- */
-header {
+.container header {
     background: linear-gradient(135deg, 
         rgba(102, 126, 234, 0.95) 0%, 
         rgba(118, 75, 162, 0.95) 100%
@@ -30,7 +26,7 @@ header {
     overflow: hidden;
 }
 
-header::before {
+.container header::before {
     content: '';
     position: absolute;
     top: 0;
@@ -43,7 +39,8 @@ header::before {
     pointer-events: none;
 }
 
-header h1 {
+.container header h1,
+.container header h2 {
     font-size: 28px;
     margin-bottom: 10px;
     font-weight: 600;
@@ -59,12 +56,24 @@ header h1 {
     z-index: 1;
 }
 
-/* ---------- 主内容 ---------- */
 .main-content {
     padding: 30px;
 }
 
-/* ---------- 按钮组 (类型选择) ---------- */
+.back-link {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.2s;
+}
+
+.back-link:hover {
+    opacity: 1;
+}
+
 .button-group {
     display: flex;
     gap: 12px;
@@ -80,7 +89,6 @@ header h1 {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-secondary);
-    will-change: background, border-color;
 }
 
 .type-btn:hover {
@@ -100,12 +108,8 @@ header h1 {
 
 .type-btn.active:hover {
     transform: translateY(-2px);
-    box-shadow: 
-        0 8px 25px rgba(102, 126, 234, 0.5),
-        inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
-/* ---------- 操作按钮 ---------- */
 .action-buttons {
     display: flex;
     gap: 15px;
@@ -116,7 +120,6 @@ header h1 {
     flex: 1;
 }
 
-/* ---------- 结果区域 (毛玻璃卡片) ---------- */
 .result-section {
     margin-top: 30px;
     padding: 24px;
@@ -141,7 +144,14 @@ header h1 {
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 13px;
     line-height: 1.6;
-    box-shadow: var(--shadow-sm);
+}
+
+.result-content.success {
+    border-left-color: #22c55e;
+}
+
+.result-content.error {
+    border-left-color: #ef4444;
 }
 
 .file-path {
@@ -154,52 +164,12 @@ header h1 {
     color: var(--text-secondary);
 }
 
-/* ---------- 结果区域状态样式 ---------- */
-.result-success {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.result-success .result-content {
-    border-left-color: #22c55e;
-    background: rgba(255, 255, 255, 0.9);
-}
-
-.result-success .success-message {
-    color: #15803d;
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 15px;
+.result-actions {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 15px;
 }
 
-.result-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.result-error .result-content {
-    border-left-color: #ef4444;
-    background: rgba(255, 255, 255, 0.9);
-}
-
-.result-error .error-message {
-    color: #dc2626;
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* ---------- 表单元素微调 ---------- */
-select {
-    width: 100%;
-}
-
-/* ---------- 响应式 ---------- */
 @media (max-width: 640px) {
     body {
         padding: 10px;
@@ -217,7 +187,8 @@ select {
         flex-direction: column;
     }
     
-    header h1 {
+    .container header h1,
+    .container header h2 {
         font-size: 24px;
     }
 }
