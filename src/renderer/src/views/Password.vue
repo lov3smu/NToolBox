@@ -7,7 +7,7 @@
     <div class="password-content">
       <div class="password-display-section">
         <div class="password-output-wrapper">
-          <input type="text" v-model="password" class="password-output" readonly placeholder="点击生成按钮创建密码" :type="visible ? 'text' : 'password'">
+          <input :type="visible ? 'text' : 'password'" v-model="password" class="password-output" readonly placeholder="点击生成按钮创建密码">
           <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">{{ visible ? '🙈' : '👁️' }}</button>
           <button class="btn-icon" title="复制密码" @click="copyPassword">📋</button>
         </div>

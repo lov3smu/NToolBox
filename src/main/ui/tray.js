@@ -64,6 +64,15 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
       },
     },
     {
+      label: 'YAML编辑(验证)器',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show()
+          mainWindow.webContents.send('navigate-to', '/yaml-editor')
+        }
+      },
+    },
+    {
       label: '设置',
       click: () => {
         createSettingsWindowFn()

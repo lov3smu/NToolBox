@@ -6,7 +6,8 @@ import { getConfig } from '../services'
 let mainWindow = null
 let settingsWindow = null
 
-const rendererUrl = import.meta.env.ELECTRON_RENDERER_URL
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+const devServerUrl = 'http://localhost:5173'
 const preloadPath = import.meta.env.ELECTRON_PRELOAD_PATH || path.join(__dirname, '../preload/index.js')
 
 function createMainWindow() {
@@ -26,8 +27,8 @@ function createMainWindow() {
     title: 'SQL Script Generator',
   })
 
-  if (rendererUrl) {
-    mainWindow.loadURL(rendererUrl)
+  if (isDev) {
+    mainWindow.loadURL(devServerUrl)
     mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
@@ -109,8 +110,8 @@ export function createSettingsWindow() {
 
   settingsWindow.setMenu(null)
 
-  if (rendererUrl) {
-    settingsWindow.loadURL(rendererUrl + '#/settings')
+  if (isDev) {
+    settingsWindow.loadURL(devServerUrl + '#/settings')
   } else {
     settingsWindow.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: '/settings' })
   }

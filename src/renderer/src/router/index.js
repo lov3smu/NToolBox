@@ -25,6 +25,11 @@ const routes = [
     path: '/unixtimestamp',
     name: 'UnixTimestamp',
     component: () => import('@/views/UnixTimestamp.vue')
+  },
+  {
+    path: '/yaml-editor',
+    name: 'YamlEditor',
+    component: () => import('@/views/YamlEditor.vue')
   }
 ]
 

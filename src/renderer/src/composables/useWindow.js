@@ -1,6 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
-export function useWindowWidth(defaultWidth = 900) {
+export function useWindowWidth(defaultWidth = 1200) {
   const windowWidth = ref(defaultWidth)
 
   function updateWidth() {

@@ -32,6 +32,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
     password: 'CmdOrCtrl+P',
     cron: 'CmdOrCtrl+Shift+C',
     unixtimestamp: 'CmdOrCtrl+Shift+T',
+    yamlEditor: 'CmdOrCtrl+Shift+Y',
     settings: 'CmdOrCtrl+,'
   }
 
@@ -98,6 +99,16 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             }
           },
         },
+        {
+          label: 'YAML编辑(验证)器',
+          accelerator: shortcuts.yamlEditor || 'CmdOrCtrl+Shift+Y',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/yaml-editor')
+            }
+          },
+        },
         { type: 'separator' },
         {
           label: '设置',
@@ -108,7 +119,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             }
           },
         },
-      ],
+],
     },
     {
       label: '帮助',
@@ -118,6 +129,16 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
           click: () => {
             if (checkForUpdatesFn && mainWindow) {
               checkForUpdatesFn(true, mainWindow)
+            }
+          },
+        },
+        { type: 'separator' },
+        {
+          label: '开发者工具',
+          accelerator: 'F12',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.toggleDevTools()
             }
           },
         },

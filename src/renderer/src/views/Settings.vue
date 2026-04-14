@@ -135,6 +135,10 @@
                 <input type="text" v-model="shortcuts.unixtimestamp" class="input-field shortcut-input" placeholder="快捷键">
               </div>
               <div class="shortcut-item">
+                <span class="shortcut-name">YAML编辑(验证)器</span>
+                <input type="text" v-model="shortcuts.yamlEditor" class="input-field shortcut-input" placeholder="快捷键">
+              </div>
+              <div class="shortcut-item">
                 <span class="shortcut-name">设置</span>
                 <input type="text" v-model="shortcuts.settings" class="input-field shortcut-input" placeholder="快捷键">
               </div>
@@ -204,6 +208,7 @@ const shortcuts = ref({
   password: 'CmdOrCtrl+P',
   cron: 'CmdOrCtrl+Shift+C',
   unixtimestamp: 'CmdOrCtrl+Shift+T',
+  yamlEditor: 'CmdOrCtrl+Shift+Y',
   settings: 'CmdOrCtrl+,'
 })
 const version = ref('1.0.0')
