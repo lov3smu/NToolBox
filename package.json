@@ -2,30 +2,29 @@
   "name": "sql-script-generator",
   "version": "1.0.4",
   "description": "SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。",
-  "main": "dist-electron/main.js",
+  "main": "./out/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && electron-builder",
-    "build:win": "vite build && electron-builder --win --x64",
-    "build:linux": "vite build && electron-builder --linux --x64",
-    "build:mac": "vite build && electron-builder --mac --x64",
-    "preview": "vite preview"
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && electron-builder",
+    "build:win": "electron-vite build && electron-builder --win --x64",
+    "build:linux": "electron-vite build && electron-builder --linux --x64",
+    "build:mac": "electron-vite build && electron-builder --mac --x64",
+    "preview": "electron-vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.21",
-    "vue-router": "^4.3.0",
     "electron-log": "^5.0.1",
-    "electron-updater": "^6.1.7"
+    "electron-updater": "^6.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.4.0",
-    "vite-plugin-electron": "^0.28.8",
-    "vite-plugin-electron-renderer": "^0.14.6",
+    "@vitejs/plugin-vue": "^6.0.6",
     "electron": "^41.2.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^5.0.0",
+    "vite": "^7.3.2"
   },
   "build": {
     "appId": "com.ancoka.sql-script-generator",
@@ -36,33 +35,44 @@
     },
     "asar": true,
     "files": [
-      "dist/**/*",
-      "dist-electron/**/*"
+      "out/**/*"
     ],
     "extraResources": [
       {
         "from": "assets/",
         "to": "assets/",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "target": {
         "target": "nsis",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       },
       "icon": "assets/icon.ico",
-      "publisherName": "lov3smu"
+      "signtoolOptions": {
+        "publisherName": "lov3smu"
+      }
     },
     "mac": {
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "category": "public.app-category.developer-tools",
@@ -71,7 +81,12 @@
       "icon": "assets/icon.icns"
     },
     "linux": {
-      "target": ["AppImage", "deb", "rpm", "tar.gz"],
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm",
+        "tar.gz"
+      ],
       "icon": "assets/icon.png",
       "category": "Development"
     },
