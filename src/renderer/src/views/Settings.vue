@@ -119,10 +119,6 @@
             <label>快捷键配置</label>
             <div class="shortcut-list">
               <div class="shortcut-item">
-                <span class="shortcut-name">首页</span>
-                <input type="text" v-model="shortcuts.home" class="input-field shortcut-input" placeholder="快捷键">
-              </div>
-              <div class="shortcut-item">
                 <span class="shortcut-name">密码生成器</span>
                 <input type="text" v-model="shortcuts.password" class="input-field shortcut-input" placeholder="快捷键">
               </div>
@@ -208,7 +204,6 @@ const closeAction = ref('ask')
 const databases = ref([])
 const scriptTypes = ref([])
 const shortcuts = ref({
-  home: 'CmdOrCtrl+H',
   password: 'CmdOrCtrl+P',
   cron: 'CmdOrCtrl+Shift+C',
   unixtimestamp: 'CmdOrCtrl+Shift+T',
@@ -400,10 +395,7 @@ function closeWindow() {
 }
 
 async function checkUpdate() {
-  const result = await checkForUpdates(true)
-  if (result && result.status === 'update-not-available') {
-    alert('当前已是最新版本')
-  }
+  await checkForUpdates(true)
 }
 </script>
 

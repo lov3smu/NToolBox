@@ -29,7 +29,6 @@ function showAboutDialog(mainWindow) {
 export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindowFn) {
   const config = getConfig()
   const shortcuts = config.shortcuts || {
-    home: 'CmdOrCtrl+H',
     password: 'CmdOrCtrl+P',
     cron: 'CmdOrCtrl+Shift+C',
     unixtimestamp: 'CmdOrCtrl+Shift+T',
