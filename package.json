@@ -1,6 +1,6 @@
 {
   "name": "sql-script-generator",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。",
   "main": "./out/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",

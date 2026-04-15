@@ -58,10 +58,14 @@
       
       <div v-if="loading" class="loading">加载中...</div>
       
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+      <div v-else-if="error && !isDirectoryNotExist" class="error-message">{{ error }}</div>
+      
+      <div v-else-if="!config?.base_path || isDirectoryNotExist" class="empty-message">
+        文件目录未设置，请到设置中设置
+      </div>
       
       <div v-else-if="directories.length === 0 && files.length === 0" class="empty-message">
-        当前目录为空
+        暂时没有文件哦!
       </div>
       
       <div v-else :class="['file-list', viewMode, { compact: compactMode }]">
@@ -208,6 +212,14 @@ const isAtRoot = computed(() => {
   if (!currentPath.value || !config.value?.base_path) return true
   const normalizePath = (p) => p.replace(/[\\\/]+$/, '').toLowerCase()
   return normalizePath(currentPath.value) === normalizePath(config.value.base_path)
+})
+
+const isDirectoryNotExist = computed(() => {
+  return error.value && (
+    error.value.includes('ENOENT') || 
+    error.value.includes('no such file') ||
+    error.value.includes('目录不存在')
+  )
 })
 
 async function loadDirectory(dirPath) {

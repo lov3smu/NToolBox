@@ -89,6 +89,12 @@ body {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-secondary);
+    outline: none;
+}
+
+.type-btn:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 .type-btn:hover {

@@ -270,6 +270,11 @@ onMounted(() => {
   font-weight: 600;
   color: var(--text-secondary);
   transition: var(--transition-normal);
+  outline: none;
+}
+
+.type-btn:focus {
+  outline: none;
 }
 
 .type-btn:hover {

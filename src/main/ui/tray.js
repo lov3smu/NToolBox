@@ -26,7 +26,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '显示主窗口',
+      label: '打开',
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.show()
@@ -37,40 +37,45 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
     },
     { type: 'separator' },
     {
-      label: '密码生成器',
-      click: () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show()
-          mainWindow.webContents.send('navigate-to', '/password')
-        }
-      },
-    },
-    {
-      label: 'Cron表达式生成器',
-      click: () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show()
-          mainWindow.webContents.send('navigate-to', '/cron')
-        }
-      },
-    },
-    {
-      label: 'Unix时间戳互转',
-      click: () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show()
-          mainWindow.webContents.send('navigate-to', '/unixtimestamp')
-        }
-      },
-    },
-    {
-      label: 'YAML编辑(验证)器',
-      click: () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show()
-          mainWindow.webContents.send('navigate-to', '/yaml-editor')
-        }
-      },
+      label: '工具',
+      submenu: [
+        {
+          label: '密码生成器',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/password')
+            }
+          },
+        },
+        {
+          label: 'Cron表达式生成器',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/cron')
+            }
+          },
+        },
+        {
+          label: 'Unix时间戳互转',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/unixtimestamp')
+            }
+          },
+        },
+        {
+          label: 'YAML编辑(验证)器',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/yaml-editor')
+            }
+          },
+        },
+      ],
     },
     {
       label: '设置',

@@ -11,6 +11,7 @@ const packageJson = require(path.join(getProjectRoot(), 'package.json'))
 
 const appVersion = packageJson.version || '1.0.0'
 const appAuthor = packageJson.author || 'lov3smu'
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 function showAboutDialog(mainWindow) {
   const appName = 'SQL Script Generator'
@@ -43,7 +44,6 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
       submenu: [
         {
           label: '首页',
-          accelerator: shortcuts.home || 'CmdOrCtrl+H',
           click: () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.show()
@@ -144,7 +144,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
           },
         },
         { type: 'separator' },
-        {
+        ...(isDev ? [{
           label: '开发者工具',
           accelerator: 'F12',
           click: () => {
@@ -152,8 +152,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.webContents.toggleDevTools()
             }
           },
-        },
-        { type: 'separator' },
+        }, { type: 'separator' }] : []),
         {
           label: '关于软件',
           click: () => showAboutDialog(mainWindow),

@@ -5,10 +5,57 @@ import { getConfig } from '../services'
 
 let mainWindow = null
 let settingsWindow = null
+let splashWindow = null
+let splashStartTime = null
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const devServerUrl = 'http://localhost:5173'
 const preloadPath = import.meta.env.ELECTRON_PRELOAD_PATH || path.join(__dirname, '../preload/index.js')
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+    title: '启动中...',
+  })
+
+  if (isDev) {
+    splashWindow.loadURL(devServerUrl + '/splash.html')
+  } else {
+    splashWindow.loadFile(path.join(__dirname, '../renderer/splash.html'))
+  }
+
+  splashWindow.center()
+
+  splashWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.show()
+      splashStartTime = Date.now()
+      log.info('启动窗口已显示')
+    }
+  })
+
+  splashWindow.on('closed', () => {
+    splashWindow = null
+  })
+
+  return splashWindow
+}
+
+function closeSplashWindow() {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close()
+    splashWindow = null
+  }
+}
 
 function createMainWindow() {
   const iconPath = getIconPath()
@@ -35,9 +82,16 @@ function createMainWindow() {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.maximize()
-    mainWindow.show()
-    log.info('主窗口已显示')
+    const elapsed = Date.now() - (splashStartTime || Date.now())
+    const minSplashTime = 1500
+    const delay = Math.max(0, minSplashTime - elapsed)
+
+    setTimeout(() => {
+      closeSplashWindow()
+      mainWindow.maximize()
+      mainWindow.show()
+      log.info('主窗口已显示')
+    }, delay)
   })
 
   mainWindow.on('close', async (event) => {
@@ -134,6 +188,7 @@ export function getSettingsWindow() {
 }
 
 export function initWindows() {
+  createSplashWindow()
   return {
     mainWindow: createMainWindow(),
     createSettingsWindow,
