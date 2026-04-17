@@ -1,7 +1,15 @@
 <template>
   <div class="unix-container" :style="{ width: windowWidth + 'px' }">
     <header>
-      <h1>⏱️ Unix时间戳互转</h1>
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Unix时间戳互转
+      </h1>
       <div class="subtitle">时间戳与日期时间双向转换工具</div>
     </header>
 
@@ -402,9 +410,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 24px;
   margin-bottom: 6px;
+}
+
+.unix-container header h1 .header-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .unix-container header .subtitle {
@@ -652,33 +665,5 @@ onUnmounted(() => {
 
 .help-content li {
   margin-bottom: 4px;
-}
-
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast-icon {
-  color: #22c55e;
-  font-weight: bold;
 }
 </style>

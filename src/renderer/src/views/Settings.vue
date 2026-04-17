@@ -139,6 +139,10 @@
                 <input type="text" v-model="shortcuts.fileManager" class="input-field shortcut-input" placeholder="快捷键">
               </div>
               <div class="shortcut-item">
+                <span class="shortcut-name">JSON解析器</span>
+                <input type="text" v-model="shortcuts.jsonParser" class="input-field shortcut-input" placeholder="快捷键">
+              </div>
+              <div class="shortcut-item">
                 <span class="shortcut-name">设置</span>
                 <input type="text" v-model="shortcuts.settings" class="input-field shortcut-input" placeholder="快捷键">
               </div>
@@ -209,6 +213,7 @@ const shortcuts = ref({
   unixtimestamp: 'CmdOrCtrl+Shift+T',
   yamlEditor: 'CmdOrCtrl+Shift+Y',
   fileManager: 'CmdOrCtrl+Shift+F',
+  jsonParser: 'CmdOrCtrl+J',
   settings: 'CmdOrCtrl+,'
 })
 const version = ref('1.0.0')
@@ -346,14 +351,22 @@ function validate() {
 }
 
 function showError(message) {
-  const existing = document.querySelector('.error-toast')
+  const existing = document.querySelector('.toast')
   if (existing) existing.remove()
 
   const toast = document.createElement('div')
-  toast.className = 'error-toast'
-  toast.textContent = message
+  toast.className = 'toast'
+  toast.innerHTML = `<span class="toast-icon" style="color: #ef4444;">✕</span><span class="toast-message">${message}</span>`
   document.body.appendChild(toast)
-  setTimeout(() => toast.remove(), 3000)
+  
+  setTimeout(() => {
+    toast.classList.add('show')
+  }, 10)
+  
+  setTimeout(() => {
+    toast.classList.remove('show')
+    setTimeout(() => toast.remove(), 300)
+  }, 3000)
 }
 
 async function save() {

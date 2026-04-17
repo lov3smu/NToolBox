@@ -1,13 +1,9 @@
 import { app } from 'electron'
-import { log } from './utils'
+import { log, initLogger } from './utils'
 import { loadConfig, startAutoUpdateCheck, promptAutoStartOnFirstLaunch, checkForUpdates } from './services'
 import { setupIPCHandlers } from './ipc'
 import { initWindows, getMainWindow } from './windows'
 import { createTray, destroyTray, createAppMenu } from './ui'
-
-log.info('========================================')
-log.info('应用启动')
-log.info('========================================')
 
 app.on('before-quit', () => {
   app.isQuitting = true
@@ -15,6 +11,16 @@ app.on('before-quit', () => {
 })
 
 app.whenReady().then(async () => {
+  try {
+    await initLogger()
+  } catch (e) {
+    console.error('初始化日志失败:', e)
+  }
+  
+  log.info('========================================')
+  log.info('应用启动')
+  log.info('========================================')
+
   const shouldHide = process.argv.includes('--hidden')
   log.info('启动模式:', shouldHide ? '隐藏' : '正常')
 

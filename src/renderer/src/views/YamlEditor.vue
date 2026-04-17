@@ -1,7 +1,15 @@
 <template>
   <div class="yaml-container" :style="{ width: windowWidth + 'px' }">
     <header>
-      <h1>YAML编辑(验证)器</h1>
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        YAML编辑(验证)器
+      </h1>
       <div class="subtitle">YAML格式化、校验、转换工具</div>
     </header>
 
@@ -119,6 +127,7 @@
     </div>
 
     <div class="toast" :class="{ show: toastVisible }">
+      <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>
   </div>
@@ -527,9 +536,18 @@ onMounted(() => {
 }
 
 .yaml-container header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   font-size: 28px;
   margin-bottom: 10px;
   font-weight: 600;
+}
+
+.yaml-container header h1 .header-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .yaml-container header .subtitle {
@@ -816,28 +834,5 @@ onMounted(() => {
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Consolas', 'Monaco', monospace;
-}
-
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 </style>

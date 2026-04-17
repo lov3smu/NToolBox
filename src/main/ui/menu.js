@@ -34,6 +34,8 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
     unixtimestamp: 'CmdOrCtrl+Shift+T',
     yamlEditor: 'CmdOrCtrl+Shift+Y',
     fileManager: 'CmdOrCtrl+Shift+F',
+    jsonParser: 'CmdOrCtrl+J',
+    htmlViewer: 'CmdOrCtrl+H',
     settings: 'CmdOrCtrl+,'
   }
 
@@ -80,6 +82,16 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
       label: '工具',
       submenu: [
         {
+          label: 'SQL脚本生成',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/sql-generator')
+            }
+          },
+        },
+        {
           label: '密码生成器',
           accelerator: shortcuts.password || 'CmdOrCtrl+P',
           click: () => {
@@ -116,6 +128,26 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/yaml-editor')
+            }
+          },
+        },
+        {
+          label: 'JSON解析器',
+          accelerator: shortcuts.jsonParser || 'CmdOrCtrl+J',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/json-parser')
+            }
+          },
+        },
+        {
+          label: 'HTML查看器',
+          accelerator: shortcuts.htmlViewer || 'CmdOrCtrl+H',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/html-viewer')
             }
           },
         },

@@ -2,7 +2,7 @@ import { app, dialog } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { log } from '../utils'
-import { configPath, installDir } from '../utils/path'
+import { getConfigPath, installDir } from '../utils/path'
 import { VALID_CLOSE_ACTIONS } from '../constants'
 
 let config = {}
@@ -38,9 +38,12 @@ function getDefaultConfigContent() {
       { name: 'DQL', description: 'Data Query Language (SELECT)' },
     ],
     shortcuts: {
-      home: 'CmdOrCtrl+H',
       password: 'CmdOrCtrl+P',
       cron: 'CmdOrCtrl+Shift+C',
+      unixtimestamp: 'CmdOrCtrl+U',
+      yamlEditor: 'CmdOrCtrl+Y',
+      fileManager: 'CmdOrCtrl+F',
+      jsonParser: 'CmdOrCtrl+J',
       settings: 'CmdOrCtrl+,'
     },
   }
@@ -49,6 +52,7 @@ function getDefaultConfigContent() {
 async function createDefaultConfig() {
   try {
     const defaultConfig = getDefaultConfigContent()
+    const configPath = getConfigPath()
     await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2), 'utf8')
     log.info('已创建默认配置文件:', configPath)
     return defaultConfig
@@ -78,7 +82,7 @@ export function validateConfig(cfg) {
   if (cfg.close_action && !VALID_CLOSE_ACTIONS.includes(cfg.close_action)) return 'close_action 值不合法'
   if (cfg.shortcuts !== undefined) {
     if (typeof cfg.shortcuts !== 'object') return 'shortcuts 必须是对象'
-    const validKeys = ['home', 'password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'settings']
+    const validKeys = ['password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'jsonParser', 'settings']
     for (const key of Object.keys(cfg.shortcuts)) {
       if (!validKeys.includes(key)) return `shortcuts.${key} 不是有效的快捷键配置项`
       if (typeof cfg.shortcuts[key] !== 'string') return `shortcuts.${key} 必须是字符串`
@@ -89,6 +93,7 @@ export function validateConfig(cfg) {
 
 export async function loadConfig() {
   try {
+    const configPath = getConfigPath()
     let data
     try {
       data = await fs.promises.readFile(configPath, 'utf8')
@@ -134,6 +139,7 @@ export async function saveConfig(newConfig) {
       log.error('配置校验失败:', error)
       return false
     }
+    const configPath = getConfigPath()
     await fs.promises.writeFile(configPath, JSON.stringify(newConfig, null, 2), 'utf8')
     config = newConfig
     log.info('配置保存成功')

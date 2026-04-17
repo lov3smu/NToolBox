@@ -40,6 +40,15 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
       label: '工具',
       submenu: [
         {
+          label: 'SQL脚本生成',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/sql-generator')
+            }
+          },
+        },
+        {
           label: '密码生成器',
           click: () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
@@ -72,6 +81,24 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/yaml-editor')
+            }
+          },
+        },
+        {
+          label: 'JSON解析器',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/json-parser')
+            }
+          },
+        },
+        {
+          label: 'HTML查看器',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/html-viewer')
             }
           },
         },

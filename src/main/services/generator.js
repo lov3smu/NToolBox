@@ -12,6 +12,7 @@ import {
   sanitizePathSegment,
   isPathWithinBase,
 } from '../utils/sanitize'
+import { mkdirWithElevate } from '../utils/elevate'
 
 let isGenerating = false
 
@@ -69,7 +70,7 @@ export async function generateSQLFile(scriptInfo) {
       throw new Error('目标路径超出允许范围')
     }
 
-    await fs.promises.mkdir(targetPath, { recursive: true })
+    await mkdirWithElevate(targetPath)
 
     const files = await fs.promises.readdir(targetPath)
     const sqlFiles = files.filter(f => f.endsWith('.sql'))

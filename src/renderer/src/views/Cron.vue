@@ -1,7 +1,13 @@
 <template>
   <div class="cron-container" :style="{ width: windowWidth + 'px' }">
     <header>
-      <h1>⏰ Cron 表达式生成器</h1>
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Cron 表达式生成器
+      </h1>
       <div class="subtitle">可视化生成定时任务表达式</div>
       
       <div class="field-tabs">
@@ -12,7 +18,6 @@
           :class="{ active: activeTab === tab.key }"
           @click="activeTab = tab.key"
         >
-          <span class="tab-icon">{{ tab.icon }}</span>
           <span class="tab-text">{{ tab.text }}</span>
         </div>
       </div>
@@ -288,13 +293,13 @@ const FIELD_CONFIG = {
 const MONTH_NAMES = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
 
 const tabs = [
-  { key: 'second', icon: '⏱️', text: '秒' },
-  { key: 'minute', icon: '⏳', text: '分钟' },
-  { key: 'hour', icon: '🕐', text: '小时' },
-  { key: 'day', icon: '📅', text: '日' },
-  { key: 'month', icon: '🗓️', text: '月' },
-  { key: 'week', icon: '📆', text: '周' },
-  { key: 'year', icon: '📈', text: '年' }
+  { key: 'second', text: '秒' },
+  { key: 'minute', text: '分钟' },
+  { key: 'hour', text: '小时' },
+  { key: 'day', text: '日' },
+  { key: 'month', text: '月' },
+  { key: 'week', text: '周' },
+  { key: 'year', text: '年' }
 ]
 
 const fields = ['second', 'minute', 'hour', 'day', 'month', 'week', 'year']
@@ -916,9 +921,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 24px;
   margin-bottom: 6px;
+}
+
+.cron-container header h1 .header-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .cron-container header .subtitle {
@@ -960,10 +970,6 @@ onMounted(() => {
   color: var(--primary-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   font-weight: 600;
-}
-
-.tab-icon {
-  font-size: 18px;
 }
 
 .tab-text {
@@ -1340,33 +1346,5 @@ onMounted(() => {
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 12px;
   line-height: 1.6;
-}
-
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast-icon {
-  color: #22c55e;
-  font-weight: bold;
 }
 </style>

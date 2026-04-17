@@ -134,7 +134,8 @@ export function setupIPCHandlers() {
           const item = {
             name: entry.name,
             path: fullPath,
-            created: stat.birthtimeMs || stat.ctimeMs,
+            created: stat.birthtimeMs || stat.mtimeMs,
+            modified: stat.mtimeMs,
             isDirectory: entry.isDirectory()
           }
           

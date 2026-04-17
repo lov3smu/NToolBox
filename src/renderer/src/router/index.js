@@ -3,8 +3,13 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/views/Home.vue')
+    name: 'Dashboard',
+    component: () => import('@/views/Dashboard.vue')
+  },
+  {
+    path: '/sql-generator',
+    name: 'SqlGenerator',
+    component: () => import('@/views/SqlScriptGenerator.vue')
   },
   {
     path: '/settings',
@@ -35,6 +40,16 @@ const routes = [
     path: '/file-manager',
     name: 'FileManager',
     component: () => import('@/views/FileManager.vue')
+  },
+  {
+    path: '/json-parser',
+    name: 'JsonParser',
+    component: () => import('@/views/JsonParser.vue')
+  },
+  {
+    path: '/html-viewer',
+    name: 'HtmlViewer',
+    component: () => import('@/views/HtmlViewer.vue')
   }
 ]
 

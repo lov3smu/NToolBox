@@ -1,7 +1,12 @@
 <template>
   <div class="file-manager-container" :style="{ width: windowWidth + 'px' }">
     <header>
-      <h1>文件管理器</h1>
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        文件管理器
+      </h1>
       <div class="breadcrumb" v-if="currentPath">
         <span class="breadcrumb-item" @click="navigateToRoot">根目录</span>
         <span v-for="(part, index) in pathParts" :key="index" class="breadcrumb-path">
@@ -331,14 +336,22 @@ async function copyAllFilesPath() {
 }
 
 function showToast(message) {
-  const existing = document.querySelector('.toast-message')
+  const existing = document.querySelector('.toast')
   if (existing) existing.remove()
   
   const toast = document.createElement('div')
-  toast.className = 'toast-message'
-  toast.textContent = message
+  toast.className = 'toast'
+  toast.innerHTML = `<span class="toast-icon">✓</span><span class="toast-message">${message}</span>`
   document.body.appendChild(toast)
-  setTimeout(() => toast.remove(), 2000)
+  
+  setTimeout(() => {
+    toast.classList.add('show')
+  }, 10)
+  
+  setTimeout(() => {
+    toast.classList.remove('show')
+    setTimeout(() => toast.remove(), 300)
+  }, 2000)
 }
 
 function formatTime(timestamp) {
@@ -444,8 +457,16 @@ onUnmounted(() => {
 }
 
 .file-manager-container header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 24px;
   margin-bottom: 10px;
+}
+
+.file-manager-container header h1 .header-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .breadcrumb {
@@ -814,32 +835,5 @@ onUnmounted(() => {
 .properties-value.location {
   font-size: 12px;
   color: var(--text-tertiary);
-}
-</style>
-
-<style>
-.toast-message {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  z-index: 2000;
-  animation: fadeInUp 0.3s ease;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
 }
 </style>

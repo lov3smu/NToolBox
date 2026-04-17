@@ -32,8 +32,23 @@ export function getIconPath() {
 }
 
 export function getLogDir() {
-  return path.join(app.isPackaged ? path.dirname(app.getPath('exe')) : getProjectRoot(), 'logs')
+  if (app.isPackaged) {
+    return path.join(getInstallDir(), 'logs')
+  } else {
+    return path.join(getProjectRoot(), 'logs')
+  }
+}
+
+export function getConfigPath() {
+  if (app.isPackaged) {
+    const configDir = path.join(app.getPath('home'), '.config', 'sql-script-generator')
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true })
+    }
+    return path.join(configDir, 'config.json')
+  } else {
+    return path.join(getProjectRoot(), 'config.json')
+  }
 }
 
 export const installDir = getInstallDir()
-export const configPath = path.join(installDir, 'config.json')

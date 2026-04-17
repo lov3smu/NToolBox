@@ -1,17 +1,44 @@
 <template>
   <div class="password-container" :style="{ width: windowWidth + 'px' }">
     <header>
-      <h1>🔐 密码生成器</h1>
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        密码生成器
+      </h1>
       <div class="subtitle">随机安全密码生成工具</div>
     </header>
     <div class="password-content">
       <div class="password-display-section">
         <div class="password-output-wrapper">
           <input :type="visible ? 'text' : 'password'" v-model="password" class="password-output" readonly placeholder="点击生成按钮创建密码">
-          <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">{{ visible ? '🙈' : '👁️' }}</button>
-          <button class="btn-icon" title="复制密码" @click="copyPassword">📋</button>
+          <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
+            <svg v-if="visible" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+          <button class="btn-icon" title="复制密码" @click="copyPassword">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
         </div>
-        <button class="btn btn-primary btn-lg generate-btn" @click="generate">🔄 生成密码</button>
+        <button class="btn btn-primary btn-lg generate-btn" @click="generate">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+            <path d="M16 21h5v-5"/>
+          </svg>
+          生成密码
+        </button>
       </div>
 
       <div class="section">
@@ -36,25 +63,25 @@
         <div class="checkbox-group">
           <label class="checkbox-card" :class="{ active: useUpper }" data-type="uppercase">
             <input type="checkbox" v-model="useUpper" hidden>
-            <span class="checkbox-icon">🔠</span>
+            <span class="checkbox-icon">A</span>
             <span class="checkbox-label">大写字母</span>
             <span class="checkbox-desc">A-Z</span>
           </label>
           <label class="checkbox-card" :class="{ active: useLower }" data-type="lowercase">
             <input type="checkbox" v-model="useLower" hidden>
-            <span class="checkbox-icon">🔡</span>
+            <span class="checkbox-icon">a</span>
             <span class="checkbox-label">小写字母</span>
             <span class="checkbox-desc">a-z</span>
           </label>
           <label class="checkbox-card" :class="{ active: useNumbers }" data-type="numbers">
             <input type="checkbox" v-model="useNumbers" hidden>
-            <span class="checkbox-icon">🔢</span>
+            <span class="checkbox-icon">0</span>
             <span class="checkbox-label">数字</span>
             <span class="checkbox-desc">0-9</span>
           </label>
           <label class="checkbox-card" :class="{ active: useSymbols }" data-type="special">
             <input type="checkbox" v-model="useSymbols" hidden>
-            <span class="checkbox-icon">⚡</span>
+            <span class="checkbox-icon">#</span>
             <span class="checkbox-label">特殊字符</span>
             <span class="checkbox-desc">!@#$%</span>
           </label>
@@ -358,9 +385,18 @@ onMounted(() => {
 }
 
 .password-container header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   font-size: 28px;
   margin-bottom: 10px;
   font-weight: 600;
+}
+
+.password-container header h1 .header-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .password-container .subtitle {
@@ -424,6 +460,10 @@ onMounted(() => {
 .generate-btn {
   width: 100%;
   padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .section {
@@ -553,8 +593,17 @@ onMounted(() => {
 }
 
 .checkbox-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--primary-gradient);
+  color: white;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
 }
 
 .checkbox-label {
@@ -699,44 +748,5 @@ onMounted(() => {
 
 .copy-btn:hover {
   opacity: 1;
-}
-
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--success-color);
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast-icon {
-  width: 20px;
-  height: 20px;
-  background: white;
-  color: var(--success-color);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
 }
 </style>

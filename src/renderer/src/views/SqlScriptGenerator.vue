@@ -1,7 +1,14 @@
 <template>
   <div class="home-container" :style="{ width: windowWidth + 'px' }">
     <header>
-      <h1>SQL Script Generator</h1>
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+        SQL Script Generator
+      </h1>
       <div class="subtitle">SQL脚本生成工具</div>
     </header>
 
@@ -211,12 +218,17 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 28px;
   margin-bottom: 10px;
   position: relative;
   z-index: 1;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.home-container header h1 .header-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .home-container header .subtitle {
