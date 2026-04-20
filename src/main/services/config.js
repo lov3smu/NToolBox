@@ -26,6 +26,17 @@ function getDefaultConfigContent() {
     auto_start: true,
     first_launch_done: false,
     close_action: 'ask',
+    ai_provider: 'bailian',
+    ai_api_keys: {
+      bailian: '',
+      moonshot: '',
+      zhipu: '',
+      minimax: '',
+      minimax_group_id: '',
+      volcengine: '',
+      volcengine_endpoint_id: '',
+      deepseek: ''
+    },
     databases: [
       'order_db', 'product_db', 'community_db', 'content_db', 'device_db',
       'main_db', 'promotion_db', 'ota_db', 'payment_db', 'pmp_db',
@@ -40,10 +51,11 @@ function getDefaultConfigContent() {
     shortcuts: {
       password: 'CmdOrCtrl+P',
       cron: 'CmdOrCtrl+Shift+C',
-      unixtimestamp: 'CmdOrCtrl+U',
-      yamlEditor: 'CmdOrCtrl+Y',
-      fileManager: 'CmdOrCtrl+F',
+      unixtimestamp: 'CmdOrCtrl+Shift+T',
+      yamlEditor: 'CmdOrCtrl+Shift+Y',
+      fileManager: 'CmdOrCtrl+Shift+F',
       jsonParser: 'CmdOrCtrl+J',
+      chat: 'CmdOrCtrl+L',
       settings: 'CmdOrCtrl+,'
     },
   }
@@ -70,6 +82,8 @@ export function validateConfig(cfg) {
   if (cfg.text_edit_app !== undefined && typeof cfg.text_edit_app !== 'string') return 'text_edit_app 必须是字符串'
   if (typeof cfg.auto_update !== 'boolean') return 'auto_update 必须是布尔值'
   if (typeof cfg.auto_start !== 'boolean') return 'auto_start 必须是布尔值'
+  if (cfg.ai_provider !== undefined && typeof cfg.ai_provider !== 'string') return 'ai_provider 必须是字符串'
+  if (cfg.ai_api_keys !== undefined && typeof cfg.ai_api_keys !== 'object') return 'ai_api_keys 必须是对象'
   if (!Array.isArray(cfg.databases)) return 'databases 必须是数组'
   for (const db of cfg.databases) {
     if (typeof db !== 'string') return 'databases 中的每项必须是字符串'
@@ -82,7 +96,7 @@ export function validateConfig(cfg) {
   if (cfg.close_action && !VALID_CLOSE_ACTIONS.includes(cfg.close_action)) return 'close_action 值不合法'
   if (cfg.shortcuts !== undefined) {
     if (typeof cfg.shortcuts !== 'object') return 'shortcuts 必须是对象'
-    const validKeys = ['password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'jsonParser', 'settings']
+    const validKeys = ['password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'jsonParser', 'chat', 'settings']
     for (const key of Object.keys(cfg.shortcuts)) {
       if (!validKeys.includes(key)) return `shortcuts.${key} 不是有效的快捷键配置项`
       if (typeof cfg.shortcuts[key] !== 'string') return `shortcuts.${key} 必须是字符串`
@@ -115,6 +129,13 @@ export async function loadConfig() {
     if (config.auto_start === undefined) config.auto_start = true
     if (config.first_launch_done === undefined) config.first_launch_done = false
     if (config.close_action === undefined) config.close_action = 'ask'
+    if (config.ai_provider === undefined) config.ai_provider = 'bailian'
+    if (config.ai_api_keys === undefined) config.ai_api_keys = {}
+    
+    if (loadedConfig.bailian_api_key && !config.ai_api_keys.bailian) {
+      config.ai_api_keys.bailian = loadedConfig.bailian_api_key
+      delete config.bailian_api_key
+    }
 
     log.info('配置文件加载成功')
     return config

@@ -122,6 +122,14 @@ const tools = [
     </svg>`
   },
   {
+    name: 'AI聊天助手',
+    description: '智能对话，解答编程问题',
+    path: '/chat',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>`
+  },
+  {
     name: '密码生成',
     description: '生成随机密码',
     path: '/password',

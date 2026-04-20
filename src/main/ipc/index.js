@@ -3,6 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import { log, getProjectRoot } from '../utils'
 import { getConfig, saveConfig, loadConfig, generateSQLFile, openFile, openFolder, setAutoStart, getAutoStart, checkForUpdates } from '../services'
+import { chat, validateApiKey, getAvailableProviders, getProviderModels } from '../services/chat.js'
 import { isPathWithinBase } from '../utils/sanitize'
 import { getMainWindow, getSettingsWindow, createSettingsWindow } from '../windows'
 import { createAppMenu } from '../ui'
@@ -88,8 +89,8 @@ export function setupIPCHandlers() {
     return await checkForUpdates(manual, parentWindow)
   })
 
-  ipcMain.handle('open-settings', async () => {
-    createSettingsWindow()
+  ipcMain.handle('open-settings', async (_event, tab) => {
+    createSettingsWindow(tab)
     return true
   })
 
@@ -231,6 +232,30 @@ export function setupIPCHandlers() {
       log.error('获取信息失败:', e)
       return { success: false, error: e.message }
     }
+  })
+
+  ipcMain.handle('chat', async (_event, messages, options) => {
+    console.log('=== IPC chat 被调用 ===')
+    console.log('messages:', messages)
+    console.log('options:', options)
+    const result = await chat(messages, options)
+    console.log('=== chat 结果 ===')
+    console.log('result:', result)
+    return result
+  })
+
+  ipcMain.handle('validate-api-key', async (_event, providerType, apiKey, extraConfig) => {
+    console.log('=== IPC validate-api-key ===')
+    console.log('provider:', providerType)
+    return await validateApiKey(providerType, apiKey, extraConfig)
+  })
+
+  ipcMain.handle('get-ai-providers', async () => {
+    return getAvailableProviders()
+  })
+
+  ipcMain.handle('get-provider-models', async (_event, providerType) => {
+    return getProviderModels(providerType)
   })
 }
 

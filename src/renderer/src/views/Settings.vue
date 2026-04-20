@@ -60,6 +60,65 @@
           </div>
         </div>
 
+        <div v-show="activeTab === 'api'" class="settings-tab">
+          <div class="form-group">
+            <label>AI 平台选择</label>
+            <select v-model="aiProvider" class="select-field" @change="onProviderChange">
+              <option v-for="provider in aiProviders" :key="provider.type" :value="provider.type">
+                {{ provider.name }} - {{ provider.description }}
+              </option>
+            </select>
+            <div class="setting-hint">选择要使用的 AI 服务提供商</div>
+          </div>
+
+          <div class="form-group" v-if="currentProvider">
+            <label>{{ currentProvider.name }} API Key</label>
+            <div class="api-key-input-group">
+              <input 
+                :type="showApiKey ? 'text' : 'password'" 
+                v-model="currentApiKey" 
+                class="input-field" 
+                :placeholder="`输入 ${currentProvider.name} API Key`"
+              >
+              <button class="btn-small btn-secondary" @click="showApiKey = !showApiKey">
+                {{ showApiKey ? '隐藏' : '显示' }}
+              </button>
+              <button class="btn-small" @click="testApiKey" :disabled="!currentApiKey || testingApiKey">
+                {{ testingApiKey ? '验证中...' : '验证' }}
+              </button>
+            </div>
+            <div class="setting-hint">
+              获取 API Key：访问 
+              <a href="#" @click.prevent="openProviderDocs">{{ currentProvider.name }}平台</a>
+            </div>
+            <div v-if="apiKeyTestResult" class="api-test-result" :class="apiKeyTestResult.success ? 'success' : 'error'">
+              {{ apiKeyTestResult.message }}
+            </div>
+          </div>
+
+          <div class="form-group" v-if="currentProvider?.requiresGroupId">
+            <label>{{ currentProvider.name }} Group ID</label>
+            <input 
+              type="text" 
+              v-model="currentGroupId" 
+              class="input-field" 
+              :placeholder="`输入 ${currentProvider.name} Group ID`"
+            >
+            <div class="setting-hint">部分平台需要 Group ID 进行身份验证</div>
+          </div>
+
+          <div class="form-group" v-if="currentProvider?.requiresEndpointId">
+            <label>{{ currentProvider.name }} Endpoint ID</label>
+            <input 
+              type="text" 
+              v-model="currentEndpointId" 
+              class="input-field" 
+              :placeholder="`输入 ${currentProvider.name} Endpoint ID`"
+            >
+            <div class="setting-hint">推理接入点 ID，在平台控制台获取</div>
+          </div>
+        </div>
+
         <div v-show="activeTab === 'database'" class="settings-tab">
           <div class="form-group">
             <label>数据库</label>
@@ -146,6 +205,10 @@
                 <span class="shortcut-name">设置</span>
                 <input type="text" v-model="shortcuts.settings" class="input-field shortcut-input" placeholder="快捷键">
               </div>
+              <div class="shortcut-item">
+                <span class="shortcut-name">AI聊天助手</span>
+                <input type="text" v-model="shortcuts.chat" class="input-field shortcut-input" placeholder="快捷键">
+              </div>
             </div>
             <div class="setting-hint">格式示例: CmdOrCtrl+P, CmdOrCtrl+Shift+C（留空则不设置快捷键）</div>
           </div>
@@ -176,6 +239,7 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   getConfig,
   getPackageInfo,
@@ -187,10 +251,15 @@ import {
   setAutoStart,
   checkForUpdates,
   closeSettingsWindow,
+  validateApiKey,
+  getAiProviders,
 } from '@/api'
+
+const route = useRoute()
 
 const menuItems = [
   { id: 'general', icon: '⚙', text: '通用' },
+  { id: 'api', icon: '🔑', text: 'API配置' },
   { id: 'database', icon: '🗄', text: '数据库' },
   { id: 'scripttype', icon: '📝', text: '脚本类型' },
   { id: 'shortcuts', icon: '⌨', text: '快捷键' },
@@ -205,6 +274,18 @@ const textEditApp = ref('')
 const autoUpdate = ref(true)
 const autoStart = ref(false)
 const closeAction = ref('ask')
+const aiProvider = ref('bailian')
+const aiApiKeys = ref({
+  bailian: '',
+  moonshot: '',
+  zhipu: '',
+  minimax: '',
+  minimax_group_id: '',
+  volcengine: '',
+  volcengine_endpoint_id: '',
+  deepseek: ''
+})
+const aiProviders = ref([])
 const databases = ref([])
 const scriptTypes = ref([])
 const shortcuts = ref({
@@ -214,16 +295,44 @@ const shortcuts = ref({
   yamlEditor: 'CmdOrCtrl+Shift+Y',
   fileManager: 'CmdOrCtrl+Shift+F',
   jsonParser: 'CmdOrCtrl+J',
+  chat: 'CmdOrCtrl+L',
   settings: 'CmdOrCtrl+,'
 })
 const version = ref('1.0.0')
 const author = ref('lov3smu')
 const databaseListRef = ref(null)
 const scriptTypeListRef = ref(null)
+const showApiKey = ref(false)
+const testingApiKey = ref(false)
+const apiKeyTestResult = ref(null)
 
 const year = computed(() => new Date().getFullYear())
 
+const currentProvider = computed(() => {
+  return aiProviders.value.find(p => p.type === aiProvider.value)
+})
+
+const currentApiKey = computed({
+  get: () => aiApiKeys.value[aiProvider.value] || '',
+  set: (val) => { aiApiKeys.value[aiProvider.value] = val }
+})
+
+const currentGroupId = computed({
+  get: () => aiApiKeys.value.minimax_group_id || '',
+  set: (val) => { aiApiKeys.value.minimax_group_id = val }
+})
+
+const currentEndpointId = computed({
+  get: () => aiApiKeys.value.volcengine_endpoint_id || '',
+  set: (val) => { aiApiKeys.value.volcengine_endpoint_id = val }
+})
+
 onMounted(async () => {
+  const tabParam = route.query.tab
+  if (tabParam && menuItems.some(item => item.id === tabParam)) {
+    activeTab.value = tabParam
+  }
+
   const config = await getConfig()
   basePath.value = config.base_path || ''
   developerChName.value = config.developer_ch_name || ''
@@ -232,12 +341,21 @@ onMounted(async () => {
   autoUpdate.value = config.auto_update !== false
   autoStart.value = config.auto_start === true
   closeAction.value = config.close_action || 'ask'
+  aiProvider.value = config.ai_provider || 'bailian'
+  aiApiKeys.value = { ...aiApiKeys.value, ...(config.ai_api_keys || {}) }
   databases.value = (config.databases || []).map(name => ({ name, error: false }))
   scriptTypes.value = (config.script_types || []).map(st => ({ name: st.name, description: st.description || '', error: false }))
   
   if (config.shortcuts) {
     shortcuts.value = { ...shortcuts.value, ...config.shortcuts }
   }
+
+  if (config.bailian_api_key && !aiApiKeys.value.bailian) {
+    aiApiKeys.value.bailian = config.bailian_api_key
+  }
+
+  const providers = await getAiProviders()
+  aiProviders.value = providers || []
 
   const packageJson = await getPackageInfo()
   if (packageJson.version) version.value = packageJson.version
@@ -380,6 +498,8 @@ async function save() {
     auto_update: autoUpdate.value,
     auto_start: autoStart.value,
     close_action: closeAction.value,
+    ai_provider: aiProvider.value,
+    ai_api_keys: { ...aiApiKeys.value },
     databases: databases.value.map(db => db.name.trim()).filter(Boolean),
     script_types: scriptTypes.value.map(st => ({
       name: st.name.trim(),
@@ -409,6 +529,43 @@ function closeWindow() {
 
 async function checkUpdate() {
   await checkForUpdates(true)
+}
+
+async function testApiKey() {
+  if (!currentApiKey.value) return
+  testingApiKey.value = true
+  apiKeyTestResult.value = null
+  
+  try {
+    const extraConfig = {}
+    if (aiProvider.value === 'minimax') {
+      extraConfig.groupId = currentGroupId.value
+    }
+    if (aiProvider.value === 'volcengine') {
+      extraConfig.endpointId = currentEndpointId.value
+    }
+    
+    const isValid = await validateApiKey(aiProvider.value, currentApiKey.value, extraConfig)
+    if (isValid) {
+      apiKeyTestResult.value = { success: true, message: `${currentProvider.value?.name || 'API Key'} 验证成功` }
+    } else {
+      apiKeyTestResult.value = { success: false, message: 'API Key 验证失败，请检查是否正确' }
+    }
+  } catch (e) {
+    apiKeyTestResult.value = { success: false, message: '验证失败: ' + e.message }
+  }
+  
+  testingApiKey.value = false
+}
+
+function onProviderChange() {
+  apiKeyTestResult.value = null
+}
+
+function openProviderDocs() {
+  if (currentProvider.value?.docsUrl) {
+    window.electronAPI?.openExternal?.(currentProvider.value.docsUrl)
+  }
 }
 </script>
 
@@ -706,5 +863,33 @@ async function checkUpdate() {
   padding: 8px 12px;
   font-size: 13px;
   text-align: center;
+}
+
+.api-key-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.api-key-input-group .input-field {
+  flex: 1;
+}
+
+.api-test-result {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.api-test-result.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.api-test-result.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 </style>

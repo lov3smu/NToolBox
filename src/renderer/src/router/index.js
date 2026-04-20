@@ -50,6 +50,11 @@ const routes = [
     path: '/html-viewer',
     name: 'HtmlViewer',
     component: () => import('@/views/HtmlViewer.vue')
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('@/views/Chat.vue')
   }
 ]
 
