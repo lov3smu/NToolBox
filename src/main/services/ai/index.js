@@ -87,10 +87,10 @@ export function createProvider(type, config) {
 
 export function getProvider(type, config) {
   if (currentProvider && currentProviderType === type) {
-    const validation = currentProvider.validateConfig()
-    if (validation.valid) {
-      return currentProvider
-    }
+    currentProvider.apiKey = config.apiKey
+    if (config.groupId) currentProvider.groupId = config.groupId
+    if (config.endpointId) currentProvider.endpointId = config.endpointId
+    return currentProvider
   }
   
   currentProvider = createProvider(type, config)

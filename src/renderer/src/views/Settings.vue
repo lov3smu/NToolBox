@@ -473,8 +473,8 @@ function showError(message) {
   if (existing) existing.remove()
 
   const toast = document.createElement('div')
-  toast.className = 'toast'
-  toast.innerHTML = `<span class="toast-icon" style="color: #ef4444;">✕</span><span class="toast-message">${message}</span>`
+  toast.className = 'toast error'
+  toast.innerHTML = `<span class="toast-icon">✕</span><span class="toast-message">${message}</span>`
   document.body.appendChild(toast)
   
   setTimeout(() => {

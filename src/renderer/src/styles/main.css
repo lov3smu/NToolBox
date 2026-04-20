@@ -231,3 +231,11 @@ body {
 .toast-message {
     color: white;
 }
+
+.toast.error {
+    background: rgba(239, 68, 68, 0.9);
+}
+
+.toast.error .toast-icon {
+    color: white;
+}

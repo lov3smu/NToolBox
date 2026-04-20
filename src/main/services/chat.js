@@ -528,6 +528,8 @@ export async function chat(messages, options = {}) {
 export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
   console.log('=== validateApiKey ===')
   console.log('provider:', providerType)
+  console.log('apiKey:', apiKey)
+  console.log('extraConfig:', extraConfig)
   
   const config = {
     apiKey,
@@ -541,7 +543,10 @@ export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
     return false
   }
   
-  return await provider.validateApiKey()
+  console.log('Provider apiKey:', provider.apiKey)
+  const result = await provider.validateApiKey()
+  console.log('验证结果:', result)
+  return result
 }
 
 export { getAvailableProviders, getProviderModels, PROVIDER_TYPES, PROVIDER_INFO }

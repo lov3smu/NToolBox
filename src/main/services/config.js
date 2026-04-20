@@ -96,7 +96,7 @@ export function validateConfig(cfg) {
   if (cfg.close_action && !VALID_CLOSE_ACTIONS.includes(cfg.close_action)) return 'close_action 值不合法'
   if (cfg.shortcuts !== undefined) {
     if (typeof cfg.shortcuts !== 'object') return 'shortcuts 必须是对象'
-    const validKeys = ['password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'jsonParser', 'chat', 'settings']
+    const validKeys = ['password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'jsonParser', 'chat', 'settings', 'home']
     for (const key of Object.keys(cfg.shortcuts)) {
       if (!validKeys.includes(key)) return `shortcuts.${key} 不是有效的快捷键配置项`
       if (typeof cfg.shortcuts[key] !== 'string') return `shortcuts.${key} 必须是字符串`
@@ -130,11 +130,22 @@ export async function loadConfig() {
     if (config.first_launch_done === undefined) config.first_launch_done = false
     if (config.close_action === undefined) config.close_action = 'ask'
     if (config.ai_provider === undefined) config.ai_provider = 'bailian'
-    if (config.ai_api_keys === undefined) config.ai_api_keys = {}
+    
+    if (!config.ai_api_keys || typeof config.ai_api_keys !== 'object') {
+      config.ai_api_keys = { ...defaultConfig.ai_api_keys }
+    } else {
+      config.ai_api_keys = { ...defaultConfig.ai_api_keys, ...config.ai_api_keys }
+    }
     
     if (loadedConfig.bailian_api_key && !config.ai_api_keys.bailian) {
       config.ai_api_keys.bailian = loadedConfig.bailian_api_key
       delete config.bailian_api_key
+    }
+    
+    if (!config.shortcuts || typeof config.shortcuts !== 'object') {
+      config.shortcuts = { ...defaultConfig.shortcuts }
+    } else {
+      config.shortcuts = { ...defaultConfig.shortcuts, ...config.shortcuts }
     }
 
     log.info('配置文件加载成功')
@@ -158,6 +169,7 @@ export async function saveConfig(newConfig) {
     const error = validateConfig(newConfig)
     if (error) {
       log.error('配置校验失败:', error)
+      log.error('配置内容:', JSON.stringify(newConfig, null, 2))
       return false
     }
     const configPath = getConfigPath()
