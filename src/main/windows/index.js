@@ -137,7 +137,7 @@ function createMainWindow() {
   return mainWindow
 }
 
-export function createSettingsWindow() {
+export function createSettingsWindow(defaultTab = null) {
   if (settingsWindow) {
     settingsWindow.focus()
     return settingsWindow
@@ -164,10 +164,11 @@ export function createSettingsWindow() {
 
   settingsWindow.setMenu(null)
 
+  const hash = defaultTab ? `/settings?tab=${defaultTab}` : '/settings'
   if (isDev) {
-    settingsWindow.loadURL(devServerUrl + '#/settings')
+    settingsWindow.loadURL(devServerUrl + '#' + hash)
   } else {
-    settingsWindow.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: '/settings' })
+    settingsWindow.loadFile(path.join(__dirname, '../renderer/index.html'), { hash })
   }
 
   settingsWindow.on('closed', () => {

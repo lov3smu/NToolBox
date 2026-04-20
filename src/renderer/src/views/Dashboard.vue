@@ -29,7 +29,7 @@
         <h2>工具介绍</h2>
         <div class="intro-content">
           <p>SQL Script Generator 是一款专为开发者设计的实用工具集，旨在提升日常开发效率。</p>
-          <p>集成了 SQL 脚本生成、密码生成、时间戳转换、JSON 格式化等常用工具，帮助您快速完成重复性工作。</p>
+          <p>集成了 SQL 脚本生成、AI 聊天助手、密码生成、时间戳转换、JSON 格式化等常用工具，帮助您快速完成重复性工作。</p>
         </div>
       </section>
 
@@ -56,6 +56,30 @@
               <kbd>K</kbd>
             </div>
             <div class="shortcut-desc">打开全局搜索</div>
+          </div>
+          <div class="shortcut-item">
+            <div class="shortcut-keys">
+              <kbd>Ctrl</kbd>
+              <span>+</span>
+              <kbd>L</kbd>
+            </div>
+            <div class="shortcut-desc">打开AI聊天助手</div>
+          </div>
+          <div class="shortcut-item">
+            <div class="shortcut-keys">
+              <kbd>Ctrl</kbd>
+              <span>+</span>
+              <kbd>P</kbd>
+            </div>
+            <div class="shortcut-desc">打开密码生成器</div>
+          </div>
+          <div class="shortcut-item">
+            <div class="shortcut-keys">
+              <kbd>Ctrl</kbd>
+              <span>+</span>
+              <kbd>,</kbd>
+            </div>
+            <div class="shortcut-desc">打开设置</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -119,6 +143,14 @@ const tools = [
       <ellipse cx="12" cy="5" rx="9" ry="3"/>
       <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </svg>`
+  },
+  {
+    name: 'AI聊天助手',
+    description: '智能对话，解答编程问题',
+    path: '/chat',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>`
   },
   {

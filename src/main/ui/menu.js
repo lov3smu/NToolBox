@@ -36,6 +36,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
     fileManager: 'CmdOrCtrl+Shift+F',
     jsonParser: 'CmdOrCtrl+J',
     htmlViewer: 'CmdOrCtrl+H',
+    chat: 'CmdOrCtrl+L',
     settings: 'CmdOrCtrl+,'
   }
 
@@ -148,6 +149,16 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/html-viewer')
+            }
+          },
+        },
+        {
+          label: 'AI聊天助手',
+          accelerator: shortcuts.chat || 'CmdOrCtrl+L',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/chat')
             }
           },
         },
