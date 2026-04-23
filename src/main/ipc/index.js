@@ -7,6 +7,21 @@ import { chat, validateApiKey, getAvailableProviders, getProviderModels } from '
 import { isPathWithinBase } from '../utils/sanitize'
 import { getMainWindow, getSettingsWindow, createSettingsWindow } from '../windows'
 import { createAppMenu } from '../ui'
+import {
+  testConnection,
+  createConnection,
+  closeConnection,
+  closeAllConnections,
+  executeQuery,
+  queryDatabases,
+  queryTables,
+  getTableStructure,
+  getActiveConnections,
+  isConnectionActive,
+  beginTransaction,
+  commitTransaction,
+  rollbackTransaction
+} from '../services/database.js'
 
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
@@ -19,7 +34,7 @@ export function setupIPCHandlers() {
     version: packageJson.version,
     author: packageJson.author,
     name: packageJson.name,
-    description: packageJson.description,
+    description: packageJson.description
   }))
 
   ipcMain.handle('save-config', async (_event, newConfig) => {
@@ -71,8 +86,8 @@ export function setupIPCHandlers() {
       properties: ['openFile'],
       filters: [
         { name: '可执行文件', extensions: ['exe'] },
-        { name: '所有文件', extensions: ['*'] },
-      ],
+        { name: '所有文件', extensions: ['*'] }
+      ]
     })
     return result.filePaths[0] || ''
   })
@@ -256,6 +271,103 @@ export function setupIPCHandlers() {
 
   ipcMain.handle('get-provider-models', async (_event, providerType) => {
     return getProviderModels(providerType)
+  })
+
+  // Database connection handlers
+  ipcMain.handle('db-test-connection', async (_event, config) => {
+    return await testConnection(config)
+  })
+
+  ipcMain.handle('db-create-connection', async (_event, name, config) => {
+    return await createConnection(name, config)
+  })
+
+  ipcMain.handle('db-close-connection', async (_event, name) => {
+    return await closeConnection(name)
+  })
+
+  ipcMain.handle('db-close-all-connections', async () => {
+    return await closeAllConnections()
+  })
+
+  ipcMain.handle('db-execute-query', async (_event, name, sql, params, options) => {
+    return await executeQuery(name, sql, params, options)
+  })
+
+  ipcMain.handle('db-query-databases', async (_event, name) => {
+    return await queryDatabases(name)
+  })
+
+  ipcMain.handle('db-query-tables', async (_event, name, database) => {
+    return await queryTables(name, database)
+  })
+
+  ipcMain.handle('db-get-table-structure', async (_event, name, database, tableName) => {
+    return await getTableStructure(name, database, tableName)
+  })
+
+  ipcMain.handle('db-get-active-connections', async () => {
+    return getActiveConnections()
+  })
+
+  ipcMain.handle('db-is-connection-active', async (_event, name) => {
+    return isConnectionActive(name)
+  })
+
+  ipcMain.handle('db-begin-transaction', async (_event, name) => {
+    return await beginTransaction(name)
+  })
+
+  ipcMain.handle('db-commit-transaction', async (_event, name) => {
+    return await commitTransaction(name)
+  })
+
+  ipcMain.handle('db-rollback-transaction', async (_event, name) => {
+    return await rollbackTransaction(name)
+  })
+
+  ipcMain.handle('select-sql-file', async () => {
+    const mainWindow = getMainWindow()
+    const settingsWindow = getSettingsWindow()
+    const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
+    const result = await dialog.showOpenDialog(parentWindow, {
+      title: '选择SQL文件',
+      filters: [{ name: 'SQL文件', extensions: ['sql'] }],
+      properties: ['openFile']
+    })
+    return result
+  })
+
+  ipcMain.handle('read-file', async (_event, filePath) => {
+    try {
+      const content = await fs.promises.readFile(filePath, 'utf-8')
+      return { success: true, content }
+    } catch (e) {
+      log.error('读取文件失败:', e)
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('save-sql-file', async (_event, defaultPath) => {
+    const mainWindow = getMainWindow()
+    const settingsWindow = getSettingsWindow()
+    const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
+    const result = await dialog.showSaveDialog(parentWindow, {
+      title: '保存SQL转储文件',
+      defaultPath: defaultPath || 'dump.sql',
+      filters: [{ name: 'SQL文件', extensions: ['sql'] }]
+    })
+    return result
+  })
+
+  ipcMain.handle('write-file', async (_event, filePath, content) => {
+    try {
+      await fs.promises.writeFile(filePath, content, 'utf-8')
+      return { success: true }
+    } catch (e) {
+      log.error('写入文件失败:', e)
+      return { success: false, error: e.message }
+    }
   })
 }
 

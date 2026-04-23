@@ -23,7 +23,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
         type: 'info',
         title: '检查更新',
         message: '当前为开发环境，无法检查更新。\n请打包后测试更新功能。',
-        buttons: ['确定'],
+        buttons: ['确定']
       })
     }
     return Promise.resolve({ status: 'dev-environment' })
@@ -35,7 +35,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
     provider: 'github',
     owner: 'lov3smu',
     repo: 'sql-script-generator',
-    releaseType: 'release',
+    releaseType: 'release'
   })
 
   autoUpdater.removeAllListeners('checking-for-update')
@@ -60,7 +60,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
           type: 'info',
           title: '发现新版本',
           message: `发现新版本 ${info.version}，是否立即下载？`,
-          buttons: ['下载', '以后'],
+          buttons: ['下载', '以后']
         }).then(result => {
           if (result.response === 0) autoUpdater.downloadUpdate()
         })
@@ -75,7 +75,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
           type: 'info',
           title: '检查更新',
           message: '当前已是最新版本',
-          buttons: ['确定'],
+          buttons: ['确定']
         })
       }
       resolve({ status: 'update-not-available' })
@@ -91,7 +91,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
             type: 'warning',
             title: '更新失败',
             message: '无法安装更新：更新包签名验证失败。\n\n请前往 GitHub Releases 页面手动下载最新版本。',
-            buttons: ['前往下载', '取消'],
+            buttons: ['前往下载', '取消']
           }).then(result => {
             if (result.response === 0) {
               shell.openExternal(
@@ -127,7 +127,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
         type: 'info',
         title: '更新就绪',
         message: `新版本 ${info.version} 已下载完成，是否立即重启安装？`,
-        buttons: ['立即重启', '稍后'],
+        buttons: ['立即重启', '稍后']
       }).then(result => {
         if (result.response === 0) autoUpdater.quitAndInstall()
       })

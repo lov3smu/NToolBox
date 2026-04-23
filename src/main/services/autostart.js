@@ -14,11 +14,11 @@ export async function setAutoStart(enable) {
 
     app.setLoginItemSettings({
       openAtLogin: enable,
-      path: exePath,
+      path: exePath
     })
 
     const settings = app.getLoginItemSettings({
-      path: exePath,
+      path: exePath
     })
     log.info(`开机启动验证: openAtLogin=${settings.openAtLogin}`)
 
@@ -61,7 +61,7 @@ export async function promptAutoStartOnFirstLaunch(mainWindow) {
         detail: '开启后，系统启动时会自动运行本应用。\n\n您也可以在【设置】页面随时更改此选项。',
         buttons: ['开启', '不开启'],
         defaultId: 0,
-        cancelId: 1,
+        cancelId: 1
       })
 
       const enableAutoStart = result.response === 0

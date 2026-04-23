@@ -23,6 +23,26 @@ export const validateApiKey = (providerType, apiKey, extraConfig) => api.validat
 export const getAiProviders = () => api.getAiProviders?.() || Promise.resolve([])
 export const getProviderModels = (providerType) => api.getProviderModels?.(providerType) || Promise.resolve([])
 
+// Database connection APIs
+export const dbTestConnection = (config) => api.dbTestConnection?.(config) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbCreateConnection = (name, config) => api.dbCreateConnection?.(name, config) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbCloseConnection = (name) => api.dbCloseConnection?.(name) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbCloseAllConnections = () => api.dbCloseAllConnections?.() || Promise.resolve({ success: false, error: 'API not available' })
+export const dbExecuteQuery = (name, sql, params, options) => api.dbExecuteQuery?.(name, sql, params, options) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbQueryDatabases = (name) => api.dbQueryDatabases?.(name) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbQueryTables = (name, database) => api.dbQueryTables?.(name, database) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbGetTableStructure = (name, database, tableName) => api.dbGetTableStructure?.(name, database, tableName) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbGetActiveConnections = () => api.dbGetActiveConnections?.() || Promise.resolve([])
+export const dbIsConnectionActive = (name) => api.dbIsConnectionActive?.(name) || Promise.resolve(false)
+export const dbBeginTransaction = (name) => api.dbBeginTransaction?.(name) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbCommitTransaction = (name) => api.dbCommitTransaction?.(name) || Promise.resolve({ success: false, error: 'API not available' })
+export const dbRollbackTransaction = (name) => api.dbRollbackTransaction?.(name) || Promise.resolve({ success: false, error: 'API not available' })
+
+export const selectSqlFile = () => api.selectSqlFile?.() || Promise.resolve({ canceled: true })
+export const readFile = (filePath) => api.readFile?.(filePath) || Promise.resolve({ success: false, error: 'API not available' })
+export const saveSqlFile = (defaultPath) => api.saveSqlFile?.(defaultPath) || Promise.resolve({ canceled: true })
+export const writeFile = (filePath, content) => api.writeFile?.(filePath, content) || Promise.resolve({ success: false, error: 'API not available' })
+
 export const onNavigateTo = (callback) => api.onNavigateTo?.(callback) || (() => {})
 export const onUpdateStatus = (callback) => api.onUpdateStatus?.(callback) || (() => {})
 export const onUpdateProgress = (callback) => api.onUpdateProgress?.(callback) || (() => {})

@@ -24,7 +24,7 @@ export function sanitizePathSegment(segment) {
   if (!segment || typeof segment !== 'string') return ''
   return segment
     .replace(/\.\./g, '')
-    .replace(/[\/\\:*?"<>|]/g, '_')
+    .replace(/[/\\:*?"<>|]/g, '_')
     .trim()
 }
 

@@ -1,14 +1,29 @@
 <template>
-  <div class="cron-container" :style="{ width: windowWidth + 'px' }">
+  <div
+    class="cron-container"
+    :style="{ width: windowWidth + 'px' }"
+  >
     <header>
       <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
+        <svg
+          class="header-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <polyline points="12 6 12 12 16 14" />
         </svg>
         Cron 表达式生成器
       </h1>
-      <div class="subtitle">可视化生成定时任务表达式</div>
+      <div class="subtitle">
+        可视化生成定时任务表达式
+      </div>
       
       <div class="field-tabs">
         <div
@@ -25,48 +40,129 @@
 
     <div class="cron-content">
       <div class="field-panel">
-        <div class="field-title">{{ getFieldTitle(activeTab) }}</div>
-        <div class="field-hint">{{ getFieldHint(activeTab) }}</div>
+        <div class="field-title">
+          {{ getFieldTitle(activeTab) }}
+        </div>
+        <div class="field-hint">
+          {{ getFieldHint(activeTab) }}
+        </div>
         
         <div class="type-options">
-          <label class="type-option" v-if="activeTab !== 'week' && activeTab !== 'day'">
-            <input type="radio" :name="activeTab + 'Type'" value="every" v-model="currentFieldType">
+          <label
+            v-if="activeTab !== 'week' && activeTab !== 'day'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="every"
+            >
             <span>每{{ getFieldTitle(activeTab) }}</span>
           </label>
-          <label class="type-option" v-if="activeTab === 'week' || activeTab === 'year' || activeTab === 'day'">
-            <input type="radio" :name="activeTab + 'Type'" value="notSpecify" v-model="currentFieldType">
+          <label
+            v-if="activeTab === 'week' || activeTab === 'year' || activeTab === 'day'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="notSpecify"
+            >
             <span>不指定</span>
           </label>
-          <label class="type-option" v-if="activeTab === 'day'">
-            <input type="radio" :name="activeTab + 'Type'" value="every" v-model="currentFieldType">
+          <label
+            v-if="activeTab === 'day'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="every"
+            >
             <span>每日</span>
           </label>
-          <label class="type-option" v-if="activeTab !== 'year'">
-            <input type="radio" :name="activeTab + 'Type'" value="range" v-model="currentFieldType">
+          <label
+            v-if="activeTab !== 'year'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="range"
+            >
             <span>周期</span>
           </label>
-          <label class="type-option" v-if="activeTab !== 'week' && activeTab !== 'year'">
-            <input type="radio" :name="activeTab + 'Type'" value="interval" v-model="currentFieldType">
+          <label
+            v-if="activeTab !== 'week' && activeTab !== 'year'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="interval"
+            >
             <span>循环</span>
           </label>
           <label class="type-option">
-            <input type="radio" :name="activeTab + 'Type'" value="specific" v-model="currentFieldType">
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="specific"
+            >
             <span>指定</span>
           </label>
-          <label class="type-option" v-if="activeTab === 'day'">
-            <input type="radio" :name="activeTab + 'Type'" value="workDay" v-model="currentFieldType">
+          <label
+            v-if="activeTab === 'day'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="workDay"
+            >
             <span>工作日</span>
           </label>
-          <label class="type-option" v-if="activeTab === 'day'">
-            <input type="radio" :name="activeTab + 'Type'" value="lastDay" v-model="currentFieldType">
+          <label
+            v-if="activeTab === 'day'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="lastDay"
+            >
             <span>最后一天</span>
           </label>
-          <label class="type-option" v-if="activeTab === 'week'">
-            <input type="radio" :name="activeTab + 'Type'" value="nth" v-model="currentFieldType">
+          <label
+            v-if="activeTab === 'week'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="nth"
+            >
             <span>第几个星期几</span>
           </label>
-          <label class="type-option" v-if="activeTab === 'week'">
-            <input type="radio" :name="activeTab + 'Type'" value="last" v-model="currentFieldType">
+          <label
+            v-if="activeTab === 'week'"
+            class="type-option"
+          >
+            <input
+              v-model="currentFieldType"
+              type="radio"
+              :name="activeTab + 'Type'"
+              value="last"
+            >
             <span>最后一个星期几</span>
           </label>
         </div>
@@ -74,37 +170,93 @@
         <div class="value-config">
           <template v-if="currentFieldType === 'range'">
             <template v-if="activeTab === 'week'">
-              <select v-model="weekRangeFrom" class="select-field" @change="generateExpression">
-                <option v-for="day in weekDays" :key="day.value" :value="day.value">{{ day.label }}</option>
+              <select
+                v-model="weekRangeFrom"
+                class="select-field"
+                @change="generateExpression"
+              >
+                <option
+                  v-for="day in weekDays"
+                  :key="day.value"
+                  :value="day.value"
+                >
+                  {{ day.label }}
+                </option>
               </select>
               <span class="range-separator">至</span>
-              <select v-model="weekRangeTo" class="select-field" @change="generateExpression">
-                <option v-for="day in weekDays" :key="day.value" :value="day.value">{{ day.label }}</option>
+              <select
+                v-model="weekRangeTo"
+                class="select-field"
+                @change="generateExpression"
+              >
+                <option
+                  v-for="day in weekDays"
+                  :key="day.value"
+                  :value="day.value"
+                >
+                  {{ day.label }}
+                </option>
               </select>
             </template>
             <template v-else>
-              <input type="number" class="input-field" :min="FIELD_CONFIG[activeTab]?.min" :max="FIELD_CONFIG[activeTab]?.max" v-model.number="rangeValues[activeTab].from" @input="generateExpression">
+              <input
+                v-model.number="rangeValues[activeTab].from"
+                type="number"
+                class="input-field"
+                :min="FIELD_CONFIG[activeTab]?.min"
+                :max="FIELD_CONFIG[activeTab]?.max"
+                @input="generateExpression"
+              >
               <span class="range-separator">至</span>
-              <input type="number" class="input-field" :min="FIELD_CONFIG[activeTab]?.min" :max="FIELD_CONFIG[activeTab]?.max" v-model.number="rangeValues[activeTab].to" @input="generateExpression">
+              <input
+                v-model.number="rangeValues[activeTab].to"
+                type="number"
+                class="input-field"
+                :min="FIELD_CONFIG[activeTab]?.min"
+                :max="FIELD_CONFIG[activeTab]?.max"
+                @input="generateExpression"
+              >
             </template>
           </template>
 
           <template v-else-if="currentFieldType === 'interval'">
             <span class="interval-label">从</span>
-            <input type="number" class="input-field" :min="FIELD_CONFIG[activeTab]?.min" :max="FIELD_CONFIG[activeTab]?.max" v-model.number="intervalValues[activeTab].start" @input="generateExpression">
+            <input
+              v-model.number="intervalValues[activeTab].start"
+              type="number"
+              class="input-field"
+              :min="FIELD_CONFIG[activeTab]?.min"
+              :max="FIELD_CONFIG[activeTab]?.max"
+              @input="generateExpression"
+            >
             <span class="interval-label">开始，每</span>
-            <input type="number" class="input-field" :min="1" :max="FIELD_CONFIG[activeTab]?.max" v-model.number="intervalValues[activeTab].step" @input="generateExpression">
+            <input
+              v-model.number="intervalValues[activeTab].step"
+              type="number"
+              class="input-field"
+              :min="1"
+              :max="FIELD_CONFIG[activeTab]?.max"
+              @input="generateExpression"
+            >
             <span class="interval-label">{{ getFieldTitle(activeTab) }}执行一次</span>
           </template>
 
           <template v-else-if="currentFieldType === 'specific'">
             <template v-if="activeTab === 'year'">
-              <input type="text" class="input-field specific-input" v-model="yearSpecificInput" placeholder="例如: 2024,2025,2026" @input="generateExpression">
+              <input
+                v-model="yearSpecificInput"
+                type="text"
+                class="input-field specific-input"
+                placeholder="例如: 2024,2025,2026"
+                @input="generateExpression"
+              >
             </template>
             <template v-else-if="activeTab === 'hour'">
               <div class="hour-grid-container">
                 <div class="time-section">
-                  <div class="time-section-title">上午</div>
+                  <div class="time-section-title">
+                    上午
+                  </div>
                   <div class="specific-grid hour-grid">
                     <div
                       v-for="n in 12"
@@ -118,7 +270,9 @@
                   </div>
                 </div>
                 <div class="time-section">
-                  <div class="time-section-title">下午</div>
+                  <div class="time-section-title">
+                    下午
+                  </div>
                   <div class="specific-grid hour-grid">
                     <div
                       v-for="n in 12"
@@ -133,8 +287,11 @@
                 </div>
               </div>
             </template>
-<template v-else>
-              <div class="specific-grid" :class="{ 'month-grid': activeTab === 'month', 'day-grid': activeTab === 'day', 'week-grid': activeTab === 'week' }">
+            <template v-else>
+              <div
+                class="specific-grid"
+                :class="{ 'month-grid': activeTab === 'month', 'day-grid': activeTab === 'day', 'week-grid': activeTab === 'week' }"
+              >
                 <template v-if="activeTab === 'week'">
                   <div
                     v-for="day in weekDays"
@@ -163,29 +320,70 @@
 
           <template v-else-if="currentFieldType === 'workDay'">
             <span class="interval-label">每月</span>
-            <input type="number" class="input-field" min="1" max="31" v-model.number="workDayValue" @input="generateExpression">
+            <input
+              v-model.number="workDayValue"
+              type="number"
+              class="input-field"
+              min="1"
+              max="31"
+              @input="generateExpression"
+            >
             <span class="interval-label">号最近的工作日</span>
           </template>
 
           <template v-else-if="currentFieldType === 'nth'">
             <span class="interval-label">每月第</span>
-            <select v-model="weekNth" class="select-field" @change="generateExpression">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
+            <select
+              v-model="weekNth"
+              class="select-field"
+              @change="generateExpression"
+            >
+              <option value="1">
+                1
+              </option>
+              <option value="2">
+                2
+              </option>
+              <option value="3">
+                3
+              </option>
+              <option value="4">
+                4
+              </option>
+              <option value="5">
+                5
+              </option>
             </select>
             <span class="interval-label">个</span>
-            <select v-model="weekNthDay" class="select-field" @change="generateExpression">
-              <option v-for="day in weekDays" :key="day.value" :value="day.value">{{ day.label }}</option>
+            <select
+              v-model="weekNthDay"
+              class="select-field"
+              @change="generateExpression"
+            >
+              <option
+                v-for="day in weekDays"
+                :key="day.value"
+                :value="day.value"
+              >
+                {{ day.label }}
+              </option>
             </select>
           </template>
 
           <template v-else-if="currentFieldType === 'last'">
             <span class="interval-label">每月最后一个</span>
-            <select v-model="weekLastDay" class="select-field" @change="generateExpression">
-              <option v-for="day in weekDays" :key="day.value" :value="day.value">{{ day.label }}</option>
+            <select
+              v-model="weekLastDay"
+              class="select-field"
+              @change="generateExpression"
+            >
+              <option
+                v-for="day in weekDays"
+                :key="day.value"
+                :value="day.value"
+              >
+                {{ day.label }}
+              </option>
             </select>
           </template>
         </div>
@@ -207,21 +405,49 @@
         <div class="expression-row">
           <label class="field-label">Cron表达式</label>
           <div class="expression-input-wrapper">
-            <input type="text" class="expression-input" v-model="cronExpression" @blur="onExpressionBlur">
-            <button class="btn btn-sm" @click="parseExpression">反解析</button>
-            <button class="btn btn-sm btn-primary" @click="copyExpression">复制</button>
+            <input
+              v-model="cronExpression"
+              type="text"
+              class="expression-input"
+              @blur="onExpressionBlur"
+            >
+            <button
+              class="btn btn-sm"
+              @click="parseExpression"
+            >
+              反解析
+            </button>
+            <button
+              class="btn btn-sm btn-primary"
+              @click="copyExpression"
+            >
+              复制
+            </button>
           </div>
         </div>
         <div class="expression-row">
-          <div class="expression-desc">{{ expressionDesc }}</div>
+          <div class="expression-desc">
+            {{ expressionDesc }}
+          </div>
         </div>
       </div>
 
       <div class="schedule-box">
-        <div class="schedule-title">最近5次运行时间</div>
+        <div class="schedule-title">
+          最近5次运行时间
+        </div>
         <div class="schedule-list">
-          <div v-if="scheduleList.length === 0" class="schedule-empty">请输入表达式查看执行计划</div>
-          <div v-for="(item, index) in scheduleList" :key="index" class="schedule-item">
+          <div
+            v-if="scheduleList.length === 0"
+            class="schedule-empty"
+          >
+            请输入表达式查看执行计划
+          </div>
+          <div
+            v-for="(item, index) in scheduleList"
+            :key="index"
+            class="schedule-item"
+          >
             <span class="index">{{ index + 1 }}</span>
             <span class="time">{{ item.time }}</span>
             <span class="remaining">{{ item.remaining }}</span>
@@ -230,7 +456,9 @@
       </div>
 
       <div class="help-section">
-        <div class="help-title">说明</div>
+        <div class="help-title">
+          说明
+        </div>
         <div class="help-content">
           <p>Cron 表达式是一种用于指定定时任务执行时间的字符串表达式。它由 6-7 个字段组成，分别表示秒、分钟、小时、天数、月份、星期几和年份（可选）。</p>
           <div class="cron-structure">
@@ -267,7 +495,10 @@
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible }">
+    <div
+      class="toast"
+      :class="{ show: toastVisible }"
+    >
       <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>
@@ -461,7 +692,7 @@ function generateFieldExpr(field) {
       return `${rangeValues[field].from}-${rangeValues[field].to}`
     case 'interval':
       return `${intervalValues[field].start}/${intervalValues[field].step}`
-    case 'specific':
+    case 'specific': {
       if (field === 'year') {
         return yearSpecificInput.value.trim()
       }
@@ -470,6 +701,7 @@ function generateFieldExpr(field) {
       const min = config.min
       if (specificValues[field].length === (max - min + 1)) return '*'
       return specificValues[field].sort((a, b) => a - b).join(',')
+    }
     case 'workDay':
       return `${workDayValue.value}W`
     case 'lastDay':
@@ -614,7 +846,7 @@ function getNextExecutionTimes(expression, count) {
   const [secondExpr, minuteExpr, hourExpr, dayExpr, monthExpr, weekExpr, yearExpr] = parts
 
   const results = []
-  let current = new Date()
+  const current = new Date()
   current.setMilliseconds(0)
 
   const secondSet = parseCronField(secondExpr, 0, 59)
@@ -642,7 +874,7 @@ function getNextExecutionTimes(expression, count) {
       continue
     }
 
-    let dateMatch = false
+    let dateMatch
     if (daySet && weekSet) {
       dateMatch = daySet.includes(current.getDate()) || weekSet.includes(current.getDay())
     } else if (weekSet) {

@@ -22,7 +22,7 @@ function showAboutDialog(mainWindow) {
     title: '关于软件',
     message: `${appName} ${appVersion}`,
     detail: `${description}\n\n作者：${appAuthor}\n\n${copyright}`,
-    buttons: ['确定'],
+    buttons: ['确定']
   })
 }
 
@@ -51,7 +51,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/')
             }
-          },
+          }
         },
         {
           label: '文件管理器',
@@ -61,12 +61,12 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/file-manager')
             }
-          },
+          }
         },
         { type: 'separator' },
         {
           label: '隐藏窗口',
-          click: () => { if (mainWindow) mainWindow.hide() },
+          click: () => { if (mainWindow) mainWindow.hide() }
         },
         { type: 'separator' },
         {
@@ -75,9 +75,9 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             app.isQuitting = true
             destroyTray()
             app.quit()
-          },
-        },
-      ],
+          }
+        }
+      ]
     },
     {
       label: '工具',
@@ -90,7 +90,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/sql-generator')
             }
-          },
+          }
         },
         {
           label: '密码生成器',
@@ -100,7 +100,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/password')
             }
-          },
+          }
         },
         {
           label: 'Cron表达式生成器',
@@ -110,7 +110,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/cron')
             }
-          },
+          }
         },
         {
           label: 'Unix时间戳互转',
@@ -120,7 +120,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/unixtimestamp')
             }
-          },
+          }
         },
         {
           label: 'YAML编辑(验证)器',
@@ -130,7 +130,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/yaml-editor')
             }
-          },
+          }
         },
         {
           label: 'JSON解析器',
@@ -140,7 +140,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/json-parser')
             }
-          },
+          }
         },
         {
           label: 'HTML查看器',
@@ -150,7 +150,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/html-viewer')
             }
-          },
+          }
         },
         {
           label: 'AI聊天助手',
@@ -160,7 +160,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/chat')
             }
-          },
+          }
         },
         { type: 'separator' },
         {
@@ -170,9 +170,9 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (createSettingsWindowFn) {
               createSettingsWindowFn()
             }
-          },
-        },
-],
+          }
+        }
+      ]
     },
     {
       label: '帮助',
@@ -183,7 +183,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (checkForUpdatesFn && mainWindow) {
               checkForUpdatesFn(true, mainWindow)
             }
-          },
+          }
         },
         { type: 'separator' },
         ...(isDev ? [{
@@ -193,14 +193,14 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.toggleDevTools()
             }
-          },
+          }
         }, { type: 'separator' }] : []),
         {
           label: '关于软件',
-          click: () => showAboutDialog(mainWindow),
-        },
-      ],
-    },
+          click: () => showAboutDialog(mainWindow)
+        }
+      ]
+    }
   ]
 
   const menu = Menu.buildFromTemplate(template)

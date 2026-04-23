@@ -1,19 +1,64 @@
 <template>
   <div class="chat-page">
-    <div v-if="!apiKey" class="api-key-warning">
-      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    <div
+      v-if="!apiKey"
+      class="api-key-warning"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="48"
+        height="48"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <rect
+          x="3"
+          y="11"
+          width="18"
+          height="11"
+          rx="2"
+          ry="2"
+        />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
       <p>请先在设置中配置 API Key</p>
-      <button class="btn btn-primary" @click="openSettings('api')">打开设置</button>
+      <button
+        class="btn btn-primary"
+        @click="openSettings('api')"
+      >
+        打开设置
+      </button>
     </div>
-    <div v-else class="chat-layout">
+    <div
+      v-else
+      class="chat-layout"
+    >
       <aside class="sidebar">
         <div class="sidebar-header">
-          <button class="new-chat-btn" @click="createNewChat">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          <button
+            class="new-chat-btn"
+            @click="createNewChat"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line
+                x1="12"
+                y1="5"
+                x2="12"
+                y2="19"
+              /><line
+                x1="5"
+                y1="12"
+                x2="19"
+                y2="12"
+              />
             </svg>
             新建会话
           </button>
@@ -26,34 +71,68 @@
             @click="selectSession(session.id)"
           >
             <div class="session-info">
-              <div class="session-title" v-if="editingSessionId !== session.id">{{ session.title || '新会话' }}</div>
+              <div
+                v-if="editingSessionId !== session.id"
+                class="session-title"
+              >
+                {{ session.title || '新会话' }}
+              </div>
               <input
                 v-else
-                class="session-edit-input"
                 v-model="editingTitle"
+                class="session-edit-input"
                 @keydown.enter="saveEditTitle(session.id)"
                 @keydown.escape="cancelEditTitle"
                 @blur="saveEditTitle(session.id)"
-              />
-              <div class="session-time">{{ formatTime(session.updatedAt) }}</div>
+              >
+              <div class="session-time">
+                {{ formatTime(session.updatedAt) }}
+              </div>
             </div>
             <div class="session-actions">
-              <button class="session-edit" @click.stop="startEditTitle(session.id, session.title)" title="重命名">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              <button
+                class="session-edit"
+                title="重命名"
+                @click.stop="startEditTitle(session.id, session.title)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
-              <button class="session-delete" @click.stop="deleteSession(session.id)" title="删除">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              <button
+                class="session-delete"
+                title="删除"
+                @click.stop="deleteSession(session.id)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                 </svg>
               </button>
             </div>
           </div>
-          <div v-if="sessions.length === 0" class="session-empty">
+          <div
+            v-if="sessions.length === 0"
+            class="session-empty"
+          >
             <p>暂无会话</p>
-            <p class="hint">点击上方按钮创建新会话</p>
+            <p class="hint">
+              点击上方按钮创建新会话
+            </p>
           </div>
         </div>
       </aside>
@@ -62,64 +141,139 @@
           <h2>{{ currentSession?.title || '新会话' }}</h2>
           <div class="model-selector">
             <label>模型：</label>
-            <select v-model="selectedModel" class="model-select">
-              <option v-for="model in models" :key="model.id" :value="model.id">{{ model.name }}</option>
+            <select
+              v-model="selectedModel"
+              class="model-select"
+            >
+              <option
+                v-for="model in models"
+                :key="model.id"
+                :value="model.id"
+              >
+                {{ model.name }}
+              </option>
             </select>
           </div>
         </div>
-        <div class="messages-container" ref="messagesContainer">
-          <div class="messages-empty" v-if="currentMessages.length === 0">
-            <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
-              <path d="M12 11v4M12 7h.01"/>
+        <div
+          ref="messagesContainer"
+          class="messages-container"
+        >
+          <div
+            v-if="currentMessages.length === 0"
+            class="messages-empty"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="64"
+              height="64"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1"
+            >
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+              <path d="M12 11v4M12 7h.01" />
             </svg>
             <p>开始与 AI 聊天吧</p>
-            <p class="hint">支持编程问题、代码解释、SQL 查询等</p>
+            <p class="hint">
+              支持编程问题、代码解释、SQL 查询等
+            </p>
           </div>
-          <div class="message" v-for="(msg, index) in currentMessages" :key="index" :class="msg.role">
+          <div
+            v-for="(msg, index) in currentMessages"
+            :key="index"
+            class="message"
+            :class="msg.role"
+          >
             <div class="message-avatar">
               <span v-if="msg.role === 'user'">你</span>
               <span v-else>AI</span>
             </div>
             <div class="message-content">
-              <div class="message-text" v-html="formatMessage(msg.content)"></div>
-              <button v-if="msg.role === 'assistant'" class="copy-btn" @click="copyMessage(msg.content)" title="复制">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              <div
+                class="message-text"
+                v-html="formatMessage(msg.content)"
+              />
+              <button
+                v-if="msg.role === 'assistant'"
+                class="copy-btn"
+                title="复制"
+                @click="copyMessage(msg.content)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect
+                    x="9"
+                    y="9"
+                    width="13"
+                    height="13"
+                    rx="2"
+                    ry="2"
+                  />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               </button>
             </div>
           </div>
-          <div v-if="loading" class="message assistant">
-            <div class="message-avatar"><span>AI</span></div>
+          <div
+            v-if="loading"
+            class="message assistant"
+          >
+            <div class="message-avatar">
+              <span>AI</span>
+            </div>
             <div class="message-content">
               <div class="loading-indicator">
-                <span></span><span></span><span></span>
+                <span /><span /><span />
               </div>
             </div>
           </div>
         </div>
         <div class="input-area">
           <textarea
+            ref="inputRef"
             v-model="inputText"
             class="chat-input"
             placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
-            @keydown.enter.exact="sendMessage"
             :disabled="loading"
-            ref="inputRef"
-          ></textarea>
-          <button class="btn btn-primary send-btn" @click="sendMessage" :disabled="loading || !inputText.trim()">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            @keydown.enter.exact="sendMessage"
+          />
+          <button
+            class="btn btn-primary send-btn"
+            :disabled="loading || !inputText.trim()"
+            @click="sendMessage"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line
+                x1="22"
+                y1="2"
+                x2="11"
+                y2="13"
+              />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
             发送
           </button>
         </div>
       </main>
     </div>
-    <div class="toast" :class="{ show: toastVisible }">
+    <div
+      class="toast"
+      :class="{ show: toastVisible }"
+    >
       <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>
@@ -316,7 +470,7 @@ function scrollToBottom() {
 
 function formatMessage(content) {
   if (!content) return ''
-  let formatted = content
+  const formatted = content
     .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="code-block"><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
     .replace(/\n/g, '<br>')

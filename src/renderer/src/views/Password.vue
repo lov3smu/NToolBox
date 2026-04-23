@@ -1,41 +1,117 @@
 <template>
-  <div class="password-container" :style="{ width: windowWidth + 'px' }">
+  <div
+    class="password-container"
+    :style="{ width: windowWidth + 'px' }"
+  >
     <header>
       <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <svg
+          class="header-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect
+            x="3"
+            y="11"
+            width="18"
+            height="11"
+            rx="2"
+            ry="2"
+          />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
         密码生成器
       </h1>
-      <div class="subtitle">随机安全密码生成工具</div>
+      <div class="subtitle">
+        随机安全密码生成工具
+      </div>
     </header>
     <div class="password-content">
       <div class="password-display-section">
         <div class="password-output-wrapper">
-          <input :type="visible ? 'text' : 'password'" v-model="password" class="password-output" readonly placeholder="点击生成按钮创建密码">
-          <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
-            <svg v-if="visible" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"/>
+          <input
+            v-model="password"
+            :type="visible ? 'text' : 'password'"
+            class="password-output"
+            readonly
+            placeholder="点击生成按钮创建密码"
+          >
+          <button
+            class="btn-icon"
+            title="显示/隐藏"
+            @click="visible = !visible"
+          >
+            <svg
+              v-if="visible"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22" />
             </svg>
-            <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
+            <svg
+              v-else
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle
+                cx="12"
+                cy="12"
+                r="3"
+              />
             </svg>
           </button>
-          <button class="btn-icon" title="复制密码" @click="copyPassword">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          <button
+            class="btn-icon"
+            title="复制密码"
+            @click="copyPassword"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect
+                x="9"
+                y="9"
+                width="13"
+                height="13"
+                rx="2"
+                ry="2"
+              />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           </button>
         </div>
-        <button class="btn btn-primary btn-lg generate-btn" @click="generate">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-            <path d="M3 3v5h5"/>
-            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-            <path d="M16 21h5v-5"/>
+        <button
+          class="btn btn-primary btn-lg generate-btn"
+          @click="generate"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 21h5v-5" />
           </svg>
           生成密码
         </button>
@@ -47,7 +123,15 @@
           <span class="length-value">{{ length }}</span>
         </div>
         <div class="slider-container">
-          <input type="range" class="password-slider" v-model="length" min="1" max="100" :style="{ '--progress': progress + '%' }" @input="onSliderInput">
+          <input
+            v-model="length"
+            type="range"
+            class="password-slider"
+            min="1"
+            max="100"
+            :style="{ '--progress': progress + '%' }"
+            @input="onSliderInput"
+          >
           <div class="slider-labels">
             <span>1</span>
             <span>25</span>
@@ -61,26 +145,58 @@
       <div class="section">
         <label class="section-title">字符类型</label>
         <div class="checkbox-group">
-          <label class="checkbox-card" :class="{ active: useUpper }" data-type="uppercase">
-            <input type="checkbox" v-model="useUpper" hidden>
+          <label
+            class="checkbox-card"
+            :class="{ active: useUpper }"
+            data-type="uppercase"
+          >
+            <input
+              v-model="useUpper"
+              type="checkbox"
+              hidden
+            >
             <span class="checkbox-icon">A</span>
             <span class="checkbox-label">大写字母</span>
             <span class="checkbox-desc">A-Z</span>
           </label>
-          <label class="checkbox-card" :class="{ active: useLower }" data-type="lowercase">
-            <input type="checkbox" v-model="useLower" hidden>
+          <label
+            class="checkbox-card"
+            :class="{ active: useLower }"
+            data-type="lowercase"
+          >
+            <input
+              v-model="useLower"
+              type="checkbox"
+              hidden
+            >
             <span class="checkbox-icon">a</span>
             <span class="checkbox-label">小写字母</span>
             <span class="checkbox-desc">a-z</span>
           </label>
-          <label class="checkbox-card" :class="{ active: useNumbers }" data-type="numbers">
-            <input type="checkbox" v-model="useNumbers" hidden>
+          <label
+            class="checkbox-card"
+            :class="{ active: useNumbers }"
+            data-type="numbers"
+          >
+            <input
+              v-model="useNumbers"
+              type="checkbox"
+              hidden
+            >
             <span class="checkbox-icon">0</span>
             <span class="checkbox-label">数字</span>
             <span class="checkbox-desc">0-9</span>
           </label>
-          <label class="checkbox-card" :class="{ active: useSymbols }" data-type="special">
-            <input type="checkbox" v-model="useSymbols" hidden>
+          <label
+            class="checkbox-card"
+            :class="{ active: useSymbols }"
+            data-type="special"
+          >
+            <input
+              v-model="useSymbols"
+              type="checkbox"
+              hidden
+            >
             <span class="checkbox-icon">#</span>
             <span class="checkbox-label">特殊字符</span>
             <span class="checkbox-desc">!@#$%</span>
@@ -91,33 +207,64 @@
       <div class="section">
         <div class="strength-header">
           <label>密码强度</label>
-          <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
+          <span
+            class="strength-text"
+            :class="strengthClass"
+          >{{ strengthText }}</span>
         </div>
         <div class="strength-meter">
           <div class="strength-bar">
-            <div class="strength-fill" :class="strengthClass"></div>
+            <div
+              class="strength-fill"
+              :class="strengthClass"
+            />
           </div>
         </div>
-        <div class="strength-hint">{{ strengthHint }}</div>
+        <div class="strength-hint">
+          {{ strengthHint }}
+        </div>
       </div>
 
       <div class="section history-section">
         <div class="history-header">
           <label class="section-title">历史记录</label>
-          <button class="btn-text" @click="clearHistory">清空</button>
+          <button
+            class="btn-text"
+            @click="clearHistory"
+          >
+            清空
+          </button>
         </div>
         <div class="history-list">
-          <div class="history-empty" v-if="history.length === 0">暂无历史记录</div>
-          <div class="history-item" v-for="(item, index) in history" :key="index">
+          <div
+            v-if="history.length === 0"
+            class="history-empty"
+          >
+            暂无历史记录
+          </div>
+          <div
+            v-for="(item, index) in history"
+            :key="index"
+            class="history-item"
+          >
             <span class="password-text">{{ maskPassword(item) }}</span>
             <span class="password-length">{{ item.length }}位</span>
-            <button class="copy-btn" title="复制" @click="copyToClipboard(item)">📋</button>
+            <button
+              class="copy-btn"
+              title="复制"
+              @click="copyToClipboard(item)"
+            >
+              📋
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible }">
+    <div
+      class="toast"
+      :class="{ show: toastVisible }"
+    >
       <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>

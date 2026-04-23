@@ -14,224 +14,433 @@
 
     <div class="settings-main">
       <div class="settings-content">
-        <div v-show="activeTab === 'general'" class="settings-tab">
+        <div
+          v-show="activeTab === 'general'"
+          class="settings-tab"
+        >
           <div class="form-group">
             <label>脚本位置</label>
             <div class="path-input-group">
-              <input type="text" v-model="basePath" class="input-field" placeholder="脚本存储根目录">
-              <button class="btn-small" @click="selectDir">浏览</button>
+              <input
+                v-model="basePath"
+                type="text"
+                class="input-field"
+                placeholder="脚本存储根目录"
+              >
+              <button
+                class="btn-small"
+                @click="selectDir"
+              >
+                浏览
+              </button>
             </div>
           </div>
           <div class="form-group">
             <label>开发者中文名</label>
-            <input type="text" v-model="developerChName" class="input-field" placeholder="用于脚本作者署名">
+            <input
+              v-model="developerChName"
+              type="text"
+              class="input-field"
+              placeholder="用于脚本作者署名"
+            >
           </div>
           <div class="form-group">
             <label>开发者英文名</label>
-            <input type="text" v-model="developerEnName" class="input-field" placeholder="用于脚本历史记录标识">
+            <input
+              v-model="developerEnName"
+              type="text"
+              class="input-field"
+              placeholder="用于脚本历史记录标识"
+            >
           </div>
           <div class="form-group">
             <label>文本编辑器</label>
             <div class="path-input-group">
-              <input type="text" v-model="textEditApp" class="input-field" placeholder="编辑器可执行文件路径">
-              <button class="btn-small" @click="selectEditor">浏览</button>
+              <input
+                v-model="textEditApp"
+                type="text"
+                class="input-field"
+                placeholder="编辑器可执行文件路径"
+              >
+              <button
+                class="btn-small"
+                @click="selectEditor"
+              >
+                浏览
+              </button>
             </div>
           </div>
           <div class="form-group">
             <label>
-              <input type="checkbox" v-model="autoUpdate"> 有更新时自动更新
+              <input
+                v-model="autoUpdate"
+                type="checkbox"
+              > 有更新时自动更新
             </label>
-            <div class="setting-hint">开启后，应用会自动下载并安装新版本</div>
+            <div class="setting-hint">
+              开启后，应用会自动下载并安装新版本
+            </div>
           </div>
           <div class="form-group">
             <label>
-              <input type="checkbox" v-model="autoStart"> 开机自动启动
+              <input
+                v-model="autoStart"
+                type="checkbox"
+              > 开机自动启动
             </label>
-            <div class="setting-hint">开启后，系统启动时会自动运行本应用</div>
+            <div class="setting-hint">
+              开启后，系统启动时会自动运行本应用
+            </div>
           </div>
           <div class="form-group">
             <label>关闭行为</label>
-            <select v-model="closeAction" class="select-field">
-              <option value="ask">每次询问</option>
-              <option value="hide">隐藏到托盘</option>
-              <option value="quit">直接退出</option>
+            <select
+              v-model="closeAction"
+              class="select-field"
+            >
+              <option value="ask">
+                每次询问
+              </option>
+              <option value="hide">
+                隐藏到托盘
+              </option>
+              <option value="quit">
+                直接退出
+              </option>
             </select>
-            <div class="setting-hint">选择点击关闭按钮时的默认行为</div>
+            <div class="setting-hint">
+              选择点击关闭按钮时的默认行为
+            </div>
           </div>
         </div>
 
-        <div v-show="activeTab === 'api'" class="settings-tab">
+        <div
+          v-show="activeTab === 'api'"
+          class="settings-tab"
+        >
           <div class="form-group">
             <label>AI 平台选择</label>
-            <select v-model="aiProvider" class="select-field" @change="onProviderChange">
-              <option v-for="provider in aiProviders" :key="provider.type" :value="provider.type">
+            <select
+              v-model="aiProvider"
+              class="select-field"
+              @change="onProviderChange"
+            >
+              <option
+                v-for="provider in aiProviders"
+                :key="provider.type"
+                :value="provider.type"
+              >
                 {{ provider.name }} - {{ provider.description }}
               </option>
             </select>
-            <div class="setting-hint">选择要使用的 AI 服务提供商</div>
+            <div class="setting-hint">
+              选择要使用的 AI 服务提供商
+            </div>
           </div>
 
-          <div class="form-group" v-if="currentProvider">
+          <div
+            v-if="currentProvider"
+            class="form-group"
+          >
             <label>{{ currentProvider.name }} API Key</label>
             <div class="api-key-input-group">
               <input 
-                :type="showApiKey ? 'text' : 'password'" 
                 v-model="currentApiKey" 
+                :type="showApiKey ? 'text' : 'password'" 
                 class="input-field" 
                 :placeholder="`输入 ${currentProvider.name} API Key`"
               >
-              <button class="btn-small btn-secondary" @click="showApiKey = !showApiKey">
+              <button
+                class="btn-small btn-secondary"
+                @click="showApiKey = !showApiKey"
+              >
                 {{ showApiKey ? '隐藏' : '显示' }}
               </button>
-              <button class="btn-small" @click="testApiKey" :disabled="!currentApiKey || testingApiKey">
+              <button
+                class="btn-small"
+                :disabled="!currentApiKey || testingApiKey"
+                @click="testApiKey"
+              >
                 {{ testingApiKey ? '验证中...' : '验证' }}
               </button>
             </div>
             <div class="setting-hint">
               获取 API Key：访问 
-              <a href="#" @click.prevent="openProviderDocs">{{ currentProvider.name }}平台</a>
+              <a
+                href="#"
+                @click.prevent="openProviderDocs"
+              >{{ currentProvider.name }}平台</a>
             </div>
-            <div v-if="apiKeyTestResult" class="api-test-result" :class="apiKeyTestResult.success ? 'success' : 'error'">
+            <div
+              v-if="apiKeyTestResult"
+              class="api-test-result"
+              :class="apiKeyTestResult.success ? 'success' : 'error'"
+            >
               {{ apiKeyTestResult.message }}
             </div>
           </div>
 
-          <div class="form-group" v-if="currentProvider?.requiresGroupId">
+          <div
+            v-if="currentProvider?.requiresGroupId"
+            class="form-group"
+          >
             <label>{{ currentProvider.name }} Group ID</label>
             <input 
-              type="text" 
               v-model="currentGroupId" 
+              type="text" 
               class="input-field" 
               :placeholder="`输入 ${currentProvider.name} Group ID`"
             >
-            <div class="setting-hint">部分平台需要 Group ID 进行身份验证</div>
+            <div class="setting-hint">
+              部分平台需要 Group ID 进行身份验证
+            </div>
           </div>
 
-          <div class="form-group" v-if="currentProvider?.requiresEndpointId">
+          <div
+            v-if="currentProvider?.requiresEndpointId"
+            class="form-group"
+          >
             <label>{{ currentProvider.name }} Endpoint ID</label>
             <input 
-              type="text" 
               v-model="currentEndpointId" 
+              type="text" 
               class="input-field" 
               :placeholder="`输入 ${currentProvider.name} Endpoint ID`"
             >
-            <div class="setting-hint">推理接入点 ID，在平台控制台获取</div>
+            <div class="setting-hint">
+              推理接入点 ID，在平台控制台获取
+            </div>
           </div>
         </div>
 
-        <div v-show="activeTab === 'database'" class="settings-tab">
+        <div
+          v-show="activeTab === 'database'"
+          class="settings-tab"
+        >
           <div class="form-group">
             <label>数据库</label>
-            <div class="config-list" ref="databaseListRef">
-              <div v-for="(db, index) in databases" :key="index" class="config-item">
+            <div
+              ref="databaseListRef"
+              class="config-list"
+            >
+              <div
+                v-for="(db, index) in databases"
+                :key="index"
+                class="config-item"
+              >
                 <div class="config-item-info">
                   <input
-                    type="text"
                     v-model="db.name"
+                    type="text"
                     class="input-field"
                     placeholder="数据库名"
                     :class="{ error: db.error }"
                   >
                 </div>
                 <div class="config-item-actions">
-                  <button class="btn-small btn-danger" @click="removeDatabase(index)">删除</button>
+                  <button
+                    class="btn-small btn-danger"
+                    @click="removeDatabase(index)"
+                  >
+                    删除
+                  </button>
                 </div>
               </div>
             </div>
-            <button class="btn-small" @click="addDatabase">+ 添加数据库</button>
+            <button
+              class="btn-small"
+              @click="addDatabase"
+            >
+              + 添加数据库
+            </button>
           </div>
         </div>
 
-        <div v-show="activeTab === 'scripttype'" class="settings-tab">
+        <div
+          v-show="activeTab === 'scripttype'"
+          class="settings-tab"
+        >
           <div class="form-group">
             <label>脚本类型</label>
-            <div class="config-list" ref="scriptTypeListRef">
-              <div v-for="(st, index) in scriptTypes" :key="index" class="config-item">
+            <div
+              ref="scriptTypeListRef"
+              class="config-list"
+            >
+              <div
+                v-for="(st, index) in scriptTypes"
+                :key="index"
+                class="config-item"
+              >
                 <div class="config-item-info">
                   <input
-                    type="text"
                     v-model="st.name"
+                    type="text"
                     class="input-field"
                     placeholder="名称"
                     style="width: 120px; margin-right: 10px;"
                     :class="{ error: st.error }"
                   >
                   <input
-                    type="text"
                     v-model="st.description"
+                    type="text"
                     class="input-field"
                     placeholder="描述"
                     style="flex: 1;"
                   >
                 </div>
                 <div class="config-item-actions">
-                  <button class="btn-small btn-danger" @click="removeScriptType(index)">删除</button>
+                  <button
+                    class="btn-small btn-danger"
+                    @click="removeScriptType(index)"
+                  >
+                    删除
+                  </button>
                 </div>
               </div>
             </div>
-            <button class="btn-small" @click="addScriptType">+ 添加脚本类型</button>
+            <button
+              class="btn-small"
+              @click="addScriptType"
+            >
+              + 添加脚本类型
+            </button>
           </div>
         </div>
 
-        <div v-show="activeTab === 'shortcuts'" class="settings-tab">
+        <div
+          v-show="activeTab === 'shortcuts'"
+          class="settings-tab"
+        >
           <div class="form-group">
             <label>快捷键配置</label>
             <div class="shortcut-list">
               <div class="shortcut-item">
                 <span class="shortcut-name">密码生成器</span>
-                <input type="text" v-model="shortcuts.password" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.password"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">Cron表达式生成器</span>
-                <input type="text" v-model="shortcuts.cron" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.cron"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">Unix时间戳互转</span>
-                <input type="text" v-model="shortcuts.unixtimestamp" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.unixtimestamp"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">YAML编辑(验证)器</span>
-                <input type="text" v-model="shortcuts.yamlEditor" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.yamlEditor"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">文件管理器</span>
-                <input type="text" v-model="shortcuts.fileManager" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.fileManager"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">JSON解析器</span>
-                <input type="text" v-model="shortcuts.jsonParser" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.jsonParser"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">设置</span>
-                <input type="text" v-model="shortcuts.settings" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.settings"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">AI聊天助手</span>
-                <input type="text" v-model="shortcuts.chat" class="input-field shortcut-input" placeholder="快捷键">
+                <input
+                  v-model="shortcuts.chat"
+                  type="text"
+                  class="input-field shortcut-input"
+                  placeholder="快捷键"
+                >
               </div>
             </div>
-            <div class="setting-hint">格式示例: CmdOrCtrl+P, CmdOrCtrl+Shift+C（留空则不设置快捷键）</div>
+            <div class="setting-hint">
+              格式示例: CmdOrCtrl+P, CmdOrCtrl+Shift+C（留空则不设置快捷键）
+            </div>
           </div>
         </div>
 
-        <div v-show="activeTab === 'about'" class="settings-tab">
+        <div
+          v-show="activeTab === 'about'"
+          class="settings-tab"
+        >
           <div class="about-section">
-            <div class="about-icon">SQL</div>
-            <div class="about-name">SQL Script Generator</div>
-            <div class="about-version">版本: {{ version }}</div>
-            <div class="about-description">SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。</div>
-            <div class="about-author">作者: {{ author }}</div>
-            <div class="about-copyright">{{ year }} {{ author }}. All rights reserved.</div>
+            <div class="about-icon">
+              SQL
+            </div>
+            <div class="about-name">
+              SQL Script Generator
+            </div>
+            <div class="about-version">
+              版本: {{ version }}
+            </div>
+            <div class="about-description">
+              SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。
+            </div>
+            <div class="about-author">
+              作者: {{ author }}
+            </div>
+            <div class="about-copyright">
+              {{ year }} {{ author }}. All rights reserved.
+            </div>
             <div class="about-buttons">
-              <button class="btn btn-secondary" @click="checkUpdate">检查更新</button>
+              <button
+                class="btn btn-secondary"
+                @click="checkUpdate"
+              >
+                检查更新
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div class="settings-footer">
-        <button class="btn btn-primary" @click="save">保存</button>
-        <button class="btn btn-default" @click="closeWindow">取消</button>
+        <button
+          class="btn btn-primary"
+          @click="save"
+        >
+          保存
+        </button>
+        <button
+          class="btn btn-default"
+          @click="closeWindow"
+        >
+          取消
+        </button>
       </div>
     </div>
   </div>
@@ -252,7 +461,7 @@ import {
   checkForUpdates,
   closeSettingsWindow,
   validateApiKey,
-  getAiProviders,
+  getAiProviders
 } from '@/api'
 
 const route = useRoute()
@@ -263,7 +472,7 @@ const menuItems = [
   { id: 'database', icon: '🗄', text: '数据库' },
   { id: 'scripttype', icon: '📝', text: '脚本类型' },
   { id: 'shortcuts', icon: '⌨', text: '快捷键' },
-  { id: 'about', icon: 'ℹ', text: '关于软件' },
+  { id: 'about', icon: 'ℹ', text: '关于软件' }
 ]
 
 const activeTab = ref('general')
@@ -505,7 +714,7 @@ async function save() {
       name: st.name.trim(),
       description: st.description.trim()
     })).filter(st => st.name),
-    shortcuts: { ...shortcuts.value },
+    shortcuts: { ...shortcuts.value }
   }
 
   try {

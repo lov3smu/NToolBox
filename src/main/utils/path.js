@@ -16,7 +16,7 @@ export function getIconPath() {
     const resourcesDir = process.resourcesPath
     const possiblePaths = [
       path.join(resourcesDir, 'assets', 'icon.ico'),
-      path.join(resourcesDir, 'assets', 'icon.png'),
+      path.join(resourcesDir, 'assets', 'icon.png')
     ]
     for (const p of possiblePaths) {
       if (fs.existsSync(p)) { iconPath = p; break }

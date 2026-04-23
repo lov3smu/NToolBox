@@ -13,7 +13,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
     tray = null
   }
 
-  let iconPath = getIconPath()
+  const iconPath = getIconPath()
   
   if (!iconPath || !fs.existsSync(iconPath)) {
     const defaultIcon = nativeImage.createFromDataURL(
@@ -33,7 +33,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
           if (mainWindow.isMinimized()) mainWindow.restore()
           mainWindow.focus()
         }
-      },
+      }
     },
     { type: 'separator' },
     {
@@ -46,7 +46,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/sql-generator')
             }
-          },
+          }
         },
         {
           label: '密码生成器',
@@ -55,7 +55,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/password')
             }
-          },
+          }
         },
         {
           label: 'Cron表达式生成器',
@@ -64,7 +64,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/cron')
             }
-          },
+          }
         },
         {
           label: 'Unix时间戳互转',
@@ -73,7 +73,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/unixtimestamp')
             }
-          },
+          }
         },
         {
           label: 'YAML编辑(验证)器',
@@ -82,7 +82,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/yaml-editor')
             }
-          },
+          }
         },
         {
           label: 'JSON解析器',
@@ -91,7 +91,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/json-parser')
             }
-          },
+          }
         },
         {
           label: 'HTML查看器',
@@ -100,20 +100,20 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/html-viewer')
             }
-          },
-        },
-      ],
+          }
+        }
+      ]
     },
     {
       label: '设置',
       click: () => {
         createSettingsWindowFn()
-      },
+      }
     },
     { type: 'separator' },
     {
       label: '检查更新',
-      click: () => checkForUpdatesFn(true, mainWindow),
+      click: () => checkForUpdatesFn(true, mainWindow)
     },
     { type: 'separator' },
     {
@@ -122,8 +122,8 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
         app.isQuitting = true
         destroyTray()
         app.quit()
-      },
-    },
+      }
+    }
   ])
 
   tray.setContextMenu(contextMenu)

@@ -24,6 +24,6 @@ export function useAutoDirName(usage) {
 
   return {
     dirName,
-    updateDirName,
+    updateDirName
   }
 }

@@ -1,23 +1,51 @@
 <template>
-  <div class="dashboard-container" :style="{ width: windowWidth + 'px' }">
+  <div
+    class="dashboard-container"
+    :style="{ width: windowWidth + 'px' }"
+  >
     <header class="dashboard-header">
       <div class="logo-section">
         <div class="logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <ellipse cx="12" cy="5" rx="9" ry="3"/>
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <ellipse
+              cx="12"
+              cy="5"
+              rx="9"
+              ry="3"
+            />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
           </svg>
         </div>
         <div class="title-section">
           <h1>SQL Script Generator</h1>
-          <p class="subtitle">开发工具集 - 提升开发效率的实用工具箱</p>
+          <p class="subtitle">
+            开发工具集 - 提升开发效率的实用工具箱
+          </p>
         </div>
       </div>
-      <div class="search-trigger" @click="$emit('openSearch')">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
+      <div
+        class="search-trigger"
+        @click="$emit('openSearch')"
+      >
+        <svg
+          class="search-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle
+            cx="11"
+            cy="11"
+            r="8"
+          />
+          <path d="m21 21-4.35-4.35" />
         </svg>
         <span>搜索工具...</span>
         <span class="shortcut">Ctrl K</span>
@@ -36,11 +64,23 @@
       <section class="tools-section">
         <h2>工具快捷入口</h2>
         <div class="tools-grid">
-          <div v-for="tool in tools" :key="tool.path" class="tool-card" @click="navigateTo(tool.path)">
-            <div class="tool-icon" v-html="tool.icon"></div>
+          <div
+            v-for="tool in tools"
+            :key="tool.path"
+            class="tool-card"
+            @click="navigateTo(tool.path)"
+          >
+            <div
+              class="tool-icon"
+              v-html="tool.icon"
+            />
             <div class="tool-info">
-              <div class="tool-name">{{ tool.name }}</div>
-              <div class="tool-desc">{{ tool.description }}</div>
+              <div class="tool-name">
+                {{ tool.name }}
+              </div>
+              <div class="tool-desc">
+                {{ tool.description }}
+              </div>
             </div>
           </div>
         </div>
@@ -55,7 +95,9 @@
               <span>+</span>
               <kbd>K</kbd>
             </div>
-            <div class="shortcut-desc">打开全局搜索</div>
+            <div class="shortcut-desc">
+              打开全局搜索
+            </div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -63,7 +105,9 @@
               <span>+</span>
               <kbd>L</kbd>
             </div>
-            <div class="shortcut-desc">打开AI聊天助手</div>
+            <div class="shortcut-desc">
+              打开AI聊天助手
+            </div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -71,7 +115,9 @@
               <span>+</span>
               <kbd>P</kbd>
             </div>
-            <div class="shortcut-desc">打开密码生成器</div>
+            <div class="shortcut-desc">
+              打开密码生成器
+            </div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -79,13 +125,17 @@
               <span>+</span>
               <kbd>,</kbd>
             </div>
-            <div class="shortcut-desc">打开设置</div>
+            <div class="shortcut-desc">
+              打开设置
+            </div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
               <kbd>Esc</kbd>
             </div>
-            <div class="shortcut-desc">关闭弹窗/搜索</div>
+            <div class="shortcut-desc">
+              关闭弹窗/搜索
+            </div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -93,13 +143,17 @@
               <span>/</span>
               <kbd>↓</kbd>
             </div>
-            <div class="shortcut-desc">在搜索结果中导航</div>
+            <div class="shortcut-desc">
+              在搜索结果中导航
+            </div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
               <kbd>Enter</kbd>
             </div>
-            <div class="shortcut-desc">选择当前工具</div>
+            <div class="shortcut-desc">
+              选择当前工具
+            </div>
           </div>
         </div>
       </section>
@@ -218,6 +272,16 @@ const tools = [
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="16 18 22 12 16 6"/>
       <polyline points="8 6 2 12 8 18"/>
+    </svg>`
+  },
+  {
+    name: '数据库管理',
+    description: 'MySQL数据库连接与管理',
+    path: '/database',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
     </svg>`
   },
   {

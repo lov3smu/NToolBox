@@ -27,6 +27,6 @@ export function useConfig() {
     config,
     loading,
     error,
-    reload: loadConfig,
+    reload: loadConfig
   }
 }

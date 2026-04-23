@@ -1,12 +1,26 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="visible" class="search-overlay" @click.self="close">
+      <div
+        v-if="visible"
+        class="search-overlay"
+        @click.self="close"
+      >
         <div class="search-modal">
           <div class="search-input-wrapper">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="8"
+              />
+              <path d="m21 21-4.35-4.35" />
             </svg>
             <input
               ref="searchInput"
@@ -18,25 +32,38 @@
               @keydown.up="navigateUp"
               @keydown.enter="selectCurrent"
               @keydown.esc="close"
-            />
+            >
             <span class="search-shortcut">ESC</span>
           </div>
-          <div class="recent-section" v-if="recentTools.length > 0 && !searchQuery.trim()">
-            <div class="section-title">最近使用</div>
+          <div
+            v-if="recentTools.length > 0 && !searchQuery.trim()"
+            class="recent-section"
+          >
+            <div class="section-title">
+              最近使用
+            </div>
             <div class="recent-tools">
               <div
                 v-for="tool in recentTools"
                 :key="tool.path"
                 class="recent-tool-item"
-                @click="selectTool(tool)"
                 :title="tool.name"
+                @click="selectTool(tool)"
               >
-                <div class="tool-icon" v-html="tool.icon"></div>
+                <div
+                  class="tool-icon"
+                  v-html="tool.icon"
+                />
               </div>
             </div>
           </div>
-          <div class="all-tools-section" v-if="!searchQuery.trim()">
-            <div class="section-title">所有工具</div>
+          <div
+            v-if="!searchQuery.trim()"
+            class="all-tools-section"
+          >
+            <div class="section-title">
+              所有工具
+            </div>
             <div class="search-results">
               <div
                 v-for="(tool, index) in tools"
@@ -46,15 +73,25 @@
                 @click="selectTool(tool)"
                 @mouseenter="activeIndex = index"
               >
-                <div class="tool-icon" v-html="tool.icon"></div>
+                <div
+                  class="tool-icon"
+                  v-html="tool.icon"
+                />
                 <div class="tool-info">
-                  <div class="tool-name">{{ tool.name }}</div>
-                  <div class="tool-desc">{{ tool.description }}</div>
+                  <div class="tool-name">
+                    {{ tool.name }}
+                  </div>
+                  <div class="tool-desc">
+                    {{ tool.description }}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="search-results" v-else-if="filteredTools.length > 0">
+          <div
+            v-else-if="filteredTools.length > 0"
+            class="search-results"
+          >
             <div
               v-for="(tool, index) in filteredTools"
               :key="tool.path"
@@ -63,14 +100,24 @@
               @click="selectTool(tool)"
               @mouseenter="activeIndex = index"
             >
-              <div class="tool-icon" v-html="tool.icon"></div>
+              <div
+                class="tool-icon"
+                v-html="tool.icon"
+              />
               <div class="tool-info">
-                <div class="tool-name">{{ tool.name }}</div>
-                <div class="tool-desc">{{ tool.description }}</div>
+                <div class="tool-name">
+                  {{ tool.name }}
+                </div>
+                <div class="tool-desc">
+                  {{ tool.description }}
+                </div>
               </div>
             </div>
           </div>
-          <div class="search-empty" v-else-if="searchQuery">
+          <div
+            v-else-if="searchQuery"
+            class="search-empty"
+          >
             <span>未找到匹配的工具</span>
           </div>
         </div>

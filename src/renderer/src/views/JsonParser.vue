@@ -1,15 +1,31 @@
 <template>
-  <div class="json-parser-container" :style="{ width: windowWidth + 'px' }">
+  <div
+    class="json-parser-container"
+    :style="{ width: windowWidth + 'px' }"
+  >
     <header>
       <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="4 7 4 4 20 4 20 7"/>
-          <polyline points="4 17 4 20 20 20 20 17"/>
-          <line x1="9" y1="12" x2="15" y2="12"/>
+        <svg
+          class="header-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <polyline points="4 7 4 4 20 4 20 7" />
+          <polyline points="4 17 4 20 20 20 20 17" />
+          <line
+            x1="9"
+            y1="12"
+            x2="15"
+            y2="12"
+          />
         </svg>
         JSON解析器
       </h1>
-      <div class="subtitle">JSON格式化、验证、压缩与JSONPath查询工具</div>
+      <div class="subtitle">
+        JSON格式化、验证、压缩与JSONPath查询工具
+      </div>
     </header>
 
     <div class="json-content">
@@ -21,56 +37,154 @@
           </div>
           <div class="panel-actions">
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="formatJson" title="格式化">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"/></svg>
+              <button
+                class="btn-icon"
+                title="格式化"
+                @click="formatJson"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"
+                /></svg>
               </button>
               <span class="tooltip">格式化</span>
             </div>
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="collapseAll" title="折叠全部">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M6 5L12 9L18 5M6 19L12 15L18 19"/></svg>
+              <button
+                class="btn-icon"
+                title="折叠全部"
+                @click="collapseAll"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M6 5L12 9L18 5M6 19L12 15L18 19"
+                /></svg>
               </button>
               <span class="tooltip">折叠全部</span>
             </div>
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="expandAll" title="展开全部">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M6 9L12 5L18 9M6 15L12 19L18 15"/></svg>
+              <button
+                class="btn-icon"
+                title="展开全部"
+                @click="expandAll"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M6 9L12 5L18 9M6 15L12 19L18 15"
+                /></svg>
               </button>
               <span class="tooltip">展开全部</span>
             </div>
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="copyMinified" title="压缩JSON并复制">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"/></svg>
+              <button
+                class="btn-icon"
+                title="压缩JSON并复制"
+                @click="copyMinified"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"
+                /></svg>
               </button>
               <span class="tooltip">压缩JSON并复制</span>
             </div>
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="copyEscaped" title="压缩转义JSON并复制">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z"/></svg>
+              <button
+                class="btn-icon"
+                title="压缩转义JSON并复制"
+                @click="copyEscaped"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="currentColor"
+                  d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z"
+                /></svg>
               </button>
               <span class="tooltip">压缩转义JSON并复制</span>
             </div>
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="convertToXml" title="JSON转XML">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M8 6l-6 6l6 6M16 6l6 6l-6 6"/></svg>
+              <button
+                class="btn-icon"
+                title="JSON转XML"
+                @click="convertToXml"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M8 6l-6 6l6 6M16 6l6 6l-6 6"
+                /></svg>
               </button>
               <span class="tooltip">JSON转XML</span>
             </div>
             <div class="tooltip-wrapper">
-              <button class="btn-icon" @click="clearInput" title="清空">
-                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg>
+              <button
+                class="btn-icon"
+                title="清空"
+                @click="clearInput"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                ><path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M18 6L6 18M6 6l12 12"
+                /></svg>
               </button>
               <span class="tooltip">清空</span>
             </div>
           </div>
         </div>
         <div class="editor-wrapper">
-          <div class="line-numbers" ref="lineNumbersRef">
-            <div v-for="n in displayLineCount" :key="n" class="line-number">{{ n }}</div>
+          <div
+            ref="lineNumbersRef"
+            class="line-numbers"
+          >
+            <div
+              v-for="n in displayLineCount"
+              :key="n"
+              class="line-number"
+            >
+              {{ n }}
+            </div>
           </div>
           <div 
-            class="json-editor" 
-            ref="editorRef"
+            ref="editorRef" 
+            class="json-editor"
             contenteditable="true"
             spellcheck="false"
             @input="onEditorInput"
@@ -78,7 +192,7 @@
             @paste="onPaste"
             @contextmenu.prevent="showContextMenu"
             @scroll="syncScroll"
-          ></div>
+          />
         </div>
       </div>
 
@@ -88,13 +202,24 @@
         </div>
         <div class="jsonpath-input-row">
           <input
-            type="text"
             v-model="jsonPathInput"
+            type="text"
             class="input-field jsonpath-input"
             placeholder="输入JSONPath表达式，如：$.data.items[0].name"
           >
-          <button class="btn btn-primary" @click="executeJsonPath">查询</button>
-          <button class="btn btn-secondary" @click="copyJsonPathResult" v-if="jsonPathResult !== null">复制结果</button>
+          <button
+            class="btn btn-primary"
+            @click="executeJsonPath"
+          >
+            查询
+          </button>
+          <button
+            v-if="jsonPathResult !== null"
+            class="btn btn-secondary"
+            @click="copyJsonPathResult"
+          >
+            复制结果
+          </button>
         </div>
         <div class="jsonpath-hint">
           <span>示例：</span>
@@ -103,7 +228,10 @@
           <code @click="setJsonPath('$.data')">$.data (指定属性)</code>
           <code @click="setJsonPath('$.items[*]')">$.items[*] (数组所有元素)</code>
         </div>
-        <div class="jsonpath-result" v-if="jsonPathResult !== null">
+        <div
+          v-if="jsonPathResult !== null"
+          class="jsonpath-result"
+        >
           <div class="result-header">
             <span class="result-label">查询结果：</span>
           </div>
@@ -114,7 +242,9 @@
       </div>
 
       <div class="help-section">
-        <div class="help-title">JSONPath语法说明</div>
+        <div class="help-title">
+          JSONPath语法说明
+        </div>
         <div class="help-content">
           <table class="syntax-table">
             <thead>
@@ -161,23 +291,43 @@
       </div>
     </div>
 
-    <div class="context-menu" v-if="contextMenu.show" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
-      <div class="context-menu-item" @click="copySelectedPath" v-if="contextMenu.path">
+    <div
+      v-if="contextMenu.show"
+      class="context-menu"
+      :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+    >
+      <div
+        v-if="contextMenu.path"
+        class="context-menu-item"
+        @click="copySelectedPath"
+      >
         复制JSONPath: {{ contextMenu.path }}
       </div>
-      <div class="context-menu-item" @click="copySelectedText">
+      <div
+        class="context-menu-item"
+        @click="copySelectedText"
+      >
         复制选中内容
       </div>
-      <div class="context-menu-separator"></div>
-      <div class="context-menu-item" @click="formatJson">
+      <div class="context-menu-separator" />
+      <div
+        class="context-menu-item"
+        @click="formatJson"
+      >
         格式化JSON
       </div>
-      <div class="context-menu-item" @click="compressJson">
+      <div
+        class="context-menu-item"
+        @click="compressJson"
+      >
         压缩JSON
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible }">
+    <div
+      class="toast"
+      :class="{ show: toastVisible }"
+    >
       <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>
@@ -399,12 +549,12 @@ function highlightJsonWithFolds(text) {
         result += `<div class="fold-line" data-fold-id="${marker.id}">`
         result += `<span class="fold-toggle fold-open visible" data-fold-id="${marker.id}" title="点击折叠"></span>`
         result += highlightLine(line)
-        result += `</div>`
+        result += '</div>'
       } else {
-        result += `<div>`
-        result += `<span class="fold-toggle"></span>`
+        result += '<div>'
+        result += '<span class="fold-toggle"></span>'
         result += highlightLine(line)
-        result += `</div>`
+        result += '</div>'
       }
     } else {
       if (!collapsedShown.has(state)) {
@@ -414,9 +564,9 @@ function highlightJsonWithFolds(text) {
           result += `<div class="fold-line collapsed" data-fold-id="${marker.id}">`
           result += `<span class="fold-toggle fold-closed visible" data-fold-id="${marker.id}" title="点击展开"></span>`
           result += `<span class="hl-${marker.type === 'object' ? 'brace' : 'bracket'}">${marker.type === 'object' ? '{' : '['}</span>`
-          result += `<span class="fold-ellipsis">...</span>`
+          result += '<span class="fold-ellipsis">...</span>'
           result += `<span class="hl-${marker.type === 'object' ? 'brace' : 'bracket'}">${marker.type === 'object' ? '}' : ']'}</span>`
-          result += `</div>`
+          result += '</div>'
         }
       }
     }
@@ -460,13 +610,13 @@ function highlightLine(line) {
       while (i < line.length && /[0-9.eE+-]/.test(line[i])) i++
       result += `<span class="hl-number">${escapeHtml(line.substring(start, i))}</span>`
     } else if (line.substring(i).startsWith('true')) {
-      result += `<span class="hl-boolean">true</span>`
+      result += '<span class="hl-boolean">true</span>'
       i += 4
     } else if (line.substring(i).startsWith('false')) {
-      result += `<span class="hl-boolean">false</span>`
+      result += '<span class="hl-boolean">false</span>'
       i += 5
     } else if (line.substring(i).startsWith('null')) {
-      result += `<span class="hl-null">null</span>`
+      result += '<span class="hl-null">null</span>'
       i += 4
     } else if (char === '{' || char === '}') {
       result += `<span class="hl-brace">${char}</span>`
@@ -810,7 +960,7 @@ function findJsonPathAtPosition(text, pos) {
         }
         i++
       }
-    } else if (/[0-9\-]/.test(char)) {
+    } else if (/[0-9-]/.test(char)) {
       const start = i
       if (char === '-') i++
       while (i < text.length && /[0-9.eE+-]/.test(text[i])) i++
@@ -891,7 +1041,7 @@ function findPrecedingKeySimple(text, valueEnd, pathStack) {
   while (i >= 0 && /\s/.test(text[i])) i--
   if (i < 0 || text[i] !== '"') return
   
-  let keyEnd = i
+  const keyEnd = i
   i--
   while (i >= 0) {
     if (text[i] === '\\' && i > 0) {
@@ -1106,7 +1256,7 @@ function recursiveSearch(obj, propName, results) {
   } else {
     if (propName === '' || propName === '*') {
       results.push(...Object.values(obj))
-    } else if (obj.hasOwnProperty(propName)) {
+    } else if (Object.prototype.hasOwnProperty.call(obj, propName)) {
       results.push(obj[propName])
     }
     for (const key in obj) {

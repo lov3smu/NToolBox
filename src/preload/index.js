@@ -24,6 +24,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAiProviders: () => ipcRenderer.invoke('get-ai-providers'),
   getProviderModels: (providerType) => ipcRenderer.invoke('get-provider-models', providerType),
   
+  // Database connection APIs
+  dbTestConnection: (config) => ipcRenderer.invoke('db-test-connection', config),
+  dbCreateConnection: (name, config) => ipcRenderer.invoke('db-create-connection', name, config),
+  dbCloseConnection: (name) => ipcRenderer.invoke('db-close-connection', name),
+  dbCloseAllConnections: () => ipcRenderer.invoke('db-close-all-connections'),
+  dbExecuteQuery: (name, sql, params, options) => ipcRenderer.invoke('db-execute-query', name, sql, params, options),
+  dbQueryDatabases: (name) => ipcRenderer.invoke('db-query-databases', name),
+  dbQueryTables: (name, database) => ipcRenderer.invoke('db-query-tables', name, database),
+  dbGetTableStructure: (name, database, tableName) => ipcRenderer.invoke('db-get-table-structure', name, database, tableName),
+  dbGetActiveConnections: () => ipcRenderer.invoke('db-get-active-connections'),
+  dbIsConnectionActive: (name) => ipcRenderer.invoke('db-is-connection-active', name),
+  dbBeginTransaction: (name) => ipcRenderer.invoke('db-begin-transaction', name),
+  dbCommitTransaction: (name) => ipcRenderer.invoke('db-commit-transaction', name),
+  dbRollbackTransaction: (name) => ipcRenderer.invoke('db-rollback-transaction', name),
+  
+  selectSqlFile: () => ipcRenderer.invoke('select-sql-file'),
+  readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+  saveSqlFile: (defaultPath) => ipcRenderer.invoke('save-sql-file', defaultPath),
+  writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
+  
   onNavigateTo: (callback) => {
     const listener = (_event, path) => callback(path)
     ipcRenderer.on('navigate-to', listener)
@@ -43,5 +63,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const listener = () => callback()
     ipcRenderer.on('config-changed', listener)
     return () => ipcRenderer.removeListener('config-changed', listener)
-  },
+  }
 })

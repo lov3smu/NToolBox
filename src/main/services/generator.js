@@ -10,7 +10,7 @@ import {
   isValidIdentifier,
   escapeIdentifier,
   sanitizePathSegment,
-  isPathWithinBase,
+  isPathWithinBase
 } from '../utils/sanitize'
 import { mkdirWithElevate } from '../utils/elevate'
 

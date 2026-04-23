@@ -5,6 +5,27 @@ import { setupIPCHandlers } from './ipc'
 import { initWindows, getMainWindow } from './windows'
 import { createTray, destroyTray, createAppMenu } from './ui'
 
+process.on('uncaughtException', (error) => {
+  if (error.code === 'EPIPE') {
+    return
+  }
+  log.error('Uncaught exception:', error)
+})
+
+process.stdout.on('error', (error) => {
+  if (error.code === 'EPIPE') {
+    return
+  }
+  log.error('stdout error:', error)
+})
+
+process.stderr.on('error', (error) => {
+  if (error.code === 'EPIPE') {
+    return
+  }
+  log.error('stderr error:', error)
+})
+
 app.on('before-quit', () => {
   app.isQuitting = true
   destroyTray()

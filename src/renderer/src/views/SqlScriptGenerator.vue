@@ -1,15 +1,31 @@
 <template>
-  <div class="home-container" :style="{ width: windowWidth + 'px' }">
+  <div
+    class="home-container"
+    :style="{ width: windowWidth + 'px' }"
+  >
     <header>
       <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <ellipse cx="12" cy="5" rx="9" ry="3"/>
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        <svg
+          class="header-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <ellipse
+            cx="12"
+            cy="5"
+            rx="9"
+            ry="3"
+          />
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
         </svg>
         SQL Script Generator
       </h1>
-      <div class="subtitle">SQL脚本生成工具</div>
+      <div class="subtitle">
+        SQL脚本生成工具
+      </div>
     </header>
 
     <div class="main-content">
@@ -20,67 +36,141 @@
             class="type-btn" 
             :class="{ active: operateType === 'FIX' }"
             @click="setOperateType('FIX')"
-          >FIX</button>
+          >
+            FIX
+          </button>
           <button 
             class="type-btn" 
             :class="{ active: operateType === 'PUBLISH' }"
             @click="setOperateType('PUBLISH')"
-          >PUBLISH</button>
+          >
+            PUBLISH
+          </button>
           <button 
             class="type-btn" 
             :class="{ active: operateType === 'QUERY' }"
             @click="setOperateType('QUERY')"
-          >QUERY</button>
+          >
+            QUERY
+          </button>
         </div>
       </div>
 
       <div class="section">
         <label class="section-label">脚本用途</label>
-        <input type="text" v-model="usage" placeholder="请输入脚本用途" class="input-field" @input="updateDirName">
+        <input
+          v-model="usage"
+          type="text"
+          placeholder="请输入脚本用途"
+          class="input-field"
+          @input="updateDirName"
+        >
       </div>
 
       <div class="section">
         <label class="section-label">数据库</label>
-        <select v-model="database" class="select-field">
-          <option value="">请选择数据库</option>
-          <option v-for="db in databases" :key="db" :value="db">{{ db }}</option>
+        <select
+          v-model="database"
+          class="select-field"
+        >
+          <option value="">
+            请选择数据库
+          </option>
+          <option
+            v-for="db in databases"
+            :key="db"
+            :value="db"
+          >
+            {{ db }}
+          </option>
         </select>
       </div>
 
-      <div class="section script-type-section" :class="{ hidden: operateType === 'QUERY' }">
+      <div
+        class="section script-type-section"
+        :class="{ hidden: operateType === 'QUERY' }"
+      >
         <label class="section-label">脚本类型</label>
-        <select v-model="scriptType" class="select-field">
-          <option value="">请选择脚本类型</option>
-          <option v-for="type in scriptTypes" :key="type.name" :value="type.name">{{ type.name }} - {{ type.description }}</option>
+        <select
+          v-model="scriptType"
+          class="select-field"
+        >
+          <option value="">
+            请选择脚本类型
+          </option>
+          <option
+            v-for="type in scriptTypes"
+            :key="type.name"
+            :value="type.name"
+          >
+            {{ type.name }} - {{ type.description }}
+          </option>
         </select>
       </div>
 
       <div class="section">
         <label class="section-label">目录名</label>
-        <input type="text" v-model="dirName" placeholder="目录名（留空自动生成）" class="input-field">
+        <input
+          v-model="dirName"
+          type="text"
+          placeholder="目录名（留空自动生成）"
+          class="input-field"
+        >
       </div>
 
       <div class="action-buttons">
-        <button class="btn btn-primary" :disabled="loading" @click="generate">
+        <button
+          class="btn btn-primary"
+          :disabled="loading"
+          @click="generate"
+        >
           {{ loading ? '生成中...' : '生成脚本' }}
         </button>
-        <button class="btn btn-default" @click="openSettings">设置</button>
+        <button
+          class="btn btn-default"
+          @click="openSettings"
+        >
+          设置
+        </button>
       </div>
 
-      <div class="result-section" v-if="result" :class="{ 'result-success': result.success, 'result-error': !result.success }">
+      <div
+        v-if="result"
+        class="result-section"
+        :class="{ 'result-success': result.success, 'result-error': !result.success }"
+      >
         <h3>生成结果</h3>
-        <div class="result-content" :class="{ 'success': result.success, 'error': !result.success }">
+        <div
+          class="result-content"
+          :class="{ 'success': result.success, 'error': !result.success }"
+        >
           <template v-if="result.success">
-            <div class="success-message">脚本生成成功！</div>
+            <div class="success-message">
+              脚本生成成功！
+            </div>
             <div><strong>文件名：</strong> {{ result.filename }}</div>
-            <div class="file-path"><strong>文件路径：</strong><br>{{ result.filePath }}</div>
+            <div class="file-path">
+              <strong>文件路径：</strong><br>{{ result.filePath }}
+            </div>
             <div class="result-actions">
-              <button class="btn-small" @click="openFile">打开文件</button>
-              <button class="btn-small" @click="openFolder">打开文件夹</button>
+              <button
+                class="btn-small"
+                @click="openFile"
+              >
+                打开文件
+              </button>
+              <button
+                class="btn-small"
+                @click="openFolder"
+              >
+                打开文件夹
+              </button>
             </div>
           </template>
           <template v-else>
-            <div class="error-message">{{ result.error }}</div>
+            <div class="error-message">
+              {{ result.error }}
+            </div>
           </template>
         </div>
       </div>

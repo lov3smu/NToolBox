@@ -33,7 +33,7 @@ function elevateMkdir(targetPath) {
   return new Promise((resolve, reject) => {
     const command = `cmd /c "if not exist "${targetPath}" mkdir "${targetPath}""`
     const options = {
-      name: 'SQL Script Generator',
+      name: 'SQL Script Generator'
     }
 
     sudo.exec(command, options, (error) => {

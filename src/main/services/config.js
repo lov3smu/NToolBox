@@ -41,12 +41,12 @@ function getDefaultConfigContent() {
       'order_db', 'product_db', 'community_db', 'content_db', 'device_db',
       'main_db', 'promotion_db', 'ota_db', 'payment_db', 'pmp_db',
       'report_db', 'report_data_db', 'sharespace_db', 'user_db',
-      'workbench_db', 'worktask_db', 'data_warehouse_db',
+      'workbench_db', 'worktask_db', 'data_warehouse_db'
     ],
     script_types: [
       { name: 'DDL', description: 'Data Definition Language (CREATE, ALTER, DROP)' },
       { name: 'DML', description: 'Data Manipulation Language (INSERT, UPDATE, DELETE)' },
-      { name: 'DQL', description: 'Data Query Language (SELECT)' },
+      { name: 'DQL', description: 'Data Query Language (SELECT)' }
     ],
     shortcuts: {
       password: 'CmdOrCtrl+P',
@@ -57,7 +57,7 @@ function getDefaultConfigContent() {
       jsonParser: 'CmdOrCtrl+J',
       chat: 'CmdOrCtrl+L',
       settings: 'CmdOrCtrl+,'
-    },
+    }
   }
 }
 

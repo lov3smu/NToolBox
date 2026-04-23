@@ -1,6 +1,9 @@
 <template>
-  <router-view @openSearch="searchVisible = true" />
-  <SearchModal :visible="searchVisible" @close="searchVisible = false" />
+  <router-view @open-search="searchVisible = true" />
+  <SearchModal
+    :visible="searchVisible"
+    @close="searchVisible = false"
+  />
 </template>
 
 <script setup>

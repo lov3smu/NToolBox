@@ -22,9 +22,9 @@ function createSplashWindow() {
     backgroundColor: '#00000000',
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true,
+      contextIsolation: true
     },
-    title: '启动中...',
+    title: '启动中...'
   })
 
   if (isDev) {
@@ -71,7 +71,7 @@ function createMainWindow() {
       contextIsolation: true,
       preload: preloadPath
     },
-    title: 'SQL Script Generator',
+    title: 'SQL Script Generator'
   })
 
   if (isDev) {
@@ -117,7 +117,7 @@ function createMainWindow() {
         defaultId: 0,
         cancelId: 1,
         checkboxLabel: '记住我的选择',
-        checkboxChecked: false,
+        checkboxChecked: false
       })
 
       if (result.response === 0) {
@@ -159,7 +159,7 @@ export function createSettingsWindow(defaultTab = null) {
       contextIsolation: true,
       preload: preloadPath
     },
-    title: '设置 - SQL Script Generator',
+    title: '设置 - SQL Script Generator'
   })
 
   settingsWindow.setMenu(null)
@@ -194,6 +194,6 @@ export function initWindows() {
     mainWindow: createMainWindow(),
     createSettingsWindow,
     getMainWindow,
-    getSettingsWindow,
+    getSettingsWindow
   }
 }

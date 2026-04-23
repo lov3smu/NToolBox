@@ -1,72 +1,182 @@
 <template>
-  <div class="html-viewer-container" :style="{ width: Math.min(windowWidth * 0.9, windowWidth) + 'px' }">
+  <div
+    class="html-viewer-container"
+    :style="{ width: Math.min(windowWidth * 0.9, windowWidth) + 'px' }"
+  >
     <header>
       <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="16 18 22 12 16 6"/>
-          <polyline points="8 6 2 12 8 18"/>
+        <svg
+          class="header-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
         </svg>
         HTML查看器
       </h1>
-      <div class="subtitle">HTML编辑、查看与美化工具</div>
+      <div class="subtitle">
+        HTML编辑、查看与美化工具
+      </div>
     </header>
 
     <div class="viewer-content">
       <div class="toolbar">
         <span class="size-info">{{ inputSize }} 字符 | {{ lineCount }} 行</span>
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="formatHtml" title="格式化">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"/></svg>
+          <button
+            class="btn-icon"
+            title="格式化"
+            @click="formatHtml"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"
+            /></svg>
           </button>
           <span class="tooltip">格式化</span>
         </div>
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="minifyHtml" title="压缩">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"/></svg>
+          <button
+            class="btn-icon"
+            title="压缩"
+            @click="minifyHtml"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"
+            /></svg>
           </button>
           <span class="tooltip">压缩</span>
         </div>
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="copyInput" title="复制输入">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6v4H9V2z"/></svg>
+          <button
+            class="btn-icon"
+            title="复制输入"
+            @click="copyInput"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6v4H9V2z"
+            /></svg>
           </button>
           <span class="tooltip">复制输入</span>
         </div>
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="clearInput" title="清空">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg>
+          <button
+            class="btn-icon"
+            title="清空"
+            @click="clearInput"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M18 6L6 18M6 6l12 12"
+            /></svg>
           </button>
           <span class="tooltip">清空</span>
         </div>
-        <span class="divider"></span>
+        <span class="divider" />
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="runPreview" title="运行预览">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+          <button
+            class="btn-icon"
+            title="运行预览"
+            @click="runPreview"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="currentColor"
+              d="M8 5v14l11-7z"
+            /></svg>
           </button>
           <span class="tooltip">运行预览</span>
         </div>
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="copyOutput" title="复制输出">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M8 17H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2M9 11l3 3 3-3M12 14V2"/></svg>
+          <button
+            class="btn-icon"
+            title="复制输出"
+            @click="copyOutput"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M8 17H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2M9 11l3 3 3-3M12 14V2"
+            /></svg>
           </button>
           <span class="tooltip">复制输出</span>
         </div>
         <div class="tooltip-wrapper">
-          <button class="btn-icon" @click="downloadHtml" title="下载">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <button
+            class="btn-icon"
+            title="下载"
+            @click="downloadHtml"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+            ><path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+            /></svg>
           </button>
           <span class="tooltip">下载</span>
         </div>
-        <span class="divider"></span>
+        <span class="divider" />
         <label class="auto-update-label">
-          <input type="checkbox" v-model="autoUpdate" />
+          <input
+            v-model="autoUpdate"
+            type="checkbox"
+          >
           <span>自动更新</span>
         </label>
         <div class="indent-control">
           <span>缩进：</span>
-          <select v-model="indentSize" class="indent-select">
-            <option :value="2">2</option>
-            <option :value="4">4</option>
+          <select
+            v-model="indentSize"
+            class="indent-select"
+          >
+            <option :value="2">
+              2
+            </option>
+            <option :value="4">
+              4
+            </option>
           </select>
         </div>
       </div>
@@ -74,30 +184,46 @@
       <div class="editor-preview-wrapper">
         <div class="editor-panel">
           <div class="editor-wrapper">
-            <div class="line-numbers" ref="lineNumbersRef">
-              <div v-for="n in displayLineCount" :key="n" class="line-number">{{ n }}</div>
+            <div
+              ref="lineNumbersRef"
+              class="line-numbers"
+            >
+              <div
+                v-for="n in displayLineCount"
+                :key="n"
+                class="line-number"
+              >
+                {{ n }}
+              </div>
             </div>
             <textarea
               ref="editorRef"
-              class="html-editor"
               v-model="htmlInput"
+              class="html-editor"
               spellcheck="false"
               @input="onEditorInput"
               @scroll="syncScroll"
               @keydown="onKeyDown"
-            ></textarea>
+            />
           </div>
         </div>
 
         <div class="preview-panel">
           <div class="preview-wrapper">
-            <iframe ref="previewFrame" class="preview-frame" :srcdoc="previewContent"></iframe>
+            <iframe
+              ref="previewFrame"
+              class="preview-frame"
+              :srcdoc="previewContent"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible, error: toastType === 'error' }">
+    <div
+      class="toast"
+      :class="{ show: toastVisible, error: toastType === 'error' }"
+    >
       <span class="toast-icon">{{ toastType === 'error' ? '!' : '✓' }}</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>

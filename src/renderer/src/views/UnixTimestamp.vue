@@ -1,16 +1,49 @@
 <template>
-  <div class="unix-container" :style="{ width: windowWidth + 'px' }">
+  <div
+    class="unix-container"
+    :style="{ width: windowWidth + 'px' }"
+  >
     <header>
       <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
+        <svg
+          class="header-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect
+            x="3"
+            y="4"
+            width="18"
+            height="18"
+            rx="2"
+            ry="2"
+          />
+          <line
+            x1="16"
+            y1="2"
+            x2="16"
+            y2="6"
+          />
+          <line
+            x1="8"
+            y1="2"
+            x2="8"
+            y2="6"
+          />
+          <line
+            x1="3"
+            y1="10"
+            x2="21"
+            y2="10"
+          />
         </svg>
         Unix时间戳互转
       </h1>
-      <div class="subtitle">时间戳与日期时间双向转换工具</div>
+      <div class="subtitle">
+        时间戳与日期时间双向转换工具
+      </div>
     </header>
 
     <div class="unix-content">
@@ -19,13 +52,29 @@
           <label>当前时间戳(Unix timestamp)</label>
         </div>
         <div class="timestamp-display">
-          <div class="timestamp-item" :class="{ active: timestampType === '10' }" @click="timestampType = '10'">
-            <div class="timestamp-value">{{ currentTimestamp10 }}</div>
-            <div class="timestamp-label">10位(秒级)</div>
+          <div
+            class="timestamp-item"
+            :class="{ active: timestampType === '10' }"
+            @click="timestampType = '10'"
+          >
+            <div class="timestamp-value">
+              {{ currentTimestamp10 }}
+            </div>
+            <div class="timestamp-label">
+              10位(秒级)
+            </div>
           </div>
-          <div class="timestamp-item" :class="{ active: timestampType === '13' }" @click="timestampType = '13'">
-            <div class="timestamp-value">{{ currentTimestamp13 }}</div>
-            <div class="timestamp-label">13位(毫秒级)</div>
+          <div
+            class="timestamp-item"
+            :class="{ active: timestampType === '13' }"
+            @click="timestampType = '13'"
+          >
+            <div class="timestamp-value">
+              {{ currentTimestamp13 }}
+            </div>
+            <div class="timestamp-label">
+              13位(毫秒级)
+            </div>
           </div>
         </div>
         <div class="current-datetime">
@@ -39,13 +88,36 @@
           <label>时间戳 → 北京时间</label>
         </div>
         <div class="input-row">
-          <input type="text" v-model="timestampInput" class="input-field timestamp-input" placeholder="输入时间戳（10位或13位）" @input="onTimestampInput">
-          <button class="btn btn-primary" @click="convertTimestampToDatetime">转换</button>
+          <input
+            v-model="timestampInput"
+            type="text"
+            class="input-field timestamp-input"
+            placeholder="输入时间戳（10位或13位）"
+            @input="onTimestampInput"
+          >
+          <button
+            class="btn btn-primary"
+            @click="convertTimestampToDatetime"
+          >
+            转换
+          </button>
         </div>
-        <div class="result-box" v-if="datetimeResult">
-          <div class="result-label">转换结果：</div>
-          <div class="result-value">{{ datetimeResult }}</div>
-          <button class="btn-text" @click="copyResult(datetimeResult)">复制</button>
+        <div
+          v-if="datetimeResult"
+          class="result-box"
+        >
+          <div class="result-label">
+            转换结果：
+          </div>
+          <div class="result-value">
+            {{ datetimeResult }}
+          </div>
+          <button
+            class="btn-text"
+            @click="copyResult(datetimeResult)"
+          >
+            复制
+          </button>
         </div>
       </div>
 
@@ -55,62 +127,151 @@
         </div>
         <div class="datetime-inputs">
           <div class="input-group">
-            <select v-model="yearValue" class="select-field">
-              <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+            <select
+              v-model="yearValue"
+              class="select-field"
+            >
+              <option
+                v-for="y in yearOptions"
+                :key="y"
+                :value="y"
+              >
+                {{ y }}
+              </option>
             </select>
             <span class="input-label">年</span>
           </div>
           <div class="input-group">
-            <select v-model="monthValue" class="select-field">
-              <option v-for="m in 12" :key="m" :value="m">{{ m }}</option>
+            <select
+              v-model="monthValue"
+              class="select-field"
+            >
+              <option
+                v-for="m in 12"
+                :key="m"
+                :value="m"
+              >
+                {{ m }}
+              </option>
             </select>
             <span class="input-label">月</span>
           </div>
           <div class="input-group">
-            <select v-model="dayValue" class="select-field">
-              <option v-for="d in dayOptions" :key="d" :value="d">{{ d }}</option>
+            <select
+              v-model="dayValue"
+              class="select-field"
+            >
+              <option
+                v-for="d in dayOptions"
+                :key="d"
+                :value="d"
+              >
+                {{ d }}
+              </option>
             </select>
             <span class="input-label">日</span>
           </div>
           <div class="input-group">
-            <select v-model="hourValue" class="select-field">
-              <option v-for="h in 24" :key="h - 1" :value="h - 1">{{ (h - 1).toString().padStart(2, '0') }}</option>
+            <select
+              v-model="hourValue"
+              class="select-field"
+            >
+              <option
+                v-for="h in 24"
+                :key="h - 1"
+                :value="h - 1"
+              >
+                {{ (h - 1).toString().padStart(2, '0') }}
+              </option>
             </select>
             <span class="input-label">时</span>
           </div>
           <div class="input-group">
-            <select v-model="minuteValue" class="select-field">
-              <option v-for="m in 60" :key="m - 1" :value="m - 1">{{ (m - 1).toString().padStart(2, '0') }}</option>
+            <select
+              v-model="minuteValue"
+              class="select-field"
+            >
+              <option
+                v-for="m in 60"
+                :key="m - 1"
+                :value="m - 1"
+              >
+                {{ (m - 1).toString().padStart(2, '0') }}
+              </option>
             </select>
             <span class="input-label">分</span>
           </div>
           <div class="input-group">
-            <select v-model="secondValue" class="select-field">
-              <option v-for="s in 60" :key="s - 1" :value="s - 1">{{ (s - 1).toString().padStart(2, '0') }}</option>
+            <select
+              v-model="secondValue"
+              class="select-field"
+            >
+              <option
+                v-for="s in 60"
+                :key="s - 1"
+                :value="s - 1"
+              >
+                {{ (s - 1).toString().padStart(2, '0') }}
+              </option>
             </select>
             <span class="input-label">秒</span>
           </div>
           <div class="input-group">
-            <select v-model="millisecondValue" class="select-field">
-              <option v-for="ms in 1000" :key="ms - 1" :value="ms - 1">{{ (ms - 1).toString().padStart(3, '0') }}</option>
+            <select
+              v-model="millisecondValue"
+              class="select-field"
+            >
+              <option
+                v-for="ms in 1000"
+                :key="ms - 1"
+                :value="ms - 1"
+              >
+                {{ (ms - 1).toString().padStart(3, '0') }}
+              </option>
             </select>
             <span class="input-label">毫秒</span>
           </div>
-          <button class="btn btn-primary" @click="convertDatetimeToTimestamp">转换</button>
+          <button
+            class="btn btn-primary"
+            @click="convertDatetimeToTimestamp"
+          >
+            转换
+          </button>
         </div>
-        <div class="result-box" v-if="timestampResult10 || timestampResult13">
+        <div
+          v-if="timestampResult10 || timestampResult13"
+          class="result-box"
+        >
           <div class="result-row">
             <div class="result-item">
-              <div class="result-label">10位时间戳：</div>
-              <div class="result-value">{{ timestampResult10 }}</div>
-              <button class="btn-text" @click="copyResult(timestampResult10)">复制</button>
+              <div class="result-label">
+                10位时间戳：
+              </div>
+              <div class="result-value">
+                {{ timestampResult10 }}
+              </div>
+              <button
+                class="btn-text"
+                @click="copyResult(timestampResult10)"
+              >
+                复制
+              </button>
             </div>
           </div>
           <div class="result-row">
             <div class="result-item">
-              <div class="result-label">13位时间戳：</div>
-              <div class="result-value">{{ timestampResult13 }}</div>
-              <button class="btn-text" @click="copyResult(timestampResult13)">复制</button>
+              <div class="result-label">
+                13位时间戳：
+              </div>
+              <div class="result-value">
+                {{ timestampResult13 }}
+              </div>
+              <button
+                class="btn-text"
+                @click="copyResult(timestampResult13)"
+              >
+                复制
+              </button>
             </div>
           </div>
         </div>
@@ -121,30 +282,66 @@
           <label>北京时间 → 时间戳（快速输入格式：YYYYMMDDHHMMSS）</label>
         </div>
         <div class="input-row">
-          <input type="text" v-model="quickInput" class="input-field quick-input" placeholder="例如：20240101120000" @input="onQuickInput">
-          <button class="btn btn-primary" @click="convertQuickInput">转换</button>
+          <input
+            v-model="quickInput"
+            type="text"
+            class="input-field quick-input"
+            placeholder="例如：20240101120000"
+            @input="onQuickInput"
+          >
+          <button
+            class="btn btn-primary"
+            @click="convertQuickInput"
+          >
+            转换
+          </button>
         </div>
-        <div class="quick-hint">格式说明：年月日时分秒，如 20240101120000 表示 2024年01月01日 12:00:00</div>
-        <div class="result-box" v-if="quickTimestampResult10 || quickTimestampResult13">
+        <div class="quick-hint">
+          格式说明：年月日时分秒，如 20240101120000 表示 2024年01月01日 12:00:00
+        </div>
+        <div
+          v-if="quickTimestampResult10 || quickTimestampResult13"
+          class="result-box"
+        >
           <div class="result-row">
             <div class="result-item">
-              <div class="result-label">10位时间戳：</div>
-              <div class="result-value">{{ quickTimestampResult10 }}</div>
-              <button class="btn-text" @click="copyResult(quickTimestampResult10)">复制</button>
+              <div class="result-label">
+                10位时间戳：
+              </div>
+              <div class="result-value">
+                {{ quickTimestampResult10 }}
+              </div>
+              <button
+                class="btn-text"
+                @click="copyResult(quickTimestampResult10)"
+              >
+                复制
+              </button>
             </div>
           </div>
           <div class="result-row">
             <div class="result-item">
-              <div class="result-label">13位时间戳：</div>
-              <div class="result-value">{{ quickTimestampResult13 }}</div>
-              <button class="btn-text" @click="copyResult(quickTimestampResult13)">复制</button>
+              <div class="result-label">
+                13位时间戳：
+              </div>
+              <div class="result-value">
+                {{ quickTimestampResult13 }}
+              </div>
+              <button
+                class="btn-text"
+                @click="copyResult(quickTimestampResult13)"
+              >
+                复制
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div class="help-section">
-        <div class="help-title">工具介绍</div>
+        <div class="help-title">
+          工具介绍
+        </div>
         <div class="help-content">
           <p>Unix时间戳(Unix timestamp)，或Unix时间(Unix time)、POSIX时间(POSIX time)，是一种时间表示方式。</p>
           <p>定义为从格林威治时间1970年01月01日00时00分00秒起至现在的总秒数。</p>
@@ -158,7 +355,10 @@
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible }">
+    <div
+      class="toast"
+      :class="{ show: toastVisible }"
+    >
       <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>

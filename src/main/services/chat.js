@@ -316,8 +316,8 @@ function generateCron(params) {
   const dayOfMonth = params.day_of_month || 1
   const dayOfWeek = params.day_of_week || '*'
   
-  let cronExpression = ''
-  let description = ''
+  let cronExpression
+  let description
   
   switch (frequency) {
     case 'every_minute':
@@ -391,9 +391,6 @@ function validateYaml(params) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       const lineNum = i + 1
-      
-      if (line.trim().startsWith('-') && !line.includes(':')) {
-      }
       
       const colonIndex = line.indexOf(':')
       if (colonIndex > 0 && line[colonIndex - 1] === ' ') {
