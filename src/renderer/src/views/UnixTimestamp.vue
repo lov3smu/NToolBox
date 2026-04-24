@@ -355,21 +355,21 @@
       </div>
     </div>
 
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { useWindowWidth, useToast } from '@/composables'
+import { copyToClipboard } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
 
 const currentTimestamp10 = ref('')
 const currentTimestamp13 = ref('')
@@ -392,9 +392,6 @@ const timestampResult13 = ref('')
 const quickInput = ref('')
 const quickTimestampResult10 = ref('')
 const quickTimestampResult13 = ref('')
-
-const toastVisible = ref(false)
-const toastMessage = ref('')
 
 let timer = null
 
@@ -440,13 +437,13 @@ function onTimestampInput() {
 function convertTimestampToDatetime() {
   const input = timestampInput.value.trim()
   if (!input) {
-    showToast('请输入时间戳')
+    showWarning('请输入时间戳')
     return
   }
 
   const timestamp = parseInt(input)
   if (isNaN(timestamp)) {
-    showToast('时间戳格式错误，请输入数字')
+    showError('时间戳格式错误，请输入数字')
     return
   }
 
@@ -456,17 +453,17 @@ function convertTimestampToDatetime() {
   } else if (input.length === 13) {
     date = new Date(timestamp)
   } else {
-    showToast('时间戳长度应为10位或13位')
+    showError('时间戳长度应为10位或13位')
     return
   }
 
   if (date.toString() === 'Invalid Date') {
-    showToast('时间戳无效')
+    showError('时间戳无效')
     return
   }
 
   datetimeResult.value = formatDatetime(date)
-  showToast('转换成功')
+  showSuccess('转换成功')
 }
 
 function convertDatetimeToTimestamp() {
@@ -481,13 +478,13 @@ function convertDatetimeToTimestamp() {
   )
 
   if (date.toString() === 'Invalid Date') {
-    showToast('日期无效')
+    showError('日期无效')
     return
   }
 
   timestampResult10.value = Math.floor(date.getTime() / 1000).toString()
   timestampResult13.value = date.getTime().toString()
-  showToast('转换成功')
+  showSuccess('转换成功')
 }
 
 function onQuickInput() {
@@ -498,12 +495,12 @@ function onQuickInput() {
 function convertQuickInput() {
   const input = quickInput.value.trim()
   if (!input) {
-    showToast('请输入日期时间')
+    showWarning('请输入日期时间')
     return
   }
 
   if (input.length !== 14) {
-    showToast('格式应为14位数字：YYYYMMDDHHMMSS')
+    showError('格式应为14位数字：YYYYMMDDHHMMSS')
     return
   }
 
@@ -515,64 +512,45 @@ function convertQuickInput() {
   const second = parseInt(input.substring(12, 14))
 
   if (month < 1 || month > 12) {
-    showToast('月份应在1-12之间')
+    showError('月份应在1-12之间')
     return
   }
   if (day < 1 || day > 31) {
-    showToast('日期应在1-31之间')
+    showError('日期应在1-31之间')
     return
   }
   if (hour < 0 || hour > 23) {
-    showToast('小时应在0-23之间')
+    showError('小时应在0-23之间')
     return
   }
   if (minute < 0 || minute > 59) {
-    showToast('分钟应在0-59之间')
+    showError('分钟应在0-59之间')
     return
   }
   if (second < 0 || second > 59) {
-    showToast('秒应在0-59之间')
+    showError('秒应在0-59之间')
     return
   }
 
   const date = new Date(year, month - 1, day, hour, minute, second)
   if (date.toString() === 'Invalid Date') {
-    showToast('日期无效')
+    showError('日期无效')
     return
   }
 
   quickTimestampResult10.value = Math.floor(date.getTime() / 1000).toString()
   quickTimestampResult13.value = date.getTime().toString()
-  showToast('转换成功')
+  showSuccess('转换成功')
 }
 
-function copyResult(text) {
+async function copyResult(text) {
   if (!text) return
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    try {
-      document.execCommand('copy')
-      showToast('已复制到剪贴板')
-    } catch (e) {
-      showToast('复制失败，请手动复制')
-    }
-    document.body.removeChild(textarea)
-  })
-}
-
-function showToast(message) {
-  toastMessage.value = message
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+  const success = await copyToClipboard(text)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败，请手动复制')
+  }
 }
 
 onMounted(() => {

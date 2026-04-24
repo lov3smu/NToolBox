@@ -9,7 +9,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/main/index.js')
         },
-        external: ['electron', 'electron-log', 'electron-updater', 'fs', 'path', 'child_process', 'crypto', 'stream', 'events', 'util', 'os']
+        external: ['electron', 'electron-log', 'electron-updater', 'fs', 'path', 'child_process', 'crypto', 'stream', 'events', 'util', 'os', 'mysql2']
       }
     }
   },
@@ -33,7 +33,14 @@ export default defineConfig({
     },
     base: './',
     build: {
-      outDir: resolve(__dirname, 'out/renderer')
+      outDir: resolve(__dirname, 'out/renderer'),
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'codemirror': ['@codemirror/view', '@codemirror/state', '@codemirror/language', '@codemirror/lang-sql', '@codemirror/autocomplete', '@codemirror/theme-one-dark', 'codemirror']
+          }
+        }
+      }
     }
   }
 })

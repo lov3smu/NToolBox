@@ -495,21 +495,21 @@
       </div>
     </div>
 
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { useWindowWidth, useToast } from '@/composables'
+import { copyToClipboard, formatDateTime } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
 
 const FIELD_CONFIG = {
   second: { min: 0, max: 59, name: '秒' },
@@ -599,8 +599,6 @@ const yearSpecificInput = ref('')
 const cronExpression = ref('* * * * * ?')
 const expressionDesc = ref('每秒执行')
 const scheduleList = ref([])
-const toastVisible = ref(false)
-const toastMessage = ref('')
 
 const fieldTags = computed(() => {
   const parts = cronExpression.value.trim().split(/\s+/)
@@ -962,16 +960,6 @@ function parseCronField(expr, min, max) {
   return result.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b)
 }
 
-function formatDateTime(date) {
-  const year = date.getFullYear()
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
-  const hour = date.getHours().toString().padStart(2, '0')
-  const minute = date.getMinutes().toString().padStart(2, '0')
-  const second = date.getSeconds().toString().padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-}
-
 function getTimeRemaining(from, to) {
   const diff = to - from
   if (diff < 0) return '已过期'
@@ -994,13 +982,13 @@ function getTimeRemaining(from, to) {
 function parseExpression() {
   const expression = cronExpression.value.trim()
   if (!expression) {
-    showToast('请输入表达式')
+    showWarning('请输入表达式')
     return
   }
 
   const parts = expression.split(/\s+/)
   if (parts.length < 6 || parts.length > 7) {
-    showToast('表达式格式错误，应为 6-7 个字段')
+    showError('表达式格式错误，应为 6-7 个字段')
     return
   }
 
@@ -1017,7 +1005,7 @@ function parseExpression() {
 
   expressionDesc.value = getExpressionDescription(cronExpression.value)
   updateScheduleList()
-  showToast('表达式已反解析')
+  showSuccess('表达式已反解析')
 }
 
 function parseFieldExpression(field, expr) {
@@ -1095,35 +1083,16 @@ function onExpressionBlur() {
   updateScheduleList()
 }
 
-function copyExpression() {
+async function copyExpression() {
   const text = cronExpression.value
   if (!text) return
 
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    try {
-      document.execCommand('copy')
-      showToast('已复制到剪贴板')
-    } catch (e) {
-      showToast('复制失败，请手动复制')
-    }
-    document.body.removeChild(textarea)
-  })
-}
-
-function showToast(message) {
-  toastMessage.value = message
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+  const success = await copyToClipboard(text)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败，请手动复制')
+  }
 }
 
 onMounted(() => {

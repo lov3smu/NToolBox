@@ -270,19 +270,19 @@
         </div>
       </main>
     </div>
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { getConfig, chat, openSettings, onConfigChanged, getProviderModels } from '@/api'
+import { useToast } from '@/composables'
+import { copyToClipboard } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const apiKey = ref('')
 const aiProvider = ref('bailian')
@@ -291,12 +291,12 @@ const currentSessionId = ref('')
 const inputText = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
-const toastVisible = ref(false)
-const toastMessage = ref('')
 const selectedModel = ref('')
 const editingSessionId = ref('')
 const editingTitle = ref('')
 const models = ref([])
+
+const { toastVisible, toastMessage, showSuccess, showError } = useToast()
 
 const currentSession = computed(() => sessions.value.find(s => s.id === currentSessionId.value))
 const currentMessages = computed(() => currentSession?.value?.messages || [])
@@ -477,28 +477,13 @@ function formatMessage(content) {
   return formatted
 }
 
-function copyMessage(content) {
-  navigator.clipboard.writeText(content).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = content
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    showToast('已复制到剪贴板')
-  })
-}
-
-function showToast(msg) {
-  toastMessage.value = msg
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+async function copyMessage(content) {
+  const success = await copyToClipboard(content)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败')
+  }
 }
 
 let removeConfigListener = null
@@ -975,33 +960,5 @@ watch(currentMessages, () => {
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast-icon {
-  color: #22c55e;
-  font-weight: bold;
 }
 </style>

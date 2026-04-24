@@ -252,7 +252,7 @@
             <button
               class="copy-btn"
               title="复制"
-              @click="copyToClipboard(item)"
+              @click="handleCopyHistoryItem(item)"
             >
               📋
             </button>
@@ -261,21 +261,21 @@
       </div>
     </div>
 
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useWindowWidth, useToast } from '@/composables'
+import { copyToClipboard } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
 
 const CHAR_SETS = {
   uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -292,8 +292,6 @@ const useNumbers = ref(true)
 const useSymbols = ref(false)
 const visible = ref(true)
 const history = ref([])
-const toastVisible = ref(false)
-const toastMessage = ref('')
 
 const progress = computed(() => ((length.value - 1) / 99) * 100)
 
@@ -393,7 +391,7 @@ function generate() {
   if (useSymbols.value) chars += CHAR_SETS.special
 
   if (!chars) {
-    showToast('请至少选择一种字符类型')
+    showWarning('请至少选择一种字符类型')
     useLower.value = true
     return
   }
@@ -417,7 +415,7 @@ function generate() {
   password.value = result
   
   addToHistory(result)
-  showToast('密码已生成')
+  showSuccess('密码已生成')
 }
 
 function getRandomChar(charSet) {
@@ -435,26 +433,21 @@ function shuffleString(str) {
   return array.join('')
 }
 
-function copyPassword() {
+async function copyPassword() {
   if (password.value) {
-    copyToClipboard(password.value)
+    const success = await copyToClipboard(password.value)
+    if (success) {
+      showSuccess('已复制到剪贴板')
+    } else {
+      showError('复制失败')
+    }
   }
 }
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    showToast('已复制到剪贴板')
-  })
+function clearHistory() {
+  history.value = []
+  localStorage.removeItem('password_history')
+  showSuccess('历史记录已清空')
 }
 
 function addToHistory(pwd) {
@@ -471,12 +464,6 @@ function maskPassword(pwd) {
   return pwd.substring(0, 2) + '*'.repeat(pwd.length - 4) + pwd.substring(pwd.length - 2)
 }
 
-function clearHistory() {
-  history.value = []
-  localStorage.removeItem('password_history')
-  showToast('历史记录已清空')
-}
-
 function saveHistory() {
   localStorage.setItem('password_history', JSON.stringify(history.value))
 }
@@ -488,12 +475,13 @@ function loadHistory() {
   }
 }
 
-function showToast(msg) {
-  toastMessage.value = msg
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+async function handleCopyHistoryItem(item) {
+  const success = await copyToClipboard(item)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败')
+  }
 }
 
 watch([useUpper, useLower, useNumbers, useSymbols], () => {

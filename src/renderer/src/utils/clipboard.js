@@ -1,7 +1,6 @@
-export async function copyToClipboard(text, onSuccess, onError) {
+export async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text)
-    onSuccess?.('已复制到剪贴板')
     return true
   } catch {
     const textarea = document.createElement('textarea')
@@ -13,15 +12,8 @@ export async function copyToClipboard(text, onSuccess, onError) {
     
     try {
       const success = document.execCommand('copy')
-      if (success) {
-        onSuccess?.('已复制到剪贴板')
-        return true
-      } else {
-        onError?.('复制失败')
-        return false
-      }
+      return success
     } catch {
-      onError?.('复制失败')
       return false
     } finally {
       document.body.removeChild(textarea)
