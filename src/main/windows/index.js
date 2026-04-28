@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, app } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { log, getIconPath } from '../utils'
 import { getConfig } from '../services'
 
@@ -30,7 +31,15 @@ function createSplashWindow() {
   if (isDev) {
     splashWindow.loadURL(devServerUrl + '/splash.html')
   } else {
-    splashWindow.loadFile(path.join(__dirname, '../renderer/splash.html'))
+    const splashPath = path.join(__dirname, '../renderer/splash.html')
+    splashWindow.loadFile(splashPath)
+    
+    const iconSrc = path.join(__dirname, '../../assets/icon.png')
+    const iconDest = path.join(__dirname, '../renderer/assets/icon.png')
+    if (fs.existsSync(iconSrc) && !fs.existsSync(iconDest)) {
+      fs.mkdirSync(path.dirname(iconDest), { recursive: true })
+      fs.copyFileSync(iconSrc, iconDest)
+    }
   }
 
   splashWindow.center()

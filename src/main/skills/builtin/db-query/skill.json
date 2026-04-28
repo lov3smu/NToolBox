@@ -1,0 +1,81 @@
+{
+  "name": "db-query",
+  "version": "1.4.0",
+  "description": "执行数据库查询操作。**禁止伪造数据**：只返回真实查询结果，不伪造任何表名、数据内容。如果查询失败或无结果，如实告知用户，不能编造数据。**安全限制**：只允许查询类语句（SELECT、SHOW等），禁止INSERT、UPDATE、DELETE等。",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["数据库", "查询", "SQL", "MySQL", "真实数据", "禁止伪造"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["list_databases", "list_tables", "execute"],
+        "description": "查看表 → list_tables；查看数据库 → list_databases"
+      },
+      "connection_name": {
+        "type": "string",
+        "description": "必须参数，从上下文获取"
+      },
+      "database": {
+        "type": "string",
+        "description": "从输入提取数据库名"
+      },
+      "sql": {
+        "type": "string",
+        "description": "SQL查询语句，只允许SELECT等"
+      },
+      "params": {
+        "type": "array",
+        "description": "SQL参数，可选"
+      },
+      "limit": {
+        "type": "number",
+        "description": "结果限制，默认1000"
+      }
+    },
+    "required": ["action", "connection_name"]
+  },
+  "handler": "handler.js",
+  "semantic_rules": {
+    "禁止伪造数据": {
+      "强制规则": "绝对禁止伪造表名、字段名、数据内容",
+      "真实返回": "只返回数据库的真实查询结果",
+      "失败处理": "查询失败时如实告知用户，不能编造虚假数据",
+      "空结果处理": "查询无结果时如实告知无数据，不能虚构内容"
+    },
+    "安全限制": {
+      "允许的SQL": ["SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN"],
+      "禁止的SQL": ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE"]
+    },
+    "trigger_keywords": ["查看", "数据库", "表", "查询"],
+    "强制触发模式": ["查看xxx库的表", "xxx库有哪些表", "查看表", "有哪些表"],
+    "action_mapping": {
+      "list_databases": ["查看数据库", "有哪些数据库"],
+      "list_tables": ["查看表", "有哪些表", "查看xxx库的表"],
+      "execute": ["查询数据", "执行SQL", "SELECT"]
+    }
+  },
+  "examples": [
+    {
+      "user_input": "查看order_db有哪些表",
+      "tool_call": "db-query({action: 'list_tables', connection_name: 'mysql57', database: 'order_db'})",
+      "真实返回示例": "表列表（共3个）：orders, products, inventory",
+      "禁止行为": "如果tool返回空列表，不能虚构orders、products等表名"
+    },
+    {
+      "user_input": "查询users表前10条数据",
+      "tool_call": "db-query({action: 'execute', sql: 'SELECT * FROM users LIMIT 10'})",
+      "真实返回示例": "返回10条真实数据记录",
+      "禁止行为": "如果tool返回表不存在，不能伪造字段和数据"
+    },
+    {
+      "user_input": "查看有哪些数据库",
+      "tool_call": "db-query({action: 'list_databases'})",
+      "真实返回示例": "数据库列表：order_db, user_db, main_db",
+      "禁止行为": "如果tool返回失败，不能虚构数据库列表"
+    }
+  ]
+}

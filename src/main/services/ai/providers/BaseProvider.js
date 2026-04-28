@@ -10,6 +10,8 @@ class BaseProvider {
     this.hostname = config.hostname
     this.path = config.path
     this.validateModel = config.validateModel || this.defaultModel
+    this.timeout = config.timeout || 60000
+    this.connectionTimeout = config.connectionTimeout || 10000
   }
 
   getModels() {
@@ -91,8 +93,26 @@ class BaseProvider {
           let fullContent = ''
           const toolCalls = []
           let buffer = ''
+          let lastDataTime = Date.now()
+          
+          const streamTimeout = setTimeout(() => {
+            req.destroy()
+            log.error(`${this.name} 流式响应超时（无数据传输）`)
+            reject({ success: false, error: `响应超时（${this.timeout/1000}秒），请稍后重试` })
+          }, this.timeout)
+
+          const keepAliveCheck = setInterval(() => {
+            if (Date.now() - lastDataTime > this.timeout) {
+              clearInterval(keepAliveCheck)
+              clearTimeout(streamTimeout)
+              req.destroy()
+              log.error(`${this.name} 流式连接中断`)
+              reject({ success: false, error: `连接中断，请稍后重试` })
+            }
+          }, 5000)
 
           res.on('data', (chunk) => {
+            lastDataTime = Date.now()
             buffer += chunk.toString()
             const lines = buffer.split('\n')
             buffer = lines.pop() || ''
@@ -140,6 +160,9 @@ class BaseProvider {
           })
 
           res.on('end', () => {
+            clearTimeout(streamTimeout)
+            clearInterval(keepAliveCheck)
+            
             if (res.statusCode !== 200) {
               log.error(`${this.name} 流式请求失败: ${res.statusCode}`)
               reject({ success: false, error: `请求失败: ${res.statusCode}` })
@@ -159,7 +182,17 @@ class BaseProvider {
 
       req.on('error', (e) => {
         log.error(`${this.name} 流式请求网络错误:`, e)
-        reject({ success: false, error: `网络请求失败: ${e.message}` })
+        
+        let errorMessage = `网络请求失败: ${e.message}`
+        if (e.code === 'ENOTFOUND') {
+          errorMessage = `无法连接到服务器 (${this.hostname})，请检查网络连接`
+        } else if (e.code === 'ECONNREFUSED') {
+          errorMessage = `连接被拒绝，服务器可能不可用`
+        } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
+          errorMessage = `连接超时，请检查网络或稍后重试`
+        }
+        
+        reject({ success: false, error: errorMessage })
       })
 
       req.write(JSON.stringify(requestBody))
@@ -195,6 +228,7 @@ class BaseProvider {
           let data = ''
           res.on('data', (chunk) => { data += chunk })
           res.on('end', () => {
+            clearTimeout(timeoutTimer)
             try {
               const responseData = JSON.parse(data)
               if (res.statusCode !== 200) {
@@ -214,9 +248,26 @@ class BaseProvider {
         }
       )
 
+      const timeoutTimer = setTimeout(() => {
+        req.destroy()
+        log.error(`${this.name} API 请求超时`)
+        resolve({ success: false, error: `请求超时（${this.timeout/1000}秒），请检查网络连接或稍后重试` })
+      }, this.timeout)
+
       req.on('error', (e) => {
+        clearTimeout(timeoutTimer)
         log.error(`${this.name} API 请求失败:`, e)
-        resolve({ success: false, error: `网络请求失败: ${e.message}` })
+        
+        let errorMessage = `网络请求失败: ${e.message}`
+        if (e.code === 'ENOTFOUND') {
+          errorMessage = `无法连接到服务器 (${hostname})，请检查网络连接`
+        } else if (e.code === 'ECONNREFUSED') {
+          errorMessage = `连接被拒绝，服务器可能不可用`
+        } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
+          errorMessage = `连接超时，请检查网络或稍后重试`
+        }
+        
+        resolve({ success: false, error: errorMessage })
       })
 
       req.write(JSON.stringify(requestBody))

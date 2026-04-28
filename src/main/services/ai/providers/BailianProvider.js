@@ -1,7 +1,7 @@
 import BaseProvider from './BaseProvider.js'
 
 class BailianProvider extends BaseProvider {
-  constructor(apiKey) {
+  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
     super({
       name: '百炼',
       apiKey,
@@ -16,7 +16,9 @@ class BailianProvider extends BaseProvider {
         { id: 'qwen2.5-72b-instruct', name: 'Qwen2.5-72B' },
         { id: 'qwen2.5-32b-instruct', name: 'Qwen2.5-32B' }
       ],
-      defaultModel: 'qwen-plus'
+      defaultModel: 'qwen-plus',
+      timeout,
+      connectionTimeout
     })
   }
 }

@@ -1,4 +1,4 @@
-import { ipcMain, dialog, clipboard } from 'electron'
+import { ipcMain, dialog, clipboard, app } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { log, getProjectRoot } from '../utils'
@@ -83,12 +83,25 @@ export function setupIPCHandlers() {
     const mainWindow = getMainWindow()
     const settingsWindow = getSettingsWindow()
     const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
+    
+    const platform = process.platform
+    const filters = []
+    
+    if (platform === 'win32') {
+      filters.push({ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] })
+      filters.push({ name: '所有文件', extensions: ['*'] })
+    } else if (platform === 'darwin') {
+      filters.push({ name: '应用程序', extensions: ['app'] })
+      filters.push({ name: '可执行文件', extensions: ['sh', 'command'] })
+      filters.push({ name: '所有文件', extensions: ['*'] })
+    } else {
+      filters.push({ name: '可执行文件', extensions: ['sh', 'bin'] })
+      filters.push({ name: '所有文件', extensions: ['*'] })
+    }
+    
     const result = await dialog.showOpenDialog(parentWindow, {
       properties: ['openFile'],
-      filters: [
-        { name: '可执行文件', extensions: ['exe'] },
-        { name: '所有文件', extensions: ['*'] }
-      ]
+      filters
     })
     return result.filePaths[0] || ''
   })

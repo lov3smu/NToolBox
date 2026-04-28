@@ -1,7 +1,7 @@
 {
   "name": "ntoolbox",
   "version": "1.2.0",
-  "description": "NToolBox - 开发者工具箱，包含多种实用开发工具。",
+  "description": "NToolBox - 一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。",
   "main": "./out/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
   "license": "MIT",

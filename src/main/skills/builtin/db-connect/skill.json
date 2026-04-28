@@ -1,0 +1,76 @@
+{
+  "name": "db-connect",
+  "version": "1.1.0",
+  "description": "管理数据库连接。用户说\"连接数据库\"、\"查看连接\"、\"连接到xxx\"时使用此工具。支持列出所有可用连接、测试连接是否正常、创建连接、断开连接、查看连接状态。",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["数据库", "连接", "MySQL", "连接管理"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["list", "test", "connect", "disconnect", "status"],
+        "description": "操作类型，根据用户语义自动推断：用户说\"连接数据库\"或\"查看连接\"→list；用户说\"连接到xxx\"或\"连接xxx数据库\"→connect；用户说\"断开xxx\"或\"关闭连接\"→disconnect；用户说\"测试连接\"→test；用户说\"查看连接状态\"→status"
+      },
+      "connection_name": {
+        "type": "string",
+        "description": "数据库连接名称，用户说\"连接到xxx\"时从名称中提取。常见连接名：mysql57、127.0.0.1、localhost等。如果用户只说\"连接数据库\"未指定名称，先使用list查看可用连接，再询问用户选择"
+      }
+    },
+    "required": ["action"]
+  },
+  "handler": "handler.js",
+  "semantic_rules": {
+    "trigger_keywords": ["连接", "数据库", "查看连接", "断开", "关闭", "测试"],
+    "action_mapping": {
+      "list": ["连接数据库", "查看连接", "有哪些连接", "可用连接", "连接列表"],
+      "connect": ["连接到", "连接xxx", "使用xxx连接", "建立连接"],
+      "disconnect": ["断开连接", "关闭连接", "断开xxx", "关闭xxx连接"],
+      "test": ["测试连接", "测试xxx连接", "连接测试"],
+      "status": ["连接状态", "查看状态", "是否已连接"]
+    },
+    "parameter_extraction": {
+      "connection_name": "从用户输入中提取连接名称，如\"连接到mysql57\"提取\"mysql57\""
+    },
+    "workflow": {
+      "first_step": "用户首次提到连接数据库时，先用list查看可用连接",
+      "second_step": "用户选择连接后，用connect建立连接",
+      "auto_suggest": "返回连接列表后，主动询问\"请选择要连接的数据库，例如：mysql57或127.0.0.1\""
+    }
+  },
+  "examples": [
+    {
+      "user_input": "我想连接数据库",
+      "semantic_analysis": "用户未指定具体连接，应先查看可用连接列表",
+      "tool_call": "db-connect({action: 'list'})",
+      "expected_response": "返回可用连接列表，并提示用户选择"
+    },
+    {
+      "user_input": "连接到mysql57数据库",
+      "semantic_analysis": "用户指定连接名称为mysql57",
+      "tool_call": "db-connect({action: 'connect', connection_name: 'mysql57'})",
+      "expected_response": "建立mysql57连接，返回成功消息"
+    },
+    {
+      "user_input": "查看有哪些数据库连接",
+      "semantic_analysis": "用户要查看连接列表",
+      "tool_call": "db-connect({action: 'list'})",
+      "expected_response": "返回所有配置的数据库连接"
+    },
+    {
+      "user_input": "断开mysql57连接",
+      "semantic_analysis": "用户要断开指定连接",
+      "tool_call": "db-connect({action: 'disconnect', connection_name: 'mysql57'})",
+      "expected_response": "关闭mysql57连接"
+    },
+    {
+      "user_input": "测试mysql57连接是否正常",
+      "semantic_analysis": "用户要测试指定连接",
+      "tool_call": "db-connect({action: 'test', connection_name: 'mysql57'})",
+      "expected_response": "返回测试结果"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import BaseProvider from './BaseProvider.js'
 
 class MoonshotProvider extends BaseProvider {
-  constructor(apiKey) {
+  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
     super({
       name: 'Moonshot',
       apiKey,
@@ -13,7 +13,9 @@ class MoonshotProvider extends BaseProvider {
         { id: 'moonshot-v1-32k', name: 'Moonshot V1 32K' },
         { id: 'moonshot-v1-128k', name: 'Moonshot V1 128K' }
       ],
-      defaultModel: 'moonshot-v1-8k'
+      defaultModel: 'moonshot-v1-8k',
+      timeout,
+      connectionTimeout
     })
   }
 }

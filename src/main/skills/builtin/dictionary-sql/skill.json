@@ -12,7 +12,7 @@
     "properties": {
       "dict_name": {
         "type": "string",
-        "description": "字典名称（中文），如"用户状态"、"订单类型""
+        "description": "字典名称（中文），如：用户状态、订单类型"
       },
       "dict_values": {
         "type": "array",

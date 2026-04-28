@@ -1,7 +1,7 @@
 import BaseProvider from './BaseProvider.js'
 
 class VolcengineProvider extends BaseProvider {
-  constructor(apiKey, endpointId) {
+  constructor(apiKey, endpointId, timeout = 60000, connectionTimeout = 10000) {
     super({
       name: '火山方舟',
       apiKey,
@@ -14,7 +14,9 @@ class VolcengineProvider extends BaseProvider {
         { id: 'doubao-lite-32k', name: 'Doubao-Lite-32K (快速)' },
         { id: 'doubao-lite-128k', name: 'Doubao-Lite-128K' }
       ],
-      defaultModel: endpointId || 'doubao-pro-32k'
+      defaultModel: endpointId || 'doubao-pro-32k',
+      timeout,
+      connectionTimeout
     })
     this.endpointId = endpointId
   }

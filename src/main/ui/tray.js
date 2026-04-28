@@ -37,6 +37,24 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
     },
     { type: 'separator' },
     {
+      label: 'AI聊天助手',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show()
+          mainWindow.webContents.send('navigate-to', '/chat')
+        }
+      }
+    },
+    {
+      label: '文件管理',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show()
+          mainWindow.webContents.send('navigate-to', '/file-manager')
+        }
+      }
+    },
+    {
       label: '工具',
       submenu: [
         {
@@ -48,6 +66,16 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
             }
           }
         },
+        {
+          label: '数据库管理',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/database')
+            }
+          }
+        },
+        { type: 'separator' },
         {
           label: '密码生成器',
           click: () => {

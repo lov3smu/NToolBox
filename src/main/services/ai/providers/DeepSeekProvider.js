@@ -1,7 +1,7 @@
 import BaseProvider from './BaseProvider.js'
 
 class DeepSeekProvider extends BaseProvider {
-  constructor(apiKey) {
+  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
     super({
       name: 'DeepSeek',
       apiKey,
@@ -13,7 +13,9 @@ class DeepSeekProvider extends BaseProvider {
         { id: 'deepseek-coder', name: 'DeepSeek-Coder (编程)' },
         { id: 'deepseek-reasoner', name: 'DeepSeek-Reasoner (推理)' }
       ],
-      defaultModel: 'deepseek-chat'
+      defaultModel: 'deepseek-chat',
+      timeout,
+      connectionTimeout
     })
   }
 }

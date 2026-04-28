@@ -549,7 +549,7 @@ async function sendMessage(e) {
       
       assistantMessage.content = assistantMessage.content
         .replace(/\n*正在执行操作\.\.\.\n*/g, '\n')
-        .replace(/\n*✓[\s\S]*完成\n*/g, '\n')
+        .replace(/\n*✓ \S+ 完成\n*/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim()
       

@@ -68,17 +68,17 @@ export function createProvider(type, config) {
   
   switch (type) {
     case PROVIDER_TYPES.BAILIAN:
-      return new BailianProvider(config.apiKey)
+      return new BailianProvider(config.apiKey, config.timeout, config.connectionTimeout)
     case PROVIDER_TYPES.MOONSHOT:
-      return new MoonshotProvider(config.apiKey)
+      return new MoonshotProvider(config.apiKey, config.timeout, config.connectionTimeout)
     case PROVIDER_TYPES.ZHIPU:
-      return new ZhipuProvider(config.apiKey)
+      return new ZhipuProvider(config.apiKey, config.timeout, config.connectionTimeout)
     case PROVIDER_TYPES.MINIMAX:
-      return new MinimaxProvider(config.apiKey, config.groupId)
+      return new MinimaxProvider(config.apiKey, config.groupId, config.timeout, config.connectionTimeout)
     case PROVIDER_TYPES.VOLCENGINE:
-      return new VolcengineProvider(config.apiKey, config.endpointId)
+      return new VolcengineProvider(config.apiKey, config.endpointId, config.timeout, config.connectionTimeout)
     case PROVIDER_TYPES.DEEPSEEK:
-      return new DeepSeekProvider(config.apiKey)
+      return new DeepSeekProvider(config.apiKey, config.timeout, config.connectionTimeout)
     default:
       log.error(`未知的 Provider 类型: ${type}`)
       return null

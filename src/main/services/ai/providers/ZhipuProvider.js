@@ -1,7 +1,7 @@
 import BaseProvider from './BaseProvider.js'
 
 class ZhipuProvider extends BaseProvider {
-  constructor(apiKey) {
+  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
     super({
       name: '智谱AI',
       apiKey,
@@ -17,7 +17,9 @@ class ZhipuProvider extends BaseProvider {
         { id: 'glm-4-flash', name: 'GLM-4-Flash (免费)' },
         { id: 'glm-3-turbo', name: 'GLM-3-Turbo' }
       ],
-      defaultModel: 'glm-4-flash'
+      defaultModel: 'glm-4-flash',
+      timeout,
+      connectionTimeout
     })
   }
 }
