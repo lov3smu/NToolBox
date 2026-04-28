@@ -23,7 +23,7 @@
           </svg>
         </div>
         <div class="title-section">
-          <h1>SQL Script Generator</h1>
+          <h1>NToolBox</h1>
           <p class="subtitle">
             开发工具集 - 提升开发效率的实用工具箱
           </p>
@@ -56,7 +56,7 @@
       <section class="intro-section">
         <h2>工具介绍</h2>
         <div class="intro-content">
-          <p>SQL Script Generator 是一款专为开发者设计的实用工具集，旨在提升日常开发效率。</p>
+          <p>NToolBox 是一款专为开发者设计的实用工具集，旨在提升日常开发效率。</p>
           <p>集成了 SQL 脚本生成、AI 聊天助手、密码生成、时间戳转换、JSON 格式化等常用工具，帮助您快速完成重复性工作。</p>
         </div>
       </section>
@@ -160,7 +160,7 @@
     </main>
 
     <footer class="dashboard-footer">
-      <p>SQL Script Generator v1.0.7</p>
+      <p>NToolBox v1.1.0</p>
     </footer>
   </div>
 </template>

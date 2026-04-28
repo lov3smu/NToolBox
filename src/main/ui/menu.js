@@ -14,8 +14,8 @@ const appAuthor = packageJson.author || 'lov3smu'
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 function showAboutDialog(mainWindow) {
-  const appName = 'SQL Script Generator'
-  const description = 'SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。'
+  const appName = 'NToolBox'
+  const description = '开发者工具箱，包含多种实用开发工具。'
   const copyright = `© ${new Date().getFullYear()} ${appAuthor}. All rights reserved.`
   dialog.showMessageBox(mainWindow, {
     type: 'info',

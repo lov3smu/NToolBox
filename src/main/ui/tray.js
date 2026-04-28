@@ -127,7 +127,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
   ])
 
   tray.setContextMenu(contextMenu)
-  tray.setToolTip('SQL Script Generator')
+  tray.setToolTip('NToolBox')
 
   tray.on('click', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {

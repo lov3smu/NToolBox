@@ -71,7 +71,7 @@ function createMainWindow() {
       contextIsolation: true,
       preload: preloadPath
     },
-    title: 'SQL Script Generator'
+    title: 'NToolBox'
   })
 
   if (isDev) {
@@ -159,7 +159,7 @@ export function createSettingsWindow(defaultTab = null) {
       contextIsolation: true,
       preload: preloadPath
     },
-    title: '设置 - SQL Script Generator'
+    title: '设置 - NToolBox'
   })
 
   settingsWindow.setMenu(null)

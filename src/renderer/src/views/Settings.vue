@@ -402,13 +402,13 @@
               SQL
             </div>
             <div class="about-name">
-              SQL Script Generator
+              NToolBox
             </div>
             <div class="about-version">
               版本: {{ version }}
             </div>
             <div class="about-description">
-              SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。
+              开发者工具箱，包含多种实用开发工具。
             </div>
             <div class="about-author">
               作者: {{ author }}

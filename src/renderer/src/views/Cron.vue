@@ -170,33 +170,35 @@
         <div class="value-config">
           <template v-if="currentFieldType === 'range'">
             <template v-if="activeTab === 'week'">
-              <select
-                v-model="weekRangeFrom"
-                class="select-field"
-                @change="generateExpression"
-              >
-                <option
-                  v-for="day in weekDays"
-                  :key="day.value"
-                  :value="day.value"
+              <div class="inline-row">
+                <select
+                  v-model="weekRangeFrom"
+                  class="select-field"
+                  @change="generateExpression"
                 >
-                  {{ day.label }}
-                </option>
-              </select>
-              <span class="range-separator">至</span>
-              <select
-                v-model="weekRangeTo"
-                class="select-field"
-                @change="generateExpression"
-              >
-                <option
-                  v-for="day in weekDays"
-                  :key="day.value"
-                  :value="day.value"
+                  <option
+                    v-for="day in weekDays"
+                    :key="day.value"
+                    :value="day.value"
+                  >
+                    {{ day.label }}
+                  </option>
+                </select>
+                <span class="range-separator">至</span>
+                <select
+                  v-model="weekRangeTo"
+                  class="select-field"
+                  @change="generateExpression"
                 >
-                  {{ day.label }}
-                </option>
-              </select>
+                  <option
+                    v-for="day in weekDays"
+                    :key="day.value"
+                    :value="day.value"
+                  >
+                    {{ day.label }}
+                  </option>
+                </select>
+              </div>
             </template>
             <template v-else>
               <input
@@ -332,59 +334,63 @@
           </template>
 
           <template v-else-if="currentFieldType === 'nth'">
-            <span class="interval-label">每月第</span>
-            <select
-              v-model="weekNth"
-              class="select-field"
-              @change="generateExpression"
-            >
-              <option value="1">
-                1
-              </option>
-              <option value="2">
-                2
-              </option>
-              <option value="3">
-                3
-              </option>
-              <option value="4">
-                4
-              </option>
-              <option value="5">
-                5
-              </option>
-            </select>
-            <span class="interval-label">个</span>
-            <select
-              v-model="weekNthDay"
-              class="select-field"
-              @change="generateExpression"
-            >
-              <option
-                v-for="day in weekDays"
-                :key="day.value"
-                :value="day.value"
+            <div class="inline-row">
+              <span class="interval-label">每月第</span>
+              <select
+                v-model="weekNth"
+                class="select-field"
+                @change="generateExpression"
               >
-                {{ day.label }}
-              </option>
-            </select>
+                <option value="1">
+                  1
+                </option>
+                <option value="2">
+                  2
+                </option>
+                <option value="3">
+                  3
+                </option>
+                <option value="4">
+                  4
+                </option>
+                <option value="5">
+                  5
+                </option>
+              </select>
+              <span class="interval-label">个</span>
+              <select
+                v-model="weekNthDay"
+                class="select-field"
+                @change="generateExpression"
+              >
+                <option
+                  v-for="day in weekDays"
+                  :key="day.value"
+                  :value="day.value"
+                >
+                  {{ day.label }}
+                </option>
+              </select>
+            </div>
           </template>
 
           <template v-else-if="currentFieldType === 'last'">
-            <span class="interval-label">每月最后一个</span>
-            <select
-              v-model="weekLastDay"
-              class="select-field"
-              @change="generateExpression"
-            >
-              <option
-                v-for="day in weekDays"
-                :key="day.value"
-                :value="day.value"
+            <div class="inline-row">
+              <span class="interval-label">每月最后一个</span>
+              <select
+                v-model="weekLastDay"
+                class="select-field"
+                @change="generateExpression"
               >
-                {{ day.label }}
-              </option>
-            </select>
+                <option
+                  v-for="day in weekDays"
+                  :key="day.value"
+                  :value="day.value"
+                >
+                  {{ day.label }}
+                </option>
+              </select>
+            </div>
           </template>
         </div>
       </div>
@@ -522,6 +528,16 @@ const FIELD_CONFIG = {
 }
 
 const MONTH_NAMES = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+
+const weekDays = [
+  { value: '1', label: '周一' },
+  { value: '2', label: '周二' },
+  { value: '3', label: '周三' },
+  { value: '4', label: '周四' },
+  { value: '5', label: '周五' },
+  { value: '6', label: '周六' },
+  { value: '0', label: '周日' }
+]
 
 const tabs = [
   { key: 'second', text: '秒' },
@@ -1254,6 +1270,12 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.inline-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .value-config .input-field {
   width: 70px;
   padding: 6px 10px;
@@ -1276,6 +1298,7 @@ onMounted(() => {
   font-size: 14px;
   background: var(--glass-bg);
   cursor: pointer;
+  min-width: 70px;
 }
 
 .value-config .select-field:focus {
@@ -1297,6 +1320,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 6px;
+  align-self: flex-start;
 }
 
 .specific-grid.hour-grid {
@@ -1314,12 +1338,13 @@ onMounted(() => {
 .specific-grid.week-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .specific-grid.week-grid .specific-item {
-  flex: 1;
-  min-width: 80px;
+  width: auto;
+  min-width: 60px;
+  padding: 6px 12px;
 }
 
 .hour-grid-container {
