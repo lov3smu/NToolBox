@@ -83,7 +83,7 @@ export async function generateSQLFile(scriptInfo) {
       }
     }
     const nextNumber = maxNumber + 1
-    const padWidth = Math.max(3, String(nextNumber).length)
+    const padWidth = Math.max(2, String(nextNumber).length)
     const sNumber = `S${String(nextNumber).padStart(padWidth, '0')}`
 
     let filename
