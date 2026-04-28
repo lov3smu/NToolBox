@@ -1,0 +1,27 @@
+{
+  "name": "yaml-validate",
+  "version": "1.0.0",
+  "description": "验证YAML格式是否正确",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["YAML", "验证", "格式"],
+  "icon": "yaml",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "yaml_string": {
+        "type": "string",
+        "description": "要验证的YAML字符串"
+      }
+    },
+    "required": ["yaml_string"]
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "yaml_string: name: test",
+      "output": "验证结果和潜在问题"
+    }
+  ]
+}

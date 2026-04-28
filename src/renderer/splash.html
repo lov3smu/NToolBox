@@ -11,6 +11,7 @@
             padding: 0;
             overflow: hidden;
             background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         
         body {
@@ -22,6 +23,7 @@
         .splash-container {
             text-align: center;
             animation: fadeIn 0.6s ease-out;
+            min-width: 320px;
         }
         
         .glass-card {
@@ -31,21 +33,32 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
-            padding: 40px 50px;
+            padding: 40px 60px;
             color: #2d3748;
         }
         
         .logo {
-            font-size: 56px;
-            margin-bottom: 20px;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
             animation: bounce 1.5s ease-in-out infinite;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: white;
+            border-radius: 12px;
             filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
         }
         
         .title {
             font-size: 24px;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             letter-spacing: 1px;
             color: #2d3748;
         }
@@ -55,6 +68,7 @@
             color: #4a5568;
             margin-bottom: 24px;
             font-weight: 400;
+            line-height: 1.5;
         }
         
         .loader-wrapper {
@@ -74,7 +88,7 @@
         }
         
         .loading-text {
-            font-size: 13px;
+            font-size: 12px;
             color: #718096;
             letter-spacing: 1px;
         }
@@ -97,9 +111,11 @@
 <body>
     <div class="splash-container">
         <div class="glass-card">
-            <div class="logo">📝</div>
-            <div class="title">SQL Script Generator</div>
-            <div class="subtitle">SQL脚本生成工具</div>
+            <div class="logo">
+                <img src="./assets/icon.png" alt="NToolBox Logo">
+            </div>
+            <div class="title">NToolBox</div>
+            <div class="subtitle">多端工具集合平台 · 启动快 · 功能全 · 更智能</div>
             <div class="loader-wrapper">
                 <div class="loader"></div>
                 <div class="loading-text">正在加载...</div>

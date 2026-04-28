@@ -6,26 +6,12 @@
     <header class="dashboard-header">
       <div class="logo-section">
         <div class="logo">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <ellipse
-              cx="12"
-              cy="5"
-              rx="9"
-              ry="3"
-            />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-          </svg>
+          <img :src="iconUrl" alt="NToolBox Logo">
         </div>
         <div class="title-section">
-          <h1>SQL Script Generator</h1>
+          <h1>NToolBox</h1>
           <p class="subtitle">
-            开发工具集 - 提升开发效率的实用工具箱
+            多端工具集合平台 · 启动快 · 功能全 · 更智能
           </p>
         </div>
       </div>
@@ -56,8 +42,8 @@
       <section class="intro-section">
         <h2>工具介绍</h2>
         <div class="intro-content">
-          <p>SQL Script Generator 是一款专为开发者设计的实用工具集，旨在提升日常开发效率。</p>
-          <p>集成了 SQL 脚本生成、AI 聊天助手、密码生成、时间戳转换、JSON 格式化等常用工具，帮助您快速完成重复性工作。</p>
+          <p>NToolBox 是一款面向开发人员的多端工具集合平台，集成丰富工具 + AI 大模型能力，启动快、功能全、更智能。</p>
+          <p>内置 SQL 脚本生成、AI 聊天助手、数据库管理、密码生成、时间戳转换、JSON 格式化、Cron 表达式、YAML 编辑器等多种实用工具，集成多款主流 AI 大模型，助力提升开发效率。</p>
         </div>
       </section>
 
@@ -160,7 +146,7 @@
     </main>
 
     <footer class="dashboard-footer">
-      <p>SQL Script Generator v1.0.7</p>
+      <p>NToolBox v{{ version }}</p>
     </footer>
   </div>
 </template>
@@ -168,19 +154,29 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { openSettings } from '@/api'
+import { openSettings, getPackageInfo } from '@/api'
+import iconUrl from '@assets/icon.png'
 
 const emit = defineEmits(['openSearch'])
 const router = useRouter()
 
 const windowWidth = ref(window.innerWidth)
+const version = ref('1.0.0')
 
 function updateWidth() {
   windowWidth.value = window.innerWidth
 }
 
+async function loadVersion() {
+  const info = await getPackageInfo()
+  if (info.version) {
+    version.value = info.version
+  }
+}
+
 onMounted(() => {
   updateWidth()
+  loadVersion()
   window.addEventListener('resize', updateWidth)
 })
 
@@ -360,22 +356,24 @@ function navigateTo(path) {
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(10px);
+  overflow: hidden;
 }
 
-.logo svg {
-  width: 28px;
-  height: 28px;
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .title-section h1 {
-  font-size: 24px;
+  font-size: var(--font-size-lg);
   font-weight: 700;
   margin-bottom: 4px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .title-section .subtitle {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   opacity: 0.9;
 }
 
@@ -398,18 +396,18 @@ function navigateTo(path) {
 }
 
 .search-trigger .search-icon {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
   opacity: 0.8;
 }
 
 .search-trigger span:first-of-type {
-  font-size: 14px;
+  font-size: var(--font-size-base);
   opacity: 0.9;
 }
 
 .search-trigger .shortcut {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   background: rgba(0, 0, 0, 0.15);
   padding: 3px 8px;
   border-radius: 4px;
@@ -427,7 +425,7 @@ function navigateTo(path) {
 }
 
 .dashboard-main h2 {
-  font-size: 18px;
+  font-size: var(--font-size-md);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 20px;
@@ -450,6 +448,7 @@ function navigateTo(path) {
   border-radius: var(--radius-md);
   padding: 24px;
   line-height: 1.8;
+  font-size: var(--font-size-base);
   color: var(--text-secondary);
 }
 
@@ -487,8 +486,8 @@ function navigateTo(path) {
 }
 
 .tool-icon {
-  width: 48px;
-  height: 48px;
+  width: var(--icon-size-xl);
+  height: var(--icon-size-xl);
   background: var(--primary-gradient);
   border-radius: var(--radius-md);
   display: flex;
@@ -498,8 +497,8 @@ function navigateTo(path) {
 }
 
 .tool-icon svg {
-  width: 24px;
-  height: 24px;
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
   color: white;
 }
 
@@ -509,14 +508,14 @@ function navigateTo(path) {
 }
 
 .tool-name {
-  font-size: 15px;
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .tool-desc {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
 }
 
@@ -545,7 +544,7 @@ function navigateTo(path) {
 .shortcut-keys kbd {
   display: inline-block;
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-family: 'Consolas', 'Monaco', monospace;
   background: var(--primary-gradient);
   color: white;
@@ -557,11 +556,11 @@ function navigateTo(path) {
 
 .shortcut-keys span {
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
 .shortcut-desc {
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-secondary);
 }
 
@@ -569,7 +568,7 @@ function navigateTo(path) {
   padding: 20px 40px;
   text-align: center;
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   border-top: 1px solid var(--border-color);
 }
 </style>

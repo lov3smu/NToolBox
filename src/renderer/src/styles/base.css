@@ -1,5 +1,5 @@
 /* ========================================
-   SQL Script Generator - 统一样式基础 (毛玻璃版本)
+   NToolBox - 统一样式基础 (毛玻璃版本)
    ======================================== */
 
 /* ---------- CSS 变量 ---------- */
@@ -32,6 +32,21 @@
     --text-primary: #2d3748;
     --text-secondary: #4a5568;
     --text-tertiary: #718096;
+    
+    /* 字体层级系统 */
+    --font-size-xl: 24px;
+    --font-size-lg: 18px;
+    --font-size-md: 16px;
+    --font-size-base: 14px;
+    --font-size-sm: 12px;
+    --font-size-xs: 11px;
+    
+    /* 图标大小系统 */
+    --icon-size-xl: 48px;
+    --icon-size-lg: 32px;
+    --icon-size-md: 24px;
+    --icon-size-sm: 20px;
+    --icon-size-xs: 16px;
     
     /* 阴影层次 */
     --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
@@ -109,7 +124,7 @@ body {
     padding: 14px 28px;
     border: none;
     border-radius: var(--radius-md);
-    font-size: 15px;
+    font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition-normal);
@@ -212,7 +227,7 @@ body {
     cursor: pointer;
     background: var(--primary-gradient);
     color: white;
-    font-size: 12px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     transition: var(--transition-normal);
     box-shadow: 
@@ -269,11 +284,11 @@ body {
 }
 
 /* ---------- 按钮尺寸系统 ---------- */
-.btn-xl { padding: 18px 36px; font-size: 18px; }
-.btn-lg { padding: 16px 32px; font-size: 16px; }
-.btn-md { padding: 12px 24px; font-size: 15px; }
-.btn-sm { padding: 8px 16px; font-size: 12px; }
-.btn-xs { padding: 6px 12px; font-size: 11px; }
+.btn-xl { padding: 18px 36px; font-size: var(--font-size-lg); }
+.btn-lg { padding: 16px 32px; font-size: var(--font-size-md); }
+.btn-md { padding: 12px 24px; font-size: var(--font-size-base); }
+.btn-sm { padding: 8px 16px; font-size: var(--font-size-sm); }
+.btn-xs { padding: 6px 12px; font-size: var(--font-size-xs); }
 
 /* ---------- 输入框组件 (毛玻璃风格) ---------- */
 .input-field {
@@ -281,7 +296,7 @@ body {
     padding: 12px 16px;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
-    font-size: 14px;
+    font-size: var(--font-size-base);
     font-family: inherit;
     background: var(--glass-bg);
     color: var(--text-primary);
@@ -308,7 +323,7 @@ select {
     padding: 12px 16px;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
-    font-size: 14px;
+    font-size: var(--font-size-base);
     font-family: inherit;
     background: var(--glass-bg);
     cursor: pointer;
@@ -317,7 +332,7 @@ select {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236678ea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 14px center;
-    background-size: 18px;
+    background-size: var(--icon-size-xs);
     color: var(--text-primary);
 }
 
@@ -343,7 +358,7 @@ select:focus {
     font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 
 .form-group input[type="checkbox"] {
@@ -354,7 +369,7 @@ select:focus {
 }
 
 .setting-hint {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: var(--text-tertiary);
     margin-top: 6px;
     padding-left: 4px;
@@ -389,7 +404,7 @@ select:focus {
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 10px;
-    font-size: 14px;
+    font-size: var(--font-size-base);
     letter-spacing: 0.3px;
 }
 
@@ -415,11 +430,55 @@ select:focus {
     color: white;
     padding: 14px 28px;
     border-radius: var(--radius-md);
-    font-size: 14px;
+    font-size: var(--font-size-base);
     font-weight: 500;
     box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
     z-index: 10000;
     animation: slideDown 0.3s ease;
+}
+
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--primary-gradient);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+}
+
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+}
+
+.toast.warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+}
+
+.toast-icon {
+    font-size: var(--font-size-md);
+}
+
+.toast-message {
+    font-weight: 500;
 }
 
 @keyframes slideDown {
@@ -431,4 +490,81 @@ select:focus {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
     }
+}
+
+/* ---------- 字体层级系统 ---------- */
+.font-xl { font-size: var(--font-size-xl); }
+.font-lg { font-size: var(--font-size-lg); }
+.font-md { font-size: var(--font-size-md); }
+.font-base { font-size: var(--font-size-base); }
+.font-sm { font-size: var(--font-size-sm); }
+.font-xs { font-size: var(--font-size-xs); }
+
+h1, .heading-1 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+h2, .heading-2 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+h3, .heading-3 {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+h4, .heading-4 {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.text-body {
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+}
+
+.text-small {
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.text-xs {
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+}
+
+/* ---------- 图标大小系统 ---------- */
+.icon-xl {
+    width: var(--icon-size-xl);
+    height: var(--icon-size-xl);
+}
+
+.icon-lg {
+    width: var(--icon-size-lg);
+    height: var(--icon-size-lg);
+}
+
+.icon-md {
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
+}
+
+.icon-sm {
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
+}
+
+.icon-xs {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+}
+
+svg.icon-xl, svg.icon-lg, svg.icon-md, svg.icon-sm, svg.icon-xs {
+    flex-shrink: 0;
 }

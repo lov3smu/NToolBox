@@ -1,0 +1,43 @@
+{
+  "name": "password",
+  "version": "1.0.0",
+  "description": "生成随机密码，可指定长度和包含的字符类型",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["密码", "随机", "安全"],
+  "icon": "key",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "length": {
+        "type": "integer",
+        "description": "密码长度，默认16"
+      },
+      "include_uppercase": {
+        "type": "boolean",
+        "description": "是否包含大写字母，默认true"
+      },
+      "include_lowercase": {
+        "type": "boolean",
+        "description": "是否包含小写字母，默认true"
+      },
+      "include_numbers": {
+        "type": "boolean",
+        "description": "是否包含数字，默认true"
+      },
+      "include_symbols": {
+        "type": "boolean",
+        "description": "是否包含特殊字符，默认true"
+      }
+    },
+    "required": []
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "length: 20, include_symbols: true",
+      "output": "生成20位包含特殊字符的随机密码"
+    }
+  ]
+}

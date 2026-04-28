@@ -1,7 +1,7 @@
 {
-  "name": "sql-script-generator",
-  "version": "1.1.0",
-  "description": "SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。",
+  "name": "ntoolbox",
+  "version": "1.2.0",
+  "description": "NToolBox - 一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。",
   "main": "./out/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
   "license": "MIT",
@@ -42,8 +42,8 @@
     "vite": "^7.3.2"
   },
   "build": {
-    "appId": "com.ancoka.sql-script-generator",
-    "productName": "SqlScriptGenerator",
+    "appId": "com.ancoka.ntoolbox",
+    "productName": "NToolBox",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"
@@ -119,7 +119,7 @@
     "publish": {
       "provider": "github",
       "owner": "lov3smu",
-      "repo": "sql-script-generator",
+      "repo": "NToolBox",
       "releaseType": "release"
     },
     "dmg": {

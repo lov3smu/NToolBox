@@ -324,21 +324,21 @@
       </div>
     </div>
 
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { useWindowWidth, useToast } from '@/composables'
+import { copyToClipboard } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
 
 const jsonInput = ref('')
 const validationStatus = ref('')
@@ -349,9 +349,6 @@ const parsedJson = ref(null)
 const collapsedPaths = ref(new Set())
 const displayLineCount = ref(1)
 const foldMarkers = ref([])
-
-const toastVisible = ref(false)
-const toastMessage = ref('')
 
 const editorRef = ref(null)
 const lineNumbersRef = ref(null)
@@ -668,7 +665,7 @@ function bindFoldEvents() {
 function formatJson() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showToast('请输入JSON数据')
+    showWarning('请输入JSON数据')
     return
   }
   
@@ -679,18 +676,18 @@ function formatJson() {
     parsedJson.value = parsed
     validationStatus.value = 'valid'
     validationMessage.value = 'JSON格式正确'
-    showToast('格式化成功')
+    showSuccess('格式化成功')
   } catch (e) {
     validationStatus.value = 'error'
     validationMessage.value = `格式错误: ${e.message}`
-    showToast('JSON格式错误')
+    showError('JSON格式错误')
   }
 }
 
 function compressJson() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showToast('请输入JSON数据')
+    showWarning('请输入JSON数据')
     return
   }
   
@@ -701,11 +698,11 @@ function compressJson() {
     parsedJson.value = parsed
     validationStatus.value = 'valid'
     validationMessage.value = 'JSON格式正确'
-    showToast('压缩成功')
+    showSuccess('压缩成功')
   } catch (e) {
     validationStatus.value = 'error'
     validationMessage.value = `格式错误: ${e.message}`
-    showToast('JSON格式错误')
+    showError('JSON格式错误')
   }
 }
 
@@ -721,60 +718,64 @@ function clearInput() {
   collapsedPaths.value.clear()
   foldMarkers.value = []
   displayLineCount.value = 1
-  showToast('已清空')
+  showSuccess('已清空')
 }
 
 function collapseAll() {
   if (!parsedJson.value) {
-    showToast('请先输入有效的JSON数据')
+    showWarning('请先输入有效的JSON数据')
     return
   }
   if (foldMarkers.value.length === 0) {
-    showToast('没有可折叠的内容')
+    showWarning('没有可折叠的内容')
     return
   }
   foldMarkers.value.forEach(marker => {
     collapsedPaths.value.add(marker.id)
   })
   renderJson(lastRenderedText, parsedJson.value)
-  showToast('已折叠全部')
+  showSuccess('已折叠全部')
 }
 
 function expandAll() {
   if (!parsedJson.value) {
-    showToast('请先输入有效的JSON数据')
+    showWarning('请先输入有效的JSON数据')
     return
   }
   if (collapsedPaths.value.size === 0) {
-    showToast('没有折叠的内容')
+    showWarning('没有折叠的内容')
     return
   }
   collapsedPaths.value.clear()
   renderJson(lastRenderedText, parsedJson.value)
-  showToast('已展开全部')
+  showSuccess('已展开全部')
 }
 
-function copyMinified() {
+async function copyMinified() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showToast('请输入JSON数据')
+    showWarning('请输入JSON数据')
     return
   }
   
   try {
     const parsed = JSON.parse(input)
     const minified = JSON.stringify(parsed)
-    copyToClipboard(minified)
-    showToast('已复制压缩JSON')
+    const success = await copyToClipboard(minified)
+    if (success) {
+      showSuccess('已复制压缩JSON')
+    } else {
+      showError('复制失败')
+    }
   } catch (e) {
-    showToast('JSON格式错误')
+    showError('JSON格式错误')
   }
 }
 
-function copyEscaped() {
+async function copyEscaped() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showToast('请输入JSON数据')
+    showWarning('请输入JSON数据')
     return
   }
   
@@ -782,27 +783,35 @@ function copyEscaped() {
     const parsed = JSON.parse(input)
     const minified = JSON.stringify(parsed)
     const escaped = JSON.stringify(minified)
-    copyToClipboard(escaped)
-    showToast('已复制压缩转义JSON')
+    const success = await copyToClipboard(escaped)
+    if (success) {
+      showSuccess('已复制压缩转义JSON')
+    } else {
+      showError('复制失败')
+    }
   } catch (e) {
-    showToast('JSON格式错误')
+    showError('JSON格式错误')
   }
 }
 
-function convertToXml() {
+async function convertToXml() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showToast('请输入JSON数据')
+    showWarning('请输入JSON数据')
     return
   }
   
   try {
     const parsed = JSON.parse(input)
     const xml = jsonToXml(parsed, 'root')
-    copyToClipboard(xml)
-    showToast('已复制XML')
+    const success = await copyToClipboard(xml)
+    if (success) {
+      showSuccess('已复制XML')
+    } else {
+      showError('复制失败')
+    }
   } catch (e) {
-    showToast('JSON格式错误')
+    showError('JSON格式错误')
   }
 }
 
@@ -1063,21 +1072,31 @@ function findPrecedingKeySimple(text, valueEnd, pathStack) {
   }
 }
 
-function copySelectedPath() {
+async function copySelectedPath() {
   if (!contextMenu.value.path) {
-    showToast('无法获取路径')
+    showError('无法获取路径')
     return
   }
-  copyToClipboard(contextMenu.value.path)
+  const success = await copyToClipboard(contextMenu.value.path)
+  if (success) {
+    showSuccess('已复制路径')
+  } else {
+    showError('复制失败')
+  }
   hideContextMenu()
 }
 
-function copySelectedText() {
+async function copySelectedText() {
   if (!contextMenu.value.selectedText) {
-    showToast('没有选中内容')
+    showWarning('没有选中内容')
     return
   }
-  copyToClipboard(contextMenu.value.selectedText)
+  const success = await copyToClipboard(contextMenu.value.selectedText)
+  if (success) {
+    showSuccess('已复制内容')
+  } else {
+    showError('复制失败')
+  }
   hideContextMenu()
 }
 
@@ -1092,23 +1111,23 @@ function setJsonPath(path) {
 
 function executeJsonPath() {
   if (!parsedJson.value) {
-    showToast('请先输入有效的JSON数据')
+    showWarning('请先输入有效的JSON数据')
     return
   }
   
   const path = jsonPathInput.value.trim()
   if (!path) {
-    showToast('请输入JSONPath表达式')
+    showWarning('请输入JSONPath表达式')
     return
   }
   
   try {
     const result = evaluateJsonPath(parsedJson.value, path)
     jsonPathResult.value = result
-    showToast('查询成功')
+    showSuccess('查询成功')
   } catch (e) {
     jsonPathResult.value = null
-    showToast(`查询失败: ${e.message}`)
+    showError(`查询失败: ${e.message}`)
   }
 }
 
@@ -1265,43 +1284,20 @@ function recursiveSearch(obj, propName, results) {
   }
 }
 
-function copyJsonPathResult() {
+async function copyJsonPathResult() {
   if (jsonPathResult.value === null) {
-    showToast('没有可复制的结果')
+    showWarning('没有可复制的结果')
     return
   }
   const text = typeof jsonPathResult.value === 'object'
     ? JSON.stringify(jsonPathResult.value, null, 2)
     : String(jsonPathResult.value)
-  copyToClipboard(text)
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    try {
-      document.execCommand('copy')
-      showToast('已复制到剪贴板')
-    } catch (e) {
-      showToast('复制失败')
-    }
-    document.body.removeChild(textarea)
-  })
-}
-
-function showToast(message) {
-  toastMessage.value = message
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+  const success = await copyToClipboard(text)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败')
+  }
 }
 
 function handleClickOutside(e) {

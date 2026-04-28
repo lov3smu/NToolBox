@@ -1,0 +1,35 @@
+{
+  "name": "timestamp",
+  "version": "1.0.0",
+  "description": "Unix时间戳与日期时间互转，支持秒和毫秒",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["时间", "时间戳", "转换"],
+  "icon": "clock",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "timestamp": {
+        "type": "integer",
+        "description": "Unix时间戳（秒或毫秒）"
+      },
+      "date_string": {
+        "type": "string",
+        "description": "日期字符串，格式如 2024-01-01 或 2024-01-01 12:00:00"
+      }
+    },
+    "required": []
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "timestamp: 1704067200",
+      "output": "转换成日期时间和ISO格式"
+    },
+    {
+      "input": "date_string: 2024-01-01 00:00:00",
+      "output": "转换成时间戳（秒和毫秒）"
+    }
+  ]
+}

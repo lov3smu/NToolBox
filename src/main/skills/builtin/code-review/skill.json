@@ -1,0 +1,36 @@
+{
+  "name": "code-review",
+  "version": "1.0.0",
+  "description": "审查代码质量、安全性、性能等问题，提供改进建议",
+  "author": "system",
+  "type": "builtin",
+  "category": "code",
+  "tags": ["代码", "审查", "质量", "安全"],
+  "icon": "review",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "需要审查的代码内容"
+      },
+      "language": {
+        "type": "string",
+        "description": "代码语言，如 javascript、python、java 等"
+      },
+      "focus": {
+        "type": "string",
+        "description": "审查重点，可选：quality、security、performance、all",
+        "enum": ["quality", "security", "performance", "all"]
+      }
+    },
+    "required": ["code"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "function add(a, b) { return a + b }",
+      "output": "审查结果：代码简洁但缺少类型检查..."
+    }
+  ]
+}

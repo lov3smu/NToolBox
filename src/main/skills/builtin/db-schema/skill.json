@@ -1,0 +1,63 @@
+{
+  "name": "db-schema",
+  "version": "1.2.0",
+  "description": "查询数据库表结构信息。**禁止伪造数据**：只返回真实表结构，不伪造任何字段名、类型。如果表不存在或查询失败，如实告知用户，不能编造字段结构。**安全限制**：只允许查询操作。",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["数据库", "表结构", "真实数据", "禁止伪造"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["describe", "show_create", "show_indexes", "show_columns"],
+        "description": "查看表结构 → describe"
+      },
+      "connection_name": {
+        "type": "string",
+        "description": "必须参数，从上下文获取"
+      },
+      "database": {
+        "type": "string",
+        "description": "数据库名，从输入或上下文获取"
+      },
+      "table_name": {
+        "type": "string",
+        "description": "必须参数，表名，从输入提取"
+      }
+    },
+    "required": ["action", "connection_name", "table_name"]
+  },
+  "handler": "handler.js",
+  "semantic_rules": {
+    "禁止伪造数据": {
+      "强制规则": "绝对禁止伪造字段名、字段类型、表结构",
+      "真实返回": "只返回数据库的真实表结构",
+      "失败处理": "表不存在时如实告知用户，不能编造字段结构",
+      "空结果处理": "表无字段时如实告知，不能虚构字段"
+    },
+    "trigger_keywords": ["表结构", "字段", "索引"],
+    "action_mapping": {
+      "describe": ["查看表结构", "有哪些字段"],
+      "show_create": ["查看建表语句", "CREATE语句"],
+      "show_indexes": ["查看索引", "有哪些索引"],
+      "show_columns": ["查看字段详情", "字段注释"]
+    }
+  },
+  "examples": [
+    {
+      "user_input": "查看users表的结构",
+      "tool_call": "db-schema({action: 'describe', table_name: 'users'})",
+      "真实返回示例": "字段列表：id, name, email（真实字段）",
+      "禁止行为": "如果tool返回表不存在，不能伪造id INT等字段结构"
+    },
+    {
+      "user_input": "查看orders表的建表语句",
+      "tool_call": "db-schema({action: 'show_create', table_name: 'orders'})",
+      "真实返回示例": "CREATE TABLE语句（真实SQL）",
+      "禁止行为": "如果tool返回失败，不能编造CREATE语句"
+    }
+  ]
+}

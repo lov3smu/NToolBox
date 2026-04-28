@@ -1,0 +1,74 @@
+{
+  "name": "function-group-sql",
+  "version": "1.0.0",
+  "description": "生成功能权限组和功能权限SQL脚本，自动将中文翻译成大驼峰编码。适用于初始化功能权限表，最多支持三级层级",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["SQL", "功能权限", "权限组", "自动翻译"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "app_group": {
+        "type": "string",
+        "description": "应用代码，如 EBL、ORDER"
+      },
+      "function_groups": {
+        "type": "array",
+        "description": "功能权限组列表，最多三级",
+        "items": {
+          "type": "object",
+          "properties": {
+            "level": { "type": "integer", "description": "层级：1顶级，2二级，3三级" },
+            "code": { "type": "string", "description": "编码（中文），会自动翻译成大驼峰" },
+            "name": { "type": "string", "description": "名称（中文）" },
+            "parent_code": { "type": "string", "description": "父级编码（仅二级和三级需要）" },
+            "sort": { "type": "integer", "description": "排序，可选" },
+            "functions": {
+              "type": "array",
+              "description": "功能权限列表",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "code": { "type": "string", "description": "功能编码（中文）" },
+                  "name": { "type": "string", "description": "功能名称（中文）" },
+                  "is_sensitive": { "type": "integer", "description": "是否敏感，默认0" },
+                  "sort": { "type": "integer", "description": "排序，默认0" },
+                  "status": { "type": "integer", "description": "状态，默认101001" }
+                },
+                "required": ["code", "name"]
+              }
+            }
+          },
+          "required": ["level", "code", "name"]
+        }
+      },
+      "database": {
+        "type": "string",
+        "description": "数据库名称，默认user_db"
+      },
+      "operate_type": {
+        "type": "string",
+        "enum": ["FIX", "PUBLISH"],
+        "description": "操作类型，默认PUBLISH"
+      },
+      "dir_name": {
+        "type": "string",
+        "description": "目录名称，可选"
+      },
+      "usage": {
+        "type": "string",
+        "description": "脚本用途说明，可选"
+      }
+    },
+    "required": ["app_group", "function_groups"]
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "app_group: EBL, function_groups: [{level:1, code:系统管理, functions:[用户列表]}]",
+      "output": "生成功能权限组和功能的INSERT SQL脚本"
+    }
+  ]
+}

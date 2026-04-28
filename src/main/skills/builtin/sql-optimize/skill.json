@@ -1,0 +1,35 @@
+{
+  "name": "sql-optimize",
+  "version": "1.0.0",
+  "description": "优化SQL查询性能，分析执行计划并提供改进建议",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["SQL", "优化", "性能", "数据库"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "sql": {
+        "type": "string",
+        "description": "需要优化的SQL语句"
+      },
+      "database": {
+        "type": "string",
+        "description": "数据库类型：mysql、postgresql、oracle、sqlserver 等"
+      },
+      "context": {
+        "type": "string",
+        "description": "表结构、数据量等上下文信息（可选）"
+      }
+    },
+    "required": ["sql", "database"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "SQL: SELECT * FROM users WHERE name LIKE '%test%', 数据库: mysql",
+      "output": "建议：避免使用前导通配符，考虑添加索引..."
+    }
+  ]
+}

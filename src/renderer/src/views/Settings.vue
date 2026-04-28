@@ -55,7 +55,26 @@
           </div>
           <div class="form-group">
             <label>文本编辑器</label>
-            <div class="path-input-group">
+            <select
+              v-model="textEditApp"
+              class="select-field"
+            >
+              <option value="">
+                自定义路径
+              </option>
+              <option
+                v-for="editor in editorPresets"
+                :key="editor.path"
+                :value="editor.path"
+              >
+                {{ editor.name }}
+              </option>
+            </select>
+            <div
+              v-if="!editorPresets.some(e => e.path === textEditApp)"
+              class="path-input-group"
+              style="margin-top: 8px;"
+            >
               <input
                 v-model="textEditApp"
                 type="text"
@@ -68,6 +87,9 @@
               >
                 浏览
               </button>
+            </div>
+            <div class="setting-hint">
+              选择编辑脚本文件使用的文本编辑器
             </div>
           </div>
           <div class="form-group">
@@ -399,16 +421,16 @@
         >
           <div class="about-section">
             <div class="about-icon">
-              SQL
+              <img :src="iconUrl" alt="NToolBox Logo">
             </div>
             <div class="about-name">
-              SQL Script Generator
+              NToolBox
             </div>
             <div class="about-version">
               版本: {{ version }}
             </div>
             <div class="about-description">
-              SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。
+              一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。
             </div>
             <div class="about-author">
               作者: {{ author }}
@@ -447,22 +469,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  getConfig,
-  getPackageInfo,
-  saveConfig,
-  selectDirectory,
-  selectFile,
-  reloadConfig,
-  reloadMenu,
-  setAutoStart,
-  checkForUpdates,
-  closeSettingsWindow,
-  validateApiKey,
-  getAiProviders
-} from '@/api'
+import { getConfig, saveConfig, selectDirectory, selectFile, getPackageInfo, getAiProviders, validateApiKey, checkForUpdates, closeSettingsWindow, setAutoStart, getAutoStart, reloadConfig, reloadMenu } from '@/api'
+import iconUrl from '@assets/icon.png'
 
 const route = useRoute()
 
@@ -483,6 +493,9 @@ const textEditApp = ref('')
 const autoUpdate = ref(true)
 const autoStart = ref(false)
 const closeAction = ref('ask')
+
+const platform = ref('')
+const editorPresets = ref([])
 const aiProvider = ref('bailian')
 const aiApiKeys = ref({
   bailian: '',
@@ -537,6 +550,31 @@ const currentEndpointId = computed({
 })
 
 onMounted(async () => {
+  platform.value = navigator.platform.toLowerCase()
+  
+  if (platform.value.includes('win')) {
+    editorPresets.value = [
+      { name: 'VS Code', path: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' },
+      { name: 'Notepad++', path: 'C:\\Program Files\\Notepad++\\notepad++.exe' },
+      { name: 'Sublime Text', path: 'C:\\Program Files\\Sublime Text\\sublime_text.exe' },
+      { name: '记事本', path: 'C:\\Windows\\System32\\notepad.exe' }
+    ]
+  } else if (platform.value.includes('mac')) {
+    editorPresets.value = [
+      { name: 'VS Code', path: '/Applications/Visual Studio Code.app' },
+      { name: 'Sublime Text', path: '/Applications/Sublime Text.app' },
+      { name: 'TextEdit', path: '/Applications/TextEdit.app' },
+      { name: 'Vim', path: '/usr/bin/vim' }
+    ]
+  } else {
+    editorPresets.value = [
+      { name: 'VS Code', path: '/usr/bin/code' },
+      { name: 'Vim', path: '/usr/bin/vim' },
+      { name: 'Nano', path: '/usr/bin/nano' },
+      { name: 'Gedit', path: '/usr/bin/gedit' }
+    ]
+  }
+  
   const tabParam = route.query.tab
   if (tabParam && menuItems.some(item => item.id === tabParam)) {
     activeTab.value = tabParam
@@ -988,11 +1026,23 @@ function openProviderDocs() {
 }
 
 .about-icon {
-  font-size: 72px;
-  margin-bottom: 20px;
-  font-weight: bold;
-  color: var(--primary-color);
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.about-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: white;
+  border-radius: 16px;
+  filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
 }
 
 .about-name {

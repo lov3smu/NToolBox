@@ -14,8 +14,8 @@ const appAuthor = packageJson.author || 'lov3smu'
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 function showAboutDialog(mainWindow) {
-  const appName = 'SQL Script Generator'
-  const description = 'SQL脚本生成工具，用于快速生成符合规范的SQL脚本文件。'
+  const appName = 'NToolBox'
+  const description = '一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。'
   const copyright = `© ${new Date().getFullYear()} ${appAuthor}. All rights reserved.`
   dialog.showMessageBox(mainWindow, {
     type: 'info',
@@ -93,6 +93,27 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
           }
         },
         {
+          label: 'AI聊天助手',
+          accelerator: shortcuts.chat || 'CmdOrCtrl+L',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/chat')
+            }
+          }
+        },
+        {
+          label: '数据库管理',
+          accelerator: 'CmdOrCtrl+D',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show()
+              mainWindow.webContents.send('navigate-to', '/database')
+            }
+          }
+        },
+        { type: 'separator' },
+        {
           label: '密码生成器',
           accelerator: shortcuts.password || 'CmdOrCtrl+P',
           click: () => {
@@ -149,16 +170,6 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.show()
               mainWindow.webContents.send('navigate-to', '/html-viewer')
-            }
-          }
-        },
-        {
-          label: 'AI聊天助手',
-          accelerator: shortcuts.chat || 'CmdOrCtrl+L',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/chat')
             }
           }
         },

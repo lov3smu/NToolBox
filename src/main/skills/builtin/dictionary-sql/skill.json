@@ -1,0 +1,57 @@
+{
+  "name": "dictionary-sql",
+  "version": "1.0.0",
+  "description": "生成字典配置SQL脚本，自动将中文翻译成英文编码（全大写）。适用于初始化字典表和字典数据表",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["SQL", "字典", "数据库", "自动翻译"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "dict_name": {
+        "type": "string",
+        "description": "字典名称（中文），如：用户状态、订单类型"
+      },
+      "dict_values": {
+        "type": "array",
+        "description": "字典值列表",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "字典值名称（中文）" },
+            "sort": { "type": "integer", "description": "排序号，可选" },
+            "status": { "type": "string", "description": "状态，可选，默认EBL" }
+          },
+          "required": ["name"]
+        }
+      },
+      "database": {
+        "type": "string",
+        "description": "数据库名称，默认main_db"
+      },
+      "operate_type": {
+        "type": "string",
+        "enum": ["FIX", "PUBLISH"],
+        "description": "操作类型，默认PUBLISH"
+      },
+      "dir_name": {
+        "type": "string",
+        "description": "目录名称，可选"
+      },
+      "usage": {
+        "type": "string",
+        "description": "脚本用途说明，可选"
+      }
+    },
+    "required": ["dict_name", "dict_values"]
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "dict_name: 用户状态, dict_values: [正常, 禁用, 已删除]",
+      "output": "生成包含INSERT语句的SQL脚本文件"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "name": "cron",
+  "version": "1.0.0",
+  "description": "生成Cron表达式，用于定时任务配置",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["Cron", "定时", "任务"],
+  "icon": "calendar",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "frequency": {
+        "type": "string",
+        "enum": ["daily", "weekly", "monthly", "hourly", "every_minute", "custom"],
+        "description": "执行频率类型"
+      },
+      "hour": {
+        "type": "integer",
+        "description": "小时（0-23）"
+      },
+      "minute": {
+        "type": "integer",
+        "description": "分钟（0-59）"
+      },
+      "day_of_month": {
+        "type": "integer",
+        "description": "每月的第几天（1-31）"
+      },
+      "day_of_week": {
+        "type": "string",
+        "enum": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+        "description": "星期几"
+      }
+    },
+    "required": ["frequency"]
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "frequency: daily, hour: 8, minute: 0",
+      "output": "生成每天8:00执行的Cron表达式：0 8 * * *"
+    }
+  ]
+}

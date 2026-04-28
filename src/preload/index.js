@@ -20,6 +20,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   copyToClipboard: (itemPath, recursive) => ipcRenderer.invoke('copy-to-clipboard', itemPath, recursive),
   getItemInfo: (itemPath) => ipcRenderer.invoke('get-item-info', itemPath),
   chat: (messages, options) => ipcRenderer.invoke('chat', messages, options),
+  chatStream: (messages, options) => ipcRenderer.invoke('chat-stream', messages, options),
+  onChatStreamChunk: (callback) => {
+    const listener = (_event, chunk) => callback(chunk)
+    ipcRenderer.on('chat-stream-chunk', listener)
+    return () => ipcRenderer.removeListener('chat-stream-chunk', listener)
+  },
+  onChatStreamEnd: (callback) => {
+    const listener = (_event, result) => callback(result)
+    ipcRenderer.on('chat-stream-end', listener)
+    return () => ipcRenderer.removeListener('chat-stream-end', listener)
+  },
   validateApiKey: (providerType, apiKey, extraConfig) => ipcRenderer.invoke('validate-api-key', providerType, apiKey, extraConfig),
   getAiProviders: () => ipcRenderer.invoke('get-ai-providers'),
   getProviderModels: (providerType) => ipcRenderer.invoke('get-provider-models', providerType),
@@ -43,6 +54,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
   saveSqlFile: (defaultPath) => ipcRenderer.invoke('save-sql-file', defaultPath),
   writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
+  
+  // Skills APIs
+  skillsInit: () => ipcRenderer.invoke('skills-init'),
+  skillsList: () => ipcRenderer.invoke('skills-list'),
+  skillsGet: (name) => ipcRenderer.invoke('skills-get', name),
+  skillsExecute: (name, params) => ipcRenderer.invoke('skills-execute', name, params),
+  skillsInstall: (skillPath) => ipcRenderer.invoke('skills-install', skillPath),
+  skillsUninstall: (name) => ipcRenderer.invoke('skills-uninstall', name),
+  skillsGetToolDefinitions: () => ipcRenderer.invoke('skills-get-tool-definitions'),
   
   onNavigateTo: (callback) => {
     const listener = (_event, path) => callback(path)

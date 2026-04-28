@@ -1,0 +1,37 @@
+{
+  "name": "api-design",
+  "version": "1.0.0",
+  "description": "设计RESTful API规范，包括接口定义、参数、响应格式等",
+  "author": "system",
+  "type": "builtin",
+  "category": "code",
+  "tags": ["API", "设计", "RESTful", "接口"],
+  "icon": "api",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "requirement": {
+        "type": "string",
+        "description": "API需求描述，如用户管理、订单处理等"
+      },
+      "style": {
+        "type": "string",
+        "description": "API风格：restful、graphql、rpc",
+        "enum": ["restful", "graphql", "rpc"]
+      },
+      "output_format": {
+        "type": "string",
+        "description": "输出格式：swagger、markdown、json",
+        "enum": ["swagger", "markdown", "json"]
+      }
+    },
+    "required": ["requirement"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "需求：用户管理API，风格：restful，格式：swagger",
+      "output": "生成包含增删改查接口的Swagger YAML定义..."
+    }
+  ]
+}

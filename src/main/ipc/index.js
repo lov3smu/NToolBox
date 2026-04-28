@@ -1,9 +1,10 @@
-import { ipcMain, dialog, clipboard } from 'electron'
+import { ipcMain, dialog, clipboard, app } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { log, getProjectRoot } from '../utils'
 import { getConfig, saveConfig, loadConfig, generateSQLFile, openFile, openFolder, setAutoStart, getAutoStart, checkForUpdates } from '../services'
-import { chat, validateApiKey, getAvailableProviders, getProviderModels } from '../services/chat.js'
+import { chat, chatStream, validateApiKey, getAvailableProviders, getProviderModels } from '../services/chat.js'
+import { initSkills, getSkills, getSkill, executeSkill, installSkill, uninstallSkill, getSkillToolDefinitions } from '../services/skills.js'
 import { isPathWithinBase } from '../utils/sanitize'
 import { getMainWindow, getSettingsWindow, createSettingsWindow } from '../windows'
 import { createAppMenu } from '../ui'
@@ -82,12 +83,25 @@ export function setupIPCHandlers() {
     const mainWindow = getMainWindow()
     const settingsWindow = getSettingsWindow()
     const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
+    
+    const platform = process.platform
+    const filters = []
+    
+    if (platform === 'win32') {
+      filters.push({ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] })
+      filters.push({ name: '所有文件', extensions: ['*'] })
+    } else if (platform === 'darwin') {
+      filters.push({ name: '应用程序', extensions: ['app'] })
+      filters.push({ name: '可执行文件', extensions: ['sh', 'command'] })
+      filters.push({ name: '所有文件', extensions: ['*'] })
+    } else {
+      filters.push({ name: '可执行文件', extensions: ['sh', 'bin'] })
+      filters.push({ name: '所有文件', extensions: ['*'] })
+    }
+    
     const result = await dialog.showOpenDialog(parentWindow, {
       properties: ['openFile'],
-      filters: [
-        { name: '可执行文件', extensions: ['exe'] },
-        { name: '所有文件', extensions: ['*'] }
-      ]
+      filters
     })
     return result.filePaths[0] || ''
   })
@@ -249,13 +263,26 @@ export function setupIPCHandlers() {
     }
   })
 
-  ipcMain.handle('chat', async (_event, messages, options) => {
+  ipcMain.handle('chat', async (event, messages, options) => {
     console.log('=== IPC chat 被调用 ===')
     console.log('messages:', messages)
     console.log('options:', options)
     const result = await chat(messages, options)
     console.log('=== chat 结果 ===')
     console.log('result:', result)
+    return result
+  })
+
+  ipcMain.handle('chat-stream', async (event, messages, options) => {
+    console.log('=== IPC chat-stream 被调用 ===')
+    console.log('messages:', messages)
+    console.log('options:', options)
+    
+    const result = await chatStream(messages, options, (chunk) => {
+      event.sender.send('chat-stream-chunk', chunk)
+    })
+    
+    event.sender.send('chat-stream-end', result)
     return result
   })
 
@@ -368,6 +395,35 @@ export function setupIPCHandlers() {
       log.error('写入文件失败:', e)
       return { success: false, error: e.message }
     }
+  })
+
+  ipcMain.handle('skills-init', async () => {
+    await initSkills()
+    return { success: true }
+  })
+
+  ipcMain.handle('skills-list', async () => {
+    return getSkills()
+  })
+
+  ipcMain.handle('skills-get', async (_event, name) => {
+    return getSkill(name)
+  })
+
+  ipcMain.handle('skills-execute', async (_event, name, params) => {
+    return await executeSkill(name, params)
+  })
+
+  ipcMain.handle('skills-install', async (_event, skillPath) => {
+    return await installSkill(skillPath)
+  })
+
+  ipcMain.handle('skills-uninstall', async (_event, name) => {
+    return await uninstallSkill(name)
+  })
+
+  ipcMain.handle('skills-get-tool-definitions', async () => {
+    return getSkillToolDefinitions()
   })
 }
 

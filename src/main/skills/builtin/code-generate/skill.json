@@ -1,0 +1,40 @@
+{
+  "name": "code-generate",
+  "version": "1.0.0",
+  "description": "根据需求描述生成代码片段或完整实现",
+  "author": "system",
+  "type": "builtin",
+  "category": "code",
+  "tags": ["代码", "生成", "实现"],
+  "icon": "code",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "requirement": {
+        "type": "string",
+        "description": "需求描述，说明要实现什么功能"
+      },
+      "language": {
+        "type": "string",
+        "description": "目标语言，如 javascript、python、java、typescript 等"
+      },
+      "style": {
+        "type": "string",
+        "description": "代码风格，可选：简洁、详细、企业级",
+        "enum": ["简洁", "详细", "企业级"]
+      },
+      "context": {
+        "type": "string",
+        "description": "上下文信息，如现有代码、框架等（可选）"
+      }
+    },
+    "required": ["requirement", "language"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "需求：实现一个用户登录验证函数，语言：javascript",
+      "output": "生成包含用户名密码验证、错误处理的完整函数..."
+    }
+  ]
+}

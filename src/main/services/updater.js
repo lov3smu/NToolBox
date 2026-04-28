@@ -34,7 +34,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
   autoUpdater.setFeedURL({
     provider: 'github',
     owner: 'lov3smu',
-    repo: 'sql-script-generator',
+    repo: 'NToolBox',
     releaseType: 'release'
   })
 
@@ -95,7 +95,7 @@ export function checkForUpdates(manual = true, mainWindow = null) {
           }).then(result => {
             if (result.response === 0) {
               shell.openExternal(
-                'https://github.com/lov3smu/sql-script-generator/releases'
+                'https://github.com/lov3smu/NToolBox/releases'
               )
             }
           })

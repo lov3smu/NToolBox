@@ -4,6 +4,7 @@ import fs from 'fs'
 import { log } from '../utils'
 import { getConfigPath, installDir } from '../utils/path'
 import { VALID_CLOSE_ACTIONS } from '../constants'
+import { initCrypto, decryptDbPassword, encryptDbPassword } from '../utils/crypto'
 
 let config = {}
 
@@ -107,6 +108,8 @@ export function validateConfig(cfg) {
 
 export async function loadConfig() {
   try {
+    await initCrypto()
+    
     const configPath = getConfigPath()
     let data
     try {
@@ -148,6 +151,14 @@ export async function loadConfig() {
       config.shortcuts = { ...defaultConfig.shortcuts, ...config.shortcuts }
     }
 
+    if (Array.isArray(config.dbConnections)) {
+      for (const conn of config.dbConnections) {
+        if (conn.password) {
+          conn.password = decryptDbPassword(conn.password)
+        }
+      }
+    }
+
     log.info('配置文件加载成功')
     return config
   } catch (error) {
@@ -172,8 +183,21 @@ export async function saveConfig(newConfig) {
       log.error('配置内容:', JSON.stringify(newConfig, null, 2))
       return false
     }
+    
+    const configToSave = JSON.parse(JSON.stringify(newConfig))
+    
+    if (Array.isArray(configToSave.dbConnections)) {
+      for (const conn of configToSave.dbConnections) {
+        if (conn.password && conn.savePassword) {
+          conn.password = encryptDbPassword(conn.password)
+        } else if (conn.password && !conn.savePassword) {
+          conn.password = ''
+        }
+      }
+    }
+    
     const configPath = getConfigPath()
-    await fs.promises.writeFile(configPath, JSON.stringify(newConfig, null, 2), 'utf8')
+    await fs.promises.writeFile(configPath, JSON.stringify(configToSave, null, 2), 'utf8')
     config = newConfig
     log.info('配置保存成功')
     return true

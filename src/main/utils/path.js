@@ -41,7 +41,7 @@ export function getLogDir() {
 
 export function getConfigPath() {
   if (app.isPackaged) {
-    const configDir = path.join(app.getPath('home'), '.config', 'sql-script-generator')
+    const configDir = path.join(app.getPath('home'), '.config', 'ntoolbox')
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true })
     }

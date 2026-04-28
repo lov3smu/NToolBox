@@ -41,7 +41,7 @@ body {
 
 .container header h1,
 .container header h2 {
-    font-size: 28px;
+    font-size: var(--font-size-lg);
     margin-bottom: 10px;
     font-weight: 600;
     position: relative;
@@ -50,7 +50,7 @@ body {
 }
 
 .subtitle {
-    font-size: 14px;
+    font-size: var(--font-size-base);
     opacity: 0.9;
     position: relative;
     z-index: 1;
@@ -86,7 +86,7 @@ body {
     background: var(--glass-bg);
     border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--text-secondary);
     outline: none;
@@ -137,7 +137,7 @@ body {
 .result-section h3 {
     color: var(--text-primary);
     margin-bottom: 15px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     font-weight: 600;
 }
 
@@ -148,7 +148,7 @@ body {
     border-left: 4px solid var(--primary-color);
     word-break: break-all;
     font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     line-height: 1.6;
 }
 
@@ -162,7 +162,7 @@ body {
 
 .file-path {
     font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     background: rgba(0, 0, 0, 0.05);
     padding: 10px;
     border-radius: var(--radius-sm);
@@ -193,10 +193,10 @@ body {
         flex-direction: column;
     }
     
-    .container header h1,
-    .container header h2 {
-        font-size: 24px;
-    }
+.container header h1,
+.container header h2 {
+    font-size: var(--font-size-md);
+}
 }
 
 .toast {
@@ -211,7 +211,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 14px;
+    font-size: var(--font-size-base);
     opacity: 0;
     transition: all 0.3s ease;
     z-index: 1000;

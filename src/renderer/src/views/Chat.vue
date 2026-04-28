@@ -180,7 +180,7 @@
             </p>
           </div>
           <div
-            v-for="(msg, index) in currentMessages"
+            v-for="(msg, index) in displayedMessages"
             :key="index"
             class="message"
             :class="msg.role"
@@ -191,11 +191,50 @@
             </div>
             <div class="message-content">
               <div
+                v-if="msg.thinking"
+                class="thinking-block"
+              >
+                <div
+                  class="thinking-header"
+                  @click="toggleThinking(index)"
+                >
+                  <svg
+                    class="thinking-icon"
+                    :class="{ expanded: expandedThinking[index] }"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                  <span class="thinking-title">
+                    {{ msg.isStreaming ? '正在思考...' : '已思考' }}
+                  </span>
+                  <span class="thinking-duration">点击展开</span>
+                </div>
+                <div
+                  v-show="expandedThinking[index]"
+                  class="thinking-content"
+                >
+                  {{ msg.thinking }}
+                </div>
+              </div>
+              <div
+                v-if="msg.content"
                 class="message-text"
                 v-html="formatMessage(msg.content)"
               />
+              <div
+                v-if="msg.isStreaming && !msg.content && !msg.thinking"
+                class="loading-indicator"
+              >
+                <span /><span /><span />
+              </div>
               <button
-                v-if="msg.role === 'assistant'"
+                v-if="msg.role === 'assistant' && msg.content && !msg.isStreaming"
                 class="copy-btn"
                 title="复制"
                 @click="copyMessage(msg.content)"
@@ -219,19 +258,6 @@
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               </button>
-            </div>
-          </div>
-          <div
-            v-if="loading"
-            class="message assistant"
-          >
-            <div class="message-avatar">
-              <span>AI</span>
-            </div>
-            <div class="message-content">
-              <div class="loading-indicator">
-                <span /><span /><span />
-              </div>
             </div>
           </div>
         </div>
@@ -270,19 +296,19 @@
         </div>
       </main>
     </div>
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { getConfig, chat, openSettings, onConfigChanged, getProviderModels } from '@/api'
+import { getConfig, chatStream, openSettings, onConfigChanged, getProviderModels, onChatStreamChunk, onChatStreamEnd } from '@/api'
+import { useToast } from '@/composables'
+import { copyToClipboard } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const apiKey = ref('')
 const aiProvider = ref('bailian')
@@ -291,15 +317,41 @@ const currentSessionId = ref('')
 const inputText = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
-const toastVisible = ref(false)
-const toastMessage = ref('')
 const selectedModel = ref('')
 const editingSessionId = ref('')
 const editingTitle = ref('')
 const models = ref([])
+const streamingContent = ref('')
+const streamingThinking = ref('')
+const expandedThinking = ref({})
+let removeChunkListener = null
+let removeEndListener = null
+
+const { toastVisible, toastMessage, showSuccess, showError } = useToast()
 
 const currentSession = computed(() => sessions.value.find(s => s.id === currentSessionId.value))
 const currentMessages = computed(() => currentSession?.value?.messages || [])
+
+const displayedMessages = computed(() => {
+  const messages = currentMessages.value
+  if (!loading.value || messages.length === 0) {
+    return messages
+  }
+  
+  const lastMsg = messages[messages.length - 1]
+  if (lastMsg.role === 'assistant') {
+    const updatedMessages = [...messages.slice(0, -1)]
+    updatedMessages.push({
+      ...lastMsg,
+      content: streamingContent.value || lastMsg.content,
+      thinking: streamingThinking.value || lastMsg.thinking,
+      isStreaming: true
+    })
+    return updatedMessages
+  }
+  
+  return messages
+})
 
 async function loadApiKey() {
   const config = await getConfig()
@@ -436,28 +488,92 @@ async function sendMessage(e) {
   saveSessions()
   
   loading.value = true
+  streamingContent.value = ''
+  streamingThinking.value = ''
   scrollToBottom()
   
-  try {
-    const chatMessages = session.messages.map(m => ({ role: m.role, content: m.content }))
-    const result = await chat(chatMessages, { model: selectedModel.value })
+  const assistantMessage = { role: 'assistant', content: '', thinking: '' }
+  session.messages.push(assistantMessage)
+  
+  if (removeChunkListener) removeChunkListener()
+  if (removeEndListener) removeEndListener()
+  
+  removeChunkListener = onChatStreamChunk((chunk) => {
+    assistantMessage.content += chunk
+    
+    if (assistantMessage.content.includes('<thinking>')) {
+      const thinkingMatch = assistantMessage.content.match(/<thinking>([\s\S]*?)<\/thinking>/)
+      if (thinkingMatch) {
+        assistantMessage.thinking = thinkingMatch[1].trim()
+        assistantMessage.content = assistantMessage.content.replace(/<thinking>[\s\S]*?<\/thinking>/, '').trim()
+      } else {
+        const thinkingStart = assistantMessage.content.indexOf('<thinking>')
+        const beforeThinking = assistantMessage.content.slice(0, thinkingStart)
+        const thinkingContent = assistantMessage.content.slice(thinkingStart + 10)
+        assistantMessage.thinking = thinkingContent.trim()
+        assistantMessage.content = beforeThinking.trim()
+      }
+      streamingThinking.value = assistantMessage.thinking
+      streamingContent.value = assistantMessage.content
+    } else if (assistantMessage.content.includes('正在执行操作')) {
+      streamingContent.value = assistantMessage.content.replace(/正在执行操作[\s\S]*/, '').trim()
+      if (!assistantMessage.thinking) {
+        streamingThinking.value = '正在执行工具调用...'
+      }
+    } else {
+      streamingContent.value = assistantMessage.content
+      streamingThinking.value = assistantMessage.thinking
+    }
+    scrollToBottom()
+  })
+  
+  removeEndListener = onChatStreamEnd((result) => {
+    loading.value = false
+    streamingContent.value = ''
+    streamingThinking.value = ''
     
     if (result.success) {
-      session.messages.push({ role: 'assistant', content: result.content })
+      if (assistantMessage.content.includes('<thinking>')) {
+        const thinkingMatch = assistantMessage.content.match(/<thinking>([\s\S]*?)<\/thinking>/)
+        if (thinkingMatch) {
+          assistantMessage.thinking = thinkingMatch[1].trim()
+          assistantMessage.content = assistantMessage.content.replace(/<thinking>[\s\S]*?<\/thinking>/, '').trim()
+        } else {
+          const thinkingStart = assistantMessage.content.indexOf('<thinking>')
+          const beforeThinking = assistantMessage.content.slice(0, thinkingStart)
+          const thinkingContent = assistantMessage.content.slice(thinkingStart + 10)
+          assistantMessage.thinking = thinkingContent.trim()
+          assistantMessage.content = beforeThinking.trim()
+        }
+      }
+      
+      assistantMessage.content = assistantMessage.content
+        .replace(/\n*正在执行操作\.\.\.\n*/g, '\n')
+        .replace(/\n*✓ \S+ 完成\n*/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+      
       session.model = selectedModel.value
       session.updatedAt = Date.now()
       saveSessions()
     } else {
-      session.messages.push({ role: 'assistant', content: `错误: ${result.error}` })
+      assistantMessage.content = `错误: ${result.error}`
       saveSessions()
     }
-  } catch (e) {
-    session.messages.push({ role: 'assistant', content: `请求失败: ${e.message}` })
-    saveSessions()
-  }
+    
+    scrollToBottom()
+  })
   
-  loading.value = false
-  scrollToBottom()
+  try {
+    const chatMessages = session.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
+    await chatStream(chatMessages, { model: selectedModel.value })
+  } catch (e) {
+    loading.value = false
+    streamingContent.value = ''
+    assistantMessage.content = `请求失败: ${e.message}`
+    saveSessions()
+    scrollToBottom()
+  }
 }
 
 function scrollToBottom() {
@@ -468,37 +584,28 @@ function scrollToBottom() {
   })
 }
 
+function toggleThinking(index) {
+  expandedThinking.value[index] = !expandedThinking.value[index]
+}
+
 function formatMessage(content) {
   if (!content) return ''
-  const formatted = content
+  let cleaned = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, '').trim()
+  cleaned = cleaned.replace(/<thinking>[\s\S]*$/g, '').trim()
+  const formatted = cleaned
     .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="code-block"><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
     .replace(/\n/g, '<br>')
   return formatted
 }
 
-function copyMessage(content) {
-  navigator.clipboard.writeText(content).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = content
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    showToast('已复制到剪贴板')
-  })
-}
-
-function showToast(msg) {
-  toastMessage.value = msg
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+async function copyMessage(content) {
+  const success = await copyToClipboard(content)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败')
+  }
 }
 
 let removeConfigListener = null
@@ -514,6 +621,12 @@ onMounted(async () => {
 onUnmounted(() => {
   if (removeConfigListener) {
     removeConfigListener()
+  }
+  if (removeChunkListener) {
+    removeChunkListener()
+  }
+  if (removeEndListener) {
+    removeEndListener()
   }
 })
 
@@ -847,6 +960,58 @@ watch(currentMessages, () => {
   position: relative;
 }
 
+.thinking-block {
+  margin-bottom: 8px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius-md);
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.thinking-header:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.thinking-icon {
+  transition: transform 0.2s;
+}
+
+.thinking-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.thinking-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.thinking-duration {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+.thinking-content {
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: rgba(248, 249, 250, 0.8);
+  border-top: 1px solid rgba(102, 126, 234, 0.15);
+  white-space: pre-wrap;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
 .message-text {
   padding: 12px 16px;
   border-radius: var(--radius-md);
@@ -975,33 +1140,5 @@ watch(currentMessages, () => {
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast-icon {
-  color: #22c55e;
-  font-weight: bold;
 }
 </style>

@@ -1,0 +1,31 @@
+{
+  "name": "json-format",
+  "version": "1.0.0",
+  "description": "格式化或验证JSON字符串",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["JSON", "格式化", "验证"],
+  "icon": "json",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "json_string": {
+        "type": "string",
+        "description": "要格式化或验证的JSON字符串"
+      },
+      "indent": {
+        "type": "integer",
+        "description": "缩进空格数，默认2"
+      }
+    },
+    "required": ["json_string"]
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "json_string: {\"a\":1,\"b\":2}",
+      "output": "格式化后的JSON，带缩进"
+    }
+  ]
+}

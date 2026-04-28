@@ -1,0 +1,36 @@
+{
+  "name": "doc-generate",
+  "version": "1.0.0",
+  "description": "为代码生成文档说明，支持多种文档格式",
+  "author": "system",
+  "type": "builtin",
+  "category": "document",
+  "tags": ["文档", "生成", "注释"],
+  "icon": "doc",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "需要生成文档的代码内容"
+      },
+      "format": {
+        "type": "string",
+        "description": "文档格式：inline（行内注释）、api（API文档）、readme（README说明）",
+        "enum": ["inline", "api", "readme"]
+      },
+      "language": {
+        "type": "string",
+        "description": "代码语言（可选）"
+      }
+    },
+    "required": ["code", "format"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "代码：function add(a,b){return a+b}, 格式：api",
+      "output": "生成包含参数说明、返回值、示例的API文档..."
+    }
+  ]
+}

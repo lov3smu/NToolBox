@@ -170,33 +170,35 @@
         <div class="value-config">
           <template v-if="currentFieldType === 'range'">
             <template v-if="activeTab === 'week'">
-              <select
-                v-model="weekRangeFrom"
-                class="select-field"
-                @change="generateExpression"
-              >
-                <option
-                  v-for="day in weekDays"
-                  :key="day.value"
-                  :value="day.value"
+              <div class="inline-row">
+                <select
+                  v-model="weekRangeFrom"
+                  class="select-field"
+                  @change="generateExpression"
                 >
-                  {{ day.label }}
-                </option>
-              </select>
-              <span class="range-separator">至</span>
-              <select
-                v-model="weekRangeTo"
-                class="select-field"
-                @change="generateExpression"
-              >
-                <option
-                  v-for="day in weekDays"
-                  :key="day.value"
-                  :value="day.value"
+                  <option
+                    v-for="day in weekDays"
+                    :key="day.value"
+                    :value="day.value"
+                  >
+                    {{ day.label }}
+                  </option>
+                </select>
+                <span class="range-separator">至</span>
+                <select
+                  v-model="weekRangeTo"
+                  class="select-field"
+                  @change="generateExpression"
                 >
-                  {{ day.label }}
-                </option>
-              </select>
+                  <option
+                    v-for="day in weekDays"
+                    :key="day.value"
+                    :value="day.value"
+                  >
+                    {{ day.label }}
+                  </option>
+                </select>
+              </div>
             </template>
             <template v-else>
               <input
@@ -332,59 +334,63 @@
           </template>
 
           <template v-else-if="currentFieldType === 'nth'">
-            <span class="interval-label">每月第</span>
-            <select
-              v-model="weekNth"
-              class="select-field"
-              @change="generateExpression"
-            >
-              <option value="1">
-                1
-              </option>
-              <option value="2">
-                2
-              </option>
-              <option value="3">
-                3
-              </option>
-              <option value="4">
-                4
-              </option>
-              <option value="5">
-                5
-              </option>
-            </select>
-            <span class="interval-label">个</span>
-            <select
-              v-model="weekNthDay"
-              class="select-field"
-              @change="generateExpression"
-            >
-              <option
-                v-for="day in weekDays"
-                :key="day.value"
-                :value="day.value"
+            <div class="inline-row">
+              <span class="interval-label">每月第</span>
+              <select
+                v-model="weekNth"
+                class="select-field"
+                @change="generateExpression"
               >
-                {{ day.label }}
-              </option>
-            </select>
+                <option value="1">
+                  1
+                </option>
+                <option value="2">
+                  2
+                </option>
+                <option value="3">
+                  3
+                </option>
+                <option value="4">
+                  4
+                </option>
+                <option value="5">
+                  5
+                </option>
+              </select>
+              <span class="interval-label">个</span>
+              <select
+                v-model="weekNthDay"
+                class="select-field"
+                @change="generateExpression"
+              >
+                <option
+                  v-for="day in weekDays"
+                  :key="day.value"
+                  :value="day.value"
+                >
+                  {{ day.label }}
+                </option>
+              </select>
+            </div>
           </template>
 
           <template v-else-if="currentFieldType === 'last'">
-            <span class="interval-label">每月最后一个</span>
-            <select
-              v-model="weekLastDay"
-              class="select-field"
-              @change="generateExpression"
-            >
-              <option
-                v-for="day in weekDays"
-                :key="day.value"
-                :value="day.value"
+            <div class="inline-row">
+              <span class="interval-label">每月最后一个</span>
+              <select
+                v-model="weekLastDay"
+                class="select-field"
+                @change="generateExpression"
               >
-                {{ day.label }}
-              </option>
-            </select>
+                <option
+                  v-for="day in weekDays"
+                  :key="day.value"
+                  :value="day.value"
+                >
+                  {{ day.label }}
+                </option>
+              </select>
+            </div>
           </template>
         </div>
       </div>
@@ -495,21 +501,21 @@
       </div>
     </div>
 
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast
+      :visible="toastVisible"
+      :message="toastMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { useWindowWidth, useToast } from '@/composables'
+import { copyToClipboard, formatDateTime } from '@/utils'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
 
 const FIELD_CONFIG = {
   second: { min: 0, max: 59, name: '秒' },
@@ -522,6 +528,16 @@ const FIELD_CONFIG = {
 }
 
 const MONTH_NAMES = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+
+const weekDays = [
+  { value: '1', label: '周一' },
+  { value: '2', label: '周二' },
+  { value: '3', label: '周三' },
+  { value: '4', label: '周四' },
+  { value: '5', label: '周五' },
+  { value: '6', label: '周六' },
+  { value: '0', label: '周日' }
+]
 
 const tabs = [
   { key: 'second', text: '秒' },
@@ -599,8 +615,6 @@ const yearSpecificInput = ref('')
 const cronExpression = ref('* * * * * ?')
 const expressionDesc = ref('每秒执行')
 const scheduleList = ref([])
-const toastVisible = ref(false)
-const toastMessage = ref('')
 
 const fieldTags = computed(() => {
   const parts = cronExpression.value.trim().split(/\s+/)
@@ -962,16 +976,6 @@ function parseCronField(expr, min, max) {
   return result.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b)
 }
 
-function formatDateTime(date) {
-  const year = date.getFullYear()
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
-  const hour = date.getHours().toString().padStart(2, '0')
-  const minute = date.getMinutes().toString().padStart(2, '0')
-  const second = date.getSeconds().toString().padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-}
-
 function getTimeRemaining(from, to) {
   const diff = to - from
   if (diff < 0) return '已过期'
@@ -994,13 +998,13 @@ function getTimeRemaining(from, to) {
 function parseExpression() {
   const expression = cronExpression.value.trim()
   if (!expression) {
-    showToast('请输入表达式')
+    showWarning('请输入表达式')
     return
   }
 
   const parts = expression.split(/\s+/)
   if (parts.length < 6 || parts.length > 7) {
-    showToast('表达式格式错误，应为 6-7 个字段')
+    showError('表达式格式错误，应为 6-7 个字段')
     return
   }
 
@@ -1017,7 +1021,7 @@ function parseExpression() {
 
   expressionDesc.value = getExpressionDescription(cronExpression.value)
   updateScheduleList()
-  showToast('表达式已反解析')
+  showSuccess('表达式已反解析')
 }
 
 function parseFieldExpression(field, expr) {
@@ -1095,35 +1099,16 @@ function onExpressionBlur() {
   updateScheduleList()
 }
 
-function copyExpression() {
+async function copyExpression() {
   const text = cronExpression.value
   if (!text) return
 
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    try {
-      document.execCommand('copy')
-      showToast('已复制到剪贴板')
-    } catch (e) {
-      showToast('复制失败，请手动复制')
-    }
-    document.body.removeChild(textarea)
-  })
-}
-
-function showToast(message) {
-  toastMessage.value = message
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
+  const success = await copyToClipboard(text)
+  if (success) {
+    showSuccess('已复制到剪贴板')
+  } else {
+    showError('复制失败，请手动复制')
+  }
 }
 
 onMounted(() => {
@@ -1285,6 +1270,12 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.inline-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .value-config .input-field {
   width: 70px;
   padding: 6px 10px;
@@ -1307,6 +1298,7 @@ onMounted(() => {
   font-size: 14px;
   background: var(--glass-bg);
   cursor: pointer;
+  min-width: 70px;
 }
 
 .value-config .select-field:focus {
@@ -1328,6 +1320,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 6px;
+  align-self: flex-start;
 }
 
 .specific-grid.hour-grid {
@@ -1345,12 +1338,13 @@ onMounted(() => {
 .specific-grid.week-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .specific-grid.week-grid .specific-item {
-  flex: 1;
-  min-width: 80px;
+  width: auto;
+  min-width: 60px;
+  padding: 6px 12px;
 }
 
 .hour-grid-container {

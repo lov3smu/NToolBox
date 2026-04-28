@@ -5,6 +5,7 @@ export function useConfig() {
   const config = ref(null)
   const loading = ref(true)
   const error = ref(null)
+  let removeConfigListener = null
 
   async function loadConfig() {
     loading.value = true
@@ -20,7 +21,13 @@ export function useConfig() {
 
   onMounted(async () => {
     await loadConfig()
-    onConfigChanged(loadConfig)
+    removeConfigListener = onConfigChanged(loadConfig)
+  })
+
+  onUnmounted(() => {
+    if (removeConfigListener) {
+      removeConfigListener()
+    }
   })
 
   return {

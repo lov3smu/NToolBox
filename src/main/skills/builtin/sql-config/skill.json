@@ -1,0 +1,22 @@
+{
+  "name": "sql-config",
+  "version": "1.0.0",
+  "description": "获取SQL脚本生成的配置信息，包括可用的数据库列表、脚本类型、开发者信息",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["配置", "数据库", "信息"],
+  "icon": "config",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "",
+      "output": "返回数据库列表、脚本类型等配置信息"
+    }
+  ]
+}

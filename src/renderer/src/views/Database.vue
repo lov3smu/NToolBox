@@ -3007,17 +3007,28 @@
         </div>
         <div class="dialog-footer">
           <button
-            class="btn-small btn-secondary"
-            @click="closeEditDialog"
-          >
-            取消
-          </button>
-          <button
             class="btn-small"
-            @click="updateConnection"
+            :disabled="testingEditConn"
+            @click="testEditConnection"
           >
-            保存
+            {{ testingEditConn ? '测试中...' : '测试连接' }}
           </button>
+          <div class="dialog-footer-right">
+            <button
+              class="btn-small btn-secondary"
+              :disabled="testingEditConn"
+              @click="closeEditDialog"
+            >
+              取消
+            </button>
+            <button
+              class="btn-small"
+              :disabled="testingEditConn"
+              @click="updateConnection"
+            >
+              保存
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -4263,6 +4274,7 @@ const createDialogTab = ref('basic')
 const editDialogTab = ref('basic')
 const connecting = ref(false)
 const testingNewConn = ref(false)
+const testingEditConn = ref(false)
 const databases = ref([])
 const tables = ref([])
 const selectedDatabase = ref('')
@@ -5923,6 +5935,44 @@ async function testNewConnection() {
     await showMessage('测试连接失败: ' + error.message, 'error')
   } finally {
     testingNewConn.value = false
+  }
+}
+
+async function testEditConnection() {
+  if (!editingConnection.value.host) {
+    await showMessage('请输入主机地址', 'warning')
+    return
+  }
+  
+  testingEditConn.value = true
+  try {
+    const connConfig = {
+      host: editingConnection.value.host,
+      port: editingConnection.value.port || 3306,
+      user: editingConnection.value.user || 'root',
+      password: editingConnection.value.password
+    }
+    
+    if (editingConnection.value.charset) {
+      connConfig.charset = editingConnection.value.charset
+    }
+    
+    if (editingConnection.value.enableConnectTimeout) {
+      connConfig.connectTimeout = editingConnection.value.connectTimeout
+    }
+    
+    const result = await dbTestConnection(connConfig)
+    
+    if (result.success) {
+      await showMessage('连接成功！', 'success')
+    } else {
+      await showMessage('连接失败: ' + result.error, 'error')
+    }
+  } catch (error) {
+    console.error('测试连接失败:', error)
+    await showMessage('测试连接失败: ' + error.message, 'error')
+  } finally {
+    testingEditConn.value = false
   }
 }
 
@@ -8611,7 +8661,12 @@ th.sort-desc .th-name::after {
   padding: 18px 24px;
   border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-footer-right {
+  display: flex;
   gap: 12px;
 }
 

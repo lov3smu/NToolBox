@@ -1,0 +1,44 @@
+{
+  "name": "sql-script",
+  "version": "1.0.0",
+  "description": "生成符合规范的SQL脚本文件，自动创建目录、编号、添加历史记录",
+  "author": "system",
+  "type": "builtin",
+  "category": "database",
+  "tags": ["SQL", "脚本", "生成", "规范"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "database": {
+        "type": "string",
+        "description": "数据库名称"
+      },
+      "operate_type": {
+        "type": "string",
+        "enum": ["FIX", "PUBLISH", "QUERY"],
+        "description": "操作类型：FIX(修复)、PUBLISH(发布)、QUERY(查询)"
+      },
+      "script_type": {
+        "type": "string",
+        "description": "脚本类型：DDL、DML、DQL等（QUERY类型不需要此参数）"
+      },
+      "dir_name": {
+        "type": "string",
+        "description": "目录名称，使用中文描述"
+      },
+      "usage": {
+        "type": "string",
+        "description": "脚本用途说明"
+      }
+    },
+    "required": ["database", "operate_type", "dir_name", "usage"]
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "database: order_db, operate_type: PUBLISH, script_type: DDL, usage: 添加用户表",
+      "output": "生成规范编号的SQL脚本文件"
+    }
+  ]
+}
