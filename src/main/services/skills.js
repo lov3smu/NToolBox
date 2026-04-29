@@ -1,8 +1,12 @@
 import path from 'path'
 import fs from 'fs'
+import { pathToFileURL } from 'url'
 import { log } from '../utils'
 import { getConfig } from './config'
 import { getProvider } from './ai/index.js'
+import { generateDictionarySql, generateDictionarySqlBatch, generateFunctionGroupSql } from './templateGenerator.js'
+import * as database from './database.js'
+import { generateSQLFile } from './generator.js'
 
 const BUILTIN_SKILLS_PATH = path.join(__dirname, '../skills/builtin')
 const USER_SKILLS_PATH = path.join(__dirname, '../skills/user')
@@ -17,6 +21,9 @@ class SkillsManager {
     if (this.loaded) return
     
     log.info('开始加载 Skills...')
+    log.info('__dirname:', __dirname)
+    log.info('BUILTIN_SKILLS_PATH:', BUILTIN_SKILLS_PATH)
+    log.info('USER_SKILLS_PATH:', USER_SKILLS_PATH)
     
     await this._loadBuiltinSkills()
     await this._loadUserSkills()
@@ -27,12 +34,15 @@ class SkillsManager {
 
   async _loadBuiltinSkills() {
     try {
+      log.info('检查内置 Skills 目录是否存在:', BUILTIN_SKILLS_PATH)
       if (!fs.existsSync(BUILTIN_SKILLS_PATH)) {
         log.warn('内置 Skills 目录不存在')
         return
       }
 
+      log.info('内置 Skills 目录存在，开始读取...')
       const dirs = await fs.promises.readdir(BUILTIN_SKILLS_PATH)
+      log.info('找到 Skills 目录:', dirs.length, '个')
       
       for (const dir of dirs) {
         const skillPath = path.join(BUILTIN_SKILLS_PATH, dir)
@@ -161,7 +171,13 @@ class SkillsManager {
 
   async _executeHandler(skill, params) {
     try {
-      const handlerModule = await import(skill.handlerPath)
+      log.info(`Handler 执行开始: ${skill.name}`)
+      log.info(`Handler 路径: ${skill.handlerPath}`)
+      
+      const handlerPath = pathToFileURL(skill.handlerPath).href
+      log.info(`Handler URL: ${handlerPath}`)
+      
+      const handlerModule = await import(handlerPath)
       const handler = handlerModule.default || handlerModule.handler
       
       if (!handler || typeof handler !== 'function') {
@@ -172,10 +188,20 @@ class SkillsManager {
       const context = {
         config,
         log,
-        skill
+        skill,
+        database,
+        getConfig,
+        generateSQLFile,
+        executeDictionarySql: (params) => {
+          if (params.dict_list) return generateDictionarySqlBatch(params)
+          return generateDictionarySql(params)
+        },
+        executeFunctionGroupSql: generateFunctionGroupSql
       }
 
+      log.info(`开始调用 handler 函数`)
       const result = await handler(params, context)
+      log.info(`Handler 执行完成: ${JSON.stringify(result)}`)
       
       if (result && typeof result === 'object') {
         return result
@@ -184,6 +210,7 @@ class SkillsManager {
       return { success: true, content: String(result) }
     } catch (error) {
       log.error(`Handler 执行失败:`, error)
+      log.error(`错误堆栈:`, error.stack)
       return { success: false, error: error.message }
     }
   }
