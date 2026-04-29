@@ -1,9 +1,18 @@
 import { app } from 'electron'
+import path from 'path'
+import fs from 'fs'
 import { log, initLogger } from './utils'
 import { loadConfig, startAutoUpdateCheck, promptAutoStartOnFirstLaunch, checkForUpdates } from './services'
 import { setupIPCHandlers } from './ipc'
 import { initWindows, getMainWindow } from './windows'
 import { createTray, destroyTray, createAppMenu } from './ui'
+
+const cacheDir = path.join(app.getPath('userData'), 'cache')
+if (!fs.existsSync(cacheDir)) {
+  fs.mkdirSync(cacheDir, { recursive: true })
+}
+app.commandLine.appendSwitch('disk-cache-dir', cacheDir)
+app.commandLine.appendSwitch('disable-gpu-cache')
 
 process.on('uncaughtException', (error) => {
   if (error.code === 'EPIPE') {

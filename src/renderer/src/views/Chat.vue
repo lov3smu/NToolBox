@@ -81,7 +81,7 @@
                 v-else
                 v-model="editingTitle"
                 class="session-edit-input"
-                @keydown.enter="saveEditTitle(session.id)"
+                @keydown.enter="saveEditTitle(session.id, $event)"
                 @keydown.escape="cancelEditTitle"
                 @blur="saveEditTitle(session.id)"
               >
@@ -436,7 +436,8 @@ function startEditTitle(id, title) {
   })
 }
 
-function saveEditTitle(id) {
+function saveEditTitle(id, e) {
+  if (e && e.isComposing) return
   if (editingSessionId.value !== id) return
   const session = sessions.value.find(s => s.id === id)
   if (session && editingTitle.value.trim()) {
@@ -472,7 +473,7 @@ function updateSessionTitle(sessionId, firstMessage) {
 }
 
 async function sendMessage(e) {
-  if (e && e.shiftKey) return
+  if (e && (e.shiftKey || e.isComposing)) return
   if (!inputText.value.trim() || loading.value) return
   if (!currentSessionId.value) createNewChat()
   

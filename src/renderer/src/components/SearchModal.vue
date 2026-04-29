@@ -30,7 +30,7 @@
               placeholder="搜索工具..."
               @keydown.down="navigateDown"
               @keydown.up="navigateUp"
-              @keydown.enter="selectCurrent"
+              @keydown.enter="selectCurrent($event)"
               @keydown.esc="close"
             >
             <span class="search-shortcut">ESC</span>
@@ -314,7 +314,8 @@ function navigateUp() {
   }
 }
 
-function selectCurrent() {
+function selectCurrent(e) {
+  if (e && e.isComposing) return
   if (filteredTools.value[activeIndex.value]) {
     selectTool(filteredTools.value[activeIndex.value])
   }
