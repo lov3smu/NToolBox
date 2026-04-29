@@ -1,7 +1,5 @@
-import { generateSQLFile } from '../../../services/generator.js'
-
 export default async function handler(params, context) {
-  const { log } = context
+  const { log, generateSQLFile } = context
   
   log.info('执行 sql-script Skill', params)
   

@@ -37,6 +37,41 @@ const copySplashAssetsPlugin = () => {
   }
 }
 
+const copySkillsPlugin = () => {
+  return {
+    name: 'copy-skills',
+    closeBundle() {
+      const skillsSrc = resolve(__dirname, 'src/main/skills')
+      const skillsOut = resolve(__dirname, 'out/skills')
+      
+      if (!fs.existsSync(skillsOut)) {
+        fs.mkdirSync(skillsOut, { recursive: true })
+      }
+      
+      const copyDir = (src, dest) => {
+        if (!fs.existsSync(dest)) {
+          fs.mkdirSync(dest, { recursive: true })
+        }
+        const entries = fs.readdirSync(src, { withFileTypes: true })
+        for (const entry of entries) {
+          const srcPath = resolve(src, entry.name)
+          const destPath = resolve(dest, entry.name)
+          if (entry.isDirectory()) {
+            copyDir(srcPath, destPath)
+          } else {
+            fs.copyFileSync(srcPath, destPath)
+          }
+        }
+      }
+      
+      if (fs.existsSync(skillsSrc)) {
+        copyDir(skillsSrc, skillsOut)
+        console.log('Copied src/main/skills to out/skills')
+      }
+    }
+  }
+}
+
 export default defineConfig({
   main: {
     build: {
@@ -46,7 +81,8 @@ export default defineConfig({
         },
         external: ['electron', 'electron-log', 'electron-updater', 'fs', 'path', 'child_process', 'crypto', 'stream', 'events', 'util', 'os', 'mysql2']
       }
-    }
+    },
+    plugins: [copySkillsPlugin()]
   },
   preload: {
     build: {

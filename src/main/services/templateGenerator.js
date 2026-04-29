@@ -220,6 +220,224 @@ COMMIT;
   }
 }
 
+async function generateDictionarySqlBatch(params) {
+  const { dict_list, database = 'main_db', operate_type = 'PUBLISH', dir_name, usage, merge_strategy = 'auto' } = params
+  
+  if (!dict_list || dict_list.length === 0) {
+    return { success: false, error: '缺少字典列表' }
+  }
+  
+  const finalDatabase = database || 'main_db'
+  
+  try {
+    log.info('开始批量生成字典配置SQL', { count: dict_list.length, merge_strategy })
+    
+    const allTextsToTranslate = dict_list.flatMap(dict => [dict.dict_name, ...dict.dict_values.map(v => v.name)])
+    const translationMap = await translateToEnglish(allTextsToTranslate)
+    
+    const dictSqlResults = []
+    for (const dict of dict_list) {
+      const dictValue = translationMap[dict.dict_name] || dict.dict_name.toUpperCase().replace(/\s+/g, '_')
+      const safeDictName = escapeSql(dict.dict_name)
+      const safeDictValue = escapeSql(dictValue)
+      
+      const dictDataValues = dict.dict_values.map((item, index) => {
+        const dataValue = translationMap[item.name] || item.name.toUpperCase().replace(/\s+/g, '_')
+        const safeDataName = escapeSql(item.name)
+        const safeDataValue = escapeSql(dataValue)
+        const sort = item.sort || index + 1
+        const status = item.status || 'EBL'
+        return `('${safeDictValue}', '${safeDataName}', '${safeDataValue}', NULL, '${status}', ${sort}, NULL, @author, NOW(), @author, NOW())`
+      }).join(',\n')
+      
+      const dictSql = DICTIONARY_TEMPLATE.dictInsert
+        .replace('{{dict_name}}', safeDictName)
+        .replace('{{dict_value}}', safeDictValue)
+      
+      const dictDataSql = DICTIONARY_TEMPLATE.dictDataInsert
+        .replace('{{dict_data_values}}', dictDataValues)
+      
+      dictSqlResults.push({
+        dict_name: dict.dict_name,
+        dict_value: dictValue,
+        sql: `${dictSql}\n${dictDataSql}`
+      })
+    }
+    
+    const config = getConfig()
+    const now = new Date()
+    const currentYear = now.getFullYear().toString()
+    const currentDate = now.toISOString().split('T')[0]
+    
+    const safeDirName = sanitizePathSegment(dir_name || `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || '字典配置'}`)
+    
+    if (!safeDirName) {
+      return { success: false, error: '目录名无效' }
+    }
+    
+    let targetPath
+    switch (operate_type) {
+      case 'FIX':
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, safeDirName)
+        break
+      case 'PUBLISH':
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        break
+      case 'QUERY':
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, safeDirName)
+        break
+      default:
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+    }
+    
+    if (!isPathWithinBase(targetPath, config.base_path)) {
+      return { success: false, error: '目标路径超出允许范围' }
+    }
+    
+    await mkdirWithElevate(targetPath)
+    
+    const files = await fs.promises.readdir(targetPath)
+    const sqlFiles = files.filter(f => f.endsWith('.sql'))
+    let maxNumber = 0
+    for (const f of sqlFiles) {
+      const match = f.match(/^S(\d+)-/)
+      if (match) {
+        const num = parseInt(match[1], 10)
+        if (num > maxNumber) maxNumber = num
+      }
+    }
+    
+    const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
+    const safeDevEnName = escapeSql(config.developer_en_name)
+    
+    let filesToCreate = []
+    let actualMergeStrategy = merge_strategy
+    
+    if (merge_strategy === 'auto') {
+      if (dict_list.length === 1) {
+        actualMergeStrategy = 'separate'
+      } else if (dict_list.length <= 3 && safeDirName.includes('-')) {
+        actualMergeStrategy = 'merge'
+      } else if (dict_list.length > 5) {
+        actualMergeStrategy = 'separate'
+      } else {
+        actualMergeStrategy = 'merge'
+      }
+      log.info(`自动合并策略分析：${dict_list.length}个字典，目录=${safeDirName}，决定=${actualMergeStrategy}`)
+    }
+    
+    if (actualMergeStrategy === 'merge') {
+      const combinedSql = dictSqlResults.map(r => r.sql).join('\n\n')
+      const combinedNames = dictSqlResults.map(r => r.dict_name).join('-')
+      const safeCombinedNames = sanitizePathSegment(combinedNames)
+      
+      const nextNumber = maxNumber + 1
+      const padWidth = Math.max(2, String(nextNumber).length)
+      const sNumber = `S${String(nextNumber).padStart(padWidth, '0')}`
+      const filename = `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeCombinedNames}.sql`.replace(/\s/g, '_')
+      const filePath = path.join(targetPath, filename)
+      
+      if (!isPathWithinBase(filePath, config.base_path)) {
+        return { success: false, error: '文件路径超出允许范围' }
+      }
+      
+      const safeFilename = escapeSql(filename)
+      const scriptContent = `-- Please use UTF8 encoding without BOM
+-- Script Usage: ${usage || combinedNames} 字典配置初始化
+-- Script Author: ${config.developer_ch_name}
+-- Creation Time: ${currentDate}
+
+USE \`${escapeSql(finalDatabase)}\`;
+
+BEGIN;
+
+SET @author = '${safeDevEnName}${dateCompact}';
+
+${combinedSql}
+
+INSERT INTO t_script_history (scriptName, remark, create_by, modify_by, create_time, modify_time)
+VALUES ('${safeFilename}', '${escapeSql(usage || combinedNames)}', @author, @author, NOW(), NOW());
+
+COMMIT;
+`
+      
+      filesToCreate.push({
+        filename,
+        filePath,
+        content: scriptContent,
+        dict_names: dictSqlResults.map(r => r.dict_name)
+      })
+    } else {
+      for (let i = 0; i < dictSqlResults.length; i++) {
+        const dictResult = dictSqlResults[i]
+        const nextNumber = maxNumber + i + 1
+        const padWidth = Math.max(2, String(nextNumber).length)
+        const sNumber = `S${String(nextNumber).padStart(padWidth, '0')}`
+        const safeDictNameFile = sanitizePathSegment(dictResult.dict_name)
+        const filename = `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeDictNameFile}.sql`.replace(/\s/g, '_')
+        const filePath = path.join(targetPath, filename)
+        
+        if (!isPathWithinBase(filePath, config.base_path)) {
+          return { success: false, error: '文件路径超出允许范围' }
+        }
+        
+        const safeFilename = escapeSql(filename)
+        const scriptContent = `-- Please use UTF8 encoding without BOM
+-- Script Usage: ${dictResult.dict_name} 字典配置初始化
+-- Script Author: ${config.developer_ch_name}
+-- Creation Time: ${currentDate}
+
+USE \`${escapeSql(finalDatabase)}\`;
+
+BEGIN;
+
+SET @author = '${safeDevEnName}${dateCompact}';
+
+${dictResult.sql}
+
+INSERT INTO t_script_history (scriptName, remark, create_by, modify_by, create_time, modify_time)
+VALUES ('${safeFilename}', '${escapeSql(dictResult.dict_name)}', @author, @author, NOW(), NOW());
+
+COMMIT;
+`
+        
+        filesToCreate.push({
+          filename,
+          filePath,
+          content: scriptContent,
+          dict_names: [dictResult.dict_name]
+        })
+      }
+    }
+    
+    const createdFiles = []
+    for (const fileInfo of filesToCreate) {
+      await fs.promises.writeFile(fileInfo.filePath, fileInfo.content, { encoding: 'utf8', flag: 'wx' })
+      log.info('字典配置SQL文件创建成功', fileInfo.filePath)
+      createdFiles.push({
+        filename: fileInfo.filename,
+        file_path: fileInfo.filePath,
+        dict_names: fileInfo.dict_names
+      })
+    }
+    
+    const fileSummary = createdFiles.map(f => `${f.filename} (${f.dict_names.join(', ')})`).join('\n')
+    const message = `批量字典配置SQL已成功生成 ${createdFiles.length} 个文件（合并策略：${actualMergeStrategy}）：\n${fileSummary}`
+    
+    return {
+      success: true,
+      files: createdFiles,
+      total_dicts: dict_list.length,
+      merge_strategy: actualMergeStrategy,
+      translations: translationMap,
+      message
+    }
+  } catch (error) {
+    log.error('批量生成字典配置SQL失败:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 async function translateToPascalCase(texts) {
   const config = getConfig()
   const providerType = config.ai_provider || 'bailian'
@@ -474,4 +692,4 @@ COMMIT;
   }
 }
 
-export { BUILTIN_TEMPLATES }
+export { BUILTIN_TEMPLATES, generateDictionarySqlBatch }

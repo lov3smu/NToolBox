@@ -1,6 +1,5 @@
-import { getConfig } from '../../../services/config.js'
-
 export default function handler(params, context) {
+  const { getConfig } = context
   const config = getConfig()
   const databases = config.databases || []
   const scriptTypes = (config.script_types || []).map(st => ({

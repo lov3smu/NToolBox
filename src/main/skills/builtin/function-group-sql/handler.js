@@ -1,11 +1,13 @@
-import { generateFunctionGroupSql } from '../../../services/templateGenerator.js'
-
 export default async function handler(params, context) {
-  const { log } = context
+  const { log, executeFunctionGroupSql } = context
   
   log.info('执行 function-group-sql Skill', params)
   
-  const result = await generateFunctionGroupSql(params)
+  if (!executeFunctionGroupSql) {
+    return { success: false, error: 'executeFunctionGroupSql 函数未提供' }
+  }
+  
+  const result = await executeFunctionGroupSql(params)
   
   if (result.success) {
     return {

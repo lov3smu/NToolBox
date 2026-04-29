@@ -1,7 +1,5 @@
-import * as database from '../../../services/database.js'
-
 export default async function handler(params, context) {
-  const { log } = context
+  const { log, database } = context
   const { action, connection_name, database: dbName, table_name } = params
   
   log.info('执行 db-schema Skill', params)

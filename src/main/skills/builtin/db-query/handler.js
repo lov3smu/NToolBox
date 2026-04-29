@@ -1,5 +1,3 @@
-import * as database from '../../../services/database.js' // eslint-disable-line no-unused-vars
-
 const ALLOWED_SQL_KEYWORDS = ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'WITH']
 const FORBIDDEN_SQL_KEYWORDS = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'CREATE', 'TRUNCATE', 'REPLACE', 'GRANT', 'REVOKE']
 
@@ -28,8 +26,8 @@ function validateSQLSafety(sql) {
 }
 
 export default async function handler(params, context) {
-  const { log } = context
-  const { action, connection_name, database, sql, params: sqlParams, limit } = params
+  const { log, database } = context
+  const { action, connection_name, database: targetDatabase, sql, params: sqlParams, limit } = params
   
   log.info('执行 db-query Skill', params)
   
@@ -67,7 +65,7 @@ export default async function handler(params, context) {
     }
     
     case 'list_tables': {
-      const result = await database.queryTables(connection_name, database)
+      const result = await database.queryTables(connection_name, targetDatabase)
       
       if (!result.success) {
         return {
@@ -79,9 +77,9 @@ export default async function handler(params, context) {
       
       return {
         success: true,
-        content: `表列表${database ? `（数据库：${database}）` : ''}（共${result.tables.length}个）：\n${result.tables.map(t => `- ${t}`).join('\n')}`,
+        content: `表列表${targetDatabase ? `（数据库：${targetDatabase}）` : ''}（共${result.tables.length}个）：\n${result.tables.map(t => `- ${t}`).join('\n')}`,
         metadata: { 
-          database,
+          database: targetDatabase,
           tables: result.tables 
         }
       }

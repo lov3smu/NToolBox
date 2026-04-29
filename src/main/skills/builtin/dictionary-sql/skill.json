@@ -1,22 +1,46 @@
 {
   "name": "dictionary-sql",
-  "version": "1.0.0",
-  "description": "生成字典配置SQL脚本，自动将中文翻译成英文编码（全大写）。适用于初始化字典表和字典数据表",
+  "version": "2.0.0",
+  "description": "生成字典配置SQL脚本，自动将中文翻译成英文编码（全大写）。支持单字典或多字典批量生成，自动分析语境决定文件合并策略",
   "author": "system",
   "type": "builtin",
   "category": "database",
-  "tags": ["SQL", "字典", "数据库", "自动翻译"],
+  "tags": ["SQL", "字典", "数据库", "自动翻译", "批量"],
   "icon": "database",
   "parameters": {
     "type": "object",
     "properties": {
+      "dict_list": {
+        "type": "array",
+        "description": "字典列表（批量模式），传入多个字典时自动分析语境决定文件合并策略",
+        "items": {
+          "type": "object",
+          "properties": {
+            "dict_name": { "type": "string", "description": "字典名称（中文）" },
+            "dict_values": {
+              "type": "array",
+              "description": "字典值列表",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "description": "字典值名称（中文）" },
+                  "sort": { "type": "integer", "description": "排序号，可选" },
+                  "status": { "type": "string", "description": "状态，可选，默认EBL" }
+                },
+                "required": ["name"]
+              }
+            }
+          },
+          "required": ["dict_name", "dict_values"]
+        }
+      },
       "dict_name": {
         "type": "string",
-        "description": "字典名称（中文），如：用户状态、订单类型"
+        "description": "字典名称（中文），单字典模式使用，如：用户状态、订单类型"
       },
       "dict_values": {
         "type": "array",
-        "description": "字典值列表",
+        "description": "字典值列表（单字典模式）",
         "items": {
           "type": "object",
           "properties": {
@@ -38,20 +62,32 @@
       },
       "dir_name": {
         "type": "string",
-        "description": "目录名称，可选"
+        "description": "目录名称，可选，如：0424-电商V2.0"
       },
       "usage": {
         "type": "string",
         "description": "脚本用途说明，可选"
+      },
+      "merge_strategy": {
+        "type": "string",
+        "enum": ["auto", "separate", "merge"],
+        "description": "文件合并策略：auto自动分析（默认）、separate分开文件、merge合并到一个文件"
       }
     },
-    "required": ["dict_name", "dict_values"]
+    "oneOf": [
+      { "required": ["dict_list"] },
+      { "required": ["dict_name", "dict_values"] }
+    ]
   },
   "handler": "handler.js",
   "examples": [
     {
       "input": "dict_name: 用户状态, dict_values: [正常, 禁用, 已删除]",
-      "output": "生成包含INSERT语句的SQL脚本文件"
+      "output": "生成单个字典SQL文件"
+    },
+    {
+      "input": "dict_list: [{dict_name: 订单状态, dict_values: [待付款, 已付款]}, {dict_name: 物流状态, dict_values: [待发货, 已发货]}], dir_name: 0424-电商V2.0",
+      "output": "分析语境，同目录相关字典合并为一个文件或分开多个文件"
     }
   ]
 }

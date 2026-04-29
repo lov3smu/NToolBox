@@ -36,8 +36,9 @@ export async function generateSQLFile(scriptInfo) {
       throw new Error('无效的操作类型')
     }
     if (scriptInfo.operateType !== 'QUERY') {
-      if (!scriptInfo.scriptType || !isValidIdentifier(scriptInfo.scriptType)) {
-        throw new Error('脚本类型不合法，仅允许字母、数字和下划线')
+      const validScriptTypes = (config.script_types || []).map(st => st.name)
+      if (!scriptInfo.scriptType || !validScriptTypes.includes(scriptInfo.scriptType)) {
+        throw new Error(`脚本类型不合法，必须是 ${validScriptTypes.join('、')} 其中之一`)
       }
     }
 
@@ -50,19 +51,22 @@ export async function generateSQLFile(scriptInfo) {
     const currentYear = now.getFullYear().toString()
     const currentDate = now.toISOString().split('T')[0]
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const datePrefixedDirName = `${month}-${day}-${safeDirName}`
 
     let targetPath
     switch (scriptInfo.operateType) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, datePrefixedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, datePrefixedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, datePrefixedDirName)
         break
     }
 
