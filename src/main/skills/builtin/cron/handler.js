@@ -4,10 +4,10 @@ export default function handler(params) {
   const minute = params.minute || 0
   const dayOfMonth = params.day_of_month || 1
   const dayOfWeek = params.day_of_week || '*'
-  
+
   let cronExpression
   let description
-  
+
   switch (frequency) {
     case 'every_minute':
       cronExpression = '* * * * *'
@@ -36,7 +36,7 @@ export default function handler(params) {
     default:
       return { success: false, error: '未知的频率类型' }
   }
-  
+
   return {
     success: true,
     content: `Cron表达式：${cronExpression}\n说明：${description}`,

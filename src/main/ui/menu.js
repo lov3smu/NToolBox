@@ -42,24 +42,32 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
   }
 
   const template = [
-    ...(isMac ? [{
-      label: app.name,
-      submenu: [
-        { label: `关于 ${app.name}`, click: () => showAboutDialog(mainWindow) },
-        { type: 'separator' },
-        { label: '服务', role: 'services' },
-        { type: 'separator' },
-        { label: `隐藏 ${app.name}`, accelerator: 'Command+H', role: 'hide' },
-        { label: '隐藏其他', accelerator: 'Command+Alt+H', role: 'hideOthers' },
-        { label: '显示全部', role: 'unhide' },
-        { type: 'separator' },
-        { label: '退出', accelerator: 'Command+Q', click: () => {
-          app.isQuitting = true
-          destroyTray()
-          app.quit()
-        } }
-      ]
-    }] : []),
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { label: `关于 ${app.name}`, click: () => showAboutDialog(mainWindow) },
+              { type: 'separator' },
+              { label: '服务', role: 'services' },
+              { type: 'separator' },
+              { label: `隐藏 ${app.name}`, accelerator: 'Command+H', role: 'hide' },
+              { label: '隐藏其他', accelerator: 'Command+Alt+H', role: 'hideOthers' },
+              { label: '显示全部', role: 'unhide' },
+              { type: 'separator' },
+              {
+                label: '退出',
+                accelerator: 'Command+Q',
+                click: () => {
+                  app.isQuitting = true
+                  destroyTray()
+                  app.quit()
+                }
+              }
+            ]
+          }
+        ]
+      : []),
     {
       label: '文件',
       submenu: [
@@ -85,20 +93,24 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
         { type: 'separator' },
         {
           label: '隐藏窗口',
-          click: () => { if (mainWindow) mainWindow.hide() }
-        },
-        ...(isMac ? [] : [
-          { type: 'separator' },
-          {
-            label: '退出',
-            accelerator: 'Alt+F4',
-            click: () => {
-              app.isQuitting = true
-              destroyTray()
-              app.quit()
-            }
+          click: () => {
+            if (mainWindow) mainWindow.hide()
           }
-        ])
+        },
+        ...(isMac
+          ? []
+          : [
+              { type: 'separator' },
+              {
+                label: '退出',
+                accelerator: 'Alt+F4',
+                click: () => {
+                  app.isQuitting = true
+                  destroyTray()
+                  app.quit()
+                }
+              }
+            ])
       ]
     },
     {
@@ -230,25 +242,29 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             }
           }
         },
-        ...(isMac ? [] : [
-          { type: 'separator' },
-          {
-            label: '关于软件',
-            click: () => showAboutDialog(mainWindow)
-          }
-        ]),
-        ...(isDev ? [
-          { type: 'separator' },
-          {
-            label: '开发者工具',
-            accelerator: isMac ? 'Alt+Command+I' : 'F12',
-            click: () => {
-              if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.toggleDevTools()
+        ...(isMac
+          ? []
+          : [
+              { type: 'separator' },
+              {
+                label: '关于软件',
+                click: () => showAboutDialog(mainWindow)
               }
-            }
-          }
-        ] : [])
+            ]),
+        ...(isDev
+          ? [
+              { type: 'separator' },
+              {
+                label: '开发者工具',
+                accelerator: isMac ? 'Alt+Command+I' : 'F12',
+                click: () => {
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.toggleDevTools()
+                  }
+                }
+              }
+            ]
+          : [])
       ]
     }
   ]

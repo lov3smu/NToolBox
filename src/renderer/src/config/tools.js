@@ -120,7 +120,10 @@ export const MAX_RECENT = 3
 export function getRecentTools() {
   try {
     const recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
-    return recent.slice(0, MAX_RECENT).map(path => tools.find(t => t.path === path)).filter(Boolean)
+    return recent
+      .slice(0, MAX_RECENT)
+      .map((path) => tools.find((t) => t.path === path))
+      .filter(Boolean)
   } catch {
     return []
   }
@@ -129,7 +132,7 @@ export function getRecentTools() {
 export function addToRecent(tool) {
   try {
     let recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
-    recent = recent.filter(p => p !== tool.path)
+    recent = recent.filter((p) => p !== tool.path)
     recent.unshift(tool.path)
     recent = recent.slice(0, MAX_RECENT)
     localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(recent))
@@ -139,16 +142,15 @@ export function addToRecent(tool) {
 }
 
 export function getToolByPath(path) {
-  return tools.find(t => t.path === path)
+  return tools.find((t) => t.path === path)
 }
 
 export function searchTools(query) {
   if (!query.trim()) return tools
   const lowerQuery = query.toLowerCase()
-  return tools.filter(tool =>
-    tool.name.toLowerCase().includes(lowerQuery) ||
-    tool.description.toLowerCase().includes(lowerQuery)
+  return tools.filter(
+    (tool) => tool.name.toLowerCase().includes(lowerQuery) || tool.description.toLowerCase().includes(lowerQuery)
   )
 }
 
-export const dashboardTools = tools.filter(t => t.path !== '/' && t.path !== 'settings')
+export const dashboardTools = tools.filter((t) => t.path !== '/' && t.path !== 'settings')

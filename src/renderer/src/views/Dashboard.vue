@@ -1,36 +1,18 @@
 <template>
-  <div
-    class="dashboard-container"
-    :style="{ width: windowWidth + 'px' }"
-  >
+  <div class="dashboard-container" :style="{ width: windowWidth + 'px' }">
     <header class="dashboard-header">
       <div class="logo-section">
         <div class="logo">
-          <img :src="iconUrl" alt="NToolBox Logo">
+          <img :src="iconUrl" alt="NToolBox Logo" />
         </div>
         <div class="title-section">
           <h1>NToolBox</h1>
-          <p class="subtitle">
-            多端工具集合平台 · 启动快 · 功能全 · 更智能
-          </p>
+          <p class="subtitle">多端工具集合平台 · 启动快 · 功能全 · 更智能</p>
         </div>
       </div>
-      <div
-        class="search-trigger"
-        @click="$emit('openSearch')"
-      >
-        <svg
-          class="search-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle
-            cx="11"
-            cy="11"
-            r="8"
-          />
+      <div class="search-trigger" @click="$emit('openSearch')">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.35-4.35" />
         </svg>
         <span>搜索工具...</span>
@@ -43,23 +25,18 @@
         <h2>工具介绍</h2>
         <div class="intro-content">
           <p>NToolBox 是一款面向开发人员的多端工具集合平台，集成丰富工具 + AI 大模型能力，启动快、功能全、更智能。</p>
-          <p>内置 SQL 脚本生成、AI 聊天助手、数据库管理、密码生成、时间戳转换、JSON 格式化、Cron 表达式、YAML 编辑器等多种实用工具，集成多款主流 AI 大模型，助力提升开发效率。</p>
+          <p>
+            内置 SQL 脚本生成、AI 聊天助手、数据库管理、密码生成、时间戳转换、JSON 格式化、Cron 表达式、YAML
+            编辑器等多种实用工具，集成多款主流 AI 大模型，助力提升开发效率。
+          </p>
         </div>
       </section>
 
       <section class="tools-section">
         <h2>工具快捷入口</h2>
         <div class="tools-grid">
-          <div
-            v-for="tool in tools"
-            :key="tool.path"
-            class="tool-card"
-            @click="navigateTo(tool.path)"
-          >
-            <div
-              class="tool-icon"
-              v-html="tool.icon"
-            />
+          <div v-for="tool in tools" :key="tool.path" class="tool-card" @click="navigateTo(tool.path)">
+            <div class="tool-icon" v-html="tool.icon" />
             <div class="tool-info">
               <div class="tool-name">
                 {{ tool.name }}
@@ -81,9 +58,7 @@
               <span>+</span>
               <kbd>K</kbd>
             </div>
-            <div class="shortcut-desc">
-              打开全局搜索
-            </div>
+            <div class="shortcut-desc">打开全局搜索</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -91,9 +66,7 @@
               <span>+</span>
               <kbd>L</kbd>
             </div>
-            <div class="shortcut-desc">
-              打开AI聊天助手
-            </div>
+            <div class="shortcut-desc">打开AI聊天助手</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -101,9 +74,7 @@
               <span>+</span>
               <kbd>P</kbd>
             </div>
-            <div class="shortcut-desc">
-              打开密码生成器
-            </div>
+            <div class="shortcut-desc">打开密码生成器</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -111,17 +82,13 @@
               <span>+</span>
               <kbd>,</kbd>
             </div>
-            <div class="shortcut-desc">
-              打开设置
-            </div>
+            <div class="shortcut-desc">打开设置</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
               <kbd>Esc</kbd>
             </div>
-            <div class="shortcut-desc">
-              关闭弹窗/搜索
-            </div>
+            <div class="shortcut-desc">关闭弹窗/搜索</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
@@ -129,17 +96,13 @@
               <span>/</span>
               <kbd>↓</kbd>
             </div>
-            <div class="shortcut-desc">
-              在搜索结果中导航
-            </div>
+            <div class="shortcut-desc">在搜索结果中导航</div>
           </div>
           <div class="shortcut-item">
             <div class="shortcut-keys">
               <kbd>Enter</kbd>
             </div>
-            <div class="shortcut-desc">
-              选择当前工具
-            </div>
+            <div class="shortcut-desc">选择当前工具</div>
           </div>
         </div>
       </section>
@@ -313,10 +276,7 @@ function navigateTo(path) {
 }
 
 .dashboard-header {
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.95) 0%, 
-    rgba(118, 75, 162, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
   color: white;
   padding: 30px 40px;
   display: flex;
@@ -333,9 +293,9 @@ function navigateTo(path) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.15) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(255,255,255,0.1) 0%, transparent 20%);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 20%);
   pointer-events: none;
 }
 
@@ -369,7 +329,7 @@ function navigateTo(path) {
   font-size: var(--font-size-lg);
   font-weight: 700;
   margin-bottom: 4px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .title-section .subtitle {

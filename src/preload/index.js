@@ -31,10 +31,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('chat-stream-end', listener)
     return () => ipcRenderer.removeListener('chat-stream-end', listener)
   },
-  validateApiKey: (providerType, apiKey, extraConfig) => ipcRenderer.invoke('validate-api-key', providerType, apiKey, extraConfig),
+  validateApiKey: (providerType, apiKey, extraConfig) =>
+    ipcRenderer.invoke('validate-api-key', providerType, apiKey, extraConfig),
   getAiProviders: () => ipcRenderer.invoke('get-ai-providers'),
   getProviderModels: (providerType) => ipcRenderer.invoke('get-provider-models', providerType),
-  
+
   // Database connection APIs
   dbTestConnection: (config) => ipcRenderer.invoke('db-test-connection', config),
   dbCreateConnection: (name, config) => ipcRenderer.invoke('db-create-connection', name, config),
@@ -43,18 +44,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   dbExecuteQuery: (name, sql, params, options) => ipcRenderer.invoke('db-execute-query', name, sql, params, options),
   dbQueryDatabases: (name) => ipcRenderer.invoke('db-query-databases', name),
   dbQueryTables: (name, database) => ipcRenderer.invoke('db-query-tables', name, database),
-  dbGetTableStructure: (name, database, tableName) => ipcRenderer.invoke('db-get-table-structure', name, database, tableName),
+  dbGetTableStructure: (name, database, tableName) =>
+    ipcRenderer.invoke('db-get-table-structure', name, database, tableName),
   dbGetActiveConnections: () => ipcRenderer.invoke('db-get-active-connections'),
   dbIsConnectionActive: (name) => ipcRenderer.invoke('db-is-connection-active', name),
   dbBeginTransaction: (name) => ipcRenderer.invoke('db-begin-transaction', name),
   dbCommitTransaction: (name) => ipcRenderer.invoke('db-commit-transaction', name),
   dbRollbackTransaction: (name) => ipcRenderer.invoke('db-rollback-transaction', name),
-  
+
   selectSqlFile: () => ipcRenderer.invoke('select-sql-file'),
   readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
   saveSqlFile: (defaultPath) => ipcRenderer.invoke('save-sql-file', defaultPath),
   writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
-  
+
   // Skills APIs
   skillsInit: () => ipcRenderer.invoke('skills-init'),
   skillsList: () => ipcRenderer.invoke('skills-list'),
@@ -63,7 +65,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   skillsInstall: (skillPath) => ipcRenderer.invoke('skills-install', skillPath),
   skillsUninstall: (name) => ipcRenderer.invoke('skills-uninstall', name),
   skillsGetToolDefinitions: () => ipcRenderer.invoke('skills-get-tool-definitions'),
-  
+
   onNavigateTo: (callback) => {
     const listener = (_event, path) => callback(path)
     ipcRenderer.on('navigate-to', listener)

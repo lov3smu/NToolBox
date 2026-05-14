@@ -1,31 +1,15 @@
 <template>
-  <div
-    class="json-parser-container"
-    :style="{ width: windowWidth + 'px' }"
-  >
+  <div class="json-parser-container" :style="{ width: windowWidth + 'px' }">
     <header>
       <h1>
-        <svg
-          class="header-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="4 7 4 4 20 4 20 7" />
           <polyline points="4 17 4 20 20 20 20 17" />
-          <line
-            x1="9"
-            y1="12"
-            x2="15"
-            y2="12"
-          />
+          <line x1="9" y1="12" x2="15" y2="12" />
         </svg>
         JSON解析器
       </h1>
-      <div class="subtitle">
-        JSON格式化、验证、压缩与JSONPath查询工具
-      </div>
+      <div class="subtitle">JSON格式化、验证、压缩与JSONPath查询工具</div>
     </header>
 
     <div class="json-content">
@@ -37,153 +21,81 @@
           </div>
           <div class="panel-actions">
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="格式化"
-                @click="formatJson"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"
-                /></svg>
+              <button class="btn-icon" title="格式化" @click="formatJson">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"
+                  />
+                </svg>
               </button>
               <span class="tooltip">格式化</span>
             </div>
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="折叠全部"
-                @click="collapseAll"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M6 5L12 9L18 5M6 19L12 15L18 19"
-                /></svg>
+              <button class="btn-icon" title="折叠全部" @click="collapseAll">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="none" stroke="currentColor" stroke-width="2" d="M6 5L12 9L18 5M6 19L12 15L18 19" />
+                </svg>
               </button>
               <span class="tooltip">折叠全部</span>
             </div>
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="展开全部"
-                @click="expandAll"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M6 9L12 5L18 9M6 15L12 19L18 15"
-                /></svg>
+              <button class="btn-icon" title="展开全部" @click="expandAll">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="none" stroke="currentColor" stroke-width="2" d="M6 9L12 5L18 9M6 15L12 19L18 15" />
+                </svg>
               </button>
               <span class="tooltip">展开全部</span>
             </div>
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="压缩JSON并复制"
-                @click="copyMinified"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"
-                /></svg>
+              <button class="btn-icon" title="压缩JSON并复制" @click="copyMinified">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"
+                  />
+                </svg>
               </button>
               <span class="tooltip">压缩JSON并复制</span>
             </div>
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="压缩转义JSON并复制"
-                @click="copyEscaped"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="currentColor"
-                  d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z"
-                /></svg>
+              <button class="btn-icon" title="压缩转义JSON并复制" @click="copyEscaped">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="currentColor" d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z" />
+                </svg>
               </button>
               <span class="tooltip">压缩转义JSON并复制</span>
             </div>
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="JSON转XML"
-                @click="convertToXml"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M8 6l-6 6l6 6M16 6l6 6l-6 6"
-                /></svg>
+              <button class="btn-icon" title="JSON转XML" @click="convertToXml">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="none" stroke="currentColor" stroke-width="2" d="M8 6l-6 6l6 6M16 6l6 6l-6 6" />
+                </svg>
               </button>
               <span class="tooltip">JSON转XML</span>
             </div>
             <div class="tooltip-wrapper">
-              <button
-                class="btn-icon"
-                title="清空"
-                @click="clearInput"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                ><path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M18 6L6 18M6 6l12 12"
-                /></svg>
+              <button class="btn-icon" title="清空" @click="clearInput">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="none" stroke="currentColor" stroke-width="2" d="M18 6L6 18M6 6l12 12" />
+                </svg>
               </button>
               <span class="tooltip">清空</span>
             </div>
           </div>
         </div>
         <div class="editor-wrapper">
-          <div
-            ref="lineNumbersRef"
-            class="line-numbers"
-          >
-            <div
-              v-for="n in displayLineCount"
-              :key="n"
-              class="line-number"
-            >
+          <div ref="lineNumbersRef" class="line-numbers">
+            <div v-for="n in displayLineCount" :key="n" class="line-number">
               {{ n }}
             </div>
           </div>
-          <div 
-            ref="editorRef" 
+          <div
+            ref="editorRef"
             class="json-editor"
             contenteditable="true"
             spellcheck="false"
@@ -206,20 +118,9 @@
             type="text"
             class="input-field jsonpath-input"
             placeholder="输入JSONPath表达式，如：$.data.items[0].name"
-          >
-          <button
-            class="btn btn-primary"
-            @click="executeJsonPath"
-          >
-            查询
-          </button>
-          <button
-            v-if="jsonPathResult !== null"
-            class="btn btn-secondary"
-            @click="copyJsonPathResult"
-          >
-            复制结果
-          </button>
+          />
+          <button class="btn btn-primary" @click="executeJsonPath">查询</button>
+          <button v-if="jsonPathResult !== null" class="btn btn-secondary" @click="copyJsonPathResult">复制结果</button>
         </div>
         <div class="jsonpath-hint">
           <span>示例：</span>
@@ -228,10 +129,7 @@
           <code @click="setJsonPath('$.data')">$.data (指定属性)</code>
           <code @click="setJsonPath('$.items[*]')">$.items[*] (数组所有元素)</code>
         </div>
-        <div
-          v-if="jsonPathResult !== null"
-          class="jsonpath-result"
-        >
+        <div v-if="jsonPathResult !== null" class="jsonpath-result">
           <div class="result-header">
             <span class="result-label">查询结果：</span>
           </div>
@@ -242,9 +140,7 @@
       </div>
 
       <div class="help-section">
-        <div class="help-title">
-          JSONPath语法说明
-        </div>
+        <div class="help-title">JSONPath语法说明</div>
         <div class="help-content">
           <table class="syntax-table">
             <thead>
@@ -296,38 +192,16 @@
       class="context-menu"
       :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
     >
-      <div
-        v-if="contextMenu.path"
-        class="context-menu-item"
-        @click="copySelectedPath"
-      >
+      <div v-if="contextMenu.path" class="context-menu-item" @click="copySelectedPath">
         复制JSONPath: {{ contextMenu.path }}
       </div>
-      <div
-        class="context-menu-item"
-        @click="copySelectedText"
-      >
-        复制选中内容
-      </div>
+      <div class="context-menu-item" @click="copySelectedText">复制选中内容</div>
       <div class="context-menu-separator" />
-      <div
-        class="context-menu-item"
-        @click="formatJson"
-      >
-        格式化JSON
-      </div>
-      <div
-        class="context-menu-item"
-        @click="compressJson"
-      >
-        压缩JSON
-      </div>
+      <div class="context-menu-item" @click="formatJson">格式化JSON</div>
+      <div class="context-menu-item" @click="compressJson">压缩JSON</div>
     </div>
 
-    <Toast
-      :visible="toastVisible"
-      :message="toastMessage"
-    />
+    <Toast :visible="toastVisible" :message="toastMessage" />
   </div>
 </template>
 
@@ -384,13 +258,13 @@ function onEditorInput() {
   const text = editorRef.value.innerText || ''
   jsonInput.value = text
   jsonPathResult.value = null
-  
+
   clearTimeout(formatTimeout)
   formatTimeout = setTimeout(() => {
     autoFormat()
   }, 800)
-  
-  displayLineCount.value = (editorRef.value.querySelectorAll('div')?.length) || 1
+
+  displayLineCount.value = editorRef.value.querySelectorAll('div')?.length || 1
 }
 
 function onKeyDown(e) {
@@ -402,7 +276,8 @@ function onKeyDown(e) {
 
 function onPaste(e) {
   e.preventDefault()
-  const text = e.clipboardData.getData('text/plain')
+  const text = e.clipboardData
+    .getData('text/plain')
     .replace(/[▼▶]/g, '')
     .replace(/\u200B/g, '')
   document.execCommand('insertText', false, text)
@@ -416,7 +291,7 @@ function autoFormat() {
     parsedJson.value = null
     return
   }
-  
+
   try {
     const parsed = JSON.parse(input)
     const formatted = JSON.stringify(parsed, null, 2)
@@ -439,13 +314,13 @@ function renderJson(text, parsed) {
   if (!editorRef.value) return
   isRendering = true
   lastRenderedText = text
-  
+
   foldMarkers.value = parseFoldMarkers(text)
   const html = highlightJsonWithFolds(text)
   editorRef.value.innerHTML = html
   jsonInput.value = text
   displayLineCount.value = text.split('\n').length
-  
+
   nextTick(() => {
     isRendering = false
     bindFoldEvents()
@@ -456,12 +331,12 @@ function renderHighlight(text) {
   if (!editorRef.value) return
   isRendering = true
   lastRenderedText = text
-  
+
   foldMarkers.value = parseFoldMarkers(text)
   const html = highlightJsonWithFolds(text)
   editorRef.value.innerHTML = html
   displayLineCount.value = text.split('\n').length || 1
-  
+
   nextTick(() => {
     isRendering = false
     bindFoldEvents()
@@ -472,15 +347,15 @@ function parseFoldMarkers(text) {
   const markers = []
   const stack = []
   let line = 1
-  
+
   for (let i = 0; i < text.length; i++) {
     const char = text[i]
-    
+
     if (char === '\n') {
       line++
       continue
     }
-    
+
     if (char === '{') {
       stack.push({ type: 'object', startLine: line, startPos: i, depth: stack.length })
     } else if (char === '[') {
@@ -507,14 +382,14 @@ function parseFoldMarkers(text) {
       }
     }
   }
-  
+
   return markers.sort((a, b) => b.depth - a.depth)
 }
 
 function highlightJsonWithFolds(text) {
   const lines = text.split('\n')
   const lineStates = new Array(lines.length).fill('show')
-  
+
   for (const marker of foldMarkers.value) {
     const isCollapsed = collapsedPaths.value.has(marker.id)
     if (isCollapsed) {
@@ -523,7 +398,7 @@ function highlightJsonWithFolds(text) {
       }
     }
   }
-  
+
   const startLineMarkers = {}
   for (const marker of foldMarkers.value) {
     if (!startLineMarkers[marker.startLine]) {
@@ -532,14 +407,14 @@ function highlightJsonWithFolds(text) {
       startLineMarkers[marker.startLine] = marker
     }
   }
-  
+
   let result = ''
   const collapsedShown = new Set()
-  
+
   lines.forEach((line, lineIndex) => {
     const lineNum = lineIndex + 1
     const state = lineStates[lineIndex]
-    
+
     if (state === 'show') {
       const marker = startLineMarkers[lineNum]
       if (marker && !collapsedPaths.value.has(marker.id)) {
@@ -556,7 +431,7 @@ function highlightJsonWithFolds(text) {
     } else {
       if (!collapsedShown.has(state)) {
         collapsedShown.add(state)
-        const marker = foldMarkers.value.find(m => m.id === state)
+        const marker = foldMarkers.value.find((m) => m.id === state)
         if (marker) {
           result += `<div class="fold-line collapsed" data-fold-id="${marker.id}">`
           result += `<span class="fold-toggle fold-closed visible" data-fold-id="${marker.id}" title="点击展开"></span>`
@@ -568,17 +443,17 @@ function highlightJsonWithFolds(text) {
       }
     }
   })
-  
+
   return result
 }
 
 function highlightLine(line) {
   let result = ''
   let i = 0
-  
+
   while (i < line.length) {
     const char = line[i]
-    
+
     if (char === '"') {
       const start = i
       i++
@@ -593,7 +468,7 @@ function highlightLine(line) {
         }
       }
       const str = line.substring(start, i)
-      
+
       let j = i
       while (j < line.length && /\s/.test(line[j])) j++
       if (j < line.length && line[j] === ':') {
@@ -601,7 +476,7 @@ function highlightLine(line) {
       } else {
         result += `<span class="hl-string">${escapeHtml(str)}</span>`
       }
-    } else if (char >= '0' && char <= '9' || (char === '-' && i + 1 < line.length && /[0-9]/.test(line[i + 1]))) {
+    } else if ((char >= '0' && char <= '9') || (char === '-' && i + 1 < line.length && /[0-9]/.test(line[i + 1]))) {
       const start = i
       if (char === '-') i++
       while (i < line.length && /[0-9.eE+-]/.test(line[i])) i++
@@ -632,22 +507,19 @@ function highlightLine(line) {
       i++
     }
   }
-  
+
   return result
 }
 
 function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function bindFoldEvents() {
   if (!editorRef.value) return
-  
+
   const toggles = editorRef.value.querySelectorAll('.fold-toggle.visible')
-  toggles.forEach(toggle => {
+  toggles.forEach((toggle) => {
     toggle.onclick = (e) => {
       e.stopPropagation()
       const foldId = toggle.getAttribute('data-fold-id')
@@ -668,7 +540,7 @@ function formatJson() {
     showWarning('请输入JSON数据')
     return
   }
-  
+
   try {
     const parsed = JSON.parse(input)
     const formatted = JSON.stringify(parsed, null, 2)
@@ -690,7 +562,7 @@ function compressJson() {
     showWarning('请输入JSON数据')
     return
   }
-  
+
   try {
     const parsed = JSON.parse(input)
     const compressed = JSON.stringify(parsed)
@@ -730,7 +602,7 @@ function collapseAll() {
     showWarning('没有可折叠的内容')
     return
   }
-  foldMarkers.value.forEach(marker => {
+  foldMarkers.value.forEach((marker) => {
     collapsedPaths.value.add(marker.id)
   })
   renderJson(lastRenderedText, parsedJson.value)
@@ -757,7 +629,7 @@ async function copyMinified() {
     showWarning('请输入JSON数据')
     return
   }
-  
+
   try {
     const parsed = JSON.parse(input)
     const minified = JSON.stringify(parsed)
@@ -778,7 +650,7 @@ async function copyEscaped() {
     showWarning('请输入JSON数据')
     return
   }
-  
+
   try {
     const parsed = JSON.parse(input)
     const minified = JSON.stringify(parsed)
@@ -800,7 +672,7 @@ async function convertToXml() {
     showWarning('请输入JSON数据')
     return
   }
-  
+
   try {
     const parsed = JSON.parse(input)
     const xml = jsonToXml(parsed, 'root')
@@ -817,7 +689,7 @@ async function convertToXml() {
 
 function jsonToXml(obj, rootName) {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-  
+
   function toXml(value, tagName) {
     if (value === null) return `<${tagName} xsi:nil="true"/>`
     if (typeof value === 'boolean' || typeof value === 'number') {
@@ -833,7 +705,7 @@ function jsonToXml(obj, rootName) {
       return `<${tagName}>${escaped}</${tagName}>`
     }
     if (Array.isArray(value)) {
-      return value.map(item => toXml(item, tagName)).join('\n  ')
+      return value.map((item) => toXml(item, tagName)).join('\n  ')
     }
     if (typeof value === 'object') {
       let inner = ''
@@ -845,7 +717,7 @@ function jsonToXml(obj, rootName) {
     }
     return `<${tagName}>${String(value)}</${tagName}>`
   }
-  
+
   xml += toXml(obj, rootName)
   return xml
 }
@@ -859,14 +731,14 @@ function syncScroll() {
 function showContextMenu(event) {
   const selection = window.getSelection()
   const selectedText = selection.toString()
-  
+
   let path = ''
   if (editorRef.value && selection.rangeCount > 0 && lastRenderedText) {
     const range = selection.getRangeAt(0)
     const startPos = getTextPosition(editorRef.value, range.startContainer, range.startOffset)
     path = findJsonPathAtPosition(lastRenderedText, startPos)
   }
-  
+
   contextMenu.value = {
     show: true,
     x: event.clientX,
@@ -879,7 +751,7 @@ function showContextMenu(event) {
 function getTextPosition(root, node, offset) {
   let pos = 0
   const divs = root.querySelectorAll('div')
-  
+
   for (const div of divs) {
     const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT, null, false)
     while (walker.nextNode()) {
@@ -890,19 +762,19 @@ function getTextPosition(root, node, offset) {
     }
     pos += 1
   }
-  
+
   return 0
 }
 
 function findJsonPathAtPosition(text, pos) {
   if (!parsedJson.value) return ''
-  
+
   const pathStack = []
   let i = 0
-  
+
   while (i < text.length) {
     const char = text[i]
-    
+
     if (char === '{') {
       pathStack.push({ type: 'object', key: null })
       i++
@@ -940,9 +812,9 @@ function findJsonPathAtPosition(text, pos) {
         }
       }
       const strEnd = i
-      
+
       while (i < text.length && /\s/.test(text[i])) i++
-      
+
       if (pos >= start && pos < strEnd) {
         const afterColon = i < text.length && text[i] === ':'
         if (afterColon) {
@@ -958,7 +830,7 @@ function findJsonPathAtPosition(text, pos) {
         }
         break
       }
-      
+
       if (i < text.length && text[i] === ':') {
         const key = text.substring(start + 1, strEnd - 1)
         for (let k = pathStack.length - 1; k >= 0; k--) {
@@ -1001,14 +873,14 @@ function findJsonPathAtPosition(text, pos) {
     } else {
       i++
     }
-    
+
     if (i >= pos && char !== '"' && char !== '{' && char !== '[') {
       break
     }
   }
-  
+
   if (pathStack.length === 0) return '$'
-  
+
   let path = '$'
   for (const item of pathStack) {
     if (item.type === 'object' && item.key) {
@@ -1017,16 +889,16 @@ function findJsonPathAtPosition(text, pos) {
       path += '[' + item.index + ']'
     }
   }
-  
+
   return path
 }
 
 function findPrecedingKeySimple(text, valueEnd, pathStack) {
   let i = valueEnd - 1
-  
+
   while (i >= 0 && /\s/.test(text[i])) i--
   if (i < 0) return
-  
+
   if (text[i] === '"') {
     i--
     while (i >= 0) {
@@ -1040,16 +912,16 @@ function findPrecedingKeySimple(text, valueEnd, pathStack) {
       }
     }
   }
-  
+
   while (i >= 0 && /\s/.test(text[i])) i--
   if (i < 0) return
-  
+
   if (text[i] !== ':') return
-  
+
   i--
   while (i >= 0 && /\s/.test(text[i])) i--
   if (i < 0 || text[i] !== '"') return
-  
+
   const keyEnd = i
   i--
   while (i >= 0) {
@@ -1062,7 +934,7 @@ function findPrecedingKeySimple(text, valueEnd, pathStack) {
     }
   }
   if (i < 0) return
-  
+
   const key = text.substring(i + 1, keyEnd)
   for (let j = pathStack.length - 1; j >= 0; j--) {
     if (pathStack[j].type === 'object') {
@@ -1114,13 +986,13 @@ function executeJsonPath() {
     showWarning('请先输入有效的JSON数据')
     return
   }
-  
+
   const path = jsonPathInput.value.trim()
   if (!path) {
     showWarning('请输入JSONPath表达式')
     return
   }
-  
+
   try {
     const result = evaluateJsonPath(parsedJson.value, path)
     jsonPathResult.value = result
@@ -1135,21 +1007,21 @@ function evaluateJsonPath(obj, path) {
   if (!path.startsWith('$')) {
     throw new Error('JSONPath必须以$开头')
   }
-  
+
   path = path.substring(1)
-  
+
   if (path === '' || path === '.') {
     return obj
   }
-  
+
   const tokens = tokenizeJsonPath(path)
   let current = obj
-  
+
   for (const token of tokens) {
     if (current === null || current === undefined) {
       return undefined
     }
-    
+
     if (token.type === 'property') {
       if (typeof current !== 'object' || current === null) {
         return undefined
@@ -1179,14 +1051,14 @@ function evaluateJsonPath(obj, path) {
       return results
     }
   }
-  
+
   return current
 }
 
 function tokenizeJsonPath(path) {
   const tokens = []
   let i = 0
-  
+
   while (i < path.length) {
     if (path[i] === '.') {
       i++
@@ -1244,7 +1116,7 @@ function tokenizeJsonPath(path) {
           i++
         }
         if (path[i] === ']') i++
-        
+
         if (numStr.includes(':')) {
           const parts = numStr.split(':')
           const start = parts[0] ? parseInt(parts[0]) : 0
@@ -1258,13 +1130,13 @@ function tokenizeJsonPath(path) {
       i++
     }
   }
-  
+
   return tokens
 }
 
 function recursiveSearch(obj, propName, results) {
   if (typeof obj !== 'object' || obj === null) return
-  
+
   if (Array.isArray(obj)) {
     for (const item of obj) {
       if (propName === '' || propName === '*') {
@@ -1289,9 +1161,10 @@ async function copyJsonPathResult() {
     showWarning('没有可复制的结果')
     return
   }
-  const text = typeof jsonPathResult.value === 'object'
-    ? JSON.stringify(jsonPathResult.value, null, 2)
-    : String(jsonPathResult.value)
+  const text =
+    typeof jsonPathResult.value === 'object'
+      ? JSON.stringify(jsonPathResult.value, null, 2)
+      : String(jsonPathResult.value)
   const success = await copyToClipboard(text)
   if (success) {
     showSuccess('已复制到剪贴板')

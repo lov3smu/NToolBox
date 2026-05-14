@@ -1,64 +1,20 @@
 <template>
   <div class="chat-page">
-    <div
-      v-if="!apiKey"
-      class="api-key-warning"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        width="48"
-        height="48"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-      >
-        <rect
-          x="3"
-          y="11"
-          width="18"
-          height="11"
-          rx="2"
-          ry="2"
-        />
+    <div v-if="!apiKey" class="api-key-warning">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
       <p>请先在设置中配置 API Key</p>
-      <button
-        class="btn btn-primary"
-        @click="openSettings('api')"
-      >
-        打开设置
-      </button>
+      <button class="btn btn-primary" @click="openSettings('api')">打开设置</button>
     </div>
-    <div
-      v-else
-      class="chat-layout"
-    >
+    <div v-else class="chat-layout">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <button
-            class="new-chat-btn"
-            @click="createNewChat"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <line
-                x1="12"
-                y1="5"
-                x2="12"
-                y2="19"
-              /><line
-                x1="5"
-                y1="12"
-                x2="19"
-                y2="12"
-              />
+          <button class="new-chat-btn" @click="createNewChat">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             新建会话
           </button>
@@ -71,10 +27,7 @@
             @click="selectSession(session.id)"
           >
             <div class="session-info">
-              <div
-                v-if="editingSessionId !== session.id"
-                class="session-title"
-              >
+              <div v-if="editingSessionId !== session.id" class="session-title">
                 {{ session.title || '新会话' }}
               </div>
               <input
@@ -84,55 +37,28 @@
                 @keydown.enter="saveEditTitle(session.id, $event)"
                 @keydown.escape="cancelEditTitle"
                 @blur="saveEditTitle(session.id)"
-              >
+              />
               <div class="session-time">
                 {{ formatTime(session.updatedAt) }}
               </div>
             </div>
             <div class="session-actions">
-              <button
-                class="session-edit"
-                title="重命名"
-                @click.stop="startEditTitle(session.id, session.title)"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="14"
-                  height="14"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
+              <button class="session-edit" title="重命名" @click.stop="startEditTitle(session.id, session.title)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
-              <button
-                class="session-delete"
-                title="删除"
-                @click.stop="deleteSession(session.id)"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="14"
-                  height="14"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
+              <button class="session-delete" title="删除" @click.stop="deleteSession(session.id)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                 </svg>
               </button>
             </div>
           </div>
-          <div
-            v-if="sessions.length === 0"
-            class="session-empty"
-          >
+          <div v-if="sessions.length === 0" class="session-empty">
             <p>暂无会话</p>
-            <p class="hint">
-              点击上方按钮创建新会话
-            </p>
+            <p class="hint">点击上方按钮创建新会话</p>
           </div>
         </div>
       </aside>
@@ -141,63 +67,30 @@
           <h2>{{ currentSession?.title || '新会话' }}</h2>
           <div class="model-selector">
             <label>模型：</label>
-            <select
-              v-model="selectedModel"
-              class="model-select"
-            >
-              <option
-                v-for="model in models"
-                :key="model.id"
-                :value="model.id"
-              >
+            <select v-model="selectedModel" class="model-select">
+              <option v-for="model in models" :key="model.id" :value="model.id">
                 {{ model.name }}
               </option>
             </select>
           </div>
         </div>
-        <div
-          ref="messagesContainer"
-          class="messages-container"
-        >
-          <div
-            v-if="currentMessages.length === 0"
-            class="messages-empty"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="64"
-              height="64"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1"
-            >
+        <div ref="messagesContainer" class="messages-container">
+          <div v-if="currentMessages.length === 0" class="messages-empty">
+            <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1">
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
               <path d="M12 11v4M12 7h.01" />
             </svg>
             <p>开始与 AI 聊天吧</p>
-            <p class="hint">
-              支持编程问题、代码解释、SQL 查询等
-            </p>
+            <p class="hint">支持编程问题、代码解释、SQL 查询等</p>
           </div>
-          <div
-            v-for="(msg, index) in displayedMessages"
-            :key="index"
-            class="message"
-            :class="msg.role"
-          >
+          <div v-for="(msg, index) in displayedMessages" :key="index" class="message" :class="msg.role">
             <div class="message-avatar">
               <span v-if="msg.role === 'user'">你</span>
               <span v-else>AI</span>
             </div>
             <div class="message-content">
-              <div
-                v-if="msg.thinking"
-                class="thinking-block"
-              >
-                <div
-                  class="thinking-header"
-                  @click="toggleThinking(index)"
-                >
+              <div v-if="msg.thinking" class="thinking-block">
+                <div class="thinking-header" @click="toggleThinking(index)">
                   <svg
                     class="thinking-icon"
                     :class="{ expanded: expandedThinking[index] }"
@@ -215,22 +108,12 @@
                   </span>
                   <span class="thinking-duration">点击展开</span>
                 </div>
-                <div
-                  v-show="expandedThinking[index]"
-                  class="thinking-content"
-                >
+                <div v-show="expandedThinking[index]" class="thinking-content">
                   {{ msg.thinking }}
                 </div>
               </div>
-              <div
-                v-if="msg.content"
-                class="message-text"
-                v-html="formatMessage(msg.content)"
-              />
-              <div
-                v-if="msg.isStreaming && !msg.content && !msg.thinking"
-                class="loading-indicator"
-              >
+              <div v-if="msg.content" class="message-text" v-html="formatMessage(msg.content)" />
+              <div v-if="msg.isStreaming && !msg.content && !msg.thinking" class="loading-indicator">
                 <span /><span /><span />
               </div>
               <button
@@ -239,22 +122,8 @@
                 title="复制"
                 @click="copyMessage(msg.content)"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="14"
-                  height="14"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect
-                    x="9"
-                    y="9"
-                    width="13"
-                    height="13"
-                    rx="2"
-                    ry="2"
-                  />
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               </button>
@@ -270,25 +139,9 @@
             :disabled="loading"
             @keydown.enter.exact="sendMessage"
           />
-          <button
-            class="btn btn-primary send-btn"
-            :disabled="loading || !inputText.trim()"
-            @click="sendMessage"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <line
-                x1="22"
-                y1="2"
-                x2="11"
-                y2="13"
-              />
+          <button class="btn btn-primary send-btn" :disabled="loading || !inputText.trim()" @click="sendMessage">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
             发送
@@ -296,16 +149,21 @@
         </div>
       </main>
     </div>
-    <Toast
-      :visible="toastVisible"
-      :message="toastMessage"
-    />
+    <Toast :visible="toastVisible" :message="toastMessage" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { getConfig, chatStream, openSettings, onConfigChanged, getProviderModels, onChatStreamChunk, onChatStreamEnd } from '@/api'
+import {
+  getConfig,
+  chatStream,
+  openSettings,
+  onConfigChanged,
+  getProviderModels,
+  onChatStreamChunk,
+  onChatStreamEnd
+} from '@/api'
 import { useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
@@ -329,7 +187,7 @@ let removeEndListener = null
 
 const { toastVisible, toastMessage, showSuccess, showError } = useToast()
 
-const currentSession = computed(() => sessions.value.find(s => s.id === currentSessionId.value))
+const currentSession = computed(() => sessions.value.find((s) => s.id === currentSessionId.value))
 const currentMessages = computed(() => currentSession?.value?.messages || [])
 
 const displayedMessages = computed(() => {
@@ -337,7 +195,7 @@ const displayedMessages = computed(() => {
   if (!loading.value || messages.length === 0) {
     return messages
   }
-  
+
   const lastMsg = messages[messages.length - 1]
   if (lastMsg.role === 'assistant') {
     const updatedMessages = [...messages.slice(0, -1)]
@@ -349,7 +207,7 @@ const displayedMessages = computed(() => {
     })
     return updatedMessages
   }
-  
+
   return messages
 })
 
@@ -359,7 +217,7 @@ async function loadApiKey() {
   const apiKeys = config.ai_api_keys || {}
   apiKey.value = apiKeys[provider] || ''
   aiProvider.value = provider
-  
+
   if (apiKey.value) {
     const providerModels = await getProviderModels(provider)
     models.value = providerModels || []
@@ -407,14 +265,14 @@ function createNewChat() {
 
 function selectSession(id) {
   currentSessionId.value = id
-  const session = sessions.value.find(s => s.id === id)
+  const session = sessions.value.find((s) => s.id === id)
   if (session?.model) {
     selectedModel.value = session.model
   }
 }
 
 function deleteSession(id) {
-  const index = sessions.value.findIndex(s => s.id === id)
+  const index = sessions.value.findIndex((s) => s.id === id)
   if (index !== -1) {
     sessions.value.splice(index, 1)
     if (currentSessionId.value === id) {
@@ -439,7 +297,7 @@ function startEditTitle(id, title) {
 function saveEditTitle(id, e) {
   if (e && e.isComposing) return
   if (editingSessionId.value !== id) return
-  const session = sessions.value.find(s => s.id === id)
+  const session = sessions.value.find((s) => s.id === id)
   if (session && editingTitle.value.trim()) {
     session.title = editingTitle.value.trim()
     session.updatedAt = Date.now()
@@ -466,7 +324,7 @@ function formatTime(timestamp) {
 }
 
 function updateSessionTitle(sessionId, firstMessage) {
-  const session = sessions.value.find(s => s.id === sessionId)
+  const session = sessions.value.find((s) => s.id === sessionId)
   if (session && session.title === '新会话' && firstMessage) {
     session.title = firstMessage.slice(0, 20) + (firstMessage.length > 20 ? '...' : '')
   }
@@ -476,32 +334,32 @@ async function sendMessage(e) {
   if (e && (e.shiftKey || e.isComposing)) return
   if (!inputText.value.trim() || loading.value) return
   if (!currentSessionId.value) createNewChat()
-  
+
   const userMessage = inputText.value.trim()
   inputText.value = ''
-  
-  const session = sessions.value.find(s => s.id === currentSessionId.value)
+
+  const session = sessions.value.find((s) => s.id === currentSessionId.value)
   if (!session) return
-  
+
   session.messages.push({ role: 'user', content: userMessage })
   session.updatedAt = Date.now()
   updateSessionTitle(currentSessionId.value, userMessage)
   saveSessions()
-  
+
   loading.value = true
   streamingContent.value = ''
   streamingThinking.value = ''
   scrollToBottom()
-  
+
   const assistantMessage = { role: 'assistant', content: '', thinking: '' }
   session.messages.push(assistantMessage)
-  
+
   if (removeChunkListener) removeChunkListener()
   if (removeEndListener) removeEndListener()
-  
+
   removeChunkListener = onChatStreamChunk((chunk) => {
     assistantMessage.content += chunk
-    
+
     if (assistantMessage.content.includes('<thinking>')) {
       const thinkingMatch = assistantMessage.content.match(/<thinking>([\s\S]*?)<\/thinking>/)
       if (thinkingMatch) {
@@ -527,12 +385,12 @@ async function sendMessage(e) {
     }
     scrollToBottom()
   })
-  
+
   removeEndListener = onChatStreamEnd((result) => {
     loading.value = false
     streamingContent.value = ''
     streamingThinking.value = ''
-    
+
     if (result.success) {
       if (assistantMessage.content.includes('<thinking>')) {
         const thinkingMatch = assistantMessage.content.match(/<thinking>([\s\S]*?)<\/thinking>/)
@@ -547,13 +405,13 @@ async function sendMessage(e) {
           assistantMessage.content = beforeThinking.trim()
         }
       }
-      
+
       assistantMessage.content = assistantMessage.content
         .replace(/\n*正在执行操作\.\.\.\n*/g, '\n')
         .replace(/\n*✓ \S+ 完成\n*/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim()
-      
+
       session.model = selectedModel.value
       session.updatedAt = Date.now()
       saveSessions()
@@ -561,12 +419,12 @@ async function sendMessage(e) {
       assistantMessage.content = `错误: ${result.error}`
       saveSessions()
     }
-    
+
     scrollToBottom()
   })
-  
+
   try {
-    const chatMessages = session.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
+    const chatMessages = session.messages.slice(0, -1).map((m) => ({ role: m.role, content: m.content }))
     await chatStream(chatMessages, { model: selectedModel.value })
   } catch (e) {
     loading.value = false
@@ -631,9 +489,13 @@ onUnmounted(() => {
   }
 })
 
-watch(currentMessages, () => {
-  scrollToBottom()
-}, { deep: true })
+watch(
+  currentMessages,
+  () => {
+    scrollToBottom()
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>
@@ -1088,12 +950,22 @@ watch(currentMessages, () => {
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
-.loading-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.loading-indicator span:nth-child(2) { animation-delay: -0.16s; }
+.loading-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.loading-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
 }
 
 .input-area {

@@ -382,7 +382,7 @@ SQL生成："SELECT * FROM users LIMIT 10"。
 
 async function getAllToolDefinitions() {
   await initSkills()
-  
+
   const skillsManager = getSkillsManager()
   return skillsManager.getToolDefinitions()
 }
@@ -391,15 +391,15 @@ async function executeToolCall(name, args) {
   try {
     const params = typeof args === 'string' ? JSON.parse(args) : args
     log.info('执行工具调用:', name, '参数:', params)
-    
+
     const skillsManager = getSkillsManager()
     const skill = skillsManager.getSkill(name)
-    
+
     if (skill) {
       log.info('调用 Skill:', name)
       return await skillsManager.executeSkill(name, params)
     }
-    
+
     return { success: false, error: `未知工具: ${name}` }
   } catch (e) {
     log.error('工具执行失败:', e)
@@ -411,56 +411,56 @@ function getProviderConfig() {
   const config = getConfig()
   const providerType = config.ai_provider || 'bailian'
   const apiKeys = config.ai_api_keys || {}
-  
+
   const providerConfig = {
     apiKey: apiKeys[providerType] || '',
     timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,
     connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000
   }
-  
+
   if (providerType === 'minimax') {
     providerConfig.groupId = apiKeys.minimax_group_id || ''
   }
   if (providerType === 'volcengine') {
     providerConfig.endpointId = apiKeys.volcengine_endpoint_id || ''
   }
-  
+
   return { providerType, providerConfig }
 }
 
 async function chatWithToolsInternal(messages, options = {}) {
   const { providerType, providerConfig } = getProviderConfig()
   const provider = getProvider(providerType, providerConfig)
-  
+
   if (!provider) {
     return { success: false, error: `未知的 AI Provider: ${providerType}` }
   }
-  
+
   const validation = provider.validateConfig()
   if (!validation.valid) {
     return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
   }
-  
+
   console.log('=== chatWithToolsInternal ===')
   console.log('Provider:', provider.name)
   console.log('Messages:', JSON.stringify(messages, null, 2))
-  
+
   const model = options.model || provider.getDefaultModel()
   const allTools = await getAllToolDefinitions()
-  
+
   const result = await provider.chat(messages, allTools, { model, ...options })
-  
+
   if (!result.success) return result
-  
+
   if (result.tool_calls && result.tool_calls.length > 0) {
     console.log('=== 检测到 tool_calls ===')
     console.log('tool_calls:', JSON.stringify(result.tool_calls, null, 2))
-    
+
     messages.push({
       role: 'assistant',
       tool_calls: result.tool_calls
     })
-    
+
     for (const call of result.tool_calls) {
       console.log('执行工具:', call.function.name)
       const toolResult = await executeToolCall(call.function.name, call.function.arguments)
@@ -471,22 +471,19 @@ async function chatWithToolsInternal(messages, options = {}) {
         content: JSON.stringify(toolResult)
       })
     }
-    
+
     return await chatWithToolsInternal(messages, { model, ...options })
   }
-  
+
   return result
 }
 
 async function chatWithTools(messages, options = {}) {
   console.log('=== chatWithTools 被调用 ===')
   console.log('原始 messages:', JSON.stringify(messages, null, 2))
-  
-  const messagesWithSystem = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...messages
-  ]
-  
+
+  const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages]
+
   return chatWithToolsInternal(messagesWithSystem, options)
 }
 
@@ -504,56 +501,53 @@ export async function chatStream(messages, options = {}, onChunk) {
   console.log('=== chatStream 函数被调用 ===')
   console.log('messages:', JSON.stringify(messages, null, 2))
   console.log('options:', options)
-  
+
   const { providerType, providerConfig } = getProviderConfig()
   const provider = getProvider(providerType, providerConfig)
-  
+
   if (!provider) {
     return { success: false, error: `未知的 AI Provider: ${providerType}` }
   }
-  
+
   const validation = provider.validateConfig()
   if (!validation.valid) {
     return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
   }
-  
-  const messagesWithSystem = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...messages
-  ]
-  
+
+  const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages]
+
   const model = options.model || provider.getDefaultModel()
   const allTools = await getAllToolDefinitions()
-  
+
   const result = await chatStreamInternal(provider, messagesWithSystem, allTools, { model, ...options }, onChunk)
-  
+
   return result
 }
 
 async function chatStreamInternal(provider, messages, tools, options, onChunk) {
   const model = options.model || provider.getDefaultModel()
-  
+
   console.log('=== chatStreamInternal ===')
   console.log('Provider:', provider.name)
-  
+
   const result = await provider.chatStream(messages, tools, { model, ...options }, onChunk)
-  
+
   if (!result.success) return result
-  
+
   if (result.tool_calls && result.tool_calls.length > 0) {
     console.log('=== 流式检测到 tool_calls ===')
     console.log('tool_calls:', JSON.stringify(result.tool_calls, null, 2))
-    
+
     messages.push({
       role: 'assistant',
       content: result.content || '',
       tool_calls: result.tool_calls
     })
-    
+
     if (onChunk && result.content) {
       onChunk('\n\n正在执行操作...\n')
     }
-    
+
     for (const call of result.tool_calls) {
       console.log('执行工具:', call.function.name)
       const toolResult = await executeToolCall(call.function.name, call.function.arguments)
@@ -563,16 +557,16 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk) {
         tool_call_id: call.id,
         content: JSON.stringify(toolResult)
       })
-      
+
       if (onChunk) {
         const toolName = call.function.name
         if (toolResult.success) {
           onChunk(`✓ ${toolName} 完成\n`)
-          
+
           if (toolResult.content) {
             onChunk('\n' + toolResult.content + '\n')
           }
-          
+
           if (toolResult.metadata) {
             if (toolName === 'db-query' && toolResult.metadata.tables) {
               onChunk(`\n查询到 ${toolResult.metadata.tables.length} 个表\n`)
@@ -589,14 +583,14 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk) {
         }
       }
     }
-    
+
     if (onChunk) {
       onChunk('\n')
     }
-    
+
     return await chatStreamInternal(provider, messages, tools, { model, ...options }, onChunk)
   }
-  
+
   return result
 }
 
@@ -605,19 +599,19 @@ export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
   console.log('provider:', providerType)
   console.log('apiKey:', apiKey)
   console.log('extraConfig:', extraConfig)
-  
+
   const config = {
     apiKey,
     ...extraConfig
   }
-  
+
   const provider = getProvider(providerType, config)
-  
+
   if (!provider) {
     log.warn(`未知的 Provider: ${providerType}`)
     return false
   }
-  
+
   console.log('Provider apiKey:', provider.apiKey)
   const result = await provider.validateApiKey()
   console.log('验证结果:', result)

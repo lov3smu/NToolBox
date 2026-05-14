@@ -74,10 +74,7 @@
         "description": "文件合并策略：auto自动分析（默认）、separate分开文件、merge合并到一个文件"
       }
     },
-    "oneOf": [
-      { "required": ["dict_list"] },
-      { "required": ["dict_name", "dict_values"] }
-    ]
+    "oneOf": [{ "required": ["dict_list"] }, { "required": ["dict_name", "dict_values"] }]
   },
   "handler": "handler.js",
   "examples": [

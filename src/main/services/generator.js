@@ -36,7 +36,7 @@ export async function generateSQLFile(scriptInfo) {
       throw new Error('无效的操作类型')
     }
     if (scriptInfo.operateType !== 'QUERY') {
-      const validScriptTypes = (config.script_types || []).map(st => st.name)
+      const validScriptTypes = (config.script_types || []).map((st) => st.name)
       if (!scriptInfo.scriptType || !validScriptTypes.includes(scriptInfo.scriptType)) {
         throw new Error(`脚本类型不合法，必须是 ${validScriptTypes.join('、')} 其中之一`)
       }
@@ -77,7 +77,7 @@ export async function generateSQLFile(scriptInfo) {
     await mkdirWithElevate(targetPath)
 
     const files = await fs.promises.readdir(targetPath)
-    const sqlFiles = files.filter(f => f.endsWith('.sql'))
+    const sqlFiles = files.filter((f) => f.endsWith('.sql'))
     let maxNumber = 0
     for (const f of sqlFiles) {
       const match = f.match(/^S(\d+)-/)

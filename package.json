@@ -13,7 +13,9 @@
     "build:mac": "electron-vite build && electron-builder --mac --x64",
     "preview": "electron-vite preview",
     "lint": "eslint src --ext .js,.vue,.ts --fix",
-    "lint:check": "eslint src --ext .js,.vue,.ts"
+    "lint:check": "eslint src --ext .js,.vue,.ts",
+    "format": "prettier --write \"src/**/*.{js,vue,ts,json,css,html}\"",
+    "format:check": "prettier --check \"src/**/*.{js,vue,ts,json,css,html}\""
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
@@ -38,7 +40,9 @@
     "electron-builder": "^25.1.8",
     "electron-vite": "^5.0.0",
     "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.8.0",
+    "prettier": "^3.8.3",
     "vite": "^7.3.2"
   },
   "build": {

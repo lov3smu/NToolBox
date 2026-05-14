@@ -1,8 +1,8 @@
 export default async function handler(params, context) {
   const { log, generateSQLFile } = context
-  
+
   log.info('执行 sql-script Skill', params)
-  
+
   const scriptInfo = {
     database: params.database,
     operateType: params.operate_type,
@@ -10,9 +10,9 @@ export default async function handler(params, context) {
     dirName: params.dir_name,
     usage: params.usage
   }
-  
+
   const result = await generateSQLFile(scriptInfo)
-  
+
   if (result.success) {
     return {
       success: true,
@@ -24,7 +24,7 @@ export default async function handler(params, context) {
       }
     }
   }
-  
+
   return {
     success: false,
     error: result.error || '生成SQL脚本失败'

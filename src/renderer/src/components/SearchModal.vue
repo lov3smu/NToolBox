@@ -1,25 +1,11 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="visible"
-        class="search-overlay"
-        @click.self="close"
-      >
+      <div v-if="visible" class="search-overlay" @click.self="close">
         <div class="search-modal">
           <div class="search-input-wrapper">
-            <svg
-              class="search-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="8"
-              />
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
@@ -32,16 +18,11 @@
               @keydown.up="navigateUp"
               @keydown.enter="selectCurrent($event)"
               @keydown.esc="close"
-            >
+            />
             <span class="search-shortcut">ESC</span>
           </div>
-          <div
-            v-if="recentTools.length > 0 && !searchQuery.trim()"
-            class="recent-section"
-          >
-            <div class="section-title">
-              最近使用
-            </div>
+          <div v-if="recentTools.length > 0 && !searchQuery.trim()" class="recent-section">
+            <div class="section-title">最近使用</div>
             <div class="recent-tools">
               <div
                 v-for="tool in recentTools"
@@ -50,20 +31,12 @@
                 :title="tool.name"
                 @click="selectTool(tool)"
               >
-                <div
-                  class="tool-icon"
-                  v-html="tool.icon"
-                />
+                <div class="tool-icon" v-html="tool.icon" />
               </div>
             </div>
           </div>
-          <div
-            v-if="!searchQuery.trim()"
-            class="all-tools-section"
-          >
-            <div class="section-title">
-              所有工具
-            </div>
+          <div v-if="!searchQuery.trim()" class="all-tools-section">
+            <div class="section-title">所有工具</div>
             <div class="search-results">
               <div
                 v-for="(tool, index) in tools"
@@ -73,10 +46,7 @@
                 @click="selectTool(tool)"
                 @mouseenter="activeIndex = index"
               >
-                <div
-                  class="tool-icon"
-                  v-html="tool.icon"
-                />
+                <div class="tool-icon" v-html="tool.icon" />
                 <div class="tool-info">
                   <div class="tool-name">
                     {{ tool.name }}
@@ -88,10 +58,7 @@
               </div>
             </div>
           </div>
-          <div
-            v-else-if="filteredTools.length > 0"
-            class="search-results"
-          >
+          <div v-else-if="filteredTools.length > 0" class="search-results">
             <div
               v-for="(tool, index) in filteredTools"
               :key="tool.path"
@@ -100,10 +67,7 @@
               @click="selectTool(tool)"
               @mouseenter="activeIndex = index"
             >
-              <div
-                class="tool-icon"
-                v-html="tool.icon"
-              />
+              <div class="tool-icon" v-html="tool.icon" />
               <div class="tool-info">
                 <div class="tool-name">
                   {{ tool.name }}
@@ -114,10 +78,7 @@
               </div>
             </div>
           </div>
-          <div
-            v-else-if="searchQuery"
-            class="search-empty"
-          >
+          <div v-else-if="searchQuery" class="search-empty">
             <span>未找到匹配的工具</span>
           </div>
         </div>
@@ -258,7 +219,10 @@ const tools = [
 const recentTools = computed(() => {
   try {
     const recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
-    return recent.slice(0, MAX_RECENT).map(path => tools.find(t => t.path === path)).filter(Boolean)
+    return recent
+      .slice(0, MAX_RECENT)
+      .map((path) => tools.find((t) => t.path === path))
+      .filter(Boolean)
   } catch {
     return []
   }
@@ -267,7 +231,7 @@ const recentTools = computed(() => {
 function addToRecent(tool) {
   try {
     let recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
-    recent = recent.filter(p => p !== tool.path)
+    recent = recent.filter((p) => p !== tool.path)
     recent.unshift(tool.path)
     recent = recent.slice(0, MAX_RECENT)
     localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(recent))
@@ -281,22 +245,24 @@ const filteredTools = computed(() => {
     return tools
   }
   const query = searchQuery.value.toLowerCase()
-  return tools.filter(tool =>
-    tool.name.toLowerCase().includes(query) ||
-    tool.description.toLowerCase().includes(query)
+  return tools.filter(
+    (tool) => tool.name.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query)
   )
 })
 
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    nextTick(() => {
-      searchInput.value?.focus()
-    })
-  } else {
-    searchQuery.value = ''
-    activeIndex.value = 0
+watch(
+  () => props.visible,
+  (newVal) => {
+    if (newVal) {
+      nextTick(() => {
+        searchInput.value?.focus()
+      })
+    } else {
+      searchQuery.value = ''
+      activeIndex.value = 0
+    }
   }
-})
+)
 
 watch(searchQuery, () => {
   activeIndex.value = 0
@@ -360,7 +326,9 @@ function close() {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -531,7 +499,9 @@ function close() {
 
 .fade-enter-active .search-modal,
 .fade-leave-active .search-modal {
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .fade-enter-from,

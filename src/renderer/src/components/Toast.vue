@@ -1,10 +1,6 @@
 <template>
   <Teleport to="body">
-    <div
-      v-if="visible"
-      class="toast show"
-      :class="type"
-    >
+    <div v-if="visible" class="toast show" :class="type">
       <span class="toast-icon">{{ icon }}</span>
       <span class="toast-message">{{ message }}</span>
     </div>

@@ -14,12 +14,12 @@ export function getIconPath() {
   let iconPath = null
   if (app.isPackaged) {
     const resourcesDir = process.resourcesPath
-    const possiblePaths = [
-      path.join(resourcesDir, 'assets', 'icon.ico'),
-      path.join(resourcesDir, 'assets', 'icon.png')
-    ]
+    const possiblePaths = [path.join(resourcesDir, 'assets', 'icon.ico'), path.join(resourcesDir, 'assets', 'icon.png')]
     for (const p of possiblePaths) {
-      if (fs.existsSync(p)) { iconPath = p; break }
+      if (fs.existsSync(p)) {
+        iconPath = p
+        break
+      }
     }
   } else {
     const projectRoot = getProjectRoot()

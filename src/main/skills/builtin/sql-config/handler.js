@@ -2,16 +2,16 @@ export default function handler(params, context) {
   const { getConfig } = context
   const config = getConfig()
   const databases = config.databases || []
-  const scriptTypes = (config.script_types || []).map(st => ({
+  const scriptTypes = (config.script_types || []).map((st) => ({
     name: st.name,
     description: st.description
   }))
-  
+
   return {
     success: true,
     content: `配置信息：
 数据库列表：${databases.join(', ') || '无'}
-脚本类型：${scriptTypes.map(st => st.name).join(', ') || '无'}
+脚本类型：${scriptTypes.map((st) => st.name).join(', ') || '无'}
 开发者：${config.developer_ch_name} (${config.developer_en_name})`,
     metadata: {
       databases,

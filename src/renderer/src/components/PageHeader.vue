@@ -12,17 +12,10 @@
         stroke-linejoin="round"
         v-html="svgIcon"
       />
-      <component
-        :is="iconComponent"
-        v-else-if="iconComponent"
-        class="header-icon"
-      />
+      <component :is="iconComponent" v-else-if="iconComponent" class="header-icon" />
       <span>{{ title }}</span>
     </h1>
-    <div
-      v-if="subtitle"
-      class="subtitle"
-    >
+    <div v-if="subtitle" class="subtitle">
       {{ subtitle }}
     </div>
     <slot name="extra" />

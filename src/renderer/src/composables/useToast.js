@@ -9,7 +9,7 @@ export function useToast() {
     toastMessage.value = message
     toastType.value = type
     toastVisible.value = true
-    
+
     if (duration > 0) {
       setTimeout(() => {
         toastVisible.value = false

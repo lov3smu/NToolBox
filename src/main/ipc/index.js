@@ -2,9 +2,27 @@ import { ipcMain, dialog, clipboard, app } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { log, getProjectRoot } from '../utils'
-import { getConfig, saveConfig, loadConfig, generateSQLFile, openFile, openFolder, setAutoStart, getAutoStart, checkForUpdates } from '../services'
+import {
+  getConfig,
+  saveConfig,
+  loadConfig,
+  generateSQLFile,
+  openFile,
+  openFolder,
+  setAutoStart,
+  getAutoStart,
+  checkForUpdates
+} from '../services'
 import { chat, chatStream, validateApiKey, getAvailableProviders, getProviderModels } from '../services/chat.js'
-import { initSkills, getSkills, getSkill, executeSkill, installSkill, uninstallSkill, getSkillToolDefinitions } from '../services/skills.js'
+import {
+  initSkills,
+  getSkills,
+  getSkill,
+  executeSkill,
+  installSkill,
+  uninstallSkill,
+  getSkillToolDefinitions
+} from '../services/skills.js'
 import { isPathWithinBase } from '../utils/sanitize'
 import { getMainWindow, getSettingsWindow, createSettingsWindow } from '../windows'
 import { createAppMenu } from '../ui'
@@ -83,10 +101,10 @@ export function setupIPCHandlers() {
     const mainWindow = getMainWindow()
     const settingsWindow = getSettingsWindow()
     const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
-    
+
     const platform = process.platform
     const filters = []
-    
+
     if (platform === 'win32') {
       filters.push({ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] })
       filters.push({ name: '所有文件', extensions: ['*'] })
@@ -98,7 +116,7 @@ export function setupIPCHandlers() {
       filters.push({ name: '可执行文件', extensions: ['sh', 'bin'] })
       filters.push({ name: '所有文件', extensions: ['*'] })
     }
-    
+
     const result = await dialog.showOpenDialog(parentWindow, {
       properties: ['openFile'],
       filters
@@ -143,20 +161,20 @@ export function setupIPCHandlers() {
     try {
       const config = getConfig()
       const basePath = config.base_path
-      
+
       if (!dirPath || typeof dirPath !== 'string') {
         return { success: false, error: '路径无效' }
       }
-      
+
       if (basePath && !isPathWithinBase(dirPath, basePath)) {
         log.warn('拒绝读取 base_path 外的目录:', dirPath)
         return { success: false, error: '无权访问该目录' }
       }
-      
+
       const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
       const directories = []
       const files = []
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name)
         try {
@@ -168,7 +186,7 @@ export function setupIPCHandlers() {
             modified: stat.mtimeMs,
             isDirectory: entry.isDirectory()
           }
-          
+
           if (entry.isDirectory()) {
             directories.push(item)
           } else {
@@ -178,7 +196,7 @@ export function setupIPCHandlers() {
           log.warn('无法读取文件信息:', fullPath, e.message)
         }
       }
-      
+
       return { success: true, directories, files }
     } catch (e) {
       log.error('读取目录失败:', e)
@@ -190,26 +208,26 @@ export function setupIPCHandlers() {
     try {
       const config = getConfig()
       const basePath = config.base_path
-      
+
       if (!itemPath || typeof itemPath !== 'string') {
         return false
       }
-      
+
       if (basePath && !isPathWithinBase(itemPath, basePath)) {
         log.warn('拒绝访问 base_path 外的路径:', itemPath)
         return false
       }
-      
+
       let filePaths = []
-      
+
       const stat = await fs.promises.stat(itemPath)
-      
+
       if (stat.isDirectory()) {
         filePaths = await collectFiles(itemPath, recursive)
       } else {
         filePaths = [itemPath]
       }
-      
+
       const text = filePaths.join('\n')
       clipboard.writeText(text)
       return true
@@ -223,19 +241,19 @@ export function setupIPCHandlers() {
     try {
       const config = getConfig()
       const basePath = config.base_path
-      
+
       if (!itemPath || typeof itemPath !== 'string') {
         return { success: false, error: '路径无效' }
       }
-      
+
       if (basePath && !isPathWithinBase(itemPath, basePath)) {
         log.warn('拒绝访问 base_path 外的路径:', itemPath)
         return { success: false, error: '无权访问' }
       }
-      
+
       const stat = await fs.promises.stat(itemPath)
       const isDirectory = stat.isDirectory()
-      
+
       const info = {
         name: path.basename(itemPath),
         type: isDirectory ? '文件夹' : '文件',
@@ -244,7 +262,7 @@ export function setupIPCHandlers() {
         modified: stat.mtimeMs,
         accessed: stat.atimeMs
       }
-      
+
       if (isDirectory) {
         const stats = await getDirectoryStats(itemPath)
         info.size = stats.size
@@ -255,7 +273,7 @@ export function setupIPCHandlers() {
         info.size = stat.size
         info.sizeOnDisk = stat.size
       }
-      
+
       return { success: true, info }
     } catch (e) {
       log.error('获取信息失败:', e)
@@ -277,11 +295,11 @@ export function setupIPCHandlers() {
     console.log('=== IPC chat-stream 被调用 ===')
     console.log('messages:', messages)
     console.log('options:', options)
-    
+
     const result = await chatStream(messages, options, (chunk) => {
       event.sender.send('chat-stream-chunk', chunk)
     })
-    
+
     event.sender.send('chat-stream-end', result)
     return result
   })
@@ -430,7 +448,7 @@ export function setupIPCHandlers() {
 async function collectFiles(dirPath, recursive) {
   const files = []
   const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
-  
+
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name)
     if (entry.isDirectory() && recursive) {
@@ -440,7 +458,7 @@ async function collectFiles(dirPath, recursive) {
       files.push(fullPath)
     }
   }
-  
+
   return files
 }
 
@@ -448,10 +466,10 @@ async function getDirectoryStats(dirPath) {
   let size = 0
   let directoryCount = 0
   let fileCount = 0
-  
+
   try {
     const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
-    
+
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name)
       try {
@@ -473,6 +491,6 @@ async function getDirectoryStats(dirPath) {
   } catch (e) {
     log.warn('无法读取目录:', dirPath, e.message)
   }
-  
+
   return { size, directoryCount, fileCount }
 }

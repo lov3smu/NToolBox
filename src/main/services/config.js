@@ -39,10 +39,23 @@ function getDefaultConfigContent() {
       deepseek: ''
     },
     databases: [
-      'order_db', 'product_db', 'community_db', 'content_db', 'device_db',
-      'main_db', 'promotion_db', 'ota_db', 'payment_db', 'pmp_db',
-      'report_db', 'report_data_db', 'sharespace_db', 'user_db',
-      'workbench_db', 'worktask_db', 'data_warehouse_db'
+      'order_db',
+      'product_db',
+      'community_db',
+      'content_db',
+      'device_db',
+      'main_db',
+      'promotion_db',
+      'ota_db',
+      'payment_db',
+      'pmp_db',
+      'report_db',
+      'report_data_db',
+      'sharespace_db',
+      'user_db',
+      'workbench_db',
+      'worktask_db',
+      'data_warehouse_db'
     ],
     script_types: [
       { name: 'DDL', description: 'Data Definition Language (CREATE, ALTER, DROP)' },
@@ -97,7 +110,17 @@ export function validateConfig(cfg) {
   if (cfg.close_action && !VALID_CLOSE_ACTIONS.includes(cfg.close_action)) return 'close_action 值不合法'
   if (cfg.shortcuts !== undefined) {
     if (typeof cfg.shortcuts !== 'object') return 'shortcuts 必须是对象'
-    const validKeys = ['password', 'cron', 'unixtimestamp', 'yamlEditor', 'fileManager', 'jsonParser', 'chat', 'settings', 'home']
+    const validKeys = [
+      'password',
+      'cron',
+      'unixtimestamp',
+      'yamlEditor',
+      'fileManager',
+      'jsonParser',
+      'chat',
+      'settings',
+      'home'
+    ]
     for (const key of Object.keys(cfg.shortcuts)) {
       if (!validKeys.includes(key)) return `shortcuts.${key} 不是有效的快捷键配置项`
       if (typeof cfg.shortcuts[key] !== 'string') return `shortcuts.${key} 必须是字符串`
@@ -109,7 +132,7 @@ export function validateConfig(cfg) {
 export async function loadConfig() {
   try {
     await initCrypto()
-    
+
     const configPath = getConfigPath()
     let data
     try {
@@ -125,26 +148,26 @@ export async function loadConfig() {
 
     const loadedConfig = JSON.parse(data)
     const defaultConfig = getDefaultConfigContent()
-    
+
     config = { ...defaultConfig, ...loadedConfig }
-    
+
     if (config.auto_update === undefined) config.auto_update = true
     if (config.auto_start === undefined) config.auto_start = true
     if (config.first_launch_done === undefined) config.first_launch_done = false
     if (config.close_action === undefined) config.close_action = 'ask'
     if (config.ai_provider === undefined) config.ai_provider = 'bailian'
-    
+
     if (!config.ai_api_keys || typeof config.ai_api_keys !== 'object') {
       config.ai_api_keys = { ...defaultConfig.ai_api_keys }
     } else {
       config.ai_api_keys = { ...defaultConfig.ai_api_keys, ...config.ai_api_keys }
     }
-    
+
     if (loadedConfig.bailian_api_key && !config.ai_api_keys.bailian) {
       config.ai_api_keys.bailian = loadedConfig.bailian_api_key
       delete config.bailian_api_key
     }
-    
+
     if (!config.shortcuts || typeof config.shortcuts !== 'object') {
       config.shortcuts = { ...defaultConfig.shortcuts }
     } else {
@@ -183,9 +206,9 @@ export async function saveConfig(newConfig) {
       log.error('配置内容:', JSON.stringify(newConfig, null, 2))
       return false
     }
-    
+
     const configToSave = JSON.parse(JSON.stringify(newConfig))
-    
+
     if (Array.isArray(configToSave.dbConnections)) {
       for (const conn of configToSave.dbConnections) {
         if (conn.password && conn.savePassword) {
@@ -195,7 +218,7 @@ export async function saveConfig(newConfig) {
         }
       }
     }
-    
+
     const configPath = getConfigPath()
     await fs.promises.writeFile(configPath, JSON.stringify(configToSave, null, 2), 'utf8')
     config = newConfig

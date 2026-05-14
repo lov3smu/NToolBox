@@ -1,136 +1,36 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="visible"
-        class="message-overlay"
-        @click.self="close"
-      >
-        <div
-          class="message-dialog"
-          :class="type"
-        >
+      <div v-if="visible" class="message-overlay" @click.self="close">
+        <div class="message-dialog" :class="type">
           <div class="message-icon">
-            <svg
-              v-if="type === 'success'"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-              />
+            <svg v-if="type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
               <polyline points="9 12 12 15 16 9" />
             </svg>
-            <svg
-              v-else-if="type === 'error'"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-              />
-              <line
-                x1="15"
-                y1="9"
-                x2="9"
-                y2="15"
-              />
-              <line
-                x1="9"
-                y1="9"
-                x2="15"
-                y2="15"
-              />
+            <svg v-else-if="type === 'error'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
-            <svg
-              v-else-if="type === 'warning'"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-              />
-              <line
-                x1="12"
-                y1="8"
-                x2="12"
-                y2="12"
-              />
-              <line
-                x1="12"
-                y1="16"
-                x2="12.01"
-                y2="16"
-              />
+            <svg v-else-if="type === 'warning'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <svg
-              v-else-if="type === 'confirm'"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-              />
-              <line
-                x1="12"
-                y1="8"
-                x2="12"
-                y2="12"
-              />
-              <line
-                x1="12"
-                y1="16"
-                x2="12.01"
-                y2="16"
-              />
+            <svg v-else-if="type === 'confirm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <svg
-              v-else
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-              />
-              <line
-                x1="12"
-                y1="16"
-                x2="12"
-                y2="12"
-              />
-              <line
-                x1="12"
-                y1="8"
-                x2="12.01"
-                y2="8"
-              />
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
           </div>
           <div class="message-content">
-            <div
-              v-if="title"
-              class="message-title"
-            >
+            <div v-if="title" class="message-title">
               {{ title }}
             </div>
             <div class="message-text">
@@ -138,19 +38,8 @@
             </div>
           </div>
           <div class="message-actions">
-            <button
-              v-if="type === 'confirm'"
-              class="btn-message btn-cancel"
-              @click="cancel"
-            >
-              取消
-            </button>
-            <button
-              class="btn-message btn-confirm"
-              @click="confirm"
-            >
-              确定
-            </button>
+            <button v-if="type === 'confirm'" class="btn-message btn-cancel" @click="cancel">取消</button>
+            <button class="btn-message btn-confirm" @click="confirm">确定</button>
           </div>
         </div>
       </div>
@@ -220,7 +109,9 @@ function cancel() {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -327,7 +218,9 @@ function cancel() {
 
 .fade-enter-active .message-dialog,
 .fade-leave-active .message-dialog {
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .fade-enter-from,

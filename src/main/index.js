@@ -46,7 +46,7 @@ app.whenReady().then(async () => {
   } catch (e) {
     console.error('初始化日志失败:', e)
   }
-  
+
   log.info('========================================')
   log.info('应用启动')
   log.info('========================================')
@@ -61,7 +61,7 @@ app.whenReady().then(async () => {
   }
 
   setupIPCHandlers()
-  
+
   const { mainWindow, createSettingsWindow } = initWindows()
   createAppMenu(mainWindow, checkForUpdates, createSettingsWindow)
   createTray(mainWindow, checkForUpdates, createSettingsWindow)
@@ -72,5 +72,4 @@ app.whenReady().then(async () => {
   log.info('应用启动完成')
 })
 
-app.on('window-all-closed', () => {
-})
+app.on('window-all-closed', () => {})
