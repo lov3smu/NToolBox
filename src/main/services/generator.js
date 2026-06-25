@@ -10,7 +10,8 @@ import {
   isValidIdentifier,
   escapeIdentifier,
   sanitizePathSegment,
-  isPathWithinBase
+  isPathWithinBase,
+  normalizeDirNameWithDate
 } from '../utils/sanitize'
 import { mkdirWithElevate } from '../utils/elevate'
 
@@ -51,22 +52,20 @@ export async function generateSQLFile(scriptInfo) {
     const currentYear = now.getFullYear().toString()
     const currentDate = now.toISOString().split('T')[0]
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const datePrefixedDirName = `${month}-${day}-${safeDirName}`
+    const normalizedDirName = normalizeDirNameWithDate(safeDirName, now)
 
     let targetPath
     switch (scriptInfo.operateType) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, datePrefixedDirName)
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, datePrefixedDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, datePrefixedDirName)
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
     }
 

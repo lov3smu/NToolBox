@@ -4,7 +4,7 @@ import { log } from '../utils'
 import { getConfig } from './config'
 import { getProvider } from './ai/index.js'
 import { mkdirWithElevate } from '../utils/elevate'
-import { sanitizePathSegment, isPathWithinBase, escapeSql } from '../utils/sanitize'
+import { sanitizePathSegment, isPathWithinBase, escapeSql, normalizeDirNameWithDate } from '../utils/sanitize'
 
 const DICTIONARY_TEMPLATE = {
   name: '字典配置',
@@ -138,9 +138,10 @@ export async function generateDictionarySql(params) {
     const currentYear = now.getFullYear().toString()
     const currentDate = now.toISOString().split('T')[0]
 
-    const safeDirName = sanitizePathSegment(
-      dir_name || `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || dict_name}`
-    )
+    const defaultDirName = `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || dict_name}`
+    const rawDirName = dir_name || defaultDirName
+    const safeDirName = sanitizePathSegment(rawDirName)
+    const normalizedDirName = normalizeDirNameWithDate(safeDirName, now)
     const safeUsage = sanitizePathSegment(usage || dict_name)
 
     if (!safeDirName) {
@@ -150,16 +151,16 @@ export async function generateDictionarySql(params) {
     let targetPath
     switch (operate_type) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
       default:
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
     }
 
     if (!isPathWithinBase(targetPath, config.base_path)) {
@@ -283,9 +284,10 @@ async function generateDictionarySqlBatch(params) {
     const currentYear = now.getFullYear().toString()
     const currentDate = now.toISOString().split('T')[0]
 
-    const safeDirName = sanitizePathSegment(
-      dir_name || `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || '字典配置'}`
-    )
+    const defaultDirName = `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || '字典配置'}`
+    const rawDirName = dir_name || defaultDirName
+    const safeDirName = sanitizePathSegment(rawDirName)
+    const normalizedDirName = normalizeDirNameWithDate(safeDirName, now)
 
     if (!safeDirName) {
       return { success: false, error: '目录名无效' }
@@ -294,16 +296,16 @@ async function generateDictionarySqlBatch(params) {
     let targetPath
     switch (operate_type) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
       default:
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
     }
 
     if (!isPathWithinBase(targetPath, config.base_path)) {
@@ -623,9 +625,10 @@ export async function generateFunctionGroupSql(params) {
     const currentYear = now.getFullYear().toString()
     const currentDate = now.toISOString().split('T')[0]
 
-    const safeDirName = sanitizePathSegment(
-      dir_name || `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || '功能权限配置'}`
-    )
+    const defaultDirName = `${currentDate.slice(5, 10).replace(/-/g, '')}-${usage || '功能权限配置'}`
+    const rawDirName = dir_name || defaultDirName
+    const safeDirName = sanitizePathSegment(rawDirName)
+    const normalizedDirName = normalizeDirNameWithDate(safeDirName, now)
     const safeUsage = sanitizePathSegment(usage || '功能权限配置')
 
     if (!safeDirName) {
@@ -635,16 +638,16 @@ export async function generateFunctionGroupSql(params) {
     let targetPath
     switch (operate_type) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
       default:
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, safeDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
     }
 
     if (!isPathWithinBase(targetPath, config.base_path)) {
