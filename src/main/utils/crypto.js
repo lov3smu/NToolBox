@@ -56,22 +56,18 @@ export function encrypt(plaintext) {
   if (!plaintext || typeof plaintext !== 'string') {
     return ''
   }
-  
+
   try {
     const iv = crypto.randomBytes(IV_LENGTH)
     const cipher = crypto.createCipheriv(ALGORITHM, encryptionKey, iv)
-    
+
     let encrypted = cipher.update(plaintext, 'utf8', 'base64')
     encrypted += cipher.final('base64')
-    
+
     const authTag = cipher.getAuthTag()
-    
-    const combined = Buffer.concat([
-      iv,
-      authTag,
-      Buffer.from(encrypted, 'base64')
-    ])
-    
+
+    const combined = Buffer.concat([iv, authTag, Buffer.from(encrypted, 'base64')])
+
     return ENCRYPTED_PREFIX + combined.toString('base64')
   } catch (error) {
     log.error('加密失败:', error)
@@ -86,25 +82,25 @@ export function decrypt(ciphertext) {
   if (!ciphertext || typeof ciphertext !== 'string') {
     return ''
   }
-  
+
   if (!ciphertext.startsWith(ENCRYPTED_PREFIX)) {
     return ciphertext
   }
-  
+
   try {
     const encryptedData = ciphertext.slice(ENCRYPTED_PREFIX.length)
     const combined = Buffer.from(encryptedData, 'base64')
-    
+
     const iv = combined.subarray(0, IV_LENGTH)
     const authTag = combined.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH)
     const encrypted = combined.subarray(IV_LENGTH + AUTH_TAG_LENGTH)
-    
+
     const decipher = crypto.createDecipheriv(ALGORITHM, encryptionKey, iv)
     decipher.setAuthTag(authTag)
-    
+
     let decrypted = decipher.update(encrypted, undefined, 'utf8')
     decrypted += decipher.final('utf8')
-    
+
     return decrypted
   } catch (error) {
     log.error('解密失败:', error)

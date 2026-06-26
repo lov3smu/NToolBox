@@ -33,7 +33,7 @@ function createSplashWindow() {
   } else {
     const splashPath = path.join(__dirname, '../renderer/splash.html')
     splashWindow.loadFile(splashPath)
-    
+
     const iconSrc = path.join(__dirname, '../../assets/icon.png')
     const iconDest = path.join(__dirname, '../renderer/assets/icon.png')
     if (fs.existsSync(iconSrc) && !fs.existsSync(iconDest)) {
@@ -68,7 +68,7 @@ function closeSplashWindow() {
 
 function createMainWindow() {
   const iconPath = getIconPath()
-  
+
   mainWindow = new BrowserWindow({
     width: 900,
     height: 700,
@@ -153,7 +153,7 @@ export function createSettingsWindow(defaultTab = null) {
   }
 
   const iconPath = getIconPath()
-  
+
   settingsWindow = new BrowserWindow({
     width: 900,
     height: 650,

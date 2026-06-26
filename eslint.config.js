@@ -4,6 +4,7 @@ const vuePlugin = require('eslint-plugin-vue')
 module.exports = [
   js.configs.recommended,
   ...vuePlugin.configs['flat/recommended'],
+  require('eslint-config-prettier'),
   {
     languageOptions: {
       ecmaVersion: 'latest',
@@ -49,14 +50,10 @@ module.exports = [
       'no-unused-vars': 'warn',
       'no-console': 'off',
       'no-debugger': 'off',
-      'quotes': ['warn', 'single', { avoidEscape: true }],
-      'semi': ['warn', 'never'],
-      'comma-dangle': ['warn', 'never'],
       'eqeqeq': ['warn', 'always', { null: 'ignore' }],
       'no-multiple-empty-lines': ['warn', { max: 1, maxEOF: 1 }],
       'prefer-const': 'warn',
-      'no-var': 'warn',
-      'indent': ['warn', 2, { SwitchCase: 1 }]
+      'no-var': 'warn'
     }
   },
   {

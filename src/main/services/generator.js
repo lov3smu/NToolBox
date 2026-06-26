@@ -10,7 +10,8 @@ import {
   isValidIdentifier,
   escapeIdentifier,
   sanitizePathSegment,
-  isPathWithinBase
+  isPathWithinBase,
+  normalizeDirNameWithDate
 } from '../utils/sanitize'
 import { mkdirWithElevate } from '../utils/elevate'
 
@@ -36,7 +37,7 @@ export async function generateSQLFile(scriptInfo) {
       throw new Error('无效的操作类型')
     }
     if (scriptInfo.operateType !== 'QUERY') {
-      const validScriptTypes = (config.script_types || []).map(st => st.name)
+      const validScriptTypes = (config.script_types || []).map((st) => st.name)
       if (!scriptInfo.scriptType || !validScriptTypes.includes(scriptInfo.scriptType)) {
         throw new Error(`脚本类型不合法，必须是 ${validScriptTypes.join('、')} 其中之一`)
       }
@@ -51,22 +52,20 @@ export async function generateSQLFile(scriptInfo) {
     const currentYear = now.getFullYear().toString()
     const currentDate = now.toISOString().split('T')[0]
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const datePrefixedDirName = `${month}-${day}-${safeDirName}`
+    const normalizedDirName = normalizeDirNameWithDate(safeDirName, now)
 
     let targetPath
     switch (scriptInfo.operateType) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, datePrefixedDirName)
+        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, datePrefixedDirName)
+        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, datePrefixedDirName)
+        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
     }
 
@@ -77,7 +76,7 @@ export async function generateSQLFile(scriptInfo) {
     await mkdirWithElevate(targetPath)
 
     const files = await fs.promises.readdir(targetPath)
-    const sqlFiles = files.filter(f => f.endsWith('.sql'))
+    const sqlFiles = files.filter((f) => f.endsWith('.sql'))
     let maxNumber = 0
     for (const f of sqlFiles) {
       const match = f.match(/^S(\d+)-/)

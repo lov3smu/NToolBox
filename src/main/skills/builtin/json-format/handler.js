@@ -1,11 +1,11 @@
 export default function handler(params) {
   const jsonString = params.json_string
   const indent = params.indent || 2
-  
+
   try {
     const parsed = JSON.parse(jsonString)
     const formatted = JSON.stringify(parsed, null, indent)
-    
+
     return {
       success: true,
       content: formatted,

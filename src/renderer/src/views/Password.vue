@@ -1,32 +1,14 @@
 <template>
-  <div
-    class="password-container"
-    :style="{ width: windowWidth + 'px' }"
-  >
+  <div class="password-container" :style="{ width: windowWidth + 'px' }">
     <header>
       <h1>
-        <svg
-          class="header-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <rect
-            x="3"
-            y="11"
-            width="18"
-            height="11"
-            rx="2"
-            ry="2"
-          />
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
         密码生成器
       </h1>
-      <div class="subtitle">
-        随机安全密码生成工具
-      </div>
+      <div class="subtitle">随机安全密码生成工具</div>
     </header>
     <div class="password-content">
       <div class="password-display-section">
@@ -37,12 +19,8 @@
             class="password-output"
             readonly
             placeholder="点击生成按钮创建密码"
-          >
-          <button
-            class="btn-icon"
-            title="显示/隐藏"
-            @click="visible = !visible"
-          >
+          />
+          <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
             <svg
               v-if="visible"
               viewBox="0 0 24 24"
@@ -52,62 +30,24 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22" />
-            </svg>
-            <svg
-              v-else
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle
-                cx="12"
-                cy="12"
-                r="3"
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
               />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
             </svg>
           </button>
-          <button
-            class="btn-icon"
-            title="复制密码"
-            @click="copyPassword"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect
-                x="9"
-                y="9"
-                width="13"
-                height="13"
-                rx="2"
-                ry="2"
-              />
+          <button class="btn-icon" title="复制密码" @click="copyPassword">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           </button>
         </div>
-        <button
-          class="btn btn-primary btn-lg generate-btn"
-          @click="generate"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
+        <button class="btn btn-primary btn-lg generate-btn" @click="generate">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
             <path d="M3 3v5h5" />
             <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
@@ -131,7 +71,7 @@
             max="100"
             :style="{ '--progress': progress + '%' }"
             @input="onSliderInput"
-          >
+          />
           <div class="slider-labels">
             <span>1</span>
             <span>25</span>
@@ -145,58 +85,26 @@
       <div class="section">
         <label class="section-title">字符类型</label>
         <div class="checkbox-group">
-          <label
-            class="checkbox-card"
-            :class="{ active: useUpper }"
-            data-type="uppercase"
-          >
-            <input
-              v-model="useUpper"
-              type="checkbox"
-              hidden
-            >
+          <label class="checkbox-card" :class="{ active: useUpper }" data-type="uppercase">
+            <input v-model="useUpper" type="checkbox" hidden />
             <span class="checkbox-icon">A</span>
             <span class="checkbox-label">大写字母</span>
             <span class="checkbox-desc">A-Z</span>
           </label>
-          <label
-            class="checkbox-card"
-            :class="{ active: useLower }"
-            data-type="lowercase"
-          >
-            <input
-              v-model="useLower"
-              type="checkbox"
-              hidden
-            >
+          <label class="checkbox-card" :class="{ active: useLower }" data-type="lowercase">
+            <input v-model="useLower" type="checkbox" hidden />
             <span class="checkbox-icon">a</span>
             <span class="checkbox-label">小写字母</span>
             <span class="checkbox-desc">a-z</span>
           </label>
-          <label
-            class="checkbox-card"
-            :class="{ active: useNumbers }"
-            data-type="numbers"
-          >
-            <input
-              v-model="useNumbers"
-              type="checkbox"
-              hidden
-            >
+          <label class="checkbox-card" :class="{ active: useNumbers }" data-type="numbers">
+            <input v-model="useNumbers" type="checkbox" hidden />
             <span class="checkbox-icon">0</span>
             <span class="checkbox-label">数字</span>
             <span class="checkbox-desc">0-9</span>
           </label>
-          <label
-            class="checkbox-card"
-            :class="{ active: useSymbols }"
-            data-type="special"
-          >
-            <input
-              v-model="useSymbols"
-              type="checkbox"
-              hidden
-            >
+          <label class="checkbox-card" :class="{ active: useSymbols }" data-type="special">
+            <input v-model="useSymbols" type="checkbox" hidden />
             <span class="checkbox-icon">#</span>
             <span class="checkbox-label">特殊字符</span>
             <span class="checkbox-desc">!@#$%</span>
@@ -207,17 +115,11 @@
       <div class="section">
         <div class="strength-header">
           <label>密码强度</label>
-          <span
-            class="strength-text"
-            :class="strengthClass"
-          >{{ strengthText }}</span>
+          <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
         </div>
         <div class="strength-meter">
           <div class="strength-bar">
-            <div
-              class="strength-fill"
-              :class="strengthClass"
-            />
+            <div class="strength-fill" :class="strengthClass" />
           </div>
         </div>
         <div class="strength-hint">
@@ -228,43 +130,20 @@
       <div class="section history-section">
         <div class="history-header">
           <label class="section-title">历史记录</label>
-          <button
-            class="btn-text"
-            @click="clearHistory"
-          >
-            清空
-          </button>
+          <button class="btn-text" @click="clearHistory">清空</button>
         </div>
         <div class="history-list">
-          <div
-            v-if="history.length === 0"
-            class="history-empty"
-          >
-            暂无历史记录
-          </div>
-          <div
-            v-for="(item, index) in history"
-            :key="index"
-            class="history-item"
-          >
+          <div v-if="history.length === 0" class="history-empty">暂无历史记录</div>
+          <div v-for="(item, index) in history" :key="index" class="history-item">
             <span class="password-text">{{ maskPassword(item) }}</span>
             <span class="password-length">{{ item.length }}位</span>
-            <button
-              class="copy-btn"
-              title="复制"
-              @click="handleCopyHistoryItem(item)"
-            >
-              📋
-            </button>
+            <button class="copy-btn" title="复制" @click="handleCopyHistoryItem(item)">📋</button>
           </div>
         </div>
       </div>
     </div>
 
-    <Toast
-      :visible="toastVisible"
-      :message="toastMessage"
-    />
+    <Toast :visible="toastVisible" :message="toastMessage" />
   </div>
 </template>
 
@@ -350,16 +229,16 @@ function estimateScore() {
   const hasLower = useLower.value
   const hasNumbers = useNumbers.value
   const hasSymbols = useSymbols.value
-  
+
   if (len <= 4) score += 5
   else if (len <= 7) score += 10
   else score += 25
-  
+
   const hasLetters = hasUpper || hasLower
   if (!hasLetters) score += 0
   else if (hasUpper && hasLower) score += 20
   else score += 10
-  
+
   if (!hasNumbers) score += 0
   else {
     const charTypeCount = (hasUpper ? 1 : 0) + (hasLower ? 1 : 0) + (hasNumbers ? 1 : 0) + (hasSymbols ? 1 : 0)
@@ -367,7 +246,7 @@ function estimateScore() {
     if (estimatedNumbers >= 2) score += 20
     else score += 10
   }
-  
+
   if (!hasSymbols) score += 0
   else {
     const charTypeCount = (hasUpper ? 1 : 0) + (hasLower ? 1 : 0) + (hasNumbers ? 1 : 0) + (hasSymbols ? 1 : 0)
@@ -375,11 +254,11 @@ function estimateScore() {
     if (estimatedSymbols >= 2) score += 25
     else score += 10
   }
-  
+
   if (hasUpper && hasLower && hasNumbers && hasSymbols) score += 5
   else if (hasLetters && hasNumbers && hasSymbols) score += 3
   else if (hasLetters && hasNumbers) score += 2
-  
+
   return score
 }
 
@@ -406,14 +285,14 @@ function generate() {
   let result = ''
   const array = new Uint32Array(remainingLength)
   crypto.getRandomValues(array)
-  
+
   for (let i = 0; i < remainingLength; i++) {
     result += chars[array[i] % chars.length]
   }
 
   result = shuffleString(result + requiredChars.join(''))
   password.value = result
-  
+
   addToHistory(result)
   showSuccess('密码已生成')
 }
@@ -427,8 +306,8 @@ function getRandomChar(charSet) {
 function shuffleString(str) {
   const array = str.split('')
   for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]]
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
   }
   return array.join('')
 }
@@ -451,7 +330,7 @@ function clearHistory() {
 }
 
 function addToHistory(pwd) {
-  history.value = history.value.filter(p => p !== pwd)
+  history.value = history.value.filter((p) => p !== pwd)
   history.value.unshift(pwd)
   if (history.value.length > 10) {
     history.value = history.value.slice(0, 10)
@@ -509,10 +388,7 @@ onMounted(() => {
 }
 
 .password-container header {
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.95) 0%, 
-    rgba(118, 75, 162, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
   color: white;
   padding: 30px;
   text-align: center;
@@ -672,7 +548,13 @@ onMounted(() => {
 .password-slider::-webkit-slider-runnable-track {
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) var(--progress, 18%), var(--border-color) var(--progress, 18%), var(--border-color) 100%);
+  background: linear-gradient(
+    to right,
+    var(--primary-color) 0%,
+    var(--primary-color) var(--progress, 18%),
+    var(--border-color) var(--progress, 18%),
+    var(--border-color) 100%
+  );
 }
 
 .slider-labels {
@@ -769,14 +651,31 @@ onMounted(() => {
   height: 100%;
   width: 0%;
   border-radius: 4px;
-  transition: width 0.3s ease, background-color 0.3s ease;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
 }
 
-.strength-fill.very-weak { width: 10%; background: linear-gradient(90deg, #7f1d1d, #991b1b); }
-.strength-fill.weak { width: 25%; background: linear-gradient(90deg, #ef4444, #dc2626); }
-.strength-fill.average { width: 50%; background: linear-gradient(90deg, #f59e0b, #d97706); }
-.strength-fill.strong { width: 75%; background: linear-gradient(90deg, #22c55e, #16a34a); }
-.strength-fill.very-strong { width: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.strength-fill.very-weak {
+  width: 10%;
+  background: linear-gradient(90deg, #7f1d1d, #991b1b);
+}
+.strength-fill.weak {
+  width: 25%;
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+.strength-fill.average {
+  width: 50%;
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+.strength-fill.strong {
+  width: 75%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+.strength-fill.very-strong {
+  width: 100%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
 
 .strength-text {
   font-weight: 600;
@@ -785,11 +684,26 @@ onMounted(() => {
   border-radius: var(--radius-sm);
 }
 
-.strength-text.very-weak { color: #7f1d1d; background: rgba(127, 29, 29, 0.1); }
-.strength-text.weak { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
-.strength-text.average { color: #d97706; background: rgba(217, 119, 6, 0.1); }
-.strength-text.strong { color: #16a34a; background: rgba(22, 163, 74, 0.1); }
-.strength-text.very-strong { color: #2563eb; background: rgba(37, 99, 235, 0.1); }
+.strength-text.very-weak {
+  color: #7f1d1d;
+  background: rgba(127, 29, 29, 0.1);
+}
+.strength-text.weak {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+.strength-text.average {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.1);
+}
+.strength-text.strong {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+}
+.strength-text.very-strong {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+}
 
 .strength-hint {
   margin-top: 8px;

@@ -65,7 +65,7 @@ let currentProviderType = null
 
 export function createProvider(type, config) {
   log.info(`创建 AI Provider: ${type}`)
-  
+
   switch (type) {
     case PROVIDER_TYPES.BAILIAN:
       return new BailianProvider(config.apiKey, config.timeout, config.connectionTimeout)
@@ -92,10 +92,10 @@ export function getProvider(type, config) {
     if (config.endpointId) currentProvider.endpointId = config.endpointId
     return currentProvider
   }
-  
+
   currentProvider = createProvider(type, config)
   currentProviderType = type
-  
+
   return currentProvider
 }
 

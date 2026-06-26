@@ -14,184 +14,89 @@
 
     <div class="settings-main">
       <div class="settings-content">
-        <div
-          v-show="activeTab === 'general'"
-          class="settings-tab"
-        >
+        <div v-show="activeTab === 'general'" class="settings-tab">
           <div class="form-group">
             <label>脚本位置</label>
             <div class="path-input-group">
-              <input
-                v-model="basePath"
-                type="text"
-                class="input-field"
-                placeholder="脚本存储根目录"
-              >
-              <button
-                class="btn-small"
-                @click="selectDir"
-              >
-                浏览
-              </button>
+              <input v-model="basePath" type="text" class="input-field" placeholder="脚本存储根目录" />
+              <button class="btn-small" @click="selectDir">浏览</button>
             </div>
           </div>
           <div class="form-group">
             <label>开发者中文名</label>
-            <input
-              v-model="developerChName"
-              type="text"
-              class="input-field"
-              placeholder="用于脚本作者署名"
-            >
+            <input v-model="developerChName" type="text" class="input-field" placeholder="用于脚本作者署名" />
           </div>
           <div class="form-group">
             <label>开发者英文名</label>
-            <input
-              v-model="developerEnName"
-              type="text"
-              class="input-field"
-              placeholder="用于脚本历史记录标识"
-            >
+            <input v-model="developerEnName" type="text" class="input-field" placeholder="用于脚本历史记录标识" />
           </div>
           <div class="form-group">
             <label>文本编辑器</label>
-            <select
-              v-model="textEditApp"
-              class="select-field"
-            >
-              <option value="">
-                自定义路径
-              </option>
-              <option
-                v-for="editor in editorPresets"
-                :key="editor.path"
-                :value="editor.path"
-              >
+            <select v-model="textEditApp" class="select-field">
+              <option value="">自定义路径</option>
+              <option v-for="editor in editorPresets" :key="editor.path" :value="editor.path">
                 {{ editor.name }}
               </option>
             </select>
             <div
-              v-if="!editorPresets.some(e => e.path === textEditApp)"
+              v-if="!editorPresets.some((e) => e.path === textEditApp)"
               class="path-input-group"
-              style="margin-top: 8px;"
+              style="margin-top: 8px"
             >
-              <input
-                v-model="textEditApp"
-                type="text"
-                class="input-field"
-                placeholder="编辑器可执行文件路径"
-              >
-              <button
-                class="btn-small"
-                @click="selectEditor"
-              >
-                浏览
-              </button>
+              <input v-model="textEditApp" type="text" class="input-field" placeholder="编辑器可执行文件路径" />
+              <button class="btn-small" @click="selectEditor">浏览</button>
             </div>
-            <div class="setting-hint">
-              选择编辑脚本文件使用的文本编辑器
-            </div>
+            <div class="setting-hint">选择编辑脚本文件使用的文本编辑器</div>
           </div>
           <div class="form-group">
-            <label>
-              <input
-                v-model="autoUpdate"
-                type="checkbox"
-              > 有更新时自动更新
-            </label>
-            <div class="setting-hint">
-              开启后，应用会自动下载并安装新版本
-            </div>
+            <label> <input v-model="autoUpdate" type="checkbox" /> 有更新时自动更新 </label>
+            <div class="setting-hint">开启后，应用会自动下载并安装新版本</div>
           </div>
           <div class="form-group">
-            <label>
-              <input
-                v-model="autoStart"
-                type="checkbox"
-              > 开机自动启动
-            </label>
-            <div class="setting-hint">
-              开启后，系统启动时会自动运行本应用
-            </div>
+            <label> <input v-model="autoStart" type="checkbox" /> 开机自动启动 </label>
+            <div class="setting-hint">开启后，系统启动时会自动运行本应用</div>
           </div>
           <div class="form-group">
             <label>关闭行为</label>
-            <select
-              v-model="closeAction"
-              class="select-field"
-            >
-              <option value="ask">
-                每次询问
-              </option>
-              <option value="hide">
-                隐藏到托盘
-              </option>
-              <option value="quit">
-                直接退出
-              </option>
+            <select v-model="closeAction" class="select-field">
+              <option value="ask">每次询问</option>
+              <option value="hide">隐藏到托盘</option>
+              <option value="quit">直接退出</option>
             </select>
-            <div class="setting-hint">
-              选择点击关闭按钮时的默认行为
-            </div>
+            <div class="setting-hint">选择点击关闭按钮时的默认行为</div>
           </div>
         </div>
 
-        <div
-          v-show="activeTab === 'api'"
-          class="settings-tab"
-        >
+        <div v-show="activeTab === 'api'" class="settings-tab">
           <div class="form-group">
             <label>AI 平台选择</label>
-            <select
-              v-model="aiProvider"
-              class="select-field"
-              @change="onProviderChange"
-            >
-              <option
-                v-for="provider in aiProviders"
-                :key="provider.type"
-                :value="provider.type"
-              >
+            <select v-model="aiProvider" class="select-field" @change="onProviderChange">
+              <option v-for="provider in aiProviders" :key="provider.type" :value="provider.type">
                 {{ provider.name }} - {{ provider.description }}
               </option>
             </select>
-            <div class="setting-hint">
-              选择要使用的 AI 服务提供商
-            </div>
+            <div class="setting-hint">选择要使用的 AI 服务提供商</div>
           </div>
 
-          <div
-            v-if="currentProvider"
-            class="form-group"
-          >
+          <div v-if="currentProvider" class="form-group">
             <label>{{ currentProvider.name }} API Key</label>
             <div class="api-key-input-group">
-              <input 
-                v-model="currentApiKey" 
-                :type="showApiKey ? 'text' : 'password'" 
-                class="input-field" 
+              <input
+                v-model="currentApiKey"
+                :type="showApiKey ? 'text' : 'password'"
+                class="input-field"
                 :placeholder="`输入 ${currentProvider.name} API Key`"
-              >
-              <button
-                class="btn-small btn-secondary"
-                @click="showApiKey = !showApiKey"
-              >
+              />
+              <button class="btn-small btn-secondary" @click="showApiKey = !showApiKey">
                 {{ showApiKey ? '隐藏' : '显示' }}
               </button>
-              <button
-                class="btn-small"
-                :disabled="!currentApiKey || testingApiKey"
-                @click="testApiKey"
-              >
+              <button class="btn-small" :disabled="!currentApiKey || testingApiKey" @click="testApiKey">
                 {{ testingApiKey ? '验证中...' : '验证' }}
               </button>
             </div>
             <div class="setting-hint">
-              获取 API Key：访问 
-              <a
-                href="#"
-                @click.prevent="openProviderDocs"
-              >{{ currentProvider.name }}平台</a>
+              获取 API Key：访问
+              <a href="#" @click.prevent="openProviderDocs">{{ currentProvider.name }}平台</a>
             </div>
             <div
               v-if="apiKeyTestResult"
@@ -202,54 +107,34 @@
             </div>
           </div>
 
-          <div
-            v-if="currentProvider?.requiresGroupId"
-            class="form-group"
-          >
+          <div v-if="currentProvider?.requiresGroupId" class="form-group">
             <label>{{ currentProvider.name }} Group ID</label>
-            <input 
-              v-model="currentGroupId" 
-              type="text" 
-              class="input-field" 
+            <input
+              v-model="currentGroupId"
+              type="text"
+              class="input-field"
               :placeholder="`输入 ${currentProvider.name} Group ID`"
-            >
-            <div class="setting-hint">
-              部分平台需要 Group ID 进行身份验证
-            </div>
+            />
+            <div class="setting-hint">部分平台需要 Group ID 进行身份验证</div>
           </div>
 
-          <div
-            v-if="currentProvider?.requiresEndpointId"
-            class="form-group"
-          >
+          <div v-if="currentProvider?.requiresEndpointId" class="form-group">
             <label>{{ currentProvider.name }} Endpoint ID</label>
-            <input 
-              v-model="currentEndpointId" 
-              type="text" 
-              class="input-field" 
+            <input
+              v-model="currentEndpointId"
+              type="text"
+              class="input-field"
               :placeholder="`输入 ${currentProvider.name} Endpoint ID`"
-            >
-            <div class="setting-hint">
-              推理接入点 ID，在平台控制台获取
-            </div>
+            />
+            <div class="setting-hint">推理接入点 ID，在平台控制台获取</div>
           </div>
         </div>
 
-        <div
-          v-show="activeTab === 'database'"
-          class="settings-tab"
-        >
+        <div v-show="activeTab === 'database'" class="settings-tab">
           <div class="form-group">
             <label>数据库</label>
-            <div
-              ref="databaseListRef"
-              class="config-list"
-            >
-              <div
-                v-for="(db, index) in databases"
-                :key="index"
-                class="config-item"
-              >
+            <div ref="databaseListRef" class="config-list">
+              <div v-for="(db, index) in databases" :key="index" class="config-item">
                 <div class="config-item-info">
                   <input
                     v-model="db.name"
@@ -257,82 +142,43 @@
                     class="input-field"
                     placeholder="数据库名"
                     :class="{ error: db.error }"
-                  >
+                  />
                 </div>
                 <div class="config-item-actions">
-                  <button
-                    class="btn-small btn-danger"
-                    @click="removeDatabase(index)"
-                  >
-                    删除
-                  </button>
+                  <button class="btn-small btn-danger" @click="removeDatabase(index)">删除</button>
                 </div>
               </div>
             </div>
-            <button
-              class="btn-small"
-              @click="addDatabase"
-            >
-              + 添加数据库
-            </button>
+            <button class="btn-small" @click="addDatabase">+ 添加数据库</button>
           </div>
         </div>
 
-        <div
-          v-show="activeTab === 'scripttype'"
-          class="settings-tab"
-        >
+        <div v-show="activeTab === 'scripttype'" class="settings-tab">
           <div class="form-group">
             <label>脚本类型</label>
-            <div
-              ref="scriptTypeListRef"
-              class="config-list"
-            >
-              <div
-                v-for="(st, index) in scriptTypes"
-                :key="index"
-                class="config-item"
-              >
+            <div ref="scriptTypeListRef" class="config-list">
+              <div v-for="(st, index) in scriptTypes" :key="index" class="config-item">
                 <div class="config-item-info">
                   <input
                     v-model="st.name"
                     type="text"
                     class="input-field"
                     placeholder="名称"
-                    style="width: 120px; margin-right: 10px;"
+                    style="width: 120px; margin-right: 10px"
                     :class="{ error: st.error }"
-                  >
-                  <input
-                    v-model="st.description"
-                    type="text"
-                    class="input-field"
-                    placeholder="描述"
-                    style="flex: 1;"
-                  >
+                  />
+                  <input v-model="st.description" type="text" class="input-field" placeholder="描述" style="flex: 1" />
                 </div>
                 <div class="config-item-actions">
-                  <button
-                    class="btn-small btn-danger"
-                    @click="removeScriptType(index)"
-                  >
-                    删除
-                  </button>
+                  <button class="btn-small btn-danger" @click="removeScriptType(index)">删除</button>
                 </div>
               </div>
             </div>
-            <button
-              class="btn-small"
-              @click="addScriptType"
-            >
-              + 添加脚本类型
-            </button>
+            <button class="btn-small" @click="addScriptType">+ 添加脚本类型</button>
           </div>
         </div>
 
-        <div
-          v-show="activeTab === 'shortcuts'"
-          class="settings-tab"
-        >
+        <div v-show="activeTab === 'shortcuts'" class="settings-tab">
           <div class="form-group">
             <label>快捷键配置</label>
             <div class="shortcut-list">
@@ -343,16 +189,11 @@
                   type="text"
                   class="input-field shortcut-input"
                   placeholder="快捷键"
-                >
+                />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">Cron表达式生成器</span>
-                <input
-                  v-model="shortcuts.cron"
-                  type="text"
-                  class="input-field shortcut-input"
-                  placeholder="快捷键"
-                >
+                <input v-model="shortcuts.cron" type="text" class="input-field shortcut-input" placeholder="快捷键" />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">Unix时间戳互转</span>
@@ -361,7 +202,7 @@
                   type="text"
                   class="input-field shortcut-input"
                   placeholder="快捷键"
-                >
+                />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">YAML编辑(验证)器</span>
@@ -370,7 +211,7 @@
                   type="text"
                   class="input-field shortcut-input"
                   placeholder="快捷键"
-                >
+                />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">文件管理器</span>
@@ -379,7 +220,7 @@
                   type="text"
                   class="input-field shortcut-input"
                   placeholder="快捷键"
-                >
+                />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">JSON解析器</span>
@@ -388,7 +229,7 @@
                   type="text"
                   class="input-field shortcut-input"
                   placeholder="快捷键"
-                >
+                />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">设置</span>
@@ -397,72 +238,39 @@
                   type="text"
                   class="input-field shortcut-input"
                   placeholder="快捷键"
-                >
+                />
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-name">AI聊天助手</span>
-                <input
-                  v-model="shortcuts.chat"
-                  type="text"
-                  class="input-field shortcut-input"
-                  placeholder="快捷键"
-                >
+                <input v-model="shortcuts.chat" type="text" class="input-field shortcut-input" placeholder="快捷键" />
               </div>
             </div>
-            <div class="setting-hint">
-              格式示例: CmdOrCtrl+P, CmdOrCtrl+Shift+C（留空则不设置快捷键）
-            </div>
+            <div class="setting-hint">格式示例: CmdOrCtrl+P, CmdOrCtrl+Shift+C（留空则不设置快捷键）</div>
           </div>
         </div>
 
-        <div
-          v-show="activeTab === 'about'"
-          class="settings-tab"
-        >
+        <div v-show="activeTab === 'about'" class="settings-tab">
           <div class="about-section">
             <div class="about-icon">
-              <img :src="iconUrl" alt="NToolBox Logo">
+              <img :src="iconUrl" alt="NToolBox Logo" />
             </div>
-            <div class="about-name">
-              NToolBox
-            </div>
-            <div class="about-version">
-              版本: {{ version }}
-            </div>
+            <div class="about-name">NToolBox</div>
+            <div class="about-version">版本: {{ version }}</div>
             <div class="about-description">
               一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。
             </div>
-            <div class="about-author">
-              作者: {{ author }}
-            </div>
-            <div class="about-copyright">
-              {{ year }} {{ author }}. All rights reserved.
-            </div>
+            <div class="about-author">作者: {{ author }}</div>
+            <div class="about-copyright">{{ year }} {{ author }}. All rights reserved.</div>
             <div class="about-buttons">
-              <button
-                class="btn btn-secondary"
-                @click="checkUpdate"
-              >
-                检查更新
-              </button>
+              <button class="btn btn-secondary" @click="checkUpdate">检查更新</button>
             </div>
           </div>
         </div>
       </div>
 
       <div class="settings-footer">
-        <button
-          class="btn btn-primary"
-          @click="save"
-        >
-          保存
-        </button>
-        <button
-          class="btn btn-default"
-          @click="closeWindow"
-        >
-          取消
-        </button>
+        <button class="btn btn-primary" @click="save">保存</button>
+        <button class="btn btn-default" @click="closeWindow">取消</button>
       </div>
     </div>
   </div>
@@ -471,7 +279,21 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { getConfig, saveConfig, selectDirectory, selectFile, getPackageInfo, getAiProviders, validateApiKey, checkForUpdates, closeSettingsWindow, setAutoStart, getAutoStart, reloadConfig, reloadMenu } from '@/api'
+import {
+  getConfig,
+  saveConfig,
+  selectDirectory,
+  selectFile,
+  getPackageInfo,
+  getAiProviders,
+  validateApiKey,
+  checkForUpdates,
+  closeSettingsWindow,
+  setAutoStart,
+  getAutoStart,
+  reloadConfig,
+  reloadMenu
+} from '@/api'
 import iconUrl from '@assets/icon.png'
 
 const route = useRoute()
@@ -531,27 +353,33 @@ const apiKeyTestResult = ref(null)
 const year = computed(() => new Date().getFullYear())
 
 const currentProvider = computed(() => {
-  return aiProviders.value.find(p => p.type === aiProvider.value)
+  return aiProviders.value.find((p) => p.type === aiProvider.value)
 })
 
 const currentApiKey = computed({
   get: () => aiApiKeys.value[aiProvider.value] || '',
-  set: (val) => { aiApiKeys.value[aiProvider.value] = val }
+  set: (val) => {
+    aiApiKeys.value[aiProvider.value] = val
+  }
 })
 
 const currentGroupId = computed({
   get: () => aiApiKeys.value.minimax_group_id || '',
-  set: (val) => { aiApiKeys.value.minimax_group_id = val }
+  set: (val) => {
+    aiApiKeys.value.minimax_group_id = val
+  }
 })
 
 const currentEndpointId = computed({
   get: () => aiApiKeys.value.volcengine_endpoint_id || '',
-  set: (val) => { aiApiKeys.value.volcengine_endpoint_id = val }
+  set: (val) => {
+    aiApiKeys.value.volcengine_endpoint_id = val
+  }
 })
 
 onMounted(async () => {
   platform.value = navigator.platform.toLowerCase()
-  
+
   if (platform.value.includes('win')) {
     editorPresets.value = [
       { name: 'VS Code', path: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' },
@@ -574,9 +402,9 @@ onMounted(async () => {
       { name: 'Gedit', path: '/usr/bin/gedit' }
     ]
   }
-  
+
   const tabParam = route.query.tab
-  if (tabParam && menuItems.some(item => item.id === tabParam)) {
+  if (tabParam && menuItems.some((item) => item.id === tabParam)) {
     activeTab.value = tabParam
   }
 
@@ -590,9 +418,13 @@ onMounted(async () => {
   closeAction.value = config.close_action || 'ask'
   aiProvider.value = config.ai_provider || 'bailian'
   aiApiKeys.value = { ...aiApiKeys.value, ...(config.ai_api_keys || {}) }
-  databases.value = (config.databases || []).map(name => ({ name, error: false }))
-  scriptTypes.value = (config.script_types || []).map(st => ({ name: st.name, description: st.description || '', error: false }))
-  
+  databases.value = (config.databases || []).map((name) => ({ name, error: false }))
+  scriptTypes.value = (config.script_types || []).map((st) => ({
+    name: st.name,
+    description: st.description || '',
+    error: false
+  }))
+
   if (config.shortcuts) {
     shortcuts.value = { ...shortcuts.value, ...config.shortcuts }
   }
@@ -663,8 +495,8 @@ function validate() {
   let isValid = true
   let errorMessage = ''
 
-  databases.value.forEach(db => db.error = false)
-  scriptTypes.value.forEach(st => st.error = false)
+  databases.value.forEach((db) => (db.error = false))
+  scriptTypes.value.forEach((st) => (st.error = false))
 
   const dbNames = []
   for (const db of databases.value) {
@@ -723,11 +555,11 @@ function showError(message) {
   toast.className = 'toast error'
   toast.innerHTML = `<span class="toast-icon">✕</span><span class="toast-message">${message}</span>`
   document.body.appendChild(toast)
-  
+
   setTimeout(() => {
     toast.classList.add('show')
   }, 10)
-  
+
   setTimeout(() => {
     toast.classList.remove('show')
     setTimeout(() => toast.remove(), 300)
@@ -747,11 +579,13 @@ async function save() {
     close_action: closeAction.value,
     ai_provider: aiProvider.value,
     ai_api_keys: { ...aiApiKeys.value },
-    databases: databases.value.map(db => db.name.trim()).filter(Boolean),
-    script_types: scriptTypes.value.map(st => ({
-      name: st.name.trim(),
-      description: st.description.trim()
-    })).filter(st => st.name),
+    databases: databases.value.map((db) => db.name.trim()).filter(Boolean),
+    script_types: scriptTypes.value
+      .map((st) => ({
+        name: st.name.trim(),
+        description: st.description.trim()
+      }))
+      .filter((st) => st.name),
     shortcuts: { ...shortcuts.value }
   }
 
@@ -782,7 +616,7 @@ async function testApiKey() {
   if (!currentApiKey.value) return
   testingApiKey.value = true
   apiKeyTestResult.value = null
-  
+
   try {
     const extraConfig = {}
     if (aiProvider.value === 'minimax') {
@@ -791,17 +625,20 @@ async function testApiKey() {
     if (aiProvider.value === 'volcengine') {
       extraConfig.endpointId = currentEndpointId.value
     }
-    
+
     const isValid = await validateApiKey(aiProvider.value, currentApiKey.value, extraConfig)
     if (isValid) {
-      apiKeyTestResult.value = { success: true, message: `${currentProvider.value?.name || 'API Key'} 验证成功` }
+      apiKeyTestResult.value = {
+        success: true,
+        message: `${currentProvider.value?.name || 'API Key'} 验证成功`
+      }
     } else {
       apiKeyTestResult.value = { success: false, message: 'API Key 验证失败，请检查是否正确' }
     }
   } catch (e) {
     apiKeyTestResult.value = { success: false, message: '验证失败: ' + e.message }
   }
-  
+
   testingApiKey.value = false
 }
 
@@ -894,8 +731,12 @@ function openProviderDocs() {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .form-group {
@@ -910,7 +751,7 @@ function openProviderDocs() {
   font-size: 14px;
 }
 
-.form-group > label input[type="checkbox"] {
+.form-group > label input[type='checkbox'] {
   margin-right: 8px;
 }
 

@@ -12,6 +12,7 @@ const packageJson = require(path.join(getProjectRoot(), 'package.json'))
 const appVersion = packageJson.version || '1.0.0'
 const appAuthor = packageJson.author || 'lov3smu'
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+const isMac = process.platform === 'darwin'
 
 function showAboutDialog(mainWindow) {
   const appName = 'NToolBox'
@@ -41,6 +42,32 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
   }
 
   const template = [
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { label: `关于 ${app.name}`, click: () => showAboutDialog(mainWindow) },
+              { type: 'separator' },
+              { label: '服务', role: 'services' },
+              { type: 'separator' },
+              { label: `隐藏 ${app.name}`, accelerator: 'Command+H', role: 'hide' },
+              { label: '隐藏其他', accelerator: 'Command+Alt+H', role: 'hideOthers' },
+              { label: '显示全部', role: 'unhide' },
+              { type: 'separator' },
+              {
+                label: '退出',
+                accelerator: 'Command+Q',
+                click: () => {
+                  app.isQuitting = true
+                  destroyTray()
+                  app.quit()
+                }
+              }
+            ]
+          }
+        ]
+      : []),
     {
       label: '文件',
       submenu: [
@@ -66,17 +93,36 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
         { type: 'separator' },
         {
           label: '隐藏窗口',
-          click: () => { if (mainWindow) mainWindow.hide() }
-        },
-        { type: 'separator' },
-        {
-          label: '退出',
           click: () => {
-            app.isQuitting = true
-            destroyTray()
-            app.quit()
+            if (mainWindow) mainWindow.hide()
           }
-        }
+        },
+        ...(isMac
+          ? []
+          : [
+              { type: 'separator' },
+              {
+                label: '退出',
+                accelerator: 'Alt+F4',
+                click: () => {
+                  app.isQuitting = true
+                  destroyTray()
+                  app.quit()
+                }
+              }
+            ])
+      ]
+    },
+    {
+      label: '编辑',
+      submenu: [
+        { label: '撤销', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: '重做', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+        { type: 'separator' },
+        { label: '剪切', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
       ]
     },
     {
@@ -165,7 +211,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
         },
         {
           label: 'HTML查看器',
-          accelerator: shortcuts.htmlViewer || 'CmdOrCtrl+H',
+          accelerator: shortcuts.htmlViewer || 'CmdOrCtrl+Shift+H',
           click: () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.show()
@@ -196,20 +242,29 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             }
           }
         },
-        { type: 'separator' },
-        ...(isDev ? [{
-          label: '开发者工具',
-          accelerator: 'F12',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.toggleDevTools()
-            }
-          }
-        }, { type: 'separator' }] : []),
-        {
-          label: '关于软件',
-          click: () => showAboutDialog(mainWindow)
-        }
+        ...(isMac
+          ? []
+          : [
+              { type: 'separator' },
+              {
+                label: '关于软件',
+                click: () => showAboutDialog(mainWindow)
+              }
+            ]),
+        ...(isDev
+          ? [
+              { type: 'separator' },
+              {
+                label: '开发者工具',
+                accelerator: isMac ? 'Alt+Command+I' : 'F12',
+                click: () => {
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.toggleDevTools()
+                  }
+                }
+              }
+            ]
+          : [])
       ]
     }
   ]

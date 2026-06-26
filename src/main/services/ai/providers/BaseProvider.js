@@ -56,12 +56,12 @@ class BaseProvider {
 
   async chat(messages, tools, options = {}) {
     const requestBody = this.buildRequestBody(messages, tools, options)
-    
+
     console.log(`=== ${this.name} 发送请求 ===`)
     console.log('请求体:', JSON.stringify(requestBody, null, 2))
 
     const result = await this.makeRequest(this.hostname, 443, this.path, requestBody)
-    
+
     if (!result.success) return result
 
     const responseData = result.data
@@ -74,7 +74,7 @@ class BaseProvider {
   chatStream(messages, tools, options = {}, onChunk) {
     return new Promise((resolve, reject) => {
       const requestBody = this.buildRequestBody(messages, tools, { ...options, stream: true })
-      
+
       console.log(`=== ${this.name} 流式请求 ===`)
       console.log('请求体:', JSON.stringify(requestBody, null, 2))
 
@@ -86,7 +86,7 @@ class BaseProvider {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
+            Authorization: `Bearer ${this.apiKey}`
           }
         },
         (res) => {
@@ -94,11 +94,11 @@ class BaseProvider {
           const toolCalls = []
           let buffer = ''
           let lastDataTime = Date.now()
-          
+
           const streamTimeout = setTimeout(() => {
             req.destroy()
             log.error(`${this.name} 流式响应超时（无数据传输）`)
-            reject({ success: false, error: `响应超时（${this.timeout/1000}秒），请稍后重试` })
+            reject({ success: false, error: `响应超时（${this.timeout / 1000}秒），请稍后重试` })
           }, this.timeout)
 
           const keepAliveCheck = setInterval(() => {
@@ -121,21 +121,21 @@ class BaseProvider {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6).trim()
                 if (data === '[DONE]') continue
-                
+
                 try {
                   const json = JSON.parse(data)
                   const delta = json.choices?.[0]?.delta
-                  
+
                   if (delta?.content) {
                     fullContent += delta.content
                     if (onChunk) onChunk(delta.content)
                   }
-                  
+
                   if (delta?.tool_calls) {
                     for (const tc of delta.tool_calls) {
                       const idx = tc.index || 0
                       const existing = toolCalls[idx]
-                      
+
                       if (!existing) {
                         toolCalls[idx] = {
                           id: tc.id || '',
@@ -162,15 +162,15 @@ class BaseProvider {
           res.on('end', () => {
             clearTimeout(streamTimeout)
             clearInterval(keepAliveCheck)
-            
+
             if (res.statusCode !== 200) {
               log.error(`${this.name} 流式请求失败: ${res.statusCode}`)
               reject({ success: false, error: `请求失败: ${res.statusCode}` })
               return
             }
-            
-            const validToolCalls = toolCalls.filter(tc => tc && tc.function?.name)
-            
+
+            const validToolCalls = toolCalls.filter((tc) => tc && tc.function?.name)
+
             resolve({
               success: true,
               content: fullContent,
@@ -182,7 +182,7 @@ class BaseProvider {
 
       req.on('error', (e) => {
         log.error(`${this.name} 流式请求网络错误:`, e)
-        
+
         let errorMessage = `网络请求失败: ${e.message}`
         if (e.code === 'ENOTFOUND') {
           errorMessage = `无法连接到服务器 (${this.hostname})，请检查网络连接`
@@ -191,7 +191,7 @@ class BaseProvider {
         } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
           errorMessage = `连接超时，请检查网络或稍后重试`
         }
-        
+
         reject({ success: false, error: errorMessage })
       })
 
@@ -221,12 +221,14 @@ class BaseProvider {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
+            Authorization: `Bearer ${this.apiKey}`
           }
         },
         (res) => {
           let data = ''
-          res.on('data', (chunk) => { data += chunk })
+          res.on('data', (chunk) => {
+            data += chunk
+          })
           res.on('end', () => {
             clearTimeout(timeoutTimer)
             try {
@@ -251,13 +253,16 @@ class BaseProvider {
       const timeoutTimer = setTimeout(() => {
         req.destroy()
         log.error(`${this.name} API 请求超时`)
-        resolve({ success: false, error: `请求超时（${this.timeout/1000}秒），请检查网络连接或稍后重试` })
+        resolve({
+          success: false,
+          error: `请求超时（${this.timeout / 1000}秒），请检查网络连接或稍后重试`
+        })
       }, this.timeout)
 
       req.on('error', (e) => {
         clearTimeout(timeoutTimer)
         log.error(`${this.name} API 请求失败:`, e)
-        
+
         let errorMessage = `网络请求失败: ${e.message}`
         if (e.code === 'ENOTFOUND') {
           errorMessage = `无法连接到服务器 (${hostname})，请检查网络连接`
@@ -266,7 +271,7 @@ class BaseProvider {
         } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
           errorMessage = `连接超时，请检查网络或稍后重试`
         }
-        
+
         resolve({ success: false, error: errorMessage })
       })
 

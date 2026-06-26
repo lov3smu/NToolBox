@@ -5,7 +5,8 @@ import log from './logger'
 
 export function mkdirWithElevate(targetPath) {
   return new Promise((resolve, reject) => {
-    fs.promises.mkdir(targetPath, { recursive: true })
+    fs.promises
+      .mkdir(targetPath, { recursive: true })
       .then(() => resolve({ elevated: false }))
       .catch(async (err) => {
         if (err.code === 'EPERM' || err.code === 'EACCES') {

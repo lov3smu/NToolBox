@@ -1,37 +1,16 @@
 <template>
-  <div
-    class="yaml-container"
-    :style="{ width: windowWidth + 'px' }"
-  >
+  <div class="yaml-container" :style="{ width: windowWidth + 'px' }">
     <header>
       <h1>
-        <svg
-          class="header-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
-          <line
-            x1="16"
-            y1="13"
-            x2="8"
-            y2="13"
-          />
-          <line
-            x1="16"
-            y1="17"
-            x2="8"
-            y2="17"
-          />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
         </svg>
         YAML编辑(验证)器
       </h1>
-      <div class="subtitle">
-        YAML格式化、校验、转换工具
-      </div>
+      <div class="subtitle">YAML格式化、校验、转换工具</div>
     </header>
 
     <div class="yaml-content">
@@ -40,37 +19,15 @@
           <div class="panel-header">
             <span class="panel-title">YAML输入</span>
             <div class="panel-actions">
-              <button
-                class="btn-action"
-                @click="clearInput"
-              >
-                清空
-              </button>
-              <button
-                class="btn-action"
-                @click="loadExample"
-              >
-                示例
-              </button>
-              <button
-                class="btn-action"
-                @click="loadFromFile"
-              >
-                文件
-              </button>
+              <button class="btn-action" @click="clearInput">清空</button>
+              <button class="btn-action" @click="loadExample">示例</button>
+              <button class="btn-action" @click="loadFromFile">文件</button>
             </div>
           </div>
           <div class="editor-wrapper">
             <div class="editor-with-lines">
-              <div
-                ref="lineNumbersRef"
-                class="line-numbers"
-              >
-                <div
-                  v-for="n in inputLines"
-                  :key="n"
-                  class="line-number"
-                >
+              <div ref="lineNumbersRef" class="line-numbers">
+                <div v-for="n in inputLines" :key="n" class="line-number">
                   {{ n }}
                 </div>
               </div>
@@ -95,51 +52,24 @@
           <div class="panel-header">
             <span class="panel-title">结果输出</span>
             <div class="panel-actions">
-              <button
-                class="btn-action"
-                @click="copyOutput"
-              >
-                复制
-              </button>
+              <button class="btn-action" @click="copyOutput">复制</button>
             </div>
           </div>
           <div class="output-tabs">
-            <button
-              class="output-tab"
-              :class="{ active: outputType === 'yaml' }"
-              @click="outputType = 'yaml'"
-            >
+            <button class="output-tab" :class="{ active: outputType === 'yaml' }" @click="outputType = 'yaml'">
               格式化YAML
             </button>
-            <button
-              class="output-tab"
-              :class="{ active: outputType === 'json' }"
-              @click="outputType = 'json'"
-            >
+            <button class="output-tab" :class="{ active: outputType === 'json' }" @click="outputType = 'json'">
               转换为JSON
             </button>
-            <button
-              class="output-tab"
-              :class="{ active: outputType === 'tree' }"
-              @click="outputType = 'tree'"
-            >
+            <button class="output-tab" :class="{ active: outputType === 'tree' }" @click="outputType = 'tree'">
               树形视图
             </button>
           </div>
           <div class="editor-wrapper">
-            <div
-              v-if="outputType === 'yaml' || outputType === 'json'"
-              class="editor-with-lines"
-            >
-              <div
-                ref="outputLineNumbersRef"
-                class="line-numbers"
-              >
-                <div
-                  v-for="n in outputLines"
-                  :key="n"
-                  class="line-number"
-                >
+            <div v-if="outputType === 'yaml' || outputType === 'json'" class="editor-with-lines">
+              <div ref="outputLineNumbersRef" class="line-numbers">
+                <div v-for="n in outputLines" :key="n" class="line-number">
                   {{ n }}
                 </div>
               </div>
@@ -152,21 +82,9 @@
                 @scroll="syncOutputScroll"
               />
             </div>
-            <div
-              v-else-if="outputType === 'tree'"
-              class="tree-view"
-            >
-              <div
-                v-if="!parsedData"
-                class="tree-empty"
-              >
-                请输入有效的YAML内容
-              </div>
-              <div
-                v-else
-                class="tree-content"
-                v-html="treeHtml"
-              />
+            <div v-else-if="outputType === 'tree'" class="tree-view">
+              <div v-if="!parsedData" class="tree-empty">请输入有效的YAML内容</div>
+              <div v-else class="tree-content" v-html="treeHtml" />
             </div>
           </div>
           <div class="output-stats">
@@ -177,52 +95,24 @@
       </div>
 
       <div class="action-bar">
-        <button
-          class="btn btn-primary"
-          @click="formatYaml"
-        >
-          格式化
-        </button>
-        <button
-          class="btn btn-secondary"
-          @click="compressYaml"
-        >
-          压缩
-        </button>
-        <button
-          class="btn btn-secondary"
-          @click="validateYaml"
-        >
-          校验
-        </button>
-        <button
-          class="btn btn-secondary"
-          @click="yamlToJson"
-        >
-          转JSON
-        </button>
+        <button class="btn btn-primary" @click="formatYaml">格式化</button>
+        <button class="btn btn-secondary" @click="compressYaml">压缩</button>
+        <button class="btn btn-secondary" @click="validateYaml">校验</button>
+        <button class="btn btn-secondary" @click="yamlToJson">转JSON</button>
       </div>
 
       <div class="status-bar">
-        <div
-          class="status-item"
-          :class="statusClass"
-        >
+        <div class="status-item" :class="statusClass">
           <span class="status-icon">{{ statusIcon }}</span>
           <span class="status-text">{{ statusText }}</span>
         </div>
-        <div
-          v-if="errorDetail"
-          class="status-detail"
-        >
+        <div v-if="errorDetail" class="status-detail">
           {{ errorDetail }}
         </div>
       </div>
 
       <div class="help-section">
-        <div class="help-title">
-          YAML语法说明
-        </div>
+        <div class="help-title">YAML语法说明</div>
         <div class="help-content">
           <p><strong>基本语法：</strong></p>
           <ul>
@@ -248,10 +138,7 @@
       </div>
     </div>
 
-    <div
-      class="toast"
-      :class="{ show: toastVisible }"
-    >
+    <div class="toast" :class="{ show: toastVisible }">
       <span class="toast-icon">✓</span>
       <span class="toast-message">{{ toastMessage }}</span>
     </div>
@@ -312,18 +199,23 @@ function renderTree(data, indent = 0) {
   if (data === null) {
     return `<span class="tree-null" style="padding-left:${indent}px">null</span>`
   }
-  
+
   if (typeof data !== 'object') {
-    const typeClass = typeof data === 'string' ? 'tree-string' : 
-      typeof data === 'number' ? 'tree-number' : 
-        typeof data === 'boolean' ? 'tree-boolean' : 'tree-value'
+    const typeClass =
+      typeof data === 'string'
+        ? 'tree-string'
+        : typeof data === 'number'
+          ? 'tree-number'
+          : typeof data === 'boolean'
+            ? 'tree-boolean'
+            : 'tree-value'
     const display = typeof data === 'string' ? `"${data}"` : String(data)
     return `<span class="${typeClass}" style="padding-left:${indent}px">${display}</span>`
   }
-  
+
   const isArray = Array.isArray(data)
   const entries = isArray ? data.map((v, i) => [i, v]) : Object.entries(data)
-  
+
   let html = ''
   for (const [key, val] of entries) {
     const keyDisplay = isArray ? `[${key}]` : `${key}:`
@@ -341,9 +233,14 @@ function renderTree(data, indent = 0) {
 
 function renderValueInline(val) {
   if (val === null) return '<span class="tree-null">null</span>'
-  const typeClass = typeof val === 'string' ? 'tree-string' : 
-    typeof val === 'number' ? 'tree-number' : 
-      typeof val === 'boolean' ? 'tree-boolean' : 'tree-value'
+  const typeClass =
+    typeof val === 'string'
+      ? 'tree-string'
+      : typeof val === 'number'
+        ? 'tree-number'
+        : typeof val === 'boolean'
+          ? 'tree-boolean'
+          : 'tree-value'
   const display = typeof val === 'string' ? `"${val}"` : String(val)
   return `<span class="${typeClass}">${display}</span>`
 }
@@ -365,27 +262,34 @@ function onInputChange() {
         errorDetail.value = warning.message
       }
     })
-    
+
     const lines = yamlInput.value.split('\n')
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       const trimmedLine = line.trim()
-      
+
       if (trimmedLine.startsWith('#') || trimmedLine.startsWith('-') || trimmedLine === '') {
         continue
       }
-      
+
       if (line.includes(':') && !line.includes(': ')) {
         const colonIndex = line.indexOf(':')
         const beforeColon = line.substring(0, colonIndex).trim()
         const afterColon = line.substring(colonIndex + 1).trim()
-        
-        if (beforeColon && afterColon !== '' && !afterColon.startsWith('#') && afterColon !== '|' && afterColon !== '>' && !afterColon.startsWith(':')) {
+
+        if (
+          beforeColon &&
+          afterColon !== '' &&
+          !afterColon.startsWith('#') &&
+          afterColon !== '|' &&
+          afterColon !== '>' &&
+          !afterColon.startsWith(':')
+        ) {
           throw new yaml.YAMLException(`第 ${i + 1} 行：冒号后缺少空格`)
         }
       }
     }
-    
+
     statusText.value = 'YAML格式正确'
     statusClass.value = 'status-valid'
     updateOutput()
@@ -393,7 +297,7 @@ function onInputChange() {
     parsedData.value = null
     statusText.value = 'YAML格式错误'
     statusClass.value = 'status-error'
-    
+
     let errorMsg = e.message || '未知错误'
     if (e.mark) {
       const lineNum = e.mark.line + 1
@@ -468,12 +372,14 @@ function compressYaml() {
 
   try {
     const data = yaml.load(yamlInput.value)
-    yamlInput.value = yaml.dump(data, {
-      indent: 2,
-      flowLevel: 0,
-      condenseFlow: true,
-      noRefs: true
-    }).replace(/\n+/g, '\n')
+    yamlInput.value = yaml
+      .dump(data, {
+        indent: 2,
+        flowLevel: 0,
+        condenseFlow: true,
+        noRefs: true
+      })
+      .replace(/\n+/g, '\n')
     onInputChange()
     showToast('压缩成功')
   } catch (e) {
@@ -498,7 +404,7 @@ function validateYaml() {
   } catch (e) {
     statusText.value = 'YAML格式错误'
     statusClass.value = 'status-error'
-    
+
     let errorMsg = e.message || '未知错误'
     if (e.mark) {
       const lineNum = e.mark.line + 1
@@ -607,23 +513,26 @@ function copyOutput() {
     showToast('没有可复制的内容')
     return
   }
-  navigator.clipboard.writeText(content).then(() => {
-    showToast('已复制到剪贴板')
-  }).catch(() => {
-    const textarea = document.createElement('textarea')
-    textarea.value = content
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    try {
-      document.execCommand('copy')
+  navigator.clipboard
+    .writeText(content)
+    .then(() => {
       showToast('已复制到剪贴板')
-    } catch (e) {
-      showToast('复制失败，请手动复制')
-    }
-    document.body.removeChild(textarea)
-  })
+    })
+    .catch(() => {
+      const textarea = document.createElement('textarea')
+      textarea.value = content
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      try {
+        document.execCommand('copy')
+        showToast('已复制到剪贴板')
+      } catch (e) {
+        showToast('复制失败，请手动复制')
+      }
+      document.body.removeChild(textarea)
+    })
 }
 
 function showToast(message) {
@@ -650,10 +559,7 @@ onMounted(() => {
 }
 
 .yaml-container header {
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.95) 0%,
-    rgba(118, 75, 162, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
   color: white;
   padding: 30px;
   text-align: center;

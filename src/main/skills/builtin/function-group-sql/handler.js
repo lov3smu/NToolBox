@@ -1,14 +1,14 @@
 export default async function handler(params, context) {
   const { log, executeFunctionGroupSql } = context
-  
+
   log.info('执行 function-group-sql Skill', params)
-  
+
   if (!executeFunctionGroupSql) {
     return { success: false, error: 'executeFunctionGroupSql 函数未提供' }
   }
-  
+
   const result = await executeFunctionGroupSql(params)
-  
+
   if (result.success) {
     return {
       success: true,
@@ -21,7 +21,7 @@ export default async function handler(params, context) {
       }
     }
   }
-  
+
   return {
     success: false,
     error: result.error

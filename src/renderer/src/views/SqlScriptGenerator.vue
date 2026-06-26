@@ -1,56 +1,28 @@
 <template>
-  <div
-    class="home-container"
-    :style="{ width: windowWidth + 'px' }"
-  >
+  <div class="home-container" :style="{ width: windowWidth + 'px' }">
     <header>
       <h1>
-        <svg
-          class="header-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <ellipse
-            cx="12"
-            cy="5"
-            rx="9"
-            ry="3"
-          />
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
         </svg>
         SQL Script Generator
       </h1>
-      <div class="subtitle">
-        SQL脚本生成工具
-      </div>
+      <div class="subtitle">SQL脚本生成工具</div>
     </header>
 
     <div class="main-content">
       <div class="section">
         <label class="section-label">操作类型</label>
         <div class="button-group">
-          <button 
-            class="type-btn" 
-            :class="{ active: operateType === 'FIX' }"
-            @click="setOperateType('FIX')"
-          >
+          <button class="type-btn" :class="{ active: operateType === 'FIX' }" @click="setOperateType('FIX')">
             FIX
           </button>
-          <button 
-            class="type-btn" 
-            :class="{ active: operateType === 'PUBLISH' }"
-            @click="setOperateType('PUBLISH')"
-          >
+          <button class="type-btn" :class="{ active: operateType === 'PUBLISH' }" @click="setOperateType('PUBLISH')">
             PUBLISH
           </button>
-          <button 
-            class="type-btn" 
-            :class="{ active: operateType === 'QUERY' }"
-            @click="setOperateType('QUERY')"
-          >
+          <button class="type-btn" :class="{ active: operateType === 'QUERY' }" @click="setOperateType('QUERY')">
             QUERY
           </button>
         </div>
@@ -58,51 +30,24 @@
 
       <div class="section">
         <label class="section-label">脚本用途</label>
-        <input
-          v-model="usage"
-          type="text"
-          placeholder="请输入脚本用途"
-          class="input-field"
-          @input="updateDirName"
-        >
+        <input v-model="usage" type="text" placeholder="请输入脚本用途" class="input-field" @input="updateDirName" />
       </div>
 
       <div class="section">
         <label class="section-label">数据库</label>
-        <select
-          v-model="database"
-          class="select-field"
-        >
-          <option value="">
-            请选择数据库
-          </option>
-          <option
-            v-for="db in databases"
-            :key="db"
-            :value="db"
-          >
+        <select v-model="database" class="select-field">
+          <option value="">请选择数据库</option>
+          <option v-for="db in databases" :key="db" :value="db">
             {{ db }}
           </option>
         </select>
       </div>
 
-      <div
-        class="section script-type-section"
-        :class="{ hidden: operateType === 'QUERY' }"
-      >
+      <div class="section script-type-section" :class="{ hidden: operateType === 'QUERY' }">
         <label class="section-label">脚本类型</label>
-        <select
-          v-model="scriptType"
-          class="select-field"
-        >
-          <option value="">
-            请选择脚本类型
-          </option>
-          <option
-            v-for="type in scriptTypes"
-            :key="type.name"
-            :value="type.name"
-          >
+        <select v-model="scriptType" class="select-field">
+          <option value="">请选择脚本类型</option>
+          <option v-for="type in scriptTypes" :key="type.name" :value="type.name">
             {{ type.name }} - {{ type.description }}
           </option>
         </select>
@@ -110,28 +55,14 @@
 
       <div class="section">
         <label class="section-label">目录名</label>
-        <input
-          v-model="dirName"
-          type="text"
-          placeholder="目录名（留空自动生成）"
-          class="input-field"
-        >
+        <input v-model="dirName" type="text" placeholder="目录名（留空自动生成）" class="input-field" />
       </div>
 
       <div class="action-buttons">
-        <button
-          class="btn btn-primary"
-          :disabled="loading"
-          @click="generate"
-        >
+        <button class="btn btn-primary" :disabled="loading" @click="generate">
           {{ loading ? '生成中...' : '生成脚本' }}
         </button>
-        <button
-          class="btn btn-default"
-          @click="openSettings"
-        >
-          设置
-        </button>
+        <button class="btn btn-default" @click="openSettings">设置</button>
       </div>
 
       <div
@@ -140,31 +71,14 @@
         :class="{ 'result-success': result.success, 'result-error': !result.success }"
       >
         <h3>生成结果</h3>
-        <div
-          class="result-content"
-          :class="{ 'success': result.success, 'error': !result.success }"
-        >
+        <div class="result-content" :class="{ success: result.success, error: !result.success }">
           <template v-if="result.success">
-            <div class="success-message">
-              脚本生成成功！
-            </div>
+            <div class="success-message">脚本生成成功！</div>
             <div><strong>文件名：</strong> {{ result.filename }}</div>
-            <div class="file-path">
-              <strong>文件路径：</strong><br>{{ result.filePath }}
-            </div>
+            <div class="file-path"><strong>文件路径：</strong><br />{{ result.filePath }}</div>
             <div class="result-actions">
-              <button
-                class="btn-small"
-                @click="openFile"
-              >
-                打开文件
-              </button>
-              <button
-                class="btn-small"
-                @click="openFolder"
-              >
-                打开文件夹
-              </button>
+              <button class="btn-small" @click="openFile">打开文件</button>
+              <button class="btn-small" @click="openFolder">打开文件夹</button>
             </div>
           </template>
           <template v-else>
@@ -181,7 +95,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useWindowWidth, useAutoDirName, useConfig } from '@/composables'
-import { generateScript, openFile as apiOpenFile, openFolder as apiOpenFolder, openSettings as apiOpenSettings, onConfigChanged } from '@/api'
+import {
+  generateScript,
+  openFile as apiOpenFile,
+  openFolder as apiOpenFolder,
+  openSettings as apiOpenSettings,
+  onConfigChanged
+} from '@/api'
 
 const { config } = useConfig()
 const windowWidth = useWindowWidth()
@@ -278,10 +198,7 @@ onMounted(() => {
 }
 
 .home-container header {
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.95) 0%, 
-    rgba(118, 75, 162, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
   color: white;
   padding: 30px;
   text-align: center;
@@ -298,9 +215,9 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.15) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(255,255,255,0.1) 0%, transparent 20%);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 20%);
   pointer-events: none;
 }
 
@@ -313,7 +230,7 @@ onMounted(() => {
   margin-bottom: 10px;
   position: relative;
   z-index: 1;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .home-container header h1 .header-icon {
@@ -339,7 +256,9 @@ onMounted(() => {
 .script-type-section {
   height: 80px;
   overflow: hidden;
-  transition: height 0.3s ease, opacity 0.3s ease;
+  transition:
+    height 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .script-type-section.hidden {
@@ -391,7 +310,8 @@ onMounted(() => {
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
-.input-field, .select-field {
+.input-field,
+.select-field {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-color);
@@ -401,7 +321,8 @@ onMounted(() => {
   color: var(--text-primary);
 }
 
-.input-field:focus, .select-field:focus {
+.input-field:focus,
+.select-field:focus {
   outline: none;
   border-color: var(--primary-color);
 }

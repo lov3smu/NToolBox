@@ -1,126 +1,142 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>启动中...</title>
     <style>
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .splash-container {
+        text-align: center;
+        animation: fadeIn 0.6s ease-out;
+        min-width: 320px;
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 20px;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.15),
+          0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 40px 60px;
+        color: #2d3748;
+      }
+
+      .logo {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        animation: bounce 1.5s ease-in-out infinite;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: white;
+        border-radius: 12px;
+        filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
+      }
+
+      .title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+        color: #2d3748;
+      }
+
+      .subtitle {
+        font-size: 14px;
+        color: #4a5568;
+        margin-bottom: 24px;
+        font-weight: 400;
+        line-height: 1.5;
+      }
+
+      .loader-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .loader {
+        width: 36px;
+        height: 36px;
+        border: 3px solid rgba(102, 126, 234, 0.2);
+        border-radius: 50%;
+        border-top-color: #667eea;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .loading-text {
+        font-size: 12px;
+        color: #718096;
+        letter-spacing: 1px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        
-        .splash-container {
-            text-align: center;
-            animation: fadeIn 0.6s ease-out;
-            min-width: 320px;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
         }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
-            padding: 40px 60px;
-            color: #2d3748;
+        50% {
+          transform: translateY(-8px);
         }
-        
-        .logo {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 20px;
-            animation: bounce 1.5s ease-in-out infinite;
-            border-radius: 12px;
-            overflow: hidden;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        
-        .logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: white;
-            border-radius: 12px;
-            filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
-        }
-        
-        .title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-            color: #2d3748;
-        }
-        
-        .subtitle {
-            font-size: 14px;
-            color: #4a5568;
-            margin-bottom: 24px;
-            font-weight: 400;
-            line-height: 1.5;
-        }
-        
-        .loader-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .loader {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(102, 126, 234, 0.2);
-            border-radius: 50%;
-            border-top-color: #667eea;
-            animation: spin 0.8s linear infinite;
-        }
-        
-        .loading-text {
-            font-size: 12px;
-            color: #718096;
-            letter-spacing: 1px;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="splash-container">
-        <div class="glass-card">
-            <div class="logo">
-                <img src="./assets/icon.png" alt="NToolBox Logo">
-            </div>
-            <div class="title">NToolBox</div>
-            <div class="subtitle">多端工具集合平台 · 启动快 · 功能全 · 更智能</div>
-            <div class="loader-wrapper">
-                <div class="loader"></div>
-                <div class="loading-text">正在加载...</div>
-            </div>
+      <div class="glass-card">
+        <div class="logo">
+          <img src="./assets/icon.png" alt="NToolBox Logo" />
         </div>
+        <div class="title">NToolBox</div>
+        <div class="subtitle">多端工具集合平台 · 启动快 · 功能全 · 更智能</div>
+        <div class="loader-wrapper">
+          <div class="loader"></div>
+          <div class="loading-text">正在加载...</div>
+        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>

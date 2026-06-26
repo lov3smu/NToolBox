@@ -1,9 +1,18 @@
 import { app } from 'electron'
+import path from 'path'
+import fs from 'fs'
 import { log, initLogger } from './utils'
 import { loadConfig, startAutoUpdateCheck, promptAutoStartOnFirstLaunch, checkForUpdates } from './services'
 import { setupIPCHandlers } from './ipc'
 import { initWindows, getMainWindow } from './windows'
 import { createTray, destroyTray, createAppMenu } from './ui'
+
+const cacheDir = path.join(app.getPath('userData'), 'cache')
+if (!fs.existsSync(cacheDir)) {
+  fs.mkdirSync(cacheDir, { recursive: true })
+}
+app.commandLine.appendSwitch('disk-cache-dir', cacheDir)
+app.commandLine.appendSwitch('disable-gpu-cache')
 
 process.on('uncaughtException', (error) => {
   if (error.code === 'EPIPE') {
@@ -37,7 +46,7 @@ app.whenReady().then(async () => {
   } catch (e) {
     console.error('初始化日志失败:', e)
   }
-  
+
   log.info('========================================')
   log.info('应用启动')
   log.info('========================================')
@@ -52,7 +61,7 @@ app.whenReady().then(async () => {
   }
 
   setupIPCHandlers()
-  
+
   const { mainWindow, createSettingsWindow } = initWindows()
   createAppMenu(mainWindow, checkForUpdates, createSettingsWindow)
   createTray(mainWindow, checkForUpdates, createSettingsWindow)
@@ -63,5 +72,4 @@ app.whenReady().then(async () => {
   log.info('应用启动完成')
 })
 
-app.on('window-all-closed', () => {
-})
+app.on('window-all-closed', () => {})

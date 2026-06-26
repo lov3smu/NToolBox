@@ -1,39 +1,17 @@
 <template>
-  <div
-    class="file-manager-container"
-    :style="{ width: windowWidth + 'px' }"
-  >
+  <div class="file-manager-container" :style="{ width: windowWidth + 'px' }">
     <header>
       <h1>
-        <svg
-          class="header-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
         </svg>
         文件管理器
       </h1>
-      <div
-        v-if="currentPath"
-        class="breadcrumb"
-      >
-        <span
-          class="breadcrumb-item"
-          @click="navigateToRoot"
-        >根目录</span>
-        <span
-          v-for="(part, index) in pathParts"
-          :key="index"
-          class="breadcrumb-path"
-        >
+      <div v-if="currentPath" class="breadcrumb">
+        <span class="breadcrumb-item" @click="navigateToRoot">根目录</span>
+        <span v-for="(part, index) in pathParts" :key="index" class="breadcrumb-path">
           <span class="breadcrumb-separator">/</span>
-          <span
-            class="breadcrumb-item"
-            @click="navigateToPath(index)"
-          >{{ part }}</span>
+          <span class="breadcrumb-item" @click="navigateToPath(index)">{{ part }}</span>
         </span>
       </div>
     </header>
@@ -41,34 +19,17 @@
     <div class="main-content">
       <div class="toolbar">
         <div class="nav-controls">
-          <button 
-            class="back-btn" 
-            :disabled="isAtRoot"
-            title="返回上一级"
-            @click="goToParent"
-          >
-            ↑ 返回上一级
-          </button>
+          <button class="back-btn" :disabled="isAtRoot" title="返回上一级" @click="goToParent">↑ 返回上一级</button>
         </div>
         <div class="view-controls">
-          <button 
-            class="view-btn" 
-            :class="{ active: viewMode === 'list' }"
-            title="列表视图"
-            @click="viewMode = 'list'"
-          >
+          <button class="view-btn" :class="{ active: viewMode === 'list' }" title="列表视图" @click="viewMode = 'list'">
             ☰
           </button>
-          <button 
-            class="view-btn" 
-            :class="{ active: viewMode === 'grid' }"
-            title="平铺视图"
-            @click="viewMode = 'grid'"
-          >
+          <button class="view-btn" :class="{ active: viewMode === 'grid' }" title="平铺视图" @click="viewMode = 'grid'">
             ⊞
           </button>
-          <button 
-            class="view-btn compact-toggle" 
+          <button
+            class="view-btn compact-toggle"
             :class="{ active: compactMode }"
             title="紧凑风格"
             @click="compactMode = !compactMode"
@@ -78,55 +39,24 @@
         </div>
         <div class="sort-controls">
           <span class="sort-label">时间排序:</span>
-          <button 
-            class="sort-btn" 
-            :class="{ active: sortOrder === 'desc' }"
-            @click="sortOrder = 'desc'"
-          >
-            倒序
-          </button>
-          <button 
-            class="sort-btn" 
-            :class="{ active: sortOrder === 'asc' }"
-            @click="sortOrder = 'asc'"
-          >
-            正序
-          </button>
+          <button class="sort-btn" :class="{ active: sortOrder === 'desc' }" @click="sortOrder = 'desc'">倒序</button>
+          <button class="sort-btn" :class="{ active: sortOrder === 'asc' }" @click="sortOrder = 'asc'">正序</button>
         </div>
       </div>
-      
-      <div
-        v-if="loading"
-        class="loading"
-      >
-        加载中...
-      </div>
-      
-      <div
-        v-else-if="error && !isDirectoryNotExist"
-        class="error-message"
-      >
+
+      <div v-if="loading" class="loading">加载中...</div>
+
+      <div v-else-if="error && !isDirectoryNotExist" class="error-message">
         {{ error }}
       </div>
-      
-      <div
-        v-else-if="!config?.base_path || isDirectoryNotExist"
-        class="empty-message"
-      >
+
+      <div v-else-if="!config?.base_path || isDirectoryNotExist" class="empty-message">
         文件目录未设置，请到设置中设置
       </div>
-      
-      <div
-        v-else-if="directories.length === 0 && files.length === 0"
-        class="empty-message"
-      >
-        暂时没有文件哦!
-      </div>
-      
-      <div
-        v-else
-        :class="['file-list', viewMode, { compact: compactMode }]"
-      >
+
+      <div v-else-if="directories.length === 0 && files.length === 0" class="empty-message">暂时没有文件哦!</div>
+
+      <div v-else :class="['file-list', viewMode, { compact: compactMode }]">
         <div
           v-for="dir in sortedDirectories"
           :key="dir.path"
@@ -136,12 +66,9 @@
         >
           <span class="item-icon">📁</span>
           <span class="item-name">{{ dir.name }}</span>
-          <span
-            v-if="viewMode === 'list'"
-            class="item-time"
-          >{{ formatTime(dir.created) }}</span>
+          <span v-if="viewMode === 'list'" class="item-time">{{ formatTime(dir.created) }}</span>
         </div>
-        
+
         <div
           v-for="file in sortedFiles"
           :key="file.path"
@@ -150,10 +77,7 @@
         >
           <span class="item-icon">📄</span>
           <span class="item-name">{{ file.name }}</span>
-          <span
-            v-if="viewMode === 'list'"
-            class="item-time"
-          >{{ formatTime(file.created) }}</span>
+          <span v-if="viewMode === 'list'" class="item-time">{{ formatTime(file.created) }}</span>
         </div>
       </div>
     </div>
@@ -163,60 +87,24 @@
       class="context-menu"
       :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
     >
-      <div
-        class="context-menu-item"
-        @click="openItem"
-      >
-        打开
-      </div>
+      <div class="context-menu-item" @click="openItem">打开</div>
       <div class="context-menu-separator" />
-      <div
-        v-if="contextMenu.item?.isDirectory"
-        class="context-menu-item"
-        @click="copyDirectoryFiles"
-      >
+      <div v-if="contextMenu.item?.isDirectory" class="context-menu-item" @click="copyDirectoryFiles">
         复制所有文件路径
       </div>
-      <div
-        v-if="contextMenu.item?.isDirectory"
-        class="context-menu-item"
-        @click="copyAllFilesPath"
-      >
+      <div v-if="contextMenu.item?.isDirectory" class="context-menu-item" @click="copyAllFilesPath">
         复制所有文件路径（含子目录）
       </div>
-      <div
-        v-if="!contextMenu.item?.isDirectory"
-        class="context-menu-item"
-        @click="copyFilePath"
-      >
-        复制文件路径
-      </div>
+      <div v-if="!contextMenu.item?.isDirectory" class="context-menu-item" @click="copyFilePath">复制文件路径</div>
       <div class="context-menu-separator" />
-      <div
-        class="context-menu-item"
-        @click="showProperties"
-      >
-        属性
-      </div>
+      <div class="context-menu-item" @click="showProperties">属性</div>
     </div>
 
-    <div
-      v-if="properties.show"
-      class="properties-modal"
-      @click.self="closeProperties"
-    >
-      <div
-        class="properties-dialog"
-        :style="{ left: properties.x + 'px', top: properties.y + 'px' }"
-      >
+    <div v-if="properties.show" class="properties-modal" @click.self="closeProperties">
+      <div class="properties-dialog" :style="{ left: properties.x + 'px', top: properties.y + 'px' }">
         <div class="properties-header">
           <h3>{{ properties.info?.type === '文件夹' ? '📁' : '📄' }} {{ properties.info?.name }}</h3>
-          <button
-            class="close-btn"
-            @click="closeProperties"
-          >
-            ×
-          </button>
+          <button class="close-btn" @click="closeProperties">×</button>
         </div>
         <div class="properties-content">
           <div class="properties-row">
@@ -231,12 +119,11 @@
             <span class="properties-label">大小:</span>
             <span class="properties-value">{{ formatSize(properties.info?.size) }}</span>
           </div>
-          <div
-            v-if="properties.info?.type === '文件夹'"
-            class="properties-row"
-          >
+          <div v-if="properties.info?.type === '文件夹'" class="properties-row">
             <span class="properties-label">包含:</span>
-            <span class="properties-value">{{ properties.info?.directoryCount }} 个文件夹，{{ properties.info?.fileCount }} 个文件</span>
+            <span class="properties-value"
+              >{{ properties.info?.directoryCount }} 个文件夹，{{ properties.info?.fileCount }} 个文件</span
+            >
           </div>
           <div class="properties-row">
             <span class="properties-label">创建时间:</span>
@@ -316,17 +203,16 @@ const isAtRoot = computed(() => {
 })
 
 const isDirectoryNotExist = computed(() => {
-  return error.value && (
-    error.value.includes('ENOENT') || 
-    error.value.includes('no such file') ||
-    error.value.includes('目录不存在')
+  return (
+    error.value &&
+    (error.value.includes('ENOENT') || error.value.includes('no such file') || error.value.includes('目录不存在'))
   )
 })
 
 async function loadDirectory(dirPath) {
   loading.value = true
   error.value = ''
-  
+
   try {
     const result = await readDirectory(dirPath)
     if (result.success) {
@@ -363,7 +249,7 @@ function enterDirectory(dir) {
 
 function goToParent() {
   if (isAtRoot.value) return
-  
+
   const base = config.value?.base_path || ''
   const parts = pathParts.value
   if (parts.length > 0) {
@@ -389,7 +275,7 @@ function hideContextMenu() {
 async function openItem() {
   const item = contextMenu.value.item
   if (!item) return
-  
+
   if (item.isDirectory) {
     await openFolder(item.path)
   } else {
@@ -401,7 +287,7 @@ async function openItem() {
 async function copyFilePath() {
   const item = contextMenu.value.item
   if (!item) return
-  
+
   const success = await copyToClipboard(item.path)
   if (success) {
     showToast('已复制文件路径')
@@ -412,7 +298,7 @@ async function copyFilePath() {
 async function copyDirectoryFiles() {
   const item = contextMenu.value.item
   if (!item) return
-  
+
   const success = await copyToClipboard(item.path, false)
   if (success) {
     showToast('已复制所有文件路径')
@@ -423,7 +309,7 @@ async function copyDirectoryFiles() {
 async function copyAllFilesPath() {
   const item = contextMenu.value.item
   if (!item) return
-  
+
   const success = await copyToClipboard(item.path, true)
   if (success) {
     showToast('已复制所有文件路径（含子目录）')
@@ -434,16 +320,16 @@ async function copyAllFilesPath() {
 function showToast(message) {
   const existing = document.querySelector('.toast')
   if (existing) existing.remove()
-  
+
   const toast = document.createElement('div')
   toast.className = 'toast'
   toast.innerHTML = `<span class="toast-icon">✓</span><span class="toast-message">${message}</span>`
   document.body.appendChild(toast)
-  
+
   setTimeout(() => {
     toast.classList.add('show')
   }, 10)
-  
+
   setTimeout(() => {
     toast.classList.remove('show')
     setTimeout(() => toast.remove(), 300)
@@ -480,7 +366,7 @@ async function showProperties() {
   const y = contextMenu.value.y
   if (!item) return
   hideContextMenu()
-  
+
   const result = await getItemInfo(item.path)
   if (result.success) {
     properties.value = {
@@ -506,16 +392,16 @@ function handleClickOutside(e) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  
-  getConfig().then(initialConfig => {
+
+  getConfig().then((initialConfig) => {
     if (initialConfig?.base_path) {
       config.value = initialConfig
       loadDirectory(initialConfig.base_path)
     }
   })
-  
+
   onConfigChanged(() => {
-    getConfig().then(newConfig => {
+    getConfig().then((newConfig) => {
       config.value = newConfig
       if (newConfig?.base_path) {
         loadDirectory(newConfig.base_path)
@@ -542,10 +428,7 @@ onUnmounted(() => {
 }
 
 .file-manager-container header {
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.95) 0%, 
-    rgba(118, 75, 162, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
   color: white;
   padding: 20px 30px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -606,7 +489,9 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
 }
 
-.view-controls, .sort-controls, .nav-controls {
+.view-controls,
+.sort-controls,
+.nav-controls {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -692,7 +577,9 @@ onUnmounted(() => {
   margin-right: 4px;
 }
 
-.loading, .error-message, .empty-message {
+.loading,
+.error-message,
+.empty-message {
   text-align: center;
   padding: 40px;
   color: var(--text-secondary);

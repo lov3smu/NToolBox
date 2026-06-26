@@ -56,14 +56,16 @@ export function checkForUpdates(manual = true, mainWindow = null) {
     autoUpdater.once('update-available', (info) => {
       log.info('发现新版本:', info.version)
       if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-          type: 'info',
-          title: '发现新版本',
-          message: `发现新版本 ${info.version}，是否立即下载？`,
-          buttons: ['下载', '以后']
-        }).then(result => {
-          if (result.response === 0) autoUpdater.downloadUpdate()
-        })
+        dialog
+          .showMessageBox(mainWindow, {
+            type: 'info',
+            title: '发现新版本',
+            message: `发现新版本 ${info.version}，是否立即下载？`,
+            buttons: ['下载', '以后']
+          })
+          .then((result) => {
+            if (result.response === 0) autoUpdater.downloadUpdate()
+          })
       }
       resolve({ status: 'update-available', info })
     })
@@ -83,27 +85,27 @@ export function checkForUpdates(manual = true, mainWindow = null) {
 
     autoUpdater.once('error', (err) => {
       log.error('更新出错:', err)
-      
+
       if (err.message && err.message.includes('not signed')) {
         log.warn('更新包签名验证失败')
         if (manual && mainWindow && !mainWindow.isDestroyed()) {
-          dialog.showMessageBox(mainWindow, {
-            type: 'warning',
-            title: '更新失败',
-            message: '无法安装更新：更新包签名验证失败。\n\n请前往 GitHub Releases 页面手动下载最新版本。',
-            buttons: ['前往下载', '取消']
-          }).then(result => {
-            if (result.response === 0) {
-              shell.openExternal(
-                'https://github.com/lov3smu/NToolBox/releases'
-              )
-            }
-          })
+          dialog
+            .showMessageBox(mainWindow, {
+              type: 'warning',
+              title: '更新失败',
+              message: '无法安装更新：更新包签名验证失败。\n\n请前往 GitHub Releases 页面手动下载最新版本。',
+              buttons: ['前往下载', '取消']
+            })
+            .then((result) => {
+              if (result.response === 0) {
+                shell.openExternal('https://github.com/lov3smu/NToolBox/releases')
+              }
+            })
         }
         resolve({ status: 'error', error: err })
         return
       }
-      
+
       if (manual && mainWindow && !mainWindow.isDestroyed()) {
         dialog.showErrorBox('检查更新失败', `无法检查更新：${err.message}`)
       }
@@ -123,14 +125,16 @@ export function checkForUpdates(manual = true, mainWindow = null) {
         log.warn('主窗口不存在，跳过更新安装提示')
         return
       }
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: '更新就绪',
-        message: `新版本 ${info.version} 已下载完成，是否立即重启安装？`,
-        buttons: ['立即重启', '稍后']
-      }).then(result => {
-        if (result.response === 0) autoUpdater.quitAndInstall()
-      })
+      dialog
+        .showMessageBox(mainWindow, {
+          type: 'info',
+          title: '更新就绪',
+          message: `新版本 ${info.version} 已下载完成，是否立即重启安装？`,
+          buttons: ['立即重启', '稍后']
+        })
+        .then((result) => {
+          if (result.response === 0) autoUpdater.quitAndInstall()
+        })
     })
 
     autoUpdater.checkForUpdatesAndNotify()

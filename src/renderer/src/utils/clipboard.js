@@ -9,7 +9,7 @@ export async function copyToClipboard(text) {
     document.body.appendChild(textarea)
     textarea.select()
     textarea.setSelectionRange(0, textarea.value.length)
-    
+
     try {
       const success = document.execCommand('copy')
       return success

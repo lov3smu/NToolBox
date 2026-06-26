@@ -51,3 +51,28 @@ export function sanitizeInput(input, maxLength = 1000) {
   }
   return input.trim()
 }
+
+export function normalizeDirNameWithDate(dirName, date) {
+  if (!dirName || typeof dirName !== 'string') return ''
+
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const currentDatePrefix = `${month}${day}`
+
+  const dashIndex = dirName.indexOf('-')
+  if (dashIndex === -1) {
+    return `${currentDatePrefix}-${dirName}`
+  }
+
+  const prefix = dirName.slice(0, dashIndex)
+
+  if (/^\d{4}$/.test(prefix)) {
+    const mm = parseInt(prefix.slice(0, 2), 10)
+    const dd = parseInt(prefix.slice(2, 4), 10)
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      return dirName
+    }
+  }
+
+  return `${currentDatePrefix}-${dirName}`
+}

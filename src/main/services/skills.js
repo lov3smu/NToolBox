@@ -19,15 +19,15 @@ class SkillsManager {
 
   async loadSkills() {
     if (this.loaded) return
-    
+
     log.info('开始加载 Skills...')
     log.info('__dirname:', __dirname)
     log.info('BUILTIN_SKILLS_PATH:', BUILTIN_SKILLS_PATH)
     log.info('USER_SKILLS_PATH:', USER_SKILLS_PATH)
-    
+
     await this._loadBuiltinSkills()
     await this._loadUserSkills()
-    
+
     this.loaded = true
     log.info(`Skills 加载完成，共 ${this.skills.size} 个`)
   }
@@ -43,7 +43,7 @@ class SkillsManager {
       log.info('内置 Skills 目录存在，开始读取...')
       const dirs = await fs.promises.readdir(BUILTIN_SKILLS_PATH)
       log.info('找到 Skills 目录:', dirs.length, '个')
-      
+
       for (const dir of dirs) {
         const skillPath = path.join(BUILTIN_SKILLS_PATH, dir)
         if (fs.statSync(skillPath).isDirectory()) {
@@ -63,7 +63,7 @@ class SkillsManager {
       }
 
       const dirs = await fs.promises.readdir(USER_SKILLS_PATH)
-      
+
       for (const dir of dirs) {
         const skillPath = path.join(USER_SKILLS_PATH, dir)
         if (fs.statSync(skillPath).isDirectory()) {
@@ -77,7 +77,7 @@ class SkillsManager {
 
   async _loadSkill(skillPath, type) {
     const skillJsonPath = path.join(skillPath, 'skill.json')
-    
+
     if (!fs.existsSync(skillJsonPath)) {
       log.warn(`Skill ${skillPath} 缺少 skill.json`)
       return
@@ -86,7 +86,7 @@ class SkillsManager {
     try {
       const content = await fs.promises.readFile(skillJsonPath, 'utf8')
       const skillDef = JSON.parse(content)
-      
+
       if (!skillDef.name || !skillDef.description) {
         log.warn(`Skill ${skillPath} 缺少必要字段`)
         return
@@ -94,14 +94,14 @@ class SkillsManager {
 
       skillDef.type = type
       skillDef.path = skillPath
-      
+
       if (skillDef.handler) {
         const handlerPath = path.join(skillPath, skillDef.handler)
         if (fs.existsSync(handlerPath)) {
           skillDef.handlerPath = handlerPath
         }
       }
-      
+
       if (skillDef.promptTemplate) {
         const promptPath = path.join(skillPath, skillDef.promptTemplate)
         if (fs.existsSync(promptPath)) {
@@ -117,7 +117,7 @@ class SkillsManager {
   }
 
   getSkills() {
-    return Array.from(this.skills.values()).map(skill => ({
+    return Array.from(this.skills.values()).map((skill) => ({
       name: skill.name,
       version: skill.version,
       description: skill.description,
@@ -136,7 +136,7 @@ class SkillsManager {
   }
 
   getToolDefinitions() {
-    return Array.from(this.skills.values()).map(skill => ({
+    return Array.from(this.skills.values()).map((skill) => ({
       type: 'function',
       function: {
         name: skill.name,
@@ -148,7 +148,7 @@ class SkillsManager {
 
   async executeSkill(name, params) {
     const skill = this.skills.get(name)
-    
+
     if (!skill) {
       return { success: false, error: `Skill ${name} 不存在` }
     }
@@ -173,13 +173,13 @@ class SkillsManager {
     try {
       log.info(`Handler 执行开始: ${skill.name}`)
       log.info(`Handler 路径: ${skill.handlerPath}`)
-      
+
       const handlerPath = pathToFileURL(skill.handlerPath).href
       log.info(`Handler URL: ${handlerPath}`)
-      
+
       const handlerModule = await import(handlerPath)
       const handler = handlerModule.default || handlerModule.handler
-      
+
       if (!handler || typeof handler !== 'function') {
         return { success: false, error: 'Handler 不是有效的函数' }
       }
@@ -202,11 +202,11 @@ class SkillsManager {
       log.info(`开始调用 handler 函数`)
       const result = await handler(params, context)
       log.info(`Handler 执行完成: ${JSON.stringify(result)}`)
-      
+
       if (result && typeof result === 'object') {
         return result
       }
-      
+
       return { success: true, content: String(result) }
     } catch (error) {
       log.error(`Handler 执行失败:`, error)
@@ -217,7 +217,7 @@ class SkillsManager {
 
   async _executePrompt(skill, params) {
     let prompt = skill.promptContent
-    
+
     for (const [key, value] of Object.entries(params)) {
       prompt = prompt.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '')
     }
@@ -225,20 +225,20 @@ class SkillsManager {
     const config = getConfig()
     const providerType = config.ai_provider || 'bailian'
     const apiKeys = config.ai_api_keys || {}
-    
+
     const providerConfig = {
       apiKey: apiKeys[providerType] || ''
     }
-    
+
     if (providerType === 'minimax') {
       providerConfig.groupId = apiKeys.minimax_group_id || ''
     }
     if (providerType === 'volcengine') {
       providerConfig.endpointId = apiKeys.volcengine_endpoint_id || ''
     }
-    
+
     const provider = getProvider(providerType, providerConfig)
-    
+
     if (!provider) {
       return { success: false, error: `未知的 AI Provider: ${providerType}` }
     }
@@ -248,12 +248,10 @@ class SkillsManager {
       return { success: false, error: `${provider.name} ${validation.error}` }
     }
 
-    const messages = [
-      { role: 'user', content: prompt }
-    ]
+    const messages = [{ role: 'user', content: prompt }]
 
     const result = await provider.chat(messages, [], { model: provider.getDefaultModel() })
-    
+
     if (!result.success) {
       return { success: false, error: result.error || 'AI 调用失败' }
     }
@@ -278,21 +276,21 @@ class SkillsManager {
 
       const content = await fs.promises.readFile(skillJsonPath, 'utf8')
       const skillDef = JSON.parse(content)
-      
+
       if (!skillDef.name) {
         return { success: false, error: 'skill.json 缺少 name 字段' }
       }
 
       const targetPath = path.join(USER_SKILLS_PATH, skillDef.name)
-      
+
       if (fs.existsSync(targetPath)) {
         return { success: false, error: `Skill ${skillDef.name} 已存在` }
       }
 
       await this._copyDir(skillPath, targetPath)
-      
+
       await this._loadSkill(targetPath, 'user')
-      
+
       log.info(`安装 Skill: ${skillDef.name}`)
       return { success: true, name: skillDef.name }
     } catch (error) {
@@ -303,7 +301,7 @@ class SkillsManager {
 
   async uninstallSkill(name) {
     const skill = this.skills.get(name)
-    
+
     if (!skill) {
       return { success: false, error: `Skill ${name} 不存在` }
     }
@@ -329,11 +327,11 @@ class SkillsManager {
   async _copyDir(src, dest) {
     await fs.promises.mkdir(dest, { recursive: true })
     const entries = await fs.promises.readdir(src, { withFileTypes: true })
-    
+
     for (const entry of entries) {
       const srcPath = path.join(src, entry.name)
       const destPath = path.join(dest, entry.name)
-      
+
       if (entry.isDirectory()) {
         await this._copyDir(srcPath, destPath)
       } else {
@@ -344,17 +342,17 @@ class SkillsManager {
 
   async _removeDir(dir) {
     const entries = await fs.promises.readdir(dir, { withFileTypes: true })
-    
+
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name)
-      
+
       if (entry.isDirectory()) {
         await this._removeDir(fullPath)
       } else {
         await fs.promises.unlink(fullPath)
       }
     }
-    
+
     await fs.promises.rmdir(dir)
   }
 
@@ -369,15 +367,16 @@ class SkillsManager {
   }
 
   getSkillsByCategory(category) {
-    return this.getSkills().filter(skill => skill.category === category)
+    return this.getSkills().filter((skill) => skill.category === category)
   }
 
   searchSkills(keyword) {
     const lowerKeyword = keyword.toLowerCase()
-    return this.getSkills().filter(skill => 
-      skill.name.toLowerCase().includes(lowerKeyword) ||
-      skill.description.toLowerCase().includes(lowerKeyword) ||
-      (skill.tags && skill.tags.some(tag => tag.toLowerCase().includes(lowerKeyword)))
+    return this.getSkills().filter(
+      (skill) =>
+        skill.name.toLowerCase().includes(lowerKeyword) ||
+        skill.description.toLowerCase().includes(lowerKeyword) ||
+        (skill.tags && skill.tags.some((tag) => tag.toLowerCase().includes(lowerKeyword)))
     )
   }
 }

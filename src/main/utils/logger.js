@@ -9,9 +9,9 @@ let initialized = false
 export async function initLogger() {
   if (initialized) return
   initialized = true
-  
+
   const logDir = getLogDir()
-  
+
   try {
     if (!fs.existsSync(logDir)) {
       await fs.promises.mkdir(logDir, { recursive: true })
@@ -23,7 +23,7 @@ export async function initLogger() {
       throw err
     }
   }
-  
+
   log.transports.file.resolvePathFn = () => path.join(logDir, 'main.log')
   log.transports.file.level = 'info'
   log.transports.console.level = 'debug'
