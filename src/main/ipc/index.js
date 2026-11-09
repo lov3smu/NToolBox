@@ -1,4 +1,4 @@
-import { ipcMain, dialog, clipboard, app } from 'electron'
+import { ipcMain, dialog, clipboard } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { log, getProjectRoot } from '../utils'
@@ -282,20 +282,10 @@ export function setupIPCHandlers() {
   })
 
   ipcMain.handle('chat', async (event, messages, options) => {
-    console.log('=== IPC chat 被调用 ===')
-    console.log('messages:', messages)
-    console.log('options:', options)
-    const result = await chat(messages, options)
-    console.log('=== chat 结果 ===')
-    console.log('result:', result)
-    return result
+    return await chat(messages, options)
   })
 
   ipcMain.handle('chat-stream', async (event, messages, options) => {
-    console.log('=== IPC chat-stream 被调用 ===')
-    console.log('messages:', messages)
-    console.log('options:', options)
-
     const result = await chatStream(messages, options, (chunk) => {
       event.sender.send('chat-stream-chunk', chunk)
     })
@@ -305,8 +295,6 @@ export function setupIPCHandlers() {
   })
 
   ipcMain.handle('validate-api-key', async (_event, providerType, apiKey, extraConfig) => {
-    console.log('=== IPC validate-api-key ===')
-    console.log('provider:', providerType)
     return await validateApiKey(providerType, apiKey, extraConfig)
   })
 

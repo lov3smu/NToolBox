@@ -1,5 +1,4 @@
 import fs from 'fs'
-import path from 'path'
 import sudo from 'sudo-prompt'
 import log from './logger'
 

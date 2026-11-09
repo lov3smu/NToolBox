@@ -198,7 +198,7 @@ onMounted(() => {
 }
 
 .home-container header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  background: var(--primary-gradient);
   color: white;
   padding: 30px;
   text-align: center;
@@ -307,7 +307,7 @@ onMounted(() => {
   background: var(--primary-gradient);
   color: white;
   border-color: transparent;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
 }
 
 .input-field,
@@ -356,12 +356,12 @@ onMounted(() => {
 }
 
 .result-success {
-  border-color: rgba(34, 197, 94, 0.3);
-  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(var(--success-rgb), 0.3);
+  background: rgba(var(--success-rgb), 0.1);
 }
 
 .success-message {
-  color: #15803d;
+  color: var(--success-darker);
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 15px;
@@ -379,12 +379,12 @@ onMounted(() => {
 }
 
 .result-error {
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(var(--error-rgb), 0.3);
+  background: rgba(var(--error-rgb), 0.1);
 }
 
 .error-message {
-  color: #dc2626;
+  color: var(--error-dark);
   font-size: 16px;
   font-weight: 600;
 }

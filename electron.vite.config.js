@@ -100,7 +100,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
-        '@assets': resolve(__dirname, 'assets')
+        '@assets': resolve(__dirname, 'assets'),
+        '@shared': resolve(__dirname, 'src/shared')
       }
     },
     base: '/',

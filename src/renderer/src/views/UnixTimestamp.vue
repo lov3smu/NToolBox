@@ -198,7 +198,7 @@
       </div>
     </div>
 
-    <Toast :visible="toastVisible" :message="toastMessage" />
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
@@ -209,7 +209,7 @@ import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
-const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
+const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const currentTimestamp10 = ref('')
 const currentTimestamp13 = ref('')
@@ -440,7 +440,7 @@ onUnmounted(() => {
 
 .unix-container header .subtitle {
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .unix-content {
@@ -492,7 +492,7 @@ onUnmounted(() => {
 
 .timestamp-item.active {
   border-color: var(--primary-color);
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .timestamp-value {
@@ -510,7 +510,7 @@ onUnmounted(() => {
 
 .current-datetime {
   padding: 10px 16px;
-  background: rgba(102, 126, 234, 0.08);
+  background: rgba(var(--primary-rgb), 0.08);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -597,8 +597,8 @@ onUnmounted(() => {
 .result-box {
   margin-top: 12px;
   padding: 12px 16px;
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(var(--success-rgb), 0.08);
+  border: 1px solid rgba(var(--success-rgb), 0.2);
   border-radius: var(--radius-sm);
 }
 
@@ -612,7 +612,7 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 600;
   font-family: 'Consolas', 'Monaco', monospace;
-  color: #15803d;
+  color: var(--success-darker);
 }
 
 .result-row {

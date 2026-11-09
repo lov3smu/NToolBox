@@ -5,6 +5,19 @@ import { log, getIconPath } from '../utils'
 let tray = null
 let mainWindow = null
 
+const defaultTrayIcon = () =>
+  nativeImage.createFromDataURL(
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADSSURBVDiNpZMxSgNBFIafNwsJFhZqY6WVWAgWXiCtF2gTb2AnHkGwtBEtBAsL8QpWsRFUkNRCYwjMzm4KhyCbKDObeTL8/3zzzftn4H+zTGn2V1OrB2CSUgqPLZtFQnSj1Pz5tSIlgPco0n1dUj9kzT1EW1IqyUYZ0K1AN+Ms0s1zIcR99mZ3AH5n4DqbzDMIE6CvjR7gBqgUYhfnAAdoCmB2JxVrKwf0QwhhpVgLfRDCE9C/HgT4HntSygXKskzlnH+A5c2Oruu+mqaRZVm+r+u6/iCE8F7f3F0AbRfnMiBN7nQAAAAASUVORK5CYII='
+  )
+
+function getTrayIcon() {
+  const iconPath = getIconPath()
+  if (!iconPath || !fs.existsSync(iconPath)) return defaultTrayIcon()
+
+  const icon = nativeImage.createFromPath(iconPath)
+  return icon.isEmpty() ? defaultTrayIcon() : icon
+}
+
 export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
   mainWindow = window
 
@@ -13,16 +26,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
     tray = null
   }
 
-  const iconPath = getIconPath()
-
-  if (!iconPath || !fs.existsSync(iconPath)) {
-    const defaultIcon = nativeImage.createFromDataURL(
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADSSURBVDiNpZMxSgNBFIafNwsJFhZqY6WVWAgWXiCtF2gTb2AnHkGwtBEtBAsL8QpWsRFUkNRCYwjMzm4KhyCbKDObeTL8/3zzzftn4H+zTGn2V1OrB2CSUgqPLZtFQnSj1Pz5tSIlgPco0n1dUj9kzT1EW1IqyUYZ0K1AN+Ms0s1zIcR99mZ3AH5n4DqbzDMIE6CvjR7gBqgUYhfnAAdoCmB2JxVrKwf0QwhhpVgLfRDCE9C/HgT4HntSygXKskzlnH+A5c2Oruu+mqaRZVm+r+u6/iCE8F7f3F0AbRfnMiBN7nQAAAAASUVORK5CYII='
-    )
-    tray = new Tray(defaultIcon)
-  } else {
-    tray = new Tray(iconPath)
-  }
+  tray = new Tray(getTrayIcon())
 
   const contextMenu = Menu.buildFromTemplate([
     {

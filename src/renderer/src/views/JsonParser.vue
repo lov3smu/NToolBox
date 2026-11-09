@@ -201,18 +201,18 @@
       <div class="context-menu-item" @click="compressJson">压缩JSON</div>
     </div>
 
-    <Toast :visible="toastVisible" :message="toastMessage" />
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useWindowWidth, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
-const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
+const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const jsonInput = ref('')
 const validationStatus = ref('')
@@ -310,7 +310,7 @@ function autoFormat() {
   }
 }
 
-function renderJson(text, parsed) {
+function renderJson(text) {
   if (!editorRef.value) return
   isRendering = true
   lastRenderedText = text
@@ -639,7 +639,7 @@ async function copyMinified() {
     } else {
       showError('复制失败')
     }
-  } catch (e) {
+  } catch {
     showError('JSON格式错误')
   }
 }
@@ -661,7 +661,7 @@ async function copyEscaped() {
     } else {
       showError('复制失败')
     }
-  } catch (e) {
+  } catch {
     showError('JSON格式错误')
   }
 }
@@ -682,7 +682,7 @@ async function convertToXml() {
     } else {
       showError('复制失败')
     }
-  } catch (e) {
+  } catch {
     showError('JSON格式错误')
   }
 }
@@ -1223,7 +1223,7 @@ onUnmounted(() => {
 
 .json-parser-container header .subtitle {
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .json-content {
@@ -1319,13 +1319,13 @@ onUnmounted(() => {
 }
 
 .status.valid {
-  background: rgba(34, 197, 94, 0.1);
-  color: #15803d;
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success-darker);
 }
 
 .status.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #b91c1c;
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-darker);
 }
 
 .size-info {
@@ -1429,7 +1429,7 @@ onUnmounted(() => {
 
 .jsonpath-hint code {
   padding: 2px 6px;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   border-radius: 4px;
   cursor: pointer;
   color: var(--primary-color);
@@ -1437,14 +1437,14 @@ onUnmounted(() => {
 }
 
 .jsonpath-hint code:hover {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(var(--primary-rgb), 0.2);
 }
 
 .jsonpath-result {
   margin-top: 12px;
   padding: 12px 16px;
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(var(--success-rgb), 0.08);
+  border: 1px solid rgba(var(--success-rgb), 0.2);
   border-radius: var(--radius-sm);
 }
 
@@ -1455,7 +1455,7 @@ onUnmounted(() => {
 .result-label {
   font-size: 13px;
   font-weight: 600;
-  color: #15803d;
+  color: var(--success-darker);
 }
 
 .result-content pre {
@@ -1485,8 +1485,8 @@ onUnmounted(() => {
 }
 
 .btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.8);
-  border-color: rgba(102, 126, 234, 0.8);
+  background: rgba(var(--primary-rgb), 0.8);
+  border-color: rgba(var(--primary-rgb), 0.8);
 }
 
 .btn-secondary {
@@ -1495,7 +1495,7 @@ onUnmounted(() => {
 }
 
 .btn-secondary:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .help-section {
@@ -1533,7 +1533,7 @@ onUnmounted(() => {
 
 .syntax-table code {
   padding: 2px 6px;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
   color: var(--primary-color);
@@ -1558,7 +1558,7 @@ onUnmounted(() => {
 }
 
 .context-menu-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .context-menu-separator {
@@ -1652,8 +1652,8 @@ onUnmounted(() => {
 }
 
 .json-editor .fold-toggle:hover {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  background: rgba(var(--primary-rgb), 0.2);
+  color: var(--primary-color);
 }
 
 .json-editor .fold-line {
@@ -1661,7 +1661,7 @@ onUnmounted(() => {
 }
 
 .json-editor .fold-line.collapsed {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
   border-radius: 2px;
 }
 

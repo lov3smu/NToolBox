@@ -1,3 +1,5 @@
+export const SETTINGS_PATH = '/settings'
+
 export const tools = [
   {
     name: '首页',
@@ -106,13 +108,15 @@ export const tools = [
   {
     name: '设置',
     description: '应用程序配置',
-    path: 'settings',
+    path: SETTINGS_PATH,
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>`
   }
 ]
+
+export const dashboardTools = tools.filter((tool) => tool.path !== '/')
 
 export const RECENT_TOOLS_KEY = 'recent_tools'
 export const MAX_RECENT = 3
@@ -122,7 +126,7 @@ export function getRecentTools() {
     const recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
     return recent
       .slice(0, MAX_RECENT)
-      .map((path) => tools.find((t) => t.path === path))
+      .map((path) => tools.find((tool) => tool.path === path))
       .filter(Boolean)
   } catch {
     return []
@@ -132,17 +136,16 @@ export function getRecentTools() {
 export function addToRecent(tool) {
   try {
     let recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
-    recent = recent.filter((p) => p !== tool.path)
+    recent = recent.filter((path) => path !== tool.path)
     recent.unshift(tool.path)
-    recent = recent.slice(0, MAX_RECENT)
-    localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(recent))
+    localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)))
   } catch {
-    // ignore
+    // ignore storage failures
   }
 }
 
 export function getToolByPath(path) {
-  return tools.find((t) => t.path === path)
+  return tools.find((tool) => tool.path === path)
 }
 
 export function searchTools(query) {
@@ -152,5 +155,3 @@ export function searchTools(query) {
     (tool) => tool.name.toLowerCase().includes(lowerQuery) || tool.description.toLowerCase().includes(lowerQuery)
   )
 }
-
-export const dashboardTools = tools.filter((t) => t.path !== '/' && t.path !== 'settings')

@@ -133,16 +133,14 @@
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible, error: toastType === 'error' }">
-      <span class="toast-icon">{{ toastType === 'error' ? '!' : '✓' }}</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useToast } from '@/composables'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = ref(0)
 const { toastVisible, toastMessage, toastType, showToast, showError } = useToast()
@@ -225,7 +223,7 @@ function formatHtml() {
       }
     })
     showToast('格式化成功')
-  } catch (e) {
+  } catch {
     showError('格式化失败')
   }
 }
@@ -264,10 +262,14 @@ function formatHtmlCode(html, indent) {
     return match ? match[1].toLowerCase() : null
   }
 
+  // 拆开书写，避免 Vite 依赖扫描把源码里的注释字面量当成 HTML 注释剥离
+  const commentStart = '<' + '!--'
+  const commentEnd = '--' + '>'
+
   while (i < html.length) {
     if (html[i] === '<') {
-      if (html.substring(i, i + 4) === '<!--') {
-        const end = html.indexOf('-->', i + 4)
+      if (html.substring(i, i + 4) === commentStart) {
+        const end = html.indexOf(commentEnd, i + 4)
         if (end !== -1) {
           if (result && !result.endsWith('\n')) {
             result += '\n'
@@ -346,7 +348,7 @@ function minifyHtml() {
       }
     })
     showToast('压缩成功')
-  } catch (e) {
+  } catch {
     showError('压缩失败')
   }
 }
@@ -414,7 +416,7 @@ function copyToClipboard(text) {
       try {
         document.execCommand('copy')
         showToast('已复制到剪贴板')
-      } catch (e) {
+      } catch {
         showError('复制失败')
       }
       document.body.removeChild(textarea)
@@ -467,7 +469,7 @@ onUnmounted(() => {
 
 .html-viewer-container header .subtitle {
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .viewer-content {
@@ -672,40 +674,5 @@ onUnmounted(() => {
   border: none;
   background: white;
   border-radius: var(--radius-md);
-}
-
-.toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--primary-gradient);
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  z-index: 1000;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-}
-
-.toast.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast.error {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
-}
-
-.toast-icon {
-  font-weight: bold;
 }
 </style>

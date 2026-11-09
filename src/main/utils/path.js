@@ -10,25 +10,15 @@ export function getProjectRoot() {
   return path.join(__dirname, '..', '..')
 }
 
+// nativeImage 仅在 Windows 上支持 .ico，其他平台优先使用 .png
 export function getIconPath() {
-  let iconPath = null
-  if (app.isPackaged) {
-    const resourcesDir = process.resourcesPath
-    const possiblePaths = [path.join(resourcesDir, 'assets', 'icon.ico'), path.join(resourcesDir, 'assets', 'icon.png')]
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        iconPath = p
-        break
-      }
-    }
-  } else {
-    const projectRoot = getProjectRoot()
-    const devIco = path.join(projectRoot, 'assets', 'icon.ico')
-    const devPng = path.join(projectRoot, 'assets', 'icon.png')
-    if (fs.existsSync(devIco)) iconPath = devIco
-    else if (fs.existsSync(devPng)) iconPath = devPng
+  const assetsDir = app.isPackaged ? path.join(process.resourcesPath, 'assets') : path.join(getProjectRoot(), 'assets')
+  const candidates = process.platform === 'win32' ? ['icon.ico', 'icon.png'] : ['icon.png', 'icon.ico']
+  for (const name of candidates) {
+    const iconPath = path.join(assetsDir, name)
+    if (fs.existsSync(iconPath)) return iconPath
   }
-  return iconPath
+  return null
 }
 
 export function getLogDir() {

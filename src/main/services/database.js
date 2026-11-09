@@ -37,7 +37,7 @@ export async function testConnection(config) {
     if (connection) {
       try {
         await connection.end()
-      } catch (e) {
+      } catch {
         // ignore - connection may already be closed
       }
     }
@@ -50,7 +50,7 @@ export async function createConnection(name, config) {
       const existing = connections.get(name)
       try {
         await existing.end()
-      } catch (e) {
+      } catch {
         // ignore
       }
       connections.delete(name)

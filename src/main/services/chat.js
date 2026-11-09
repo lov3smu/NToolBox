@@ -441,9 +441,7 @@ async function chatWithToolsInternal(messages, options = {}) {
     return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
   }
 
-  console.log('=== chatWithToolsInternal ===')
-  console.log('Provider:', provider.name)
-  console.log('Messages:', JSON.stringify(messages, null, 2))
+  log.debug(`[chatWithTools] provider=${provider.name} messages=${messages.length}`)
 
   const model = options.model || provider.getDefaultModel()
   const allTools = await getAllToolDefinitions()
@@ -453,8 +451,7 @@ async function chatWithToolsInternal(messages, options = {}) {
   if (!result.success) return result
 
   if (result.tool_calls && result.tool_calls.length > 0) {
-    console.log('=== 检测到 tool_calls ===')
-    console.log('tool_calls:', JSON.stringify(result.tool_calls, null, 2))
+    log.debug(`[chatWithTools] tool_calls=${result.tool_calls.length}`)
 
     messages.push({
       role: 'assistant',
@@ -462,9 +459,9 @@ async function chatWithToolsInternal(messages, options = {}) {
     })
 
     for (const call of result.tool_calls) {
-      console.log('执行工具:', call.function.name)
+      log.debug(`执行工具: ${call.function.name}`)
       const toolResult = await executeToolCall(call.function.name, call.function.arguments)
-      console.log('工具结果:', JSON.stringify(toolResult, null, 2))
+      log.debug(`工具执行结果: ${toolResult.success ? 'success' : 'failed'}`)
       messages.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -479,29 +476,16 @@ async function chatWithToolsInternal(messages, options = {}) {
 }
 
 async function chatWithTools(messages, options = {}) {
-  console.log('=== chatWithTools 被调用 ===')
-  console.log('原始 messages:', JSON.stringify(messages, null, 2))
-
   const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages]
 
   return chatWithToolsInternal(messagesWithSystem, options)
 }
 
 export async function chat(messages, options = {}) {
-  console.log('=== chat 函数被调用 ===')
-  console.log('messages:', JSON.stringify(messages, null, 2))
-  console.log('options:', options)
-  const result = await chatWithTools(messages, options)
-  console.log('=== chat 返回结果 ===')
-  console.log('result:', JSON.stringify(result, null, 2))
-  return result
+  return chatWithTools(messages, options)
 }
 
 export async function chatStream(messages, options = {}, onChunk) {
-  console.log('=== chatStream 函数被调用 ===')
-  console.log('messages:', JSON.stringify(messages, null, 2))
-  console.log('options:', options)
-
   const { providerType, providerConfig } = getProviderConfig()
   const provider = getProvider(providerType, providerConfig)
 
@@ -527,16 +511,14 @@ export async function chatStream(messages, options = {}, onChunk) {
 async function chatStreamInternal(provider, messages, tools, options, onChunk) {
   const model = options.model || provider.getDefaultModel()
 
-  console.log('=== chatStreamInternal ===')
-  console.log('Provider:', provider.name)
+  log.debug(`[chatStream] provider=${provider.name} messages=${messages.length}`)
 
   const result = await provider.chatStream(messages, tools, { model, ...options }, onChunk)
 
   if (!result.success) return result
 
   if (result.tool_calls && result.tool_calls.length > 0) {
-    console.log('=== 流式检测到 tool_calls ===')
-    console.log('tool_calls:', JSON.stringify(result.tool_calls, null, 2))
+    log.debug(`[chatStream] tool_calls=${result.tool_calls.length}`)
 
     messages.push({
       role: 'assistant',
@@ -549,9 +531,9 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk) {
     }
 
     for (const call of result.tool_calls) {
-      console.log('执行工具:', call.function.name)
+      log.debug(`执行工具: ${call.function.name}`)
       const toolResult = await executeToolCall(call.function.name, call.function.arguments)
-      console.log('工具结果:', JSON.stringify(toolResult, null, 2))
+      log.debug(`工具执行结果: ${toolResult.success ? 'success' : 'failed'}`)
       messages.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -595,10 +577,7 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk) {
 }
 
 export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
-  console.log('=== validateApiKey ===')
-  console.log('provider:', providerType)
-  console.log('apiKey:', apiKey)
-  console.log('extraConfig:', extraConfig)
+  log.debug(`[validateApiKey] provider=${providerType}`)
 
   const config = {
     apiKey,
@@ -612,9 +591,8 @@ export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
     return false
   }
 
-  console.log('Provider apiKey:', provider.apiKey)
   const result = await provider.validateApiKey()
-  console.log('验证结果:', result)
+  log.debug(`[validateApiKey] result=${result}`)
   return result
 }
 

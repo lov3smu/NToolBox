@@ -4,7 +4,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter, Decoration } from '@codemirror/view'
+import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { sql, MySQL } from '@codemirror/lang-sql'
 import { autocompletion } from '@codemirror/autocomplete'
@@ -265,7 +265,7 @@ const completionOptions = computed(() => {
 
 const myCompletions = (context) => {
   const word = context.matchBefore(/\w*/)
-  if (!word || (word.from == word.to && !context.explicit)) return null
+  if (!word || (word.from === word.to && !context.explicit)) return null
 
   const options = completionOptions.value.filter((opt) => opt.label.toLowerCase().startsWith(word.text.toLowerCase()))
 
@@ -304,7 +304,7 @@ const theme = EditorView.theme({
   },
   '.cm-tooltip-autocomplete': {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    border: '1px solid rgba(102, 126, 234, 0.3)',
+    border: '1px solid rgba(var(--primary-rgb), 0.3)',
     borderRadius: '4px',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
     fontFamily: "'Consolas', 'Monaco', monospace",
@@ -317,7 +317,7 @@ const theme = EditorView.theme({
     padding: '4px 8px'
   },
   '.cm-tooltip-autocomplete li[aria-selected]': {
-    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+    backgroundColor: 'rgba(var(--primary-rgb), 0.2)',
     color: '#333'
   },
   '.cm-completionLabel': {
@@ -435,7 +435,7 @@ defineExpose({
 
 .sql-editor-container:focus-within {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 
 .sql-editor-container .cm-editor {

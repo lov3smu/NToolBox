@@ -8,8 +8,8 @@ export function escapeSql(str) {
     .replace(/'/g, "''")
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
-    .replace(/\x00/g, '')
-    .replace(/\x1a/g, '')
+    .replaceAll('\x00', '')
+    .replaceAll('\x1a', '')
 }
 
 export function isValidIdentifier(name) {

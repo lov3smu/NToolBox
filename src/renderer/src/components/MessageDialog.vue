@@ -48,9 +48,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-
-const props = defineProps({
+defineProps({
   visible: {
     type: Boolean,
     default: false
@@ -134,27 +132,27 @@ function cancel() {
 }
 
 .message-dialog.success .message-icon {
-  background: rgba(34, 139, 34, 0.15);
-  color: #228b22;
+  background: rgba(var(--success-rgb), 0.15);
+  color: var(--success-dark);
 }
 
 .message-dialog.error .message-icon {
-  background: rgba(220, 53, 69, 0.15);
-  color: #dc3545;
+  background: rgba(var(--error-rgb), 0.15);
+  color: var(--error-dark);
 }
 
 .message-dialog.warning .message-icon {
   background: rgba(255, 193, 7, 0.15);
-  color: #ffc107;
+  color: var(--warning-darker);
 }
 
 .message-dialog.confirm .message-icon {
   background: rgba(255, 193, 7, 0.15);
-  color: #ffc107;
+  color: var(--warning-darker);
 }
 
 .message-dialog.info .message-icon {
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
   color: var(--primary-color);
 }
 

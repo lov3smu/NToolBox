@@ -528,7 +528,7 @@ function copyOutput() {
       try {
         document.execCommand('copy')
         showToast('已复制到剪贴板')
-      } catch (e) {
+      } catch {
         showToast('复制失败，请手动复制')
       }
       document.body.removeChild(textarea)
@@ -559,7 +559,7 @@ onMounted(() => {
 }
 
 .yaml-container header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  background: var(--primary-gradient);
   color: white;
   padding: 30px;
   text-align: center;
@@ -583,7 +583,7 @@ onMounted(() => {
 
 .yaml-container header .subtitle {
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .yaml-content {
@@ -753,15 +753,15 @@ onMounted(() => {
 }
 
 .tree-string {
-  color: #16a34a;
+  color: var(--success-dark);
 }
 
 .tree-number {
-  color: #2563eb;
+  color: var(--info-dark);
 }
 
 .tree-boolean {
-  color: #d97706;
+  color: var(--warning-dark);
 }
 
 .tree-null {
@@ -810,20 +810,20 @@ onMounted(() => {
 }
 
 .status-valid {
-  color: #16a34a;
+  color: var(--success-dark);
 }
 
 .status-error {
-  color: #dc2626;
+  color: var(--error-dark);
 }
 
 .status-detail {
   margin-top: 8px;
   padding: 8px 12px;
-  background: rgba(220, 38, 38, 0.1);
+  background: rgba(var(--error-rgb), 0.1);
   border-radius: var(--radius-sm);
   font-size: 12px;
-  color: #dc2626;
+  color: var(--error-dark);
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
@@ -861,7 +861,7 @@ onMounted(() => {
 }
 
 .help-content code {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Consolas', 'Monaco', monospace;

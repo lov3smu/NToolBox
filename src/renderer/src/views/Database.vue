@@ -2994,10 +2994,6 @@ async function loadDatabaseObjects(connName, dbName) {
   }
 }
 
-function selectDatabaseFromSidebar(connName, dbName) {
-  selectDatabase(dbName)
-}
-
 function hideContextMenu() {
   contextMenu.value.show = false
 }
@@ -3333,10 +3329,6 @@ async function executeTableQueryWithSort(tab) {
   }
 }
 
-function showFilterSortDialog() {
-  showMessage('筛选排序功能开发中', 'info')
-}
-
 function toggleFilterSort() {
   tableToolbarState.value.filterSortActive = !tableToolbarState.value.filterSortActive
 }
@@ -3479,10 +3471,6 @@ function createTableTab(connName, dbName, tableName) {
 
   return tabs.value.find((t) => t.id === tableId)
 }
-
-const activeConnections = computed(() => {
-  return connections.value.filter((conn) => conn.active)
-})
 
 function getTabDatabases(tab) {
   if (!tab.connectionName) return []
@@ -3881,18 +3869,6 @@ function formatSize(bytes) {
     unitIndex++
   }
   return `${size.toFixed(2)} ${units[unitIndex]}`
-}
-
-function formatTableTime(time) {
-  if (!time) return '-'
-  const date = new Date(time)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 function formatDate(time) {
@@ -4751,38 +4727,6 @@ async function closeAllConnections() {
   }
 }
 
-async function testConnection() {
-  if (!selectedConnection.value) return
-
-  try {
-    const connConfig = {
-      host: selectedConnection.value.host,
-      port: selectedConnection.value.port,
-      user: selectedConnection.value.user,
-      password: selectedConnection.value.password
-    }
-
-    if (selectedConnection.value.charset) {
-      connConfig.charset = selectedConnection.value.charset
-    }
-
-    if (selectedConnection.value.enableConnectTimeout) {
-      connConfig.connectTimeout = selectedConnection.value.connectTimeout
-    }
-
-    const result = await dbTestConnection(connConfig)
-
-    if (result.success) {
-      await showMessage('连接成功！', 'success')
-    } else {
-      await showMessage('连接失败: ' + result.error, 'error')
-    }
-  } catch (error) {
-    console.error('测试连接失败:', error)
-    await showMessage('测试连接失败: ' + error.message, 'error')
-  }
-}
-
 async function testNewConnection() {
   if (!newConnection.value.host) {
     await showMessage('请输入主机地址', 'warning')
@@ -4913,11 +4857,6 @@ async function loadDatabases() {
   }
 }
 
-function selectDatabaseOnly(conn, db) {
-  selectConnection(conn)
-  selectedDatabase.value = db
-}
-
 async function selectDatabase(db) {
   selectedDatabase.value = db
   tables.value = []
@@ -4932,47 +4871,6 @@ async function selectDatabase(db) {
     }
   } catch (error) {
     console.error('加载表列表失败:', error)
-  }
-}
-
-async function viewTableStructure(tableName) {
-  if (!selectedDatabase.value) return
-
-  try {
-    const result = await dbGetTableStructure(selectedConnection.value.name, selectedDatabase.value, tableName)
-
-    if (result.success) {
-      const tabId = `query_${Date.now()}_structure_${Math.random().toString(36).substr(2, 9)}`
-      tabs.value.push({
-        id: tabId,
-        name: `表结构 - ${tableName}`,
-        type: 'query',
-        closable: true,
-        connectionName: selectedConnection.value.name,
-        database: selectedDatabase.value,
-        sqlQuery: `-- 表: ${tableName}\nDESCRIBE \`${tableName}\`;`,
-        queryResult: {
-          success: true,
-          rows: result.fields,
-          fields: [
-            { name: 'Field' },
-            { name: 'Type' },
-            { name: 'Null' },
-            { name: 'Key' },
-            { name: 'Default' },
-            { name: 'Extra' }
-          ],
-          duration: 0,
-          rowCount: result.fields.length
-        }
-      })
-      activeTabId.value = tabId
-    } else {
-      await showMessage('获取表结构失败: ' + result.error, 'error')
-    }
-  } catch (error) {
-    console.error('获取表结构失败:', error)
-    await showMessage('获取表结构失败: ' + error.message, 'error')
   }
 }
 
@@ -5161,7 +5059,7 @@ function closeDatabase(target) {
   }
 }
 
-function startSidebarResize(e) {
+function startSidebarResize() {
   isResizingSidebar.value = true
   document.addEventListener('mousemove', handleSidebarResize)
   document.addEventListener('mouseup', stopSidebarResize)
@@ -5186,7 +5084,7 @@ function stopSidebarResize() {
   document.body.style.userSelect = ''
 }
 
-function startInfoPanelResize(e) {
+function startInfoPanelResize() {
   isResizingInfoPanel.value = true
   document.addEventListener('mousemove', handleInfoPanelResize)
   document.addEventListener('mouseup', stopInfoPanelResize)
@@ -5729,7 +5627,7 @@ async function refreshTable(target) {
 }
 
 header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  background: var(--primary-gradient);
   color: white;
   padding: 16px 24px;
   display: flex;
@@ -5836,7 +5734,7 @@ header h1 {
 }
 
 .stat-item.clickable:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   opacity: 1;
 }
 
@@ -5879,11 +5777,11 @@ header h1 {
 }
 
 .sidebar-resize-handle:hover {
-  background: rgba(102, 126, 234, 0.3);
+  background: rgba(var(--primary-rgb), 0.3);
 }
 
 .sidebar-resize-handle:active {
-  background: rgba(102, 126, 234, 0.5);
+  background: rgba(var(--primary-rgb), 0.5);
 }
 
 .sidebar-header {
@@ -5897,7 +5795,7 @@ header h1 {
 }
 
 .sidebar-header.drag-over {
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
   border-bottom: 2px dashed var(--primary-color);
 }
 
@@ -5959,11 +5857,11 @@ header h1 {
 }
 
 .group-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .group-item.drag-over {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(var(--primary-rgb), 0.2);
   border: 2px dashed var(--primary-color);
 }
 
@@ -5982,7 +5880,7 @@ header h1 {
 .group-folder-icon {
   width: 18px;
   height: 18px;
-  color: #e6a23c;
+  color: var(--warning-darker);
   flex-shrink: 0;
 }
 
@@ -6036,13 +5934,13 @@ header h1 {
 }
 
 .connection-item.active {
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
   border-color: var(--primary-color);
 }
 
 .connection-item.dragging {
   opacity: 0.5;
-  background: rgba(102, 126, 234, 0.3);
+  background: rgba(var(--primary-rgb), 0.3);
 }
 
 .connection-expand-placeholder {
@@ -6074,7 +5972,7 @@ header h1 {
 .connection-type-icon {
   width: 18px;
   height: 18px;
-  color: #409eff;
+  color: var(--info-dark);
   flex-shrink: 0;
 }
 
@@ -6104,7 +6002,7 @@ header h1 {
 }
 
 .connection-databases .database-item.active {
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
 }
 
 .connection-databases .db-icon {
@@ -6115,7 +6013,7 @@ header h1 {
 }
 
 .connection-databases .db-icon.active {
-  color: #228b22;
+  color: var(--success-dark);
 }
 
 .connection-databases .db-name {
@@ -6151,7 +6049,7 @@ header h1 {
 }
 
 .connection-databases .db-icon.opened {
-  color: #228b22;
+  color: var(--success-dark);
 }
 
 .database-objects {
@@ -6243,17 +6141,17 @@ header h1 {
 }
 
 .table-icon {
-  color: #409eff;
+  color: var(--info-dark);
 }
 
 .view-icon {
-  color: #67c23a;
+  color: var(--success-dark);
 }
 
 .function-icon {
   width: 22px;
   height: 12px;
-  color: #e6a23c;
+  color: var(--warning-darker);
 }
 
 .object-name {
@@ -6275,8 +6173,8 @@ header h1 {
 }
 
 .status-badge.active {
-  background: rgba(34, 139, 34, 0.2);
-  color: #228b22;
+  background: rgba(var(--success-rgb), 0.2);
+  color: var(--success-dark);
 }
 
 .empty-list {
@@ -6318,11 +6216,11 @@ header h1 {
 }
 
 .menu-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .menu-item.danger {
-  color: #c42b1c;
+  color: var(--error-dark);
 }
 
 .menu-item.danger:hover {
@@ -6427,14 +6325,14 @@ header h1 {
 }
 
 .tab-item:hover {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
   color: var(--text-primary);
 }
 
 .tab-item.active {
   color: var(--primary-color);
   border-bottom-color: var(--primary-color);
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .tab-name {
@@ -6460,7 +6358,7 @@ header h1 {
 
 .tab-close-btn:hover {
   background: rgba(196, 43, 28, 0.2);
-  color: #c42b1c;
+  color: var(--error-dark);
 }
 
 .object-panel {
@@ -6510,19 +6408,19 @@ header h1 {
 }
 
 .object-type-icon.database {
-  color: #228b22;
+  color: var(--success-dark);
 }
 
 .object-type-icon.table {
-  color: #409eff;
+  color: var(--info-dark);
 }
 
 .object-type-icon.view {
-  color: #67c23a;
+  color: var(--success-dark);
 }
 
 .object-type-icon.function {
-  color: #e6a23c;
+  color: var(--warning-darker);
 }
 
 .object-type-label {
@@ -6553,7 +6451,7 @@ header h1 {
 .search-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 
 .object-tables,
@@ -6588,7 +6486,7 @@ header h1 {
 .structure-header {
   display: flex;
   padding: 8px 12px;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
@@ -6615,7 +6513,7 @@ header h1 {
 
 .table-row:hover,
 .structure-row:hover {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
 }
 
 .table-row:last-child,
@@ -6688,7 +6586,7 @@ header h1 {
 .table-icon-small {
   width: 14px;
   height: 14px;
-  color: #409eff;
+  color: var(--info-dark);
 }
 
 .view-definition,
@@ -6806,7 +6704,7 @@ header h1 {
 }
 
 .result-tab:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--text-primary);
 }
 
@@ -6865,7 +6763,7 @@ header h1 {
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.08);
+  background: rgba(var(--primary-rgb), 0.08);
   color: var(--text-primary);
 }
 
@@ -6875,7 +6773,7 @@ header h1 {
 }
 
 .toolbar-btn.active {
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
   color: var(--primary-color);
 }
 
@@ -6937,11 +6835,11 @@ th:hover .th-actions {
 }
 
 .th-actions:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 th.has-sort {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
 }
 
 th.sort-asc .th-name::after,
@@ -7080,7 +6978,7 @@ th.sort-desc .th-name::after {
 
 .footer-settings:hover,
 .footer-settings.active {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .footer-settings.active svg {
@@ -7166,7 +7064,7 @@ th.sort-desc .th-name::after {
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   border-color: var(--primary-color);
 }
 
@@ -7273,7 +7171,7 @@ th.sort-desc .th-name::after {
 }
 
 .result-table th {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   font-weight: 600;
   color: var(--text-primary);
   position: sticky;
@@ -7282,7 +7180,7 @@ th.sort-desc .th-name::after {
 }
 
 .result-table tr:hover {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
 }
 
 .result-hint {
@@ -7300,7 +7198,7 @@ th.sort-desc .th-name::after {
 }
 
 .result-error {
-  color: #c42b1c;
+  color: var(--error-dark);
   padding: 12px;
 }
 
@@ -7343,7 +7241,7 @@ th.sort-desc .th-name::after {
 }
 
 .btn-small.btn-danger {
-  background: linear-gradient(135deg, #c42b1c, #d63c2d);
+  background: linear-gradient(135deg, var(--error-dark), var(--error-darker));
 }
 
 .btn-small.btn-danger:hover:not(:disabled) {
@@ -7365,13 +7263,13 @@ th.sort-desc .th-name::after {
 }
 
 .btn-icon-sm:hover {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(var(--primary-rgb), 0.2);
   color: var(--primary-color);
 }
 
 .btn-icon-sm.btn-danger:hover {
   background: rgba(196, 43, 28, 0.2);
-  color: #c42b1c;
+  color: var(--error-dark);
 }
 
 .btn-icon-sm svg {
@@ -7539,7 +7437,7 @@ th.sort-desc .th-name::after {
 .input-field:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 
 .dialog-footer {
@@ -7653,7 +7551,7 @@ th.sort-desc .th-name::after {
 .input-field-inline:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 
 .input-field-inline:disabled {
@@ -7703,7 +7601,7 @@ th.sort-desc .th-name::after {
 }
 
 .status-item.connected {
-  color: #228b22;
+  color: var(--success-dark);
 }
 
 .status-item.disconnected {
@@ -7720,7 +7618,7 @@ th.sort-desc .th-name::after {
 }
 
 .status-icon.db-icon {
-  color: #228b22;
+  color: var(--success-dark);
 }
 
 .status-divider {
@@ -7755,7 +7653,7 @@ th.sort-desc .th-name::after {
 }
 
 .copy-btn:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary-color);
 }
 
@@ -7795,12 +7693,12 @@ th.sort-desc .th-name::after {
 }
 
 .layout-btn:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--text-secondary);
 }
 
 .layout-btn.active {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(var(--primary-rgb), 0.2);
   color: var(--primary-color);
 }
 
@@ -7858,11 +7756,11 @@ th.sort-desc .th-name::after {
 }
 
 .info-panel-resize-handle:hover {
-  background: rgba(102, 126, 234, 0.3);
+  background: rgba(var(--primary-rgb), 0.3);
 }
 
 .info-panel-resize-handle:active {
-  background: rgba(102, 126, 234, 0.5);
+  background: rgba(var(--primary-rgb), 0.5);
 }
 
 .info-panel-toolbar {
@@ -7888,7 +7786,7 @@ th.sort-desc .th-name::after {
   height: 36px;
   padding: 8px;
   border-radius: var(--radius-sm);
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7954,7 +7852,7 @@ th.sort-desc .th-name::after {
 }
 
 .info-category-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .category-item-icon {
@@ -8006,11 +7904,11 @@ th.sort-desc .th-name::after {
 }
 
 .info-value.connected {
-  color: #228b22;
+  color: var(--success-dark);
 }
 
 .info-value.disconnected {
-  color: #c42b1c;
+  color: var(--error-dark);
 }
 
 .info-tab-btn {
@@ -8029,12 +7927,12 @@ th.sort-desc .th-name::after {
 }
 
 .info-tab-btn:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--text-secondary);
 }
 
 .info-tab-btn.active {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(var(--primary-rgb), 0.2);
   color: var(--primary-color);
 }
 
@@ -8094,7 +7992,7 @@ th.sort-desc .th-name::after {
 }
 
 .index-type.unique {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary-color);
 }
 
@@ -8173,7 +8071,7 @@ th.sort-desc .th-name::after {
 .info-table-header {
   font-weight: 500;
   color: var(--text-tertiary);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
   padding: 4px 6px;
   margin: -6px -10px 4px -10px;
 }

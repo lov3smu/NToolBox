@@ -143,7 +143,7 @@
       </div>
     </div>
 
-    <Toast :visible="toastVisible" :message="toastMessage" />
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
@@ -154,7 +154,7 @@ import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
-const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
+const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const CHAR_SETS = {
   uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -388,7 +388,7 @@ onMounted(() => {
 }
 
 .password-container header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  background: var(--primary-gradient);
   color: white;
   padding: 30px;
   text-align: center;
@@ -412,7 +412,7 @@ onMounted(() => {
 
 .password-container .subtitle {
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .password-content {
@@ -535,7 +535,7 @@ onMounted(() => {
   background: var(--primary-gradient);
   border-radius: 50%;
   cursor: grab;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.5);
   border: 3px solid white;
   margin-top: -10px;
 }
@@ -601,12 +601,12 @@ onMounted(() => {
 }
 
 .checkbox-card:hover {
-  border-color: rgba(102, 126, 234, 0.4);
+  border-color: rgba(var(--primary-rgb), 0.4);
 }
 
 .checkbox-card.active {
   border-color: var(--primary-color);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-dark-rgb), 0.1) 100%);
 }
 
 .checkbox-icon {
@@ -658,23 +658,23 @@ onMounted(() => {
 
 .strength-fill.very-weak {
   width: 10%;
-  background: linear-gradient(90deg, #7f1d1d, #991b1b);
+  background: var(--error-darker);
 }
 .strength-fill.weak {
   width: 25%;
-  background: linear-gradient(90deg, #ef4444, #dc2626);
+  background: linear-gradient(90deg, var(--error-color), var(--error-dark));
 }
 .strength-fill.average {
   width: 50%;
-  background: linear-gradient(90deg, #f59e0b, #d97706);
+  background: linear-gradient(90deg, var(--warning-color), var(--warning-dark));
 }
 .strength-fill.strong {
   width: 75%;
-  background: linear-gradient(90deg, #22c55e, #16a34a);
+  background: linear-gradient(90deg, var(--success-color), var(--success-dark));
 }
 .strength-fill.very-strong {
   width: 100%;
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, var(--info-color), var(--info-dark));
 }
 
 .strength-text {
@@ -685,24 +685,24 @@ onMounted(() => {
 }
 
 .strength-text.very-weak {
-  color: #7f1d1d;
-  background: rgba(127, 29, 29, 0.1);
+  color: var(--error-darker);
+  background: rgba(var(--error-rgb), 0.12);
 }
 .strength-text.weak {
-  color: #dc2626;
-  background: rgba(220, 38, 38, 0.1);
+  color: var(--error-dark);
+  background: rgba(var(--error-rgb), 0.1);
 }
 .strength-text.average {
-  color: #d97706;
-  background: rgba(217, 119, 6, 0.1);
+  color: var(--warning-dark);
+  background: rgba(var(--warning-rgb), 0.1);
 }
 .strength-text.strong {
-  color: #16a34a;
-  background: rgba(22, 163, 74, 0.1);
+  color: var(--success-dark);
+  background: rgba(var(--success-rgb), 0.1);
 }
 .strength-text.very-strong {
-  color: #2563eb;
-  background: rgba(37, 99, 235, 0.1);
+  color: var(--info-dark);
+  background: rgba(var(--info-rgb), 0.1);
 }
 
 .strength-hint {
@@ -735,7 +735,7 @@ onMounted(() => {
 }
 
 .btn-text:hover {
-  color: var(--error-color);
+  color: var(--error-dark);
 }
 
 .history-list {

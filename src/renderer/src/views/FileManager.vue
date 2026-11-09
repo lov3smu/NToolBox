@@ -136,15 +136,18 @@
         </div>
       </div>
     </div>
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { useWindowWidth, useToast } from '@/composables'
 import { readDirectory, copyToClipboard, onConfigChanged, getConfig, openFile, openFolder, getItemInfo } from '@/api'
+import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, toastType, showToast, showError } = useToast()
 
 const config = ref(null)
 
@@ -317,25 +320,6 @@ async function copyAllFilesPath() {
   hideContextMenu()
 }
 
-function showToast(message) {
-  const existing = document.querySelector('.toast')
-  if (existing) existing.remove()
-
-  const toast = document.createElement('div')
-  toast.className = 'toast'
-  toast.innerHTML = `<span class="toast-icon">✓</span><span class="toast-message">${message}</span>`
-  document.body.appendChild(toast)
-
-  setTimeout(() => {
-    toast.classList.add('show')
-  }, 10)
-
-  setTimeout(() => {
-    toast.classList.remove('show')
-    setTimeout(() => toast.remove(), 300)
-  }, 2000)
-}
-
 function formatTime(timestamp) {
   if (!timestamp) return ''
   const date = new Date(timestamp)
@@ -376,7 +360,7 @@ async function showProperties() {
       y
     }
   } else {
-    showToast(result.error || '获取信息失败')
+    showError(result.error || '获取信息失败')
   }
 }
 
@@ -384,7 +368,7 @@ function closeProperties() {
   properties.value.show = false
 }
 
-function handleClickOutside(e) {
+function handleClickOutside() {
   if (contextMenu.value.show) {
     hideContextMenu()
   }
@@ -428,7 +412,7 @@ onUnmounted(() => {
 }
 
 .file-manager-container header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  background: var(--primary-gradient);
   color: white;
   padding: 20px 30px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -450,7 +434,6 @@ onUnmounted(() => {
 
 .breadcrumb {
   font-size: 13px;
-  opacity: 0.9;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -510,8 +493,8 @@ onUnmounted(() => {
 }
 
 .back-btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.8);
-  border-color: rgba(102, 126, 234, 0.8);
+  background: rgba(var(--primary-rgb), 0.8);
+  border-color: rgba(var(--primary-rgb), 0.8);
 }
 
 .back-btn:disabled {
@@ -587,7 +570,7 @@ onUnmounted(() => {
 }
 
 .error-message {
-  color: #e74c3c;
+  color: var(--error-dark);
 }
 
 .file-list {
@@ -621,11 +604,11 @@ onUnmounted(() => {
 
 .file-item:hover {
   background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(102, 126, 234, 0.3);
+  border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .file-item.directory:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .item-icon {
@@ -723,7 +706,7 @@ onUnmounted(() => {
 }
 
 .context-menu-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .context-menu-separator {

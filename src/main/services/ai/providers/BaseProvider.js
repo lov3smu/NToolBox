@@ -57,16 +57,14 @@ class BaseProvider {
   async chat(messages, tools, options = {}) {
     const requestBody = this.buildRequestBody(messages, tools, options)
 
-    console.log(`=== ${this.name} 发送请求 ===`)
-    console.log('请求体:', JSON.stringify(requestBody, null, 2))
+    log.debug(`[${this.name}] chat 请求，消息数: ${messages.length}`)
 
     const result = await this.makeRequest(this.hostname, 443, this.path, requestBody)
 
     if (!result.success) return result
 
     const responseData = result.data
-    console.log(`=== ${this.name} 响应 ===`)
-    console.log(JSON.stringify(responseData, null, 2))
+    log.debug(`[${this.name}] chat 响应完成`)
 
     return this.parseResponse(responseData)
   }
@@ -75,8 +73,7 @@ class BaseProvider {
     return new Promise((resolve, reject) => {
       const requestBody = this.buildRequestBody(messages, tools, { ...options, stream: true })
 
-      console.log(`=== ${this.name} 流式请求 ===`)
-      console.log('请求体:', JSON.stringify(requestBody, null, 2))
+      log.debug(`[${this.name}] chatStream 请求，消息数: ${messages.length}`)
 
       const req = https.request(
         {
@@ -152,7 +149,7 @@ class BaseProvider {
                       }
                     }
                   }
-                } catch (e) {
+                } catch {
                   // 忽略解析错误
                 }
               }

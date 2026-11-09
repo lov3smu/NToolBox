@@ -328,7 +328,7 @@ async function generateDictionarySqlBatch(params) {
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
     const safeDevEnName = escapeSql(config.developer_en_name)
 
-    let filesToCreate = []
+    const filesToCreate = []
     let actualMergeStrategy = merge_strategy
 
     if (merge_strategy === 'auto') {

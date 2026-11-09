@@ -315,8 +315,7 @@
 │ │ │ │ ┌──── 月份 (1 - 12)
 │ │ │ │ │ ┌── 星期 (0 - 6, 星期天=0)
 │ │ │ │ │ │
-* * * * * * *  命令</pre
-            >
+* * * * * * *  命令</pre>
           </div>
           <p><strong>特殊字符说明：</strong></p>
           <ul>
@@ -341,18 +340,18 @@
       </div>
     </div>
 
-    <Toast :visible="toastVisible" :message="toastMessage" />
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useWindowWidth, useToast } from '@/composables'
 import { copyToClipboard, formatDateTime } from '@/utils'
 import Toast from '@/components/Toast.vue'
 
 const windowWidth = useWindowWidth()
-const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
+const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const FIELD_CONFIG = {
   second: { min: 0, max: 59, name: '秒' },
@@ -405,8 +404,6 @@ const tabs = [
   { key: 'year', text: '年' }
 ]
 
-const fields = ['second', 'minute', 'hour', 'day', 'month', 'week', 'year']
-
 const activeTab = ref('second')
 
 const fieldTypes = reactive({
@@ -422,7 +419,6 @@ const fieldTypes = reactive({
 const currentFieldType = computed({
   get: () => fieldTypes[activeTab.value],
   set: (val) => {
-    const oldType = fieldTypes[activeTab.value]
     fieldTypes[activeTab.value] = val
     if (activeTab.value === 'day' && val !== 'notSpecify' && val !== 'every') {
       fieldTypes.week = 'notSpecify'
@@ -509,11 +505,6 @@ function getFieldHint(field) {
     year: '允许的通配符 [, - * /]'
   }
   return hints[field]
-}
-
-function setFieldType(field, type) {
-  fieldTypes[field] = type
-  generateExpression()
 }
 
 function toggleSpecific(field, value) {
@@ -704,7 +695,7 @@ function updateScheduleList() {
       time: formatDateTime(time),
       remaining: getTimeRemaining(now, time)
     }))
-  } catch (err) {
+  } catch {
     scheduleList.value = []
   }
 }
@@ -1006,7 +997,7 @@ onMounted(() => {
 
 .cron-container header .subtitle {
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 1;
   margin-bottom: 16px;
 }
 
@@ -1104,7 +1095,7 @@ onMounted(() => {
 
 .type-option:hover {
   border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
 }
 
 .type-option input[type='radio'] {
@@ -1115,7 +1106,7 @@ onMounted(() => {
 }
 
 .type-option:has(input:checked) {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   border-color: var(--primary-color);
 }
 
@@ -1310,7 +1301,7 @@ onMounted(() => {
   color: var(--text-secondary);
   font-size: 14px;
   padding: 10px;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   border-radius: var(--radius-sm);
 }
 
@@ -1410,7 +1401,7 @@ onMounted(() => {
 }
 
 .help-content code {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Consolas', 'Monaco', monospace;

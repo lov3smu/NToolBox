@@ -149,7 +149,7 @@
         </div>
       </main>
     </div>
-    <Toast :visible="toastVisible" :message="toastMessage" />
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
@@ -185,7 +185,7 @@ const expandedThinking = ref({})
 let removeChunkListener = null
 let removeEndListener = null
 
-const { toastVisible, toastMessage, showSuccess, showError } = useToast()
+const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
 
 const currentSession = computed(() => sessions.value.find((s) => s.id === currentSessionId.value))
 const currentMessages = computed(() => currentSession?.value?.messages || [])
@@ -236,7 +236,7 @@ function loadSessions() {
         currentSessionId.value = sessions.value[0].id
       }
     }
-  } catch (e) {
+  } catch {
     sessions.value = []
   }
 }
@@ -571,7 +571,7 @@ watch(
 
 .new-chat-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 .session-list {
@@ -593,12 +593,12 @@ watch(
 }
 
 .session-item:hover {
-  background: rgba(102, 126, 234, 0.08);
+  background: rgba(var(--primary-rgb), 0.08);
 }
 
 .session-item.active {
-  background: rgba(102, 126, 234, 0.12);
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  background: rgba(var(--primary-rgb), 0.12);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
 }
 
 .session-info {
@@ -656,13 +656,13 @@ watch(
 }
 
 .session-edit:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary-color);
 }
 
 .session-delete:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-dark);
 }
 
 .session-empty {
@@ -814,7 +814,7 @@ watch(
 }
 
 .message.assistant .message-avatar {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, var(--success-dark) 0%, var(--success-darker) 100%);
   color: white;
 }
 
@@ -825,9 +825,9 @@ watch(
 
 .thinking-block {
   margin-bottom: 8px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
   border-radius: var(--radius-md);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
 }
 
 .thinking-header {
@@ -841,7 +841,7 @@ watch(
 }
 
 .thinking-header:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .thinking-icon {
@@ -870,7 +870,7 @@ watch(
   line-height: 1.5;
   color: var(--text-secondary);
   background: rgba(248, 249, 250, 0.8);
-  border-top: 1px solid rgba(102, 126, 234, 0.15);
+  border-top: 1px solid rgba(var(--primary-rgb), 0.15);
   white-space: pre-wrap;
   font-family: 'Consolas', 'Monaco', monospace;
 }
@@ -928,7 +928,7 @@ watch(
 }
 
 .inline-code {
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
   color: var(--primary-color);
   padding: 2px 6px;
   border-radius: 4px;

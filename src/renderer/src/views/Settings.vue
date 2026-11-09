@@ -273,12 +273,16 @@
         <button class="btn btn-default" @click="closeWindow">取消</button>
       </div>
     </div>
+
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { useToast } from '@/composables'
+import Toast from '@/components/Toast.vue'
 import {
   getConfig,
   saveConfig,
@@ -290,13 +294,13 @@ import {
   checkForUpdates,
   closeSettingsWindow,
   setAutoStart,
-  getAutoStart,
   reloadConfig,
   reloadMenu
 } from '@/api'
 import iconUrl from '@assets/icon.png'
 
 const route = useRoute()
+const { toastVisible, toastMessage, toastType, showError } = useToast()
 
 const menuItems = [
   { id: 'general', icon: '⚙', text: '通用' },
@@ -547,25 +551,6 @@ function validate() {
   return true
 }
 
-function showError(message) {
-  const existing = document.querySelector('.toast')
-  if (existing) existing.remove()
-
-  const toast = document.createElement('div')
-  toast.className = 'toast error'
-  toast.innerHTML = `<span class="toast-icon">✕</span><span class="toast-message">${message}</span>`
-  document.body.appendChild(toast)
-
-  setTimeout(() => {
-    toast.classList.add('show')
-  }, 10)
-
-  setTimeout(() => {
-    toast.classList.remove('show')
-    setTimeout(() => toast.remove(), 300)
-  }, 3000)
-}
-
 async function save() {
   if (!validate()) return
 
@@ -700,12 +685,12 @@ function openProviderDocs() {
 }
 
 .settings-menu-item:hover {
-  background: rgba(102, 126, 234, 0.08);
+  background: rgba(var(--primary-rgb), 0.08);
   color: var(--primary-color);
 }
 
 .settings-menu-item.active {
-  background: rgba(102, 126, 234, 0.12);
+  background: rgba(var(--primary-rgb), 0.12);
   color: var(--primary-color);
   border-left-color: var(--primary-color);
   font-weight: 600;
@@ -772,7 +757,7 @@ function openProviderDocs() {
 }
 
 .input-field.error {
-  border-color: #e74c3c;
+  border-color: var(--error-dark);
 }
 
 .path-input-group {
@@ -827,7 +812,7 @@ function openProviderDocs() {
 
 .config-item:hover {
   background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(102, 126, 234, 0.3);
+  border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .config-item:last-child {
@@ -883,7 +868,7 @@ function openProviderDocs() {
   object-fit: contain;
   background: white;
   border-radius: 16px;
-  filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
+  filter: drop-shadow(0 4px 12px rgba(var(--primary-rgb), 0.3));
 }
 
 .about-name {
@@ -982,14 +967,14 @@ function openProviderDocs() {
 }
 
 .api-test-result.success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #16a34a;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success-dark);
+  border: 1px solid rgba(var(--success-rgb), 0.3);
 }
 
 .api-test-result.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-dark);
+  border: 1px solid rgba(var(--error-rgb), 0.3);
 }
 </style>
