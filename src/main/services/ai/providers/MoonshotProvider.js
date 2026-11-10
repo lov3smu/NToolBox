@@ -3,17 +3,18 @@ import BaseProvider from './BaseProvider.js'
 class MoonshotProvider extends BaseProvider {
   constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
     super({
-      name: 'Moonshot',
+      name: 'Kimi',
       apiKey,
       hostname: 'api.moonshot.cn',
       path: '/v1/chat/completions',
-      validateModel: 'moonshot-v1-8k',
+      modelsPath: '/v1/models',
+      validateModel: 'kimi-k3',
       models: [
-        { id: 'moonshot-v1-8k', name: 'Moonshot V1 8K' },
-        { id: 'moonshot-v1-32k', name: 'Moonshot V1 32K' },
-        { id: 'moonshot-v1-128k', name: 'Moonshot V1 128K' }
+        { id: 'kimi-k3.1-pro', name: 'kimi-k3.1-pro' },
+        { id: 'kimi-k3.1-pro-highspeed', name: 'kimi-k3.1-pro-highspeed' },
+        { id: 'kimi-k3', name: 'kimi-k3' }
       ],
-      defaultModel: 'moonshot-v1-8k',
+      defaultModel: 'kimi-k3.1-pro',
       timeout,
       connectionTimeout
     })

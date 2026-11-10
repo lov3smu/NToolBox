@@ -1,34 +1,149 @@
-import { app, dialog, shell } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import { app } from 'electron'
+import { autoUpdater, CancellationToken } from 'electron-updater'
 import { log } from '../utils'
 import { UPDATE_CHECK_INTERVAL } from '../constants'
 import { getConfig } from './config'
+import { IPC_EVENTS } from '../../shared/ipc'
 
 autoUpdater.logger = log
 autoUpdater.logger.transports.file.level = 'info'
 autoUpdater.logger.transports.console.level = 'debug'
-
-if (process.platform === 'win32') {
-  autoUpdater.autoDownload = false
-  autoUpdater.allowPrerelease = false
-}
+autoUpdater.autoDownload = false
+autoUpdater.allowPrerelease = false
 
 let updateCheckInterval = null
+let targetWindow = null
+let downloadCancellation = null
+let downloadCancelled = false
+let manualCheck = false
+let initialized = false
 
-export function checkForUpdates(manual = true, mainWindow = null) {
+let updateState = {
+  phase: 'idle',
+  currentVersion: app.getVersion(),
+  latestVersion: '',
+  releaseNotes: '',
+  releaseDate: '',
+  progress: null,
+  error: '',
+  manual: false
+}
+
+function setTargetWindow(win) {
+  if (win && !win.isDestroyed()) targetWindow = win
+  return targetWindow
+}
+
+function publish(patch = {}, { open = false } = {}) {
+  updateState = { ...updateState, ...patch }
+  const win = targetWindow
+  if (!win || win.isDestroyed()) return
+  win.webContents.send(IPC_EVENTS.updateState, { ...updateState, open })
+}
+
+function normalizeReleaseNotes(info) {
+  const notes = info?.releaseNotes
+  if (Array.isArray(notes)) {
+    return notes
+      .map((entry) => (typeof entry === 'string' ? entry : entry?.note || ''))
+      .filter(Boolean)
+      .join('\n\n')
+  }
+  return typeof notes === 'string' ? notes : ''
+}
+
+function describeInfo(info) {
+  return {
+    latestVersion: info?.version || '',
+    releaseNotes: normalizeReleaseNotes(info),
+    releaseDate: info?.releaseDate || ''
+  }
+}
+
+function initUpdater() {
+  if (initialized) return
+  initialized = true
+
+  autoUpdater.on('checking-for-update', () => {
+    log.info('正在检查更新...')
+    publish({ phase: 'checking', error: '', progress: null })
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    log.info('发现新版本:', info.version)
+    publish({ phase: 'available', ...describeInfo(info), progress: null, error: '' }, { open: true })
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    log.info('当前已是最新版本')
+    publish(
+      { phase: 'not-available', latestVersion: '', releaseNotes: '', releaseDate: '', progress: null, error: '' },
+      { open: manualCheck }
+    )
+  })
+
+  autoUpdater.on('error', (err) => {
+    log.error('更新出错:', err)
+    publish({ phase: 'error', error: err?.message || '检查更新失败', progress: null }, { open: manualCheck })
+  })
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    log.info(`下载进度: ${progressObj.percent}%`)
+    publish({ phase: 'downloading', progress: Math.round(progressObj.percent) })
+  })
+
+  autoUpdater.on('update-cancelled', () => {
+    log.info('更新下载已取消')
+    publish({ phase: 'available', progress: null, error: '' })
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    log.info('更新下载完成:', info)
+    publish({ phase: 'downloaded', ...describeInfo(info), progress: 100, error: '' }, { open: true })
+  })
+}
+
+function showTargetWindow(win) {
+  if (!win || win.isDestroyed()) return
+  if (!win.isVisible()) win.show()
+  if (win.isMinimized()) win.restore()
+  win.focus()
+}
+
+export async function checkForUpdates(manual = true, win = null) {
+  initUpdater()
+
+  const target = setTargetWindow(win)
+  manualCheck = manual
+
   if (!app.isPackaged) {
     log.info('开发环境，跳过更新检查')
-    if (manual && mainWindow && !mainWindow.isDestroyed()) {
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: '检查更新',
-        message: '当前为开发环境，无法检查更新。\n请打包后测试更新功能。',
-        buttons: ['确定']
-      })
+    if (manual) {
+      showTargetWindow(target)
+      publish(
+        {
+          phase: 'dev-environment',
+          currentVersion: app.getVersion(),
+          latestVersion: '',
+          releaseNotes: '',
+          releaseDate: '',
+          progress: null,
+          error: '',
+          manual: true
+        },
+        { open: true }
+      )
     }
-    return Promise.resolve({ status: 'dev-environment' })
+    return { status: 'dev-environment' }
   }
 
+  if (['downloading', 'downloaded', 'installing'].includes(updateState.phase)) {
+    showTargetWindow(target)
+    publish({ manual }, { open: manual })
+    return { status: updateState.phase }
+  }
+
+  if (manual) showTargetWindow(target)
   log.info('开始检查更新，手动触发:', manual)
 
   autoUpdater.setFeedURL({
@@ -38,107 +153,76 @@ export function checkForUpdates(manual = true, mainWindow = null) {
     releaseType: 'release'
   })
 
-  autoUpdater.removeAllListeners('checking-for-update')
-  autoUpdater.removeAllListeners('update-available')
-  autoUpdater.removeAllListeners('update-not-available')
-  autoUpdater.removeAllListeners('error')
-  autoUpdater.removeAllListeners('download-progress')
-  autoUpdater.removeAllListeners('update-downloaded')
+  publish(
+    {
+      phase: 'checking',
+      currentVersion: app.getVersion(),
+      progress: null,
+      error: '',
+      manual
+    },
+    { open: manual }
+  )
 
-  return new Promise((resolve) => {
-    autoUpdater.once('checking-for-update', () => {
-      log.info('正在检查更新...')
-      if (manual && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('update-status', '正在检查更新...')
-      }
-    })
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return { status: updateState.phase, info: result?.updateInfo }
+  } catch (err) {
+    log.error('检查更新失败:', err)
+    publish({ phase: 'error', error: err?.message || '检查更新失败', progress: null }, { open: manual })
+    return { status: 'error', error: err }
+  }
+}
 
-    autoUpdater.once('update-available', (info) => {
-      log.info('发现新版本:', info.version)
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog
-          .showMessageBox(mainWindow, {
-            type: 'info',
-            title: '发现新版本',
-            message: `发现新版本 ${info.version}，是否立即下载？`,
-            buttons: ['下载', '以后']
-          })
-          .then((result) => {
-            if (result.response === 0) autoUpdater.downloadUpdate()
-          })
-      }
-      resolve({ status: 'update-available', info })
-    })
+export async function downloadUpdate(win = null) {
+  initUpdater()
+  setTargetWindow(win)
 
-    autoUpdater.once('update-not-available', () => {
-      log.info('当前已是最新版本')
-      if (manual && mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-          type: 'info',
-          title: '检查更新',
-          message: '当前已是最新版本',
-          buttons: ['确定']
-        })
-      }
-      resolve({ status: 'update-not-available' })
-    })
+  if (!app.isPackaged) {
+    publish({ phase: 'dev-environment', error: '' }, { open: true })
+    return { status: 'dev-environment' }
+  }
 
-    autoUpdater.once('error', (err) => {
-      log.error('更新出错:', err)
+  if (updateState.phase === 'downloading') return { status: 'downloading' }
+  if (updateState.phase === 'downloaded') return { status: 'downloaded' }
+  if (updateState.phase === 'installing') return { status: 'installing' }
 
-      if (err.message && err.message.includes('not signed')) {
-        log.warn('更新包签名验证失败')
-        if (manual && mainWindow && !mainWindow.isDestroyed()) {
-          dialog
-            .showMessageBox(mainWindow, {
-              type: 'warning',
-              title: '更新失败',
-              message: '无法安装更新：更新包签名验证失败。\n\n请前往 GitHub Releases 页面手动下载最新版本。',
-              buttons: ['前往下载', '取消']
-            })
-            .then((result) => {
-              if (result.response === 0) {
-                shell.openExternal('https://github.com/lov3smu/NToolBox/releases')
-              }
-            })
-        }
-        resolve({ status: 'error', error: err })
-        return
-      }
+  downloadCancelled = false
+  downloadCancellation = new CancellationToken()
+  publish({ phase: 'downloading', progress: 0, error: '' }, { open: true })
 
-      if (manual && mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showErrorBox('检查更新失败', `无法检查更新：${err.message}`)
-      }
-      resolve({ status: 'error', error: err })
-    })
+  try {
+    await autoUpdater.downloadUpdate(downloadCancellation)
+    return { status: 'downloaded' }
+  } catch (err) {
+    if (downloadCancelled) {
+      log.info('已取消更新下载')
+      publish({ phase: 'available', progress: null, error: '' })
+      return { status: 'cancelled' }
+    }
+    log.error('下载更新失败:', err)
+    publish({ phase: 'error', error: err?.message || '下载更新失败', progress: null }, { open: true })
+    return { status: 'error', error: err }
+  } finally {
+    downloadCancellation = null
+    downloadCancelled = false
+  }
+}
 
-    autoUpdater.once('download-progress', (progressObj) => {
-      log.info(`下载进度: ${progressObj.percent}%`)
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('update-progress', progressObj.percent)
-      }
-    })
+export function cancelUpdateDownload() {
+  if (!downloadCancellation) return false
+  downloadCancelled = true
+  downloadCancellation.cancel()
+  downloadCancellation = null
+  publish({ phase: 'available', progress: null, error: '' })
+  return true
+}
 
-    autoUpdater.once('update-downloaded', (info) => {
-      log.info('更新下载完成:', info)
-      if (!mainWindow || mainWindow.isDestroyed()) {
-        log.warn('主窗口不存在，跳过更新安装提示')
-        return
-      }
-      dialog
-        .showMessageBox(mainWindow, {
-          type: 'info',
-          title: '更新就绪',
-          message: `新版本 ${info.version} 已下载完成，是否立即重启安装？`,
-          buttons: ['立即重启', '稍后']
-        })
-        .then((result) => {
-          if (result.response === 0) autoUpdater.quitAndInstall()
-        })
-    })
-
-    autoUpdater.checkForUpdatesAndNotify()
-  })
+export function installUpdate() {
+  if (updateState.phase !== 'downloaded') return false
+  publish({ phase: 'installing', error: '' }, { open: true })
+  setTimeout(() => autoUpdater.quitAndInstall(), 120)
+  return true
 }
 
 export function startAutoUpdateCheck(mainWindow) {

@@ -3,8 +3,11 @@ import path from 'path'
 import fs from 'fs'
 import { log } from '../utils'
 import { getConfigPath, installDir } from '../utils/path'
-import { VALID_CLOSE_ACTIONS } from '../constants'
 import { initCrypto, decryptDbPassword, encryptDbPassword } from '../utils/crypto'
+import { validateConfig, normalizeShortcuts } from './configValidation'
+import { VALID_THEMES, VALID_THEME_STYLES, VALID_FONT_SIZES } from '../constants'
+
+export { validateConfig }
 
 let config = {}
 
@@ -14,6 +17,73 @@ export function getConfig() {
 
 export function setConfig(newConfig) {
   config = newConfig
+}
+
+const LEGACY_MODEL_NAMES = {
+  bailian: {
+    'qwen3.8-max': 'Qwen3.8 Max (旗舰)',
+    'qwen3.7-plus': 'Qwen3.7 Plus (均衡)',
+    'qwen3.8-flash': 'Qwen3.8 Flash (快速)'
+  },
+  moonshot: {
+    'kimi-k3.1-pro': 'Kimi K3.1 Pro (旗舰)',
+    'kimi-k3.1-pro-highspeed': 'Kimi K3.1 Pro 高速版',
+    'kimi-k3': 'Kimi K3'
+  },
+  zhipu: {
+    'glm-5.3': 'GLM-5.3 (旗舰)',
+    'glm-5.2': 'GLM-5.2',
+    'glm-5': 'GLM-5',
+    'glm-4.7': 'GLM-4.7',
+    'glm-4.7-flash': 'GLM-4.7-Flash (免费)'
+  },
+  minimax: {
+    'MiniMax-M3.1-Flash': 'MiniMax M3.1 Flash (快速)',
+    'MiniMax-M3': 'MiniMax M3 (旗舰)',
+    'MiniMax-M2.7': 'MiniMax M2.7',
+    'MiniMax-M2.7-highspeed': 'MiniMax M2.7 高速版'
+  },
+  volcengine: {
+    'doubao-seed-evolving': 'Doubao Seed Evolving',
+    'doubao-seed-2.1-pro': 'Doubao Seed 2.1 Pro',
+    'doubao-seed-2.0-pro': 'Doubao Seed 2.0 Pro'
+  },
+  deepseek: {
+    'deepseek-v4-pro': 'DeepSeek V4 Pro (旗舰)',
+    'deepseek-flash': 'DeepSeek Flash (快速)'
+  }
+}
+
+function normalizeModelName(type, id, name) {
+  const trimmed = typeof name === 'string' ? name.trim() : ''
+  if (!trimmed) return id
+  return LEGACY_MODEL_NAMES[type]?.[id] === trimmed ? id : trimmed
+}
+
+function normalizeAiModels(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const result = {}
+  for (const [type, entry] of Object.entries(raw)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+    const seen = new Set()
+    const models = []
+    if (Array.isArray(entry.models)) {
+      for (const model of entry.models) {
+        if (!model || typeof model !== 'object' || typeof model.id !== 'string') continue
+        const id = model.id.trim()
+        if (!id || seen.has(id)) continue
+        seen.add(id)
+        models.push({
+          id,
+          name: normalizeModelName(type, id, model.name)
+        })
+      }
+    }
+    const defaultModel = typeof entry.default === 'string' ? entry.default.trim() : ''
+    if (models.length === 0 && !defaultModel) continue
+    result[type] = { default: defaultModel, models }
+  }
+  return result
 }
 
 function getDefaultConfigContent() {
@@ -27,6 +97,9 @@ function getDefaultConfigContent() {
     auto_start: true,
     first_launch_done: false,
     close_action: 'ask',
+    theme: 'system',
+    theme_style: 'sapphire',
+    font_size: 'medium',
     ai_provider: 'bailian',
     ai_api_keys: {
       bailian: '',
@@ -38,6 +111,7 @@ function getDefaultConfigContent() {
       volcengine_endpoint_id: '',
       deepseek: ''
     },
+    ai_models: {},
     databases: [
       'order_db',
       'product_db',
@@ -63,13 +137,6 @@ function getDefaultConfigContent() {
       { name: 'DQL', description: 'Data Query Language (SELECT)' }
     ],
     shortcuts: {
-      password: 'CmdOrCtrl+P',
-      cron: 'CmdOrCtrl+Shift+C',
-      unixtimestamp: 'CmdOrCtrl+Shift+T',
-      yamlEditor: 'CmdOrCtrl+Shift+Y',
-      fileManager: 'CmdOrCtrl+Shift+F',
-      jsonParser: 'CmdOrCtrl+J',
-      chat: 'CmdOrCtrl+L',
       settings: 'CmdOrCtrl+,'
     }
   }
@@ -86,47 +153,6 @@ async function createDefaultConfig() {
     log.error('创建默认配置文件失败:', error)
     throw error
   }
-}
-
-export function validateConfig(cfg) {
-  if (!cfg || typeof cfg !== 'object') return '配置不是有效对象'
-  if (typeof cfg.base_path !== 'string') return 'base_path 必须是字符串'
-  if (typeof cfg.developer_ch_name !== 'string') return 'developer_ch_name 必须是字符串'
-  if (typeof cfg.developer_en_name !== 'string') return 'developer_en_name 必须是字符串'
-  if (cfg.text_edit_app !== undefined && typeof cfg.text_edit_app !== 'string') return 'text_edit_app 必须是字符串'
-  if (typeof cfg.auto_update !== 'boolean') return 'auto_update 必须是布尔值'
-  if (typeof cfg.auto_start !== 'boolean') return 'auto_start 必须是布尔值'
-  if (cfg.ai_provider !== undefined && typeof cfg.ai_provider !== 'string') return 'ai_provider 必须是字符串'
-  if (cfg.ai_api_keys !== undefined && typeof cfg.ai_api_keys !== 'object') return 'ai_api_keys 必须是对象'
-  if (!Array.isArray(cfg.databases)) return 'databases 必须是数组'
-  for (const db of cfg.databases) {
-    if (typeof db !== 'string') return 'databases 中的每项必须是字符串'
-  }
-  if (!Array.isArray(cfg.script_types)) return 'script_types 必须是数组'
-  for (const st of cfg.script_types) {
-    if (!st || typeof st !== 'object') return 'script_types 中的每项必须是对象'
-    if (typeof st.name !== 'string') return 'script_types.name 必须是字符串'
-  }
-  if (cfg.close_action && !VALID_CLOSE_ACTIONS.includes(cfg.close_action)) return 'close_action 值不合法'
-  if (cfg.shortcuts !== undefined) {
-    if (typeof cfg.shortcuts !== 'object') return 'shortcuts 必须是对象'
-    const validKeys = [
-      'password',
-      'cron',
-      'unixtimestamp',
-      'yamlEditor',
-      'fileManager',
-      'jsonParser',
-      'chat',
-      'settings',
-      'home'
-    ]
-    for (const key of Object.keys(cfg.shortcuts)) {
-      if (!validKeys.includes(key)) return `shortcuts.${key} 不是有效的快捷键配置项`
-      if (typeof cfg.shortcuts[key] !== 'string') return `shortcuts.${key} 必须是字符串`
-    }
-  }
-  return null
 }
 
 export async function loadConfig() {
@@ -155,6 +181,9 @@ export async function loadConfig() {
     if (config.auto_start === undefined) config.auto_start = true
     if (config.first_launch_done === undefined) config.first_launch_done = false
     if (config.close_action === undefined) config.close_action = 'ask'
+    if (!VALID_THEMES.includes(config.theme)) config.theme = 'system'
+    if (!VALID_THEME_STYLES.includes(config.theme_style)) config.theme_style = 'sapphire'
+    if (!VALID_FONT_SIZES.includes(config.font_size)) config.font_size = 'medium'
     if (config.ai_provider === undefined) config.ai_provider = 'bailian'
 
     if (!config.ai_api_keys || typeof config.ai_api_keys !== 'object') {
@@ -163,16 +192,14 @@ export async function loadConfig() {
       config.ai_api_keys = { ...defaultConfig.ai_api_keys, ...config.ai_api_keys }
     }
 
+    config.ai_models = normalizeAiModels(config.ai_models)
+
     if (loadedConfig.bailian_api_key && !config.ai_api_keys.bailian) {
       config.ai_api_keys.bailian = loadedConfig.bailian_api_key
       delete config.bailian_api_key
     }
 
-    if (!config.shortcuts || typeof config.shortcuts !== 'object') {
-      config.shortcuts = { ...defaultConfig.shortcuts }
-    } else {
-      config.shortcuts = { ...defaultConfig.shortcuts, ...config.shortcuts }
-    }
+    config.shortcuts = normalizeShortcuts(config.shortcuts, defaultConfig.shortcuts)
 
     if (Array.isArray(config.dbConnections)) {
       for (const conn of config.dbConnections) {
@@ -200,14 +227,16 @@ export async function loadConfig() {
 
 export async function saveConfig(newConfig) {
   try {
-    const error = validateConfig(newConfig)
+    // 与现有配置合并，避免局部保存（如设置页不提交 first_launch_done、dbConnections）丢字段
+    const mergedConfig = { ...config, ...newConfig }
+    const error = validateConfig(mergedConfig)
     if (error) {
       log.error('配置校验失败:', error)
-      log.error('配置内容:', JSON.stringify(newConfig, null, 2))
       return false
     }
 
-    const configToSave = JSON.parse(JSON.stringify(newConfig))
+    const configToSave = JSON.parse(JSON.stringify(mergedConfig))
+    configToSave.ai_models = normalizeAiModels(configToSave.ai_models)
 
     if (Array.isArray(configToSave.dbConnections)) {
       for (const conn of configToSave.dbConnections) {
@@ -220,8 +249,13 @@ export async function saveConfig(newConfig) {
     }
 
     const configPath = getConfigPath()
+    try {
+      await fs.promises.copyFile(configPath, `${configPath}.bak`)
+    } catch (error) {
+      if (error.code !== 'ENOENT') log.error('备份配置文件失败:', error)
+    }
     await fs.promises.writeFile(configPath, JSON.stringify(configToSave, null, 2), 'utf8')
-    config = newConfig
+    config = { ...mergedConfig, ai_models: configToSave.ai_models }
     log.info('配置保存成功')
     return true
   } catch (error) {

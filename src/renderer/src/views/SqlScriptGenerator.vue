@@ -1,112 +1,100 @@
 <template>
-  <div class="home-container" :style="{ width: windowWidth + 'px' }">
-    <header>
-      <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-        </svg>
-        SQL Script Generator
-      </h1>
-      <div class="subtitle">SQL脚本生成工具</div>
-    </header>
+  <PageLayout tool-path="/sql-generator">
+    <template #actions>
+      <TabBar
+        :model-value="operateType"
+        :tabs="operateTabs"
+        aria-label="脚本操作类型"
+        @update:model-value="setOperateType"
+      />
+      <span class="toolbar-sep" />
+      <button class="btn btn-primary btn-sm" :disabled="loading" @click="generate">
+        {{ loading ? '生成中...' : '生成脚本' }}
+      </button>
+    </template>
 
-    <div class="main-content">
-      <div class="section">
-        <label class="section-label">操作类型</label>
-        <div class="button-group">
-          <button class="type-btn" :class="{ active: operateType === 'FIX' }" @click="setOperateType('FIX')">
-            FIX
-          </button>
-          <button class="type-btn" :class="{ active: operateType === 'PUBLISH' }" @click="setOperateType('PUBLISH')">
-            PUBLISH
-          </button>
-          <button class="type-btn" :class="{ active: operateType === 'QUERY' }" @click="setOperateType('QUERY')">
-            QUERY
-          </button>
+    <div class="page-body">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">脚本信息</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field">
+              <label>脚本用途</label>
+              <input
+                v-model="usage"
+                type="text"
+                placeholder="请输入脚本用途"
+                class="input-field"
+                @input="updateDirName"
+              />
+            </div>
+            <div class="field">
+              <label>数据库</label>
+              <select v-model="database" class="select-field">
+                <option value="">请选择数据库</option>
+                <option v-for="db in databases" :key="db" :value="db">
+                  {{ db }}
+                </option>
+              </select>
+            </div>
+            <div v-if="operateType !== 'QUERY'" class="field">
+              <label>脚本类型</label>
+              <select v-model="scriptType" class="select-field">
+                <option value="">请选择脚本类型</option>
+                <option v-for="type in scriptTypes" :key="type.name" :value="type.name">
+                  {{ type.name }} - {{ type.description }}
+                </option>
+              </select>
+            </div>
+            <div class="field">
+              <label>目录名</label>
+              <input v-model="dirName" type="text" placeholder="留空自动生成" class="input-field" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="section">
-        <label class="section-label">脚本用途</label>
-        <input v-model="usage" type="text" placeholder="请输入脚本用途" class="input-field" @input="updateDirName" />
-      </div>
-
-      <div class="section">
-        <label class="section-label">数据库</label>
-        <select v-model="database" class="select-field">
-          <option value="">请选择数据库</option>
-          <option v-for="db in databases" :key="db" :value="db">
-            {{ db }}
-          </option>
-        </select>
-      </div>
-
-      <div class="section script-type-section" :class="{ hidden: operateType === 'QUERY' }">
-        <label class="section-label">脚本类型</label>
-        <select v-model="scriptType" class="select-field">
-          <option value="">请选择脚本类型</option>
-          <option v-for="type in scriptTypes" :key="type.name" :value="type.name">
-            {{ type.name }} - {{ type.description }}
-          </option>
-        </select>
-      </div>
-
-      <div class="section">
-        <label class="section-label">目录名</label>
-        <input v-model="dirName" type="text" placeholder="目录名（留空自动生成）" class="input-field" />
-      </div>
-
-      <div class="action-buttons">
-        <button class="btn btn-primary" :disabled="loading" @click="generate">
-          {{ loading ? '生成中...' : '生成脚本' }}
-        </button>
-        <button class="btn btn-default" @click="openSettings">设置</button>
-      </div>
-
-      <div
-        v-if="result"
-        class="result-section"
-        :class="{ 'result-success': result.success, 'result-error': !result.success }"
-      >
-        <h3>生成结果</h3>
-        <div class="result-content" :class="{ success: result.success, error: !result.success }">
+      <div v-if="result" class="panel result-panel" :class="result.success ? 'is-success' : 'is-error'">
+        <div class="panel-header">
+          <span class="panel-title">生成结果</span>
+        </div>
+        <div class="panel-body">
           <template v-if="result.success">
-            <div class="success-message">脚本生成成功！</div>
-            <div><strong>文件名：</strong> {{ result.filename }}</div>
-            <div class="file-path"><strong>文件路径：</strong><br />{{ result.filePath }}</div>
+            <div class="result-message success">脚本生成成功</div>
+            <div class="result-row"><span class="result-label">文件名</span>{{ result.filename }}</div>
+            <div class="result-row">
+              <span class="result-label">文件路径</span><code>{{ result.filePath }}</code>
+            </div>
             <div class="result-actions">
-              <button class="btn-small" @click="openFile">打开文件</button>
-              <button class="btn-small" @click="openFolder">打开文件夹</button>
+              <button class="btn btn-secondary btn-sm" @click="openFile">打开文件</button>
+              <button class="btn btn-secondary btn-sm" @click="openFolder">打开文件夹</button>
             </div>
           </template>
-          <template v-else>
-            <div class="error-message">
-              {{ result.error }}
-            </div>
-          </template>
+          <div v-else class="result-message error">{{ result.error }}</div>
         </div>
       </div>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useWindowWidth, useAutoDirName, useConfig } from '@/composables'
-import {
-  generateScript,
-  openFile as apiOpenFile,
-  openFolder as apiOpenFolder,
-  openSettings as apiOpenSettings,
-  onConfigChanged
-} from '@/api'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAutoDirName, useConfig } from '@/composables'
+import PageLayout from '@/layouts/PageLayout.vue'
+import TabBar from '@/components/TabBar.vue'
+import { generateScript, openFile as apiOpenFile, openFolder as apiOpenFolder } from '@/api'
 
 const { config } = useConfig()
-const windowWidth = useWindowWidth()
 const usage = ref('')
 const { dirName, updateDirName } = useAutoDirName(usage)
+
+const operateTabs = [
+  { key: 'FIX', label: 'FIX' },
+  { key: 'PUBLISH', label: 'PUBLISH' },
+  { key: 'QUERY', label: 'QUERY' }
+]
 
 const operateType = ref('PUBLISH')
 const database = ref('')
@@ -175,239 +163,89 @@ async function openFolder() {
   }
 }
 
-function openSettings() {
-  apiOpenSettings()
-}
-
 onMounted(() => {
   updateDirName(true)
-  onConfigChanged(() => updateDirName(true))
 })
+
+watch(config, () => updateDirName(true))
 </script>
 
 <style scoped>
-.home-container {
-  margin: 0 auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  overflow: hidden;
+.page-body {
+  padding: 12px 16px 16px;
+  width: 100%;
 }
 
-.home-container header {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 30px;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
 }
 
-.home-container header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 20%);
-  pointer-events: none;
-}
-
-.home-container header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 28px;
-  margin-bottom: 10px;
-  position: relative;
-  z-index: 1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.home-container header h1 .header-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.home-container header .subtitle {
-  position: relative;
-  z-index: 1;
-}
-
-.main-content {
-  padding: 30px;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.section {
-  margin-bottom: 25px;
-}
-
-.script-type-section {
-  height: 80px;
-  overflow: hidden;
-  transition:
-    height 0.3s ease,
-    opacity 0.3s ease;
-}
-
-.script-type-section.hidden {
-  height: 0;
-  margin-bottom: 0;
-  opacity: 0;
-}
-
-.section-label {
+.field label {
   display: block;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.button-group {
-  display: flex;
-  gap: 12px;
-}
-
-.type-btn {
-  flex: 1;
-  padding: 14px 16px;
-  border: 2px solid var(--border-color);
-  background: var(--glass-bg);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--text-secondary);
-  transition: var(--transition-normal);
-  outline: none;
 }
 
-.type-btn:focus {
-  outline: none;
+.result-panel {
+  margin-top: 12px;
 }
 
-.type-btn:hover {
-  border-color: var(--primary-color);
-  background: var(--glass-bg-hover);
+.result-panel.is-success .panel-header {
+  color: var(--success-dark);
 }
 
-.type-btn.active {
-  background: var(--primary-gradient);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
+.result-panel.is-error .panel-header {
+  color: var(--error-dark);
 }
 
-.input-field,
-.select-field {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  background: var(--glass-bg);
+.result-message {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.result-message.success {
+  color: var(--success-dark);
+}
+
+.result-message.error {
+  color: var(--error-dark);
+}
+
+.result-row {
+  display: flex;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: var(--font-size-sm);
   color: var(--text-primary);
 }
 
-.input-field:focus,
-.select-field:focus {
-  outline: none;
-  border-color: var(--primary-color);
+.result-label {
+  width: 64px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
 }
 
-.action-buttons {
-  display: flex;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-.action-buttons .btn {
-  flex: 1;
-}
-
-.result-section {
-  margin-top: 30px;
-  padding: 24px;
-  background: rgba(248, 249, 250, 0.6);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-}
-
-.result-section h3 {
-  margin-bottom: 15px;
-  font-size: 16px;
-}
-
-.result-content {
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.result-success {
-  border-color: rgba(var(--success-rgb), 0.3);
-  background: rgba(var(--success-rgb), 0.1);
-}
-
-.success-message {
-  color: var(--success-darker);
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 15px;
-}
-
-.file-path {
+.result-row code {
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 12px;
-  background: rgba(0, 0, 0, 0.05);
-  padding: 10px;
-  border-radius: var(--radius-sm);
-  margin-top: 10px;
+  font-size: var(--font-size-xs);
   color: var(--text-secondary);
   word-break: break-all;
 }
 
-.result-error {
-  border-color: rgba(var(--error-rgb), 0.3);
-  background: rgba(var(--error-rgb), 0.1);
-}
-
-.error-message {
-  color: var(--error-dark);
-  font-size: 16px;
-  font-weight: 600;
-}
-
 .result-actions {
-  margin-top: 15px;
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-.btn-small {
-  padding: 8px 16px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--primary-gradient);
-  color: white;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+@media (max-width: 860px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

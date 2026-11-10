@@ -1,27 +1,21 @@
 <template>
-  <div class="yaml-container" :style="{ width: windowWidth + 'px' }">
-    <header>
-      <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
-        YAML编辑(验证)器
-      </h1>
-      <div class="subtitle">YAML格式化、校验、转换工具</div>
-    </header>
+  <PageLayout tool-path="/yaml-editor">
+    <template #actions>
+      <button class="btn btn-primary btn-sm" @click="formatYaml">格式化</button>
+      <button class="btn btn-secondary btn-sm" @click="compressYaml">压缩</button>
+      <button class="btn btn-secondary btn-sm" @click="validateYaml">校验</button>
+      <button class="btn btn-secondary btn-sm" @click="yamlToJson">转 JSON</button>
+    </template>
 
-    <div class="yaml-content">
+    <div class="page-body">
       <div class="editor-layout">
-        <div class="editor-panel input-panel">
+        <div class="panel editor-panel">
           <div class="panel-header">
-            <span class="panel-title">YAML输入</span>
+            <span class="panel-title">YAML 输入</span>
             <div class="panel-actions">
-              <button class="btn-action" @click="clearInput">清空</button>
-              <button class="btn-action" @click="loadExample">示例</button>
-              <button class="btn-action" @click="loadFromFile">文件</button>
+              <button class="btn btn-secondary btn-xs" @click="clearInput">清空</button>
+              <button class="btn btn-secondary btn-xs" @click="loadExample">示例</button>
+              <button class="btn btn-secondary btn-xs" @click="loadFromFile">文件</button>
             </div>
           </div>
           <div class="editor-wrapper">
@@ -48,23 +42,23 @@
           </div>
         </div>
 
-        <div class="editor-panel output-panel">
+        <div class="panel editor-panel">
           <div class="panel-header">
             <span class="panel-title">结果输出</span>
-            <div class="panel-actions">
-              <button class="btn-action" @click="copyOutput">复制</button>
+            <div class="segmented">
+              <button class="segmented-item" :class="{ active: outputType === 'yaml' }" @click="outputType = 'yaml'">
+                YAML
+              </button>
+              <button class="segmented-item" :class="{ active: outputType === 'json' }" @click="outputType = 'json'">
+                JSON
+              </button>
+              <button class="segmented-item" :class="{ active: outputType === 'tree' }" @click="outputType = 'tree'">
+                树形
+              </button>
             </div>
-          </div>
-          <div class="output-tabs">
-            <button class="output-tab" :class="{ active: outputType === 'yaml' }" @click="outputType = 'yaml'">
-              格式化YAML
-            </button>
-            <button class="output-tab" :class="{ active: outputType === 'json' }" @click="outputType = 'json'">
-              转换为JSON
-            </button>
-            <button class="output-tab" :class="{ active: outputType === 'tree' }" @click="outputType = 'tree'">
-              树形视图
-            </button>
+            <div class="panel-actions">
+              <button class="btn btn-secondary btn-xs" @click="copyOutput">复制</button>
+            </div>
           </div>
           <div class="editor-wrapper">
             <div v-if="outputType === 'yaml' || outputType === 'json'" class="editor-with-lines">
@@ -94,13 +88,6 @@
         </div>
       </div>
 
-      <div class="action-bar">
-        <button class="btn btn-primary" @click="formatYaml">格式化</button>
-        <button class="btn btn-secondary" @click="compressYaml">压缩</button>
-        <button class="btn btn-secondary" @click="validateYaml">校验</button>
-        <button class="btn btn-secondary" @click="yamlToJson">转JSON</button>
-      </div>
-
       <div class="status-bar">
         <div class="status-item" :class="statusClass">
           <span class="status-icon">{{ statusIcon }}</span>
@@ -111,9 +98,11 @@
         </div>
       </div>
 
-      <div class="help-section">
-        <div class="help-title">YAML语法说明</div>
-        <div class="help-content">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">YAML 语法说明</span>
+        </div>
+        <div class="panel-body help-content">
           <p><strong>基本语法：</strong></p>
           <ul>
             <li>使用缩进表示层级关系，缩进空格数不限（通常2或4个空格）</li>
@@ -138,19 +127,18 @@
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible }">
-      <span class="toast-icon">✓</span>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
-  </div>
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
+  </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useWindowWidth } from '@/composables'
+import { useToast } from '@/composables'
 import * as yaml from 'js-yaml'
+import Toast from '@/components/Toast.vue'
+import PageLayout from '@/layouts/PageLayout.vue'
 
-const windowWidth = useWindowWidth()
+const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
 
 const textareaRef = ref(null)
 const lineNumbersRef = ref(null)
@@ -165,8 +153,6 @@ const statusText = ref('等待输入')
 const statusClass = ref('status-error')
 const statusIcon = ref('')
 const errorDetail = ref('')
-const toastVisible = ref(false)
-const toastMessage = ref('')
 const treeHtml = ref('')
 
 const inputLines = computed(() => {
@@ -345,7 +331,7 @@ watch(outputType, () => {
 
 function formatYaml() {
   if (!yamlInput.value.trim()) {
-    showToast('请输入YAML内容')
+    showWarning('请输入YAML内容')
     return
   }
 
@@ -358,15 +344,15 @@ function formatYaml() {
       sortKeys: false
     })
     onInputChange()
-    showToast('格式化成功')
+    showSuccess('格式化成功')
   } catch (e) {
-    showToast('格式化失败: ' + e.message)
+    showError('格式化失败: ' + e.message)
   }
 }
 
 function compressYaml() {
   if (!yamlInput.value.trim()) {
-    showToast('请输入YAML内容')
+    showWarning('请输入YAML内容')
     return
   }
 
@@ -381,9 +367,9 @@ function compressYaml() {
       })
       .replace(/\n+/g, '\n')
     onInputChange()
-    showToast('压缩成功')
+    showSuccess('压缩成功')
   } catch (e) {
-    showToast('压缩失败: ' + e.message)
+    showError('压缩失败: ' + e.message)
   }
 }
 
@@ -391,7 +377,7 @@ function validateYaml() {
   if (!yamlInput.value.trim()) {
     statusText.value = 'YAML内容不能为空'
     statusClass.value = 'status-error'
-    showToast('请输入YAML内容')
+    showWarning('请输入YAML内容')
     return
   }
 
@@ -400,7 +386,7 @@ function validateYaml() {
     statusText.value = 'YAML格式正确'
     statusClass.value = 'status-valid'
     errorDetail.value = ''
-    showToast('校验通过，YAML格式正确')
+    showSuccess('校验通过，YAML格式正确')
   } catch (e) {
     statusText.value = 'YAML格式错误'
     statusClass.value = 'status-error'
@@ -412,13 +398,13 @@ function validateYaml() {
       errorMsg = `第 ${lineNum} 行，第 ${colNum} 列: ${e.reason || e.message}`
     }
     errorDetail.value = errorMsg
-    showToast('校验失败: ' + errorMsg)
+    showError('校验失败: ' + errorMsg)
   }
 }
 
 function yamlToJson() {
   if (!yamlInput.value.trim()) {
-    showToast('请输入YAML内容')
+    showWarning('请输入YAML内容')
     return
   }
 
@@ -426,9 +412,9 @@ function yamlToJson() {
     const data = yaml.load(yamlInput.value)
     outputType.value = 'json'
     outputContent.value = JSON.stringify(data, null, 2)
-    showToast('转换成功')
+    showSuccess('转换成功')
   } catch (e) {
-    showToast('转换失败: ' + e.message)
+    showError('转换失败: ' + e.message)
   }
 }
 
@@ -440,7 +426,7 @@ function clearInput() {
   statusClass.value = 'status-error'
   errorDetail.value = ''
   treeHtml.value = ''
-  showToast('已清空')
+  showInfo('已清空')
 }
 
 function loadExample() {
@@ -483,7 +469,7 @@ settings:
   retry_count: 3
   debug: false`
   onInputChange()
-  showToast('已加载示例')
+  showInfo('已加载示例')
 }
 
 function loadFromFile() {
@@ -497,10 +483,10 @@ function loadFromFile() {
     reader.onload = (event) => {
       yamlInput.value = event.target.result
       onInputChange()
-      showToast('已加载文件: ' + file.name)
+      showInfo('已加载文件: ' + file.name)
     }
     reader.onerror = () => {
-      showToast('读取文件失败')
+      showError('读取文件失败')
     }
     reader.readAsText(file)
   }
@@ -510,13 +496,13 @@ function loadFromFile() {
 function copyOutput() {
   const content = outputType.value === 'tree' ? JSON.stringify(parsedData.value, null, 2) : outputContent.value
   if (!content) {
-    showToast('没有可复制的内容')
+    showWarning('没有可复制的内容')
     return
   }
   navigator.clipboard
     .writeText(content)
     .then(() => {
-      showToast('已复制到剪贴板')
+      showSuccess('已复制到剪贴板')
     })
     .catch(() => {
       const textarea = document.createElement('textarea')
@@ -527,20 +513,12 @@ function copyOutput() {
       textarea.select()
       try {
         document.execCommand('copy')
-        showToast('已复制到剪贴板')
+        showSuccess('已复制到剪贴板')
       } catch {
-        showToast('复制失败，请手动复制')
+        showError('复制失败，请手动复制')
       }
       document.body.removeChild(textarea)
     })
-}
-
-function showToast(message) {
-  toastMessage.value = message
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 2000)
 }
 
 onMounted(() => {
@@ -549,102 +527,43 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.yaml-container {
-  margin: 0 auto;
-  height: 100vh;
+.page-body {
+  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
-  background: var(--glass-bg);
-  overflow: hidden;
-}
-
-.yaml-container header {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 30px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.yaml-container header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
-  font-size: 28px;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.yaml-container header h1 .header-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.yaml-container header .subtitle {
-  font-size: 14px;
-  opacity: 1;
-}
-
-.yaml-content {
-  padding: 20px;
-  flex: 1;
-  overflow-y: auto;
 }
 
 .editor-layout {
   display: flex;
-  gap: 16px;
-  height: 600px;
-  margin-bottom: 16px;
+  gap: 12px;
+  height: 480px;
 }
 
 .editor-panel {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
 }
 
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: rgba(248, 249, 250, 0.6);
-  border-bottom: 1px solid var(--border-color);
+.editor-panel + .editor-panel {
+  margin-top: 0;
 }
 
-.panel-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
+.panel-header .segmented {
+  margin-left: auto;
 }
 
-.panel-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-action {
-  padding: 4px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: white;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-action:hover {
-  border-color: var(--primary-color);
-  background: var(--glass-bg-hover);
+.panel-header .segmented-item {
+  height: 22px;
+  padding: 0 8px;
+  font-size: var(--font-size-xs);
 }
 
 .editor-wrapper {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -655,16 +574,17 @@ onMounted(() => {
 
 .line-numbers {
   width: 40px;
-  background: rgba(248, 249, 250, 0.6);
-  border-right: 1px solid var(--border-color);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-tertiary);
-  overflow-y: hidden;
-  user-select: none;
+  flex-shrink: 0;
   padding: 12px 8px;
+  overflow: hidden;
+  border-right: 1px solid var(--border-color);
+  background: var(--surface-muted);
+  color: var(--text-tertiary);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: var(--font-size-dense);
+  line-height: 20.8px;
   text-align: right;
+  user-select: none;
 }
 
 .line-number {
@@ -674,15 +594,16 @@ onMounted(() => {
 .code-editor {
   flex: 1;
   height: 100%;
+  min-width: 0;
   padding: 12px;
   border: none;
-  background: transparent;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-primary);
-  resize: none;
   outline: none;
+  resize: none;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: var(--font-size-dense);
+  line-height: 20.8px;
 }
 
 .code-editor::placeholder {
@@ -690,34 +611,7 @@ onMounted(() => {
 }
 
 .output-editor {
-  background: rgba(248, 249, 250, 0.3);
-}
-
-.output-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.output-tab {
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.output-tab:hover {
-  border-color: var(--primary-color);
-}
-
-.output-tab.active {
-  background: var(--primary-gradient);
-  color: white;
-  border-color: transparent;
+  background: var(--surface);
 }
 
 .tree-view {
@@ -725,7 +619,7 @@ onMounted(() => {
   padding: 12px;
   overflow-y: auto;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: var(--font-size-dense);
   line-height: 1.6;
 }
 
@@ -747,7 +641,7 @@ onMounted(() => {
 }
 
 .tree-key {
-  color: var(--primary-color);
+  color: var(--text-primary);
   font-weight: 600;
   margin-right: 8px;
 }
@@ -770,39 +664,27 @@ onMounted(() => {
 
 .input-stats,
 .output-stats {
-  padding: 6px 12px;
-  border-top: 1px solid var(--border-color);
   display: flex;
   gap: 16px;
-  font-size: 12px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-muted);
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-  background: rgba(248, 249, 250, 0.6);
-}
-
-.action-bar {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.action-bar .btn {
-  min-width: 100px;
 }
 
 .status-bar {
-  padding: 12px 16px;
-  background: var(--glass-bg);
+  padding: 8px 12px;
+  background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  margin-bottom: 16px;
 }
 
 .status-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .status-waiting {
@@ -819,32 +701,18 @@ onMounted(() => {
 
 .status-detail {
   margin-top: 8px;
-  padding: 8px 12px;
-  background: rgba(var(--error-rgb), 0.1);
+  padding: 6px 10px;
+  background: rgba(var(--error-rgb), 0.08);
   border-radius: var(--radius-sm);
-  font-size: 12px;
   color: var(--error-dark);
+  font-size: var(--font-size-xs);
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
-.help-section {
-  background: rgba(248, 249, 250, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.help-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-}
-
 .help-content {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
 .help-content p {
@@ -861,9 +729,10 @@ onMounted(() => {
 }
 
 .help-content code {
-  background: rgba(var(--primary-rgb), 0.1);
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
+  background: var(--surface-muted);
+  color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
 }
 </style>

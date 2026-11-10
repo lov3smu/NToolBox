@@ -3,14 +3,6 @@
    参考 cron.ciding.cc 设计 + 毛玻璃风格
    ======================================== */
 
-body {
-  padding: 0;
-  margin: 0;
-  min-height: 100vh;
-  height: 100vh;
-  overflow: hidden;
-}
-
 .cron-wrapper {
   width: 100%;
   height: 100%;
@@ -21,87 +13,17 @@ body {
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* ---------- 顶部字段 Tab 导航 ---------- */
-.field-tabs {
-  display: flex;
-  background: var(--primary-gradient);
-  padding: 12px 16px;
-  gap: 8px;
-  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
-  flex-shrink: 0;
-}
-
-.field-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: rgba(255, 255, 255, 0.9);
-  min-width: 60px;
-}
-
-.field-tab:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-2px);
-}
-
-.field-tab.active {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-weight: 600;
-}
-
-.tab-icon {
-  font-size: 20px;
-  margin-bottom: 4px;
-}
-
-.tab-text {
-  font-size: 13px;
-}
-
 /* ---------- 字段内容区域 ---------- */
 .cron-content {
   flex: 1;
   overflow-y: auto;
-  background: rgba(248, 249, 250, 0.5);
+  background: var(--content-bg);
   padding: 20px;
 }
 
 .field-panel {
   padding: 20px 24px;
   overflow-y: auto;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.panel-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.panel-hint {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  background: var(--bg-tertiary);
-  padding: 4px 10px;
-  border-radius: 12px;
 }
 
 /* ---------- 规则选项 ---------- */
@@ -123,21 +45,21 @@ body {
 }
 
 .rule-option:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
+  border-color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.1);
 }
 
 .rule-option input[type='radio'] {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
   margin-right: 12px;
-  accent-color: var(--primary-color);
+  accent-color: var(--accent-color);
   cursor: pointer;
 }
 
 .option-text {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -156,7 +78,7 @@ body {
   padding: 6px 10px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   text-align: center;
   color: var(--text-primary);
   background: var(--glass-bg);
@@ -164,8 +86,9 @@ body {
 
 .inline-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
   background: var(--glass-bg-hover);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 .inline-select {
@@ -174,7 +97,7 @@ body {
   padding: 6px 10px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-primary);
   background: var(--glass-bg);
   cursor: pointer;
@@ -182,7 +105,8 @@ body {
 
 .inline-select:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 /* 周选项特殊样式 */
@@ -232,9 +156,9 @@ body {
 }
 
 .time-section-title {
-  font-size: 14px;
+  font-size: var(--font-size-base);
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary-text);
   padding-left: 4px;
 }
 
@@ -282,13 +206,13 @@ body {
 }
 
 .specific-grid label:hover {
-  border-color: var(--primary-color);
-  background: rgba(var(--primary-rgb), 0.1);
+  border-color: var(--accent-color);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .specific-grid label:has(input:checked) {
-  background: var(--primary-gradient);
-  border-color: var(--primary-color);
+  background: var(--accent-gradient);
+  border-color: var(--accent-color);
   color: white;
 }
 
@@ -297,7 +221,7 @@ body {
 }
 
 .specific-grid span {
-  font-size: 13px;
+  font-size: var(--font-size-dense);
   font-weight: 500;
 }
 
@@ -318,14 +242,15 @@ body {
   padding: 12px 16px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-primary);
   background: var(--glass-bg);
 }
 
 .year-specific-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 /* ---------- 底部区域 ---------- */
@@ -333,7 +258,7 @@ body {
   flex-shrink: 0;
   max-height: 40vh;
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--panel-hover);
   border-top: 1px solid var(--border-color);
   padding: 20px 24px;
   backdrop-filter: blur(10px);
@@ -342,8 +267,8 @@ body {
 
 /* 表达式盒子 */
 .expression-box {
-  background: linear-gradient(135deg, rgba(248, 249, 255, 0.9) 0%, rgba(240, 244, 255, 0.9) 100%);
-  border: 1px solid rgba(224, 232, 255, 0.8);
+  background: var(--expression-bg);
+  border: 1px solid var(--expression-border);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
@@ -359,9 +284,9 @@ body {
 
 .field-label {
   display: block;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary-text);
   margin-bottom: 8px;
 }
 
@@ -382,8 +307,8 @@ body {
   background: var(--glass-bg);
   border: 1px solid rgba(var(--primary-rgb), 0.3);
   border-radius: 20px;
-  font-size: 13px;
-  color: var(--primary-color);
+  font-size: var(--font-size-dense);
+  color: var(--primary-text);
   font-weight: 500;
 }
 
@@ -399,7 +324,7 @@ body {
   border: 2px solid rgba(var(--primary-rgb), 0.3);
   border-radius: 8px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   color: var(--text-primary);
   background: var(--glass-bg);
@@ -408,32 +333,20 @@ body {
 
 .expression-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 .expression-desc {
   padding: 10px 14px;
   background: var(--glass-bg);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-secondary);
   border-left: 3px solid var(--primary-color);
 }
 
 /* 执行时间盒子 */
-.schedule-box {
-  margin-bottom: 20px;
-}
-
-.schedule-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--border-color);
-}
-
 .schedule-list {
   display: flex;
   flex-direction: column;
@@ -451,28 +364,28 @@ body {
 }
 
 .schedule-item .index {
-  width: 24px;
-  height: 24px;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
   background: var(--primary-gradient);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   margin-right: 12px;
 }
 
 .schedule-item .time {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-primary);
   font-weight: 500;
 }
 
 .schedule-item .remaining {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
 }
 
@@ -480,55 +393,39 @@ body {
   text-align: center;
   padding: 24px;
   color: var(--text-tertiary);
-  font-size: 14px;
+  font-size: var(--font-size-base);
 }
 
 /* 帮助区域 */
-.help-section {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.help-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.help-content {
-  font-size: 13px;
+.cron-page .help-content {
+  font-size: var(--font-size-dense);
   line-height: 1.8;
   color: var(--text-secondary);
 }
 
-.help-content p {
+.cron-page .help-content p {
   margin-bottom: 12px;
 }
 
-.help-content ul {
+.cron-page .help-content ul {
   margin: 10px 0;
   padding-left: 20px;
 }
 
-.help-content li {
+.cron-page .help-content li {
   margin-bottom: 6px;
 }
 
-.help-content code {
-  background: rgba(0, 0, 0, 0.05);
+.cron-page .help-content code {
+  background: var(--inset-bg);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 12px;
-  color: var(--primary-color);
+  font-size: var(--font-size-sm);
+  color: var(--primary-text);
 }
 
-.help-content strong {
+.cron-page .help-content strong {
   color: var(--text-primary);
 }
 
@@ -543,7 +440,7 @@ body {
 
 .cron-structure pre {
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: var(--font-size-dense);
   line-height: 1.6;
   color: var(--text-secondary);
   margin: 0;
@@ -556,11 +453,11 @@ body {
   }
 
   .tab-icon {
-    font-size: 16px;
+    font-size: var(--font-size-md);
   }
 
   .tab-text {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
 
   .time-grid {
@@ -575,11 +472,11 @@ body {
   }
 
   .tab-icon {
-    font-size: 14px;
+    font-size: var(--font-size-base);
   }
 
   .tab-text {
-    font-size: 11px;
+    font-size: var(--font-size-xs);
   }
 
   .expression-input-wrapper {
@@ -606,6 +503,6 @@ body {
   }
 
   .specific-grid span {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
 }

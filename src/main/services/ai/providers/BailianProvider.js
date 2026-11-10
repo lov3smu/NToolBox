@@ -7,16 +7,16 @@ class BailianProvider extends BaseProvider {
       apiKey,
       hostname: 'dashscope.aliyuncs.com',
       path: '/compatible-mode/v1/chat/completions',
-      validateModel: 'qwen-turbo',
+      modelsPath: '/compatible-mode/v1/models',
+      validateModel: 'qwen3.8-flash',
       models: [
-        { id: 'qwen-plus', name: 'Qwen-Plus (推荐)' },
-        { id: 'qwen-turbo', name: 'Qwen-Turbo (快速)' },
-        { id: 'qwen-max', name: 'Qwen-Max (最强)' },
-        { id: 'qwen-coder-plus', name: 'Qwen-Coder-Plus (编程)' },
-        { id: 'qwen2.5-72b-instruct', name: 'Qwen2.5-72B' },
-        { id: 'qwen2.5-32b-instruct', name: 'Qwen2.5-32B' }
+        { id: 'qwen3.8-max', name: 'qwen3.8-max' },
+        { id: 'qwen3.7-plus', name: 'qwen3.7-plus' },
+        { id: 'qwen3.8-flash', name: 'qwen3.8-flash' }
       ],
-      defaultModel: 'qwen-plus',
+      defaultModel: 'qwen3.8-max',
+      thinkingStyle: 'enable_thinking',
+      streamUsage: true,
       timeout,
       connectionTimeout
     })

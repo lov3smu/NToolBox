@@ -38,8 +38,8 @@
             </div>
           </div>
           <div class="message-actions">
-            <button v-if="type === 'confirm'" class="btn-message btn-cancel" @click="cancel">取消</button>
-            <button class="btn-message btn-confirm" @click="confirm">确定</button>
+            <button v-if="type === 'confirm'" class="btn btn-secondary" @click="cancel">取消</button>
+            <button class="btn btn-primary" @click="confirm">确定</button>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ function cancel() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -102,14 +102,11 @@ function cancel() {
 
 .message-dialog {
   width: 420px;
-  max-width: 90vw;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  max-width: calc(100vw - 32px);
+  background: var(--surface);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-lg);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -127,8 +124,8 @@ function cancel() {
 }
 
 .message-icon svg {
-  width: 28px;
-  height: 28px;
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
 }
 
 .message-dialog.success .message-icon {
@@ -142,18 +139,18 @@ function cancel() {
 }
 
 .message-dialog.warning .message-icon {
-  background: rgba(255, 193, 7, 0.15);
+  background: rgba(var(--warning-rgb), 0.15);
   color: var(--warning-darker);
 }
 
 .message-dialog.confirm .message-icon {
-  background: rgba(255, 193, 7, 0.15);
+  background: rgba(var(--warning-rgb), 0.15);
   color: var(--warning-darker);
 }
 
 .message-dialog.info .message-icon {
-  background: rgba(var(--primary-rgb), 0.15);
-  color: var(--primary-color);
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent-color);
 }
 
 .message-content {
@@ -161,64 +158,40 @@ function cancel() {
 }
 
 .message-title {
-  font-size: 16px;
+  font-size: var(--font-size-md);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .message-text {
-  font-size: 14px;
+  font-size: var(--font-size-base);
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
 .message-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
   width: 100%;
+  margin-top: 4px;
 }
 
-.btn-message {
-  padding: 8px 24px;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.btn-confirm {
-  background: var(--primary-gradient);
-  color: white;
-}
-
-.btn-confirm:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.btn-cancel {
-  background: rgba(128, 128, 128, 0.1);
-  color: var(--text-secondary);
-}
-
-.btn-cancel:hover {
-  background: rgba(128, 128, 128, 0.2);
+.message-actions .btn {
+  min-width: 88px;
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--motion-base) var(--motion-ease);
 }
 
 .fade-enter-active .message-dialog,
 .fade-leave-active .message-dialog {
   transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
+    transform var(--motion-panel) var(--motion-ease),
+    opacity var(--motion-panel) var(--motion-ease);
 }
 
 .fade-enter-from,
@@ -228,7 +201,7 @@ function cancel() {
 
 .fade-enter-from .message-dialog,
 .fade-leave-to .message-dialog {
-  transform: scale(0.95);
+  transform: scale(0.97) translateY(4px);
   opacity: 0;
 }
 </style>

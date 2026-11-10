@@ -1,0 +1,38 @@
+{
+  "name": "sql-explain",
+  "version": "1.0.0",
+  "description": "解读 SQL 执行计划，定位全表扫描、临时表和低效索引问题并给出优化建议",
+  "author": "NToolBox Community",
+  "category": "database",
+  "tags": ["SQL", "执行计划", "性能"],
+  "icon": "database",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "sql": {
+        "type": "string",
+        "description": "需要分析的 SQL 语句"
+      },
+      "plan": {
+        "type": "string",
+        "description": "EXPLAIN 或 EXPLAIN ANALYZE 的输出"
+      },
+      "database": {
+        "type": "string",
+        "description": "数据库类型，例如 mysql、postgresql",
+        "enum": ["mysql", "postgresql", "oracle", "sqlserver"]
+      }
+    },
+    "required": ["sql"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "sql: SELECT * FROM orders WHERE user_id = 1 ORDER BY created_at DESC, database: mysql",
+      "output": "指出索引与排序问题并给出联合索引建议"
+    }
+  ],
+  "featured": true,
+  "downloads": 1120,
+  "changelog": "首个版本：支持 MySQL/PostgreSQL 执行计划解读"
+}

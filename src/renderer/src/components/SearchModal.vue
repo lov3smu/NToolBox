@@ -37,7 +37,7 @@
           </div>
           <div v-if="!searchQuery.trim()" class="all-tools-section">
             <div class="section-title">所有工具</div>
-            <div class="search-results">
+            <div ref="resultsRef" class="search-results">
               <div
                 v-for="(tool, index) in tools"
                 :key="tool.path"
@@ -58,7 +58,7 @@
               </div>
             </div>
           </div>
-          <div v-else-if="filteredTools.length > 0" class="search-results">
+          <div v-else-if="filteredTools.length > 0" ref="resultsRef" class="search-results">
             <div
               v-for="(tool, index) in filteredTools"
               :key="tool.path"
@@ -105,6 +105,7 @@ const emit = defineEmits(['close'])
 const router = useRouter()
 const searchQuery = ref('')
 const searchInput = ref(null)
+const resultsRef = ref(null)
 const activeIndex = ref(0)
 
 const recentTools = computed(() => getRecentTools())
@@ -127,7 +128,27 @@ watch(
 
 watch(searchQuery, () => {
   activeIndex.value = 0
+  nextTick(() => {
+    if (resultsRef.value) resultsRef.value.scrollTop = 0
+  })
 })
+
+watch(activeIndex, scrollActiveIntoView)
+
+function scrollActiveIntoView() {
+  nextTick(() => {
+    const container = resultsRef.value
+    const active = container?.querySelector('.search-result-item.active')
+    if (!container || !active) return
+    const containerRect = container.getBoundingClientRect()
+    const activeRect = active.getBoundingClientRect()
+    if (activeRect.top < containerRect.top) {
+      container.scrollTop -= containerRect.top - activeRect.top
+    } else if (activeRect.bottom > containerRect.bottom) {
+      container.scrollTop += activeRect.bottom - containerRect.bottom
+    }
+  })
+}
 
 function navigateDown() {
   if (activeIndex.value < filteredTools.value.length - 1) {
@@ -170,7 +191,7 @@ function close() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -182,14 +203,12 @@ function close() {
 
 .search-modal {
   width: 680px;
-  max-height: 500px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  max-width: calc(100vw - 32px);
+  max-height: min(500px, calc(100vh - 112px));
+  background: var(--surface);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -204,8 +223,8 @@ function close() {
 }
 
 .search-icon {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
   color: var(--text-tertiary);
   flex-shrink: 0;
 }
@@ -214,7 +233,7 @@ function close() {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 16px;
+  font-size: var(--font-size-md);
   background: transparent;
   color: var(--text-primary);
 }
@@ -224,16 +243,16 @@ function close() {
 }
 
 .search-shortcut {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--inset-bg);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-tertiary);
   padding: 8px 16px 4px;
@@ -259,16 +278,6 @@ function close() {
 
 .recent-tool-item:hover {
   transform: scale(1.05);
-}
-
-.recent-tool-item .tool-icon {
-  width: 48px;
-  height: 48px;
-}
-
-.recent-tool-item .tool-icon :deep(svg) {
-  width: 24px;
-  height: 24px;
 }
 
 .all-tools-section {
@@ -302,11 +311,12 @@ function close() {
 
 .search-result-item:hover,
 .search-result-item.active {
-  background: rgba(var(--primary-rgb), 0.1);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .search-result-item.active {
-  background: rgba(var(--primary-rgb), 0.15);
+  background: rgba(var(--accent-rgb), 0.14);
+  box-shadow: inset 2px 0 0 var(--accent-color);
 }
 
 .tool-icon {
@@ -321,8 +331,8 @@ function close() {
 }
 
 .tool-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
   color: white;
 }
 
@@ -332,14 +342,14 @@ function close() {
 }
 
 .tool-name {
-  font-size: 14px;
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .tool-desc {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
   white-space: nowrap;
   overflow: hidden;
@@ -350,19 +360,19 @@ function close() {
   padding: 40px 20px;
   text-align: center;
   color: var(--text-tertiary);
-  font-size: 14px;
+  font-size: var(--font-size-base);
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--motion-base) var(--motion-ease);
 }
 
 .fade-enter-active .search-modal,
 .fade-leave-active .search-modal {
   transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
+    transform var(--motion-panel) var(--motion-ease),
+    opacity var(--motion-panel) var(--motion-ease);
 }
 
 .fade-enter-from,
@@ -372,7 +382,7 @@ function close() {
 
 .fade-enter-from .search-modal,
 .fade-leave-to .search-modal {
-  transform: translateY(-20px) scale(0.98);
+  transform: translateY(-8px) scale(0.98);
   opacity: 0;
 }
 </style>

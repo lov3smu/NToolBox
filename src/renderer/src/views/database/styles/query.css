@@ -1,0 +1,324 @@
+/* Database page styles: query */
+@scope (.database-page) {
+  .query-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  .query-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  .result-body {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .query-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 8px;
+  }
+
+  .query-body.has-result .query-editor-wrapper {
+    flex: 0 0 50%;
+    min-height: 0;
+  }
+
+  .query-body.has-result {
+    gap: 0;
+  }
+
+  .query-editor-wrapper {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+    background: var(--panel-soft);
+  }
+
+  .query-splitter {
+    flex: 0 0 9px;
+    position: relative;
+    cursor: row-resize;
+    touch-action: none;
+  }
+
+  .query-splitter::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-color);
+    transition: background var(--transition-fast);
+  }
+
+  .query-splitter:hover::before,
+  .query-splitter.active::before {
+    top: 3px;
+    height: 3px;
+    background: var(--accent-color);
+  }
+
+  .query-result-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  .result-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-soft);
+    font-size: var(--font-size-dense);
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .result-info {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+  }
+
+  .result-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .result-tab {
+    padding: 4px 10px;
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-normal);
+  }
+
+  .result-tab:hover {
+    background: rgba(var(--accent-rgb), 0.08);
+    color: var(--text-primary);
+  }
+
+  .result-tab.active {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+  }
+
+  .result-title {
+    font-size: var(--font-size-dense);
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .result-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .query-toolbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+  }
+
+  .table-query-toolbar {
+    border-bottom: 1px solid var(--border-color);
+    justify-content: flex-start;
+  }
+
+  .toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-size-dense);
+    font-weight: 400;
+    cursor: pointer;
+    transition: var(--transition-normal);
+  }
+
+  .toolbar-btn:hover:not(:disabled) {
+    background: rgba(var(--accent-rgb), 0.08);
+    color: var(--text-primary);
+  }
+
+  .toolbar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .toolbar-btn.active {
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent-color);
+  }
+
+  .toolbar-btn-icon {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+  }
+
+  .toolbar-btn-text {
+    font-size: var(--font-size-dense);
+    font-weight: 400;
+  }
+
+  .table-query-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .query-result-wrapper.full-height {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .th-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .th-name {
+    flex: 1;
+    font-weight: 600;
+  }
+
+  .th-actions {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: var(--transition-normal);
+    border-radius: 3px;
+  }
+
+  .th-actions svg {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+  }
+
+  th:hover .th-actions {
+    opacity: 1;
+  }
+
+  .th-actions:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+  }
+
+  .result-table th.has-sort {
+    background-image:
+      linear-gradient(rgba(var(--accent-rgb), 0.06), rgba(var(--accent-rgb), 0.06)),
+      linear-gradient(rgba(var(--primary-rgb), 0.1), rgba(var(--primary-rgb), 0.1));
+  }
+
+  th.sort-asc .th-name::after,
+  th.sort-desc .th-name::after {
+    margin-left: 4px;
+  }
+
+  th.sort-asc .th-name::after {
+    content: '↑';
+    color: var(--accent-color);
+  }
+
+  th.sort-desc .th-name::after {
+    content: '↓';
+    color: var(--accent-color);
+  }
+
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .toolbar-select-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolbar-icon {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+    color: var(--text-secondary);
+  }
+
+  .toolbar-select {
+    height: var(--control-height-sm);
+    padding: 0 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    color: var(--text-primary);
+    min-width: 80px;
+    max-width: 120px;
+    cursor: pointer;
+  }
+
+  .toolbar-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+  }
+}
+
+body.db-resizing-query,
+body.db-resizing-query * {
+  cursor: row-resize !important;
+  user-select: none !important;
+}

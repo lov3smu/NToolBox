@@ -34,14 +34,34 @@ export function sanitizePathSegment(segment) {
     .trim()
 }
 
-export async function isPathWithinBase(targetPath, basePath) {
-  try {
-    const resolvedTarget = await fs.promises.realpath(targetPath)
-    const resolvedBase = await fs.promises.realpath(basePath)
-    return resolvedTarget.startsWith(resolvedBase + path.sep) || resolvedTarget === resolvedBase
-  } catch {
+function resolveWithExistingAncestor(targetPath) {
+  const missingSegments = []
+  let current = targetPath
+  while (true) {
+    try {
+      const real = fs.realpathSync(current)
+      return missingSegments.length ? path.join(real, ...missingSegments.reverse()) : real
+    } catch {
+      const parent = path.dirname(current)
+      if (parent === current) return targetPath
+      missingSegments.push(path.basename(current))
+      current = parent
+    }
+  }
+}
+
+export function isPathWithinBase(targetPath, basePath) {
+  if (!targetPath || !basePath || typeof targetPath !== 'string' || typeof basePath !== 'string') {
     return false
   }
+
+  const normalize = (p) => (process.platform === 'win32' ? p.toLowerCase() : p)
+  const resolvedBase = normalize(resolveWithExistingAncestor(path.resolve(basePath)))
+  const resolvedTarget = normalize(resolveWithExistingAncestor(path.resolve(targetPath)))
+
+  if (resolvedTarget === resolvedBase) return true
+  const basePrefix = resolvedBase.endsWith(path.sep) ? resolvedBase : resolvedBase + path.sep
+  return resolvedTarget.startsWith(basePrefix)
 }
 
 export function sanitizeInput(input, maxLength = 1000) {

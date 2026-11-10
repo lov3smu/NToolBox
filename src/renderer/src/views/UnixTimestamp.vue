@@ -1,214 +1,185 @@
 <template>
-  <div class="unix-container" :style="{ width: windowWidth + 'px' }">
-    <header>
-      <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-        Unix时间戳互转
-      </h1>
-      <div class="subtitle">时间戳与日期时间双向转换工具</div>
-    </header>
-
-    <div class="unix-content">
-      <div class="current-timestamp-section">
-        <div class="section-header">
-          <label>当前时间戳(Unix timestamp)</label>
+  <PageLayout tool-path="/unixtimestamp">
+    <div class="page-body">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">当前时间戳</span>
         </div>
-        <div class="timestamp-display">
-          <div class="timestamp-item" :class="{ active: timestampType === '10' }" @click="timestampType = '10'">
-            <div class="timestamp-value">
-              {{ currentTimestamp10 }}
+        <div class="panel-body">
+          <div class="timestamp-display">
+            <div class="timestamp-item" :class="{ active: timestampType === '10' }" @click="timestampType = '10'">
+              <div class="timestamp-value">{{ currentTimestamp10 }}</div>
+              <div class="timestamp-label">10 位 · 秒级</div>
             </div>
-            <div class="timestamp-label">10位(秒级)</div>
-          </div>
-          <div class="timestamp-item" :class="{ active: timestampType === '13' }" @click="timestampType = '13'">
-            <div class="timestamp-value">
-              {{ currentTimestamp13 }}
+            <div class="timestamp-item" :class="{ active: timestampType === '13' }" @click="timestampType = '13'">
+              <div class="timestamp-value">{{ currentTimestamp13 }}</div>
+              <div class="timestamp-label">13 位 · 毫秒级</div>
             </div>
-            <div class="timestamp-label">13位(毫秒级)</div>
           </div>
-        </div>
-        <div class="current-datetime">
-          <span class="datetime-label">对应北京时间：</span>
-          <span class="datetime-value">{{ currentDatetime }}</span>
+          <div class="current-datetime">
+            <span class="datetime-label">对应北京时间</span>
+            <span class="datetime-value">{{ currentDatetime }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="convert-section">
-        <div class="section-header">
-          <label>时间戳 → 北京时间</label>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">时间戳 → 北京时间</span>
         </div>
-        <div class="input-row">
-          <input
-            v-model="timestampInput"
-            type="text"
-            class="input-field timestamp-input"
-            placeholder="输入时间戳（10位或13位）"
-            @input="onTimestampInput"
-          />
-          <button class="btn btn-primary" @click="convertTimestampToDatetime">转换</button>
-        </div>
-        <div v-if="datetimeResult" class="result-box">
-          <div class="result-label">转换结果：</div>
-          <div class="result-value">
-            {{ datetimeResult }}
+        <div class="panel-body">
+          <div class="input-row">
+            <input
+              v-model="timestampInput"
+              type="text"
+              class="input-field mono"
+              placeholder="输入时间戳（10位或13位）"
+              @input="onTimestampInput"
+            />
+            <button class="btn btn-primary" @click="convertTimestampToDatetime">转换</button>
           </div>
-          <button class="btn-text" @click="copyResult(datetimeResult)">复制</button>
+          <div v-if="datetimeResult" class="result-box">
+            <span class="result-value">{{ datetimeResult }}</span>
+            <button class="btn btn-secondary btn-sm" @click="copyResult(datetimeResult)">复制</button>
+          </div>
         </div>
       </div>
 
-      <div class="convert-section">
-        <div class="section-header">
-          <label>北京时间 → 时间戳（逐项输入）</label>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">北京时间 → 时间戳（逐项输入）</span>
         </div>
-        <div class="datetime-inputs">
-          <div class="input-group">
-            <select v-model="yearValue" class="select-field">
-              <option v-for="y in yearOptions" :key="y" :value="y">
-                {{ y }}
-              </option>
-            </select>
-            <span class="input-label">年</span>
-          </div>
-          <div class="input-group">
-            <select v-model="monthValue" class="select-field">
-              <option v-for="m in 12" :key="m" :value="m">
-                {{ m }}
-              </option>
-            </select>
-            <span class="input-label">月</span>
-          </div>
-          <div class="input-group">
-            <select v-model="dayValue" class="select-field">
-              <option v-for="d in dayOptions" :key="d" :value="d">
-                {{ d }}
-              </option>
-            </select>
-            <span class="input-label">日</span>
-          </div>
-          <div class="input-group">
-            <select v-model="hourValue" class="select-field">
-              <option v-for="h in 24" :key="h - 1" :value="h - 1">
-                {{ (h - 1).toString().padStart(2, '0') }}
-              </option>
-            </select>
-            <span class="input-label">时</span>
-          </div>
-          <div class="input-group">
-            <select v-model="minuteValue" class="select-field">
-              <option v-for="m in 60" :key="m - 1" :value="m - 1">
-                {{ (m - 1).toString().padStart(2, '0') }}
-              </option>
-            </select>
-            <span class="input-label">分</span>
-          </div>
-          <div class="input-group">
-            <select v-model="secondValue" class="select-field">
-              <option v-for="s in 60" :key="s - 1" :value="s - 1">
-                {{ (s - 1).toString().padStart(2, '0') }}
-              </option>
-            </select>
-            <span class="input-label">秒</span>
-          </div>
-          <div class="input-group">
-            <select v-model="millisecondValue" class="select-field">
-              <option v-for="ms in 1000" :key="ms - 1" :value="ms - 1">
-                {{ (ms - 1).toString().padStart(3, '0') }}
-              </option>
-            </select>
-            <span class="input-label">毫秒</span>
-          </div>
-          <button class="btn btn-primary" @click="convertDatetimeToTimestamp">转换</button>
-        </div>
-        <div v-if="timestampResult10 || timestampResult13" class="result-box">
-          <div class="result-row">
-            <div class="result-item">
-              <div class="result-label">10位时间戳：</div>
-              <div class="result-value">
-                {{ timestampResult10 }}
-              </div>
-              <button class="btn-text" @click="copyResult(timestampResult10)">复制</button>
+        <div class="panel-body">
+          <div class="datetime-inputs">
+            <div class="input-group">
+              <select v-model="yearValue" class="select-field year">
+                <option v-for="y in yearOptions" :key="y" :value="y">
+                  {{ y }}
+                </option>
+              </select>
+              <span class="input-label">年</span>
             </div>
+            <div class="input-group">
+              <select v-model="monthValue" class="select-field">
+                <option v-for="m in 12" :key="m" :value="m">
+                  {{ m }}
+                </option>
+              </select>
+              <span class="input-label">月</span>
+            </div>
+            <div class="input-group">
+              <select v-model="dayValue" class="select-field">
+                <option v-for="d in dayOptions" :key="d" :value="d">
+                  {{ d }}
+                </option>
+              </select>
+              <span class="input-label">日</span>
+            </div>
+            <div class="input-group">
+              <select v-model="hourValue" class="select-field">
+                <option v-for="h in 24" :key="h - 1" :value="h - 1">
+                  {{ (h - 1).toString().padStart(2, '0') }}
+                </option>
+              </select>
+              <span class="input-label">时</span>
+            </div>
+            <div class="input-group">
+              <select v-model="minuteValue" class="select-field">
+                <option v-for="m in 60" :key="m - 1" :value="m - 1">
+                  {{ (m - 1).toString().padStart(2, '0') }}
+                </option>
+              </select>
+              <span class="input-label">分</span>
+            </div>
+            <div class="input-group">
+              <select v-model="secondValue" class="select-field">
+                <option v-for="s in 60" :key="s - 1" :value="s - 1">
+                  {{ (s - 1).toString().padStart(2, '0') }}
+                </option>
+              </select>
+              <span class="input-label">秒</span>
+            </div>
+            <div class="input-group">
+              <select v-model="millisecondValue" class="select-field ms">
+                <option v-for="ms in 1000" :key="ms - 1" :value="ms - 1">
+                  {{ (ms - 1).toString().padStart(3, '0') }}
+                </option>
+              </select>
+              <span class="input-label">毫秒</span>
+            </div>
+            <button class="btn btn-primary" @click="convertDatetimeToTimestamp">转换</button>
           </div>
-          <div class="result-row">
-            <div class="result-item">
-              <div class="result-label">13位时间戳：</div>
-              <div class="result-value">
-                {{ timestampResult13 }}
-              </div>
-              <button class="btn-text" @click="copyResult(timestampResult13)">复制</button>
+          <div v-if="timestampResult10 || timestampResult13" class="result-box column">
+            <div class="result-row">
+              <span class="result-label">10 位</span>
+              <span class="result-value">{{ timestampResult10 }}</span>
+              <button class="btn btn-secondary btn-sm" @click="copyResult(timestampResult10)">复制</button>
+            </div>
+            <div class="result-row">
+              <span class="result-label">13 位</span>
+              <span class="result-value">{{ timestampResult13 }}</span>
+              <button class="btn btn-secondary btn-sm" @click="copyResult(timestampResult13)">复制</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="convert-section">
-        <div class="section-header">
-          <label>北京时间 → 时间戳（快速输入格式：YYYYMMDDHHMMSS）</label>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">快速转换（YYYYMMDDHHMMSS）</span>
         </div>
-        <div class="input-row">
-          <input
-            v-model="quickInput"
-            type="text"
-            class="input-field quick-input"
-            placeholder="例如：20240101120000"
-            @input="onQuickInput"
-          />
-          <button class="btn btn-primary" @click="convertQuickInput">转换</button>
-        </div>
-        <div class="quick-hint">格式说明：年月日时分秒，如 20240101120000 表示 2024年01月01日 12:00:00</div>
-        <div v-if="quickTimestampResult10 || quickTimestampResult13" class="result-box">
-          <div class="result-row">
-            <div class="result-item">
-              <div class="result-label">10位时间戳：</div>
-              <div class="result-value">
-                {{ quickTimestampResult10 }}
-              </div>
-              <button class="btn-text" @click="copyResult(quickTimestampResult10)">复制</button>
-            </div>
+        <div class="panel-body">
+          <div class="input-row">
+            <input
+              v-model="quickInput"
+              type="text"
+              class="input-field mono"
+              placeholder="例如：20240101120000"
+              @input="onQuickInput"
+            />
+            <button class="btn btn-primary" @click="convertQuickInput">转换</button>
           </div>
-          <div class="result-row">
-            <div class="result-item">
-              <div class="result-label">13位时间戳：</div>
-              <div class="result-value">
-                {{ quickTimestampResult13 }}
-              </div>
-              <button class="btn-text" @click="copyResult(quickTimestampResult13)">复制</button>
+          <div class="quick-hint">年月日时分秒，如 20240101120000 表示 2024年01月01日 12:00:00</div>
+          <div v-if="quickTimestampResult10 || quickTimestampResult13" class="result-box column">
+            <div class="result-row">
+              <span class="result-label">10 位</span>
+              <span class="result-value">{{ quickTimestampResult10 }}</span>
+              <button class="btn btn-secondary btn-sm" @click="copyResult(quickTimestampResult10)">复制</button>
+            </div>
+            <div class="result-row">
+              <span class="result-label">13 位</span>
+              <span class="result-value">{{ quickTimestampResult13 }}</span>
+              <button class="btn btn-secondary btn-sm" @click="copyResult(quickTimestampResult13)">复制</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="help-section">
-        <div class="help-title">工具介绍</div>
-        <div class="help-content">
-          <p>Unix时间戳(Unix timestamp)，或Unix时间(Unix time)、POSIX时间(POSIX time)，是一种时间表示方式。</p>
-          <p>定义为从格林威治时间1970年01月01日00时00分00秒起至现在的总秒数。</p>
-          <p>Unix时间戳不仅被使用在Unix系统、类Unix系统中，也在许多其他操作系统中被广泛采用。</p>
-          <p><strong>时间戳类型说明：</strong></p>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">工具介绍</span>
+        </div>
+        <div class="panel-body help-content">
+          <p>Unix 时间戳表示从 1970-01-01 00:00:00 UTC 起至现在的总秒数，被广泛用于各类操作系统与编程语言。</p>
           <ul>
-            <li><strong>10位时间戳</strong>：秒级精度，表示从1970-01-01 00:00:00 UTC到指定时间的秒数</li>
-            <li><strong>13位时间戳</strong>：毫秒级精度，表示从1970-01-01 00:00:00 UTC到指定时间的毫秒数</li>
+            <li><strong>10 位时间戳</strong>：秒级精度</li>
+            <li><strong>13 位时间戳</strong>：毫秒级精度</li>
           </ul>
         </div>
       </div>
     </div>
 
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
-  </div>
+  </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useWindowWidth, useToast } from '@/composables'
+import { useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
+import PageLayout from '@/layouts/PageLayout.vue'
 
-const windowWidth = useWindowWidth()
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const currentTimestamp10 = ref('')
@@ -407,158 +378,88 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.unix-container {
-  margin: 0 auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--glass-bg);
-  overflow: hidden;
-}
-
-.unix-container header {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 20px 24px 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.unix-container header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 24px;
-  margin-bottom: 6px;
-}
-
-.unix-container header h1 .header-icon {
-  width: 28px;
-  height: 28px;
-}
-
-.unix-container header .subtitle {
-  font-size: 14px;
-  opacity: 1;
-}
-
-.unix-content {
-  padding: 20px 24px;
-  flex: 1;
-  overflow-y: auto;
-  background: rgba(248, 249, 250, 0.5);
-}
-
-.current-timestamp-section,
-.convert-section {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.section-header {
-  margin-bottom: 12px;
-}
-
-.section-header label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
+.page-body {
+  padding: 12px 16px 16px;
+  width: 100%;
 }
 
 .timestamp-display {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 .timestamp-item {
   flex: 1;
-  padding: 16px;
-  background: rgba(248, 249, 250, 0.5);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  text-align: center;
+  padding: 12px 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
 }
 
 .timestamp-item:hover {
-  border-color: var(--primary-color);
+  border-color: var(--border-strong);
 }
 
 .timestamp-item.active {
-  border-color: var(--primary-color);
-  background: rgba(var(--primary-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.06);
 }
 
 .timestamp-value {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
   font-family: 'Consolas', 'Monaco', monospace;
-  color: var(--primary-color);
-  margin-bottom: 6px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
 .timestamp-label {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
 .current-datetime {
-  padding: 10px 16px;
-  background: rgba(var(--primary-rgb), 0.08);
-  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
 }
 
 .datetime-label {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
 }
 
 .datetime-value {
-  font-size: 15px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   font-family: 'Consolas', 'Monaco', monospace;
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .input-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
-.input-field {
+.input-row .input-field {
   flex: 1;
-  padding: 10px 14px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  background: var(--glass-bg);
-  color: var(--text-primary);
 }
 
-.input-field:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
-.timestamp-input,
-.quick-input {
+.input-field.mono {
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .datetime-inputs {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+  gap: 8px;
 }
 
 .input-group {
@@ -567,109 +468,71 @@ onUnmounted(() => {
   gap: 4px;
 }
 
-.select-field {
-  padding: 8px 10px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  background: var(--glass-bg);
-  color: var(--text-primary);
-  cursor: pointer;
-  min-width: 60px;
+.input-group .select-field {
+  width: 68px;
 }
 
-.select-field:focus {
-  outline: none;
-  border-color: var(--primary-color);
+.input-group .select-field.year {
+  width: 88px;
+}
+
+.input-group .select-field.ms {
+  width: 80px;
 }
 
 .input-label {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
 }
 
 .quick-hint {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
 .result-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-top: 12px;
-  padding: 12px 16px;
-  background: rgba(var(--success-rgb), 0.08);
-  border: 1px solid rgba(var(--success-rgb), 0.2);
+  padding: 8px 12px;
+  background: rgba(var(--success-rgb), 0.06);
+  border: 1px solid rgba(var(--success-rgb), 0.22);
   border-radius: var(--radius-sm);
 }
 
-.result-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+.result-box.column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
 
-.result-value {
-  font-size: 16px;
+.result-box .result-value {
+  flex: 1;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   font-family: 'Consolas', 'Monaco', monospace;
-  color: var(--success-darker);
+  color: var(--success-dark);
 }
 
 .result-row {
-  margin-bottom: 8px;
-}
-
-.result-row:last-child {
-  margin-bottom: 0;
-}
-
-.result-item {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.result-item .result-label {
+.result-label {
+  width: 40px;
   flex-shrink: 0;
-  margin-bottom: 0;
-}
-
-.result-item .result-value {
-  flex: 1;
-}
-
-.btn-text {
-  padding: 4px 10px;
-  border: none;
-  background: transparent;
-  color: var(--primary-color);
-  font-size: 12px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.btn-text:hover {
-  color: var(--primary-color-dark);
-}
-
-.help-section {
-  background: rgba(248, 249, 250, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.help-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
 }
 
 .help-content {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
 .help-content p {
@@ -677,11 +540,6 @@ onUnmounted(() => {
 }
 
 .help-content ul {
-  margin: 8px 0;
-  padding-left: 20px;
-}
-
-.help-content li {
-  margin-bottom: 4px;
+  padding-left: 18px;
 }
 </style>

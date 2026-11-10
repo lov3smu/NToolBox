@@ -1,307 +1,298 @@
 <template>
-  <div class="cron-container" :style="{ width: windowWidth + 'px' }">
-    <header>
-      <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-        Cron 表达式生成器
-      </h1>
-      <div class="subtitle">可视化生成定时任务表达式</div>
+  <PageLayout tool-path="/cron" page-class="cron-page">
+    <template #actions>
+      <TabBar v-model="activeTab" :tabs="tabs" aria-label="Cron 字段" />
+    </template>
 
-      <div class="field-tabs">
-        <div
-          v-for="tab in tabs"
-          :key="tab.key"
-          class="field-tab"
-          :class="{ active: activeTab === tab.key }"
-          @click="activeTab = tab.key"
-        >
-          <span class="tab-text">{{ tab.text }}</span>
+    <div class="page-body">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">{{ getFieldTitle(activeTab) }}</span>
+          <span class="field-hint">{{ getFieldHint(activeTab) }}</span>
         </div>
-      </div>
-    </header>
+        <div class="panel-body">
+          <div class="type-options">
+            <label v-if="activeTab !== 'week' && activeTab !== 'day'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
+              <span>每{{ getFieldTitle(activeTab) }}</span>
+            </label>
+            <label v-if="activeTab === 'week' || activeTab === 'year' || activeTab === 'day'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="notSpecify" />
+              <span>不指定</span>
+            </label>
+            <label v-if="activeTab === 'day'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
+              <span>每日</span>
+            </label>
+            <label v-if="activeTab !== 'year'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="range" />
+              <span>周期</span>
+            </label>
+            <label v-if="activeTab !== 'week' && activeTab !== 'year'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="interval" />
+              <span>循环</span>
+            </label>
+            <label class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="specific" />
+              <span>指定</span>
+            </label>
+            <label v-if="activeTab === 'day'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="workDay" />
+              <span>工作日</span>
+            </label>
+            <label v-if="activeTab === 'day'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="lastDay" />
+              <span>最后一天</span>
+            </label>
+            <label v-if="activeTab === 'week'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="nth" />
+              <span>第几个星期几</span>
+            </label>
+            <label v-if="activeTab === 'week'" class="type-option">
+              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="last" />
+              <span>最后一个星期几</span>
+            </label>
+          </div>
 
-    <div class="cron-content">
-      <div class="field-panel">
-        <div class="field-title">
-          {{ getFieldTitle(activeTab) }}
-        </div>
-        <div class="field-hint">
-          {{ getFieldHint(activeTab) }}
-        </div>
-
-        <div class="type-options">
-          <label v-if="activeTab !== 'week' && activeTab !== 'day'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
-            <span>每{{ getFieldTitle(activeTab) }}</span>
-          </label>
-          <label v-if="activeTab === 'week' || activeTab === 'year' || activeTab === 'day'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="notSpecify" />
-            <span>不指定</span>
-          </label>
-          <label v-if="activeTab === 'day'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
-            <span>每日</span>
-          </label>
-          <label v-if="activeTab !== 'year'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="range" />
-            <span>周期</span>
-          </label>
-          <label v-if="activeTab !== 'week' && activeTab !== 'year'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="interval" />
-            <span>循环</span>
-          </label>
-          <label class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="specific" />
-            <span>指定</span>
-          </label>
-          <label v-if="activeTab === 'day'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="workDay" />
-            <span>工作日</span>
-          </label>
-          <label v-if="activeTab === 'day'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="lastDay" />
-            <span>最后一天</span>
-          </label>
-          <label v-if="activeTab === 'week'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="nth" />
-            <span>第几个星期几</span>
-          </label>
-          <label v-if="activeTab === 'week'" class="type-option">
-            <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="last" />
-            <span>最后一个星期几</span>
-          </label>
-        </div>
-
-        <div class="value-config">
-          <template v-if="currentFieldType === 'range'">
-            <template v-if="activeTab === 'week'">
-              <div class="inline-row">
-                <select v-model="weekRangeFrom" class="select-field" @change="generateExpression">
-                  <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                    {{ day.label }}
-                  </option>
-                </select>
+          <div class="value-config">
+            <template v-if="currentFieldType === 'range'">
+              <template v-if="activeTab === 'week'">
+                <div class="inline-row">
+                  <select v-model="weekRangeFrom" class="select-field" @change="generateExpression">
+                    <option v-for="day in weekDays" :key="day.value" :value="day.value">
+                      {{ day.label }}
+                    </option>
+                  </select>
+                  <span class="range-separator">至</span>
+                  <select v-model="weekRangeTo" class="select-field" @change="generateExpression">
+                    <option v-for="day in weekDays" :key="day.value" :value="day.value">
+                      {{ day.label }}
+                    </option>
+                  </select>
+                </div>
+              </template>
+              <template v-else>
+                <input
+                  v-model.number="rangeValues[activeTab].from"
+                  type="number"
+                  class="input-field"
+                  :min="FIELD_CONFIG[activeTab]?.min"
+                  :max="FIELD_CONFIG[activeTab]?.max"
+                  @input="generateExpression"
+                />
                 <span class="range-separator">至</span>
-                <select v-model="weekRangeTo" class="select-field" @change="generateExpression">
+                <input
+                  v-model.number="rangeValues[activeTab].to"
+                  type="number"
+                  class="input-field"
+                  :min="FIELD_CONFIG[activeTab]?.min"
+                  :max="FIELD_CONFIG[activeTab]?.max"
+                  @input="generateExpression"
+                />
+              </template>
+            </template>
+
+            <template v-else-if="currentFieldType === 'interval'">
+              <span class="interval-label">从</span>
+              <input
+                v-model.number="intervalValues[activeTab].start"
+                type="number"
+                class="input-field"
+                :min="FIELD_CONFIG[activeTab]?.min"
+                :max="FIELD_CONFIG[activeTab]?.max"
+                @input="generateExpression"
+              />
+              <span class="interval-label">开始，每</span>
+              <input
+                v-model.number="intervalValues[activeTab].step"
+                type="number"
+                class="input-field"
+                :min="1"
+                :max="FIELD_CONFIG[activeTab]?.max"
+                @input="generateExpression"
+              />
+              <span class="interval-label">{{ getFieldTitle(activeTab) }}执行一次</span>
+            </template>
+
+            <template v-else-if="currentFieldType === 'specific'">
+              <template v-if="activeTab === 'year'">
+                <input
+                  v-model="yearSpecificInput"
+                  type="text"
+                  class="input-field specific-input"
+                  placeholder="例如: 2024,2025,2026"
+                  @input="generateExpression"
+                />
+              </template>
+              <template v-else-if="activeTab === 'hour'">
+                <div class="hour-grid-container">
+                  <div class="time-section">
+                    <div class="time-section-title">上午</div>
+                    <div class="specific-grid hour-grid">
+                      <div
+                        v-for="n in 12"
+                        :key="'am-' + n"
+                        class="specific-item"
+                        :class="{ active: specificValues.hour?.includes(n - 1) }"
+                        @click="toggleSpecific('hour', n - 1)"
+                      >
+                        {{ (n - 1).toString().padStart(2, '0') }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="time-section">
+                    <div class="time-section-title">下午</div>
+                    <div class="specific-grid hour-grid">
+                      <div
+                        v-for="n in 12"
+                        :key="'pm-' + n"
+                        class="specific-item"
+                        :class="{ active: specificValues.hour?.includes(n + 11) }"
+                        @click="toggleSpecific('hour', n + 11)"
+                      >
+                        {{ (n + 11).toString().padStart(2, '0') }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div
+                  class="specific-grid"
+                  :class="{
+                    'month-grid': activeTab === 'month',
+                    'day-grid': activeTab === 'day',
+                    'week-grid': activeTab === 'week'
+                  }"
+                >
+                  <template v-if="activeTab === 'week'">
+                    <div
+                      v-for="day in weekDays"
+                      :key="day.value"
+                      class="specific-item"
+                      :class="{ active: specificValues.week?.includes(parseInt(day.value)) }"
+                      @click="toggleSpecific('week', parseInt(day.value))"
+                    >
+                      {{ day.label }}
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div
+                      v-for="n in FIELD_CONFIG[activeTab]?.max - FIELD_CONFIG[activeTab]?.min + 1"
+                      :key="n"
+                      class="specific-item"
+                      :class="{
+                        active: specificValues[activeTab]?.includes(n - 1 + FIELD_CONFIG[activeTab]?.min)
+                      }"
+                      @click="toggleSpecific(activeTab, n - 1 + FIELD_CONFIG[activeTab]?.min)"
+                    >
+                      {{ activeTab === 'month' ? MONTH_NAMES[n] : n - 1 + FIELD_CONFIG[activeTab]?.min }}
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </template>
+
+            <template v-else-if="currentFieldType === 'workDay'">
+              <span class="interval-label">每月</span>
+              <input
+                v-model.number="workDayValue"
+                type="number"
+                class="input-field"
+                min="1"
+                max="31"
+                @input="generateExpression"
+              />
+              <span class="interval-label">号最近的工作日</span>
+            </template>
+
+            <template v-else-if="currentFieldType === 'nth'">
+              <div class="inline-row">
+                <span class="interval-label">每月第</span>
+                <select v-model="weekNth" class="select-field" @change="generateExpression">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+                <span class="interval-label">个</span>
+                <select v-model="weekNthDay" class="select-field" @change="generateExpression">
                   <option v-for="day in weekDays" :key="day.value" :value="day.value">
                     {{ day.label }}
                   </option>
                 </select>
               </div>
             </template>
-            <template v-else>
-              <input
-                v-model.number="rangeValues[activeTab].from"
-                type="number"
-                class="input-field"
-                :min="FIELD_CONFIG[activeTab]?.min"
-                :max="FIELD_CONFIG[activeTab]?.max"
-                @input="generateExpression"
-              />
-              <span class="range-separator">至</span>
-              <input
-                v-model.number="rangeValues[activeTab].to"
-                type="number"
-                class="input-field"
-                :min="FIELD_CONFIG[activeTab]?.min"
-                :max="FIELD_CONFIG[activeTab]?.max"
-                @input="generateExpression"
-              />
-            </template>
-          </template>
 
-          <template v-else-if="currentFieldType === 'interval'">
-            <span class="interval-label">从</span>
-            <input
-              v-model.number="intervalValues[activeTab].start"
-              type="number"
-              class="input-field"
-              :min="FIELD_CONFIG[activeTab]?.min"
-              :max="FIELD_CONFIG[activeTab]?.max"
-              @input="generateExpression"
-            />
-            <span class="interval-label">开始，每</span>
-            <input
-              v-model.number="intervalValues[activeTab].step"
-              type="number"
-              class="input-field"
-              :min="1"
-              :max="FIELD_CONFIG[activeTab]?.max"
-              @input="generateExpression"
-            />
-            <span class="interval-label">{{ getFieldTitle(activeTab) }}执行一次</span>
-          </template>
-
-          <template v-else-if="currentFieldType === 'specific'">
-            <template v-if="activeTab === 'year'">
-              <input
-                v-model="yearSpecificInput"
-                type="text"
-                class="input-field specific-input"
-                placeholder="例如: 2024,2025,2026"
-                @input="generateExpression"
-              />
-            </template>
-            <template v-else-if="activeTab === 'hour'">
-              <div class="hour-grid-container">
-                <div class="time-section">
-                  <div class="time-section-title">上午</div>
-                  <div class="specific-grid hour-grid">
-                    <div
-                      v-for="n in 12"
-                      :key="'am-' + n"
-                      class="specific-item"
-                      :class="{ active: specificValues.hour?.includes(n - 1) }"
-                      @click="toggleSpecific('hour', n - 1)"
-                    >
-                      {{ (n - 1).toString().padStart(2, '0') }}
-                    </div>
-                  </div>
-                </div>
-                <div class="time-section">
-                  <div class="time-section-title">下午</div>
-                  <div class="specific-grid hour-grid">
-                    <div
-                      v-for="n in 12"
-                      :key="'pm-' + n"
-                      class="specific-item"
-                      :class="{ active: specificValues.hour?.includes(n + 11) }"
-                      @click="toggleSpecific('hour', n + 11)"
-                    >
-                      {{ (n + 11).toString().padStart(2, '0') }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-            <template v-else>
-              <div
-                class="specific-grid"
-                :class="{
-                  'month-grid': activeTab === 'month',
-                  'day-grid': activeTab === 'day',
-                  'week-grid': activeTab === 'week'
-                }"
-              >
-                <template v-if="activeTab === 'week'">
-                  <div
-                    v-for="day in weekDays"
-                    :key="day.value"
-                    class="specific-item"
-                    :class="{ active: specificValues.week?.includes(parseInt(day.value)) }"
-                    @click="toggleSpecific('week', parseInt(day.value))"
-                  >
+            <template v-else-if="currentFieldType === 'last'">
+              <div class="inline-row">
+                <span class="interval-label">每月最后一个</span>
+                <select v-model="weekLastDay" class="select-field" @change="generateExpression">
+                  <option v-for="day in weekDays" :key="day.value" :value="day.value">
                     {{ day.label }}
-                  </div>
-                </template>
-                <template v-else>
-                  <div
-                    v-for="n in FIELD_CONFIG[activeTab]?.max - FIELD_CONFIG[activeTab]?.min + 1"
-                    :key="n"
-                    class="specific-item"
-                    :class="{
-                      active: specificValues[activeTab]?.includes(n - 1 + FIELD_CONFIG[activeTab]?.min)
-                    }"
-                    @click="toggleSpecific(activeTab, n - 1 + FIELD_CONFIG[activeTab]?.min)"
-                  >
-                    {{ activeTab === 'month' ? MONTH_NAMES[n] : n - 1 + FIELD_CONFIG[activeTab]?.min }}
-                  </div>
-                </template>
+                  </option>
+                </select>
               </div>
             </template>
-          </template>
+          </div>
+        </div>
+      </div>
 
-          <template v-else-if="currentFieldType === 'workDay'">
-            <span class="interval-label">每月</span>
-            <input
-              v-model.number="workDayValue"
-              type="number"
-              class="input-field"
-              min="1"
-              max="31"
-              @input="generateExpression"
-            />
-            <span class="interval-label">号最近的工作日</span>
-          </template>
-
-          <template v-else-if="currentFieldType === 'nth'">
-            <div class="inline-row">
-              <span class="interval-label">每月第</span>
-              <select v-model="weekNth" class="select-field" @change="generateExpression">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
-              <span class="interval-label">个</span>
-              <select v-model="weekNthDay" class="select-field" @change="generateExpression">
-                <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                  {{ day.label }}
-                </option>
-              </select>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">表达式</span>
+        </div>
+        <div class="panel-body">
+          <div class="expression-row">
+            <label class="field-label">表达式字段</label>
+            <div class="field-tags">
+              <span class="field-tag">{{ fieldTags.second }}</span>
+              <span class="field-tag">{{ fieldTags.minute }}</span>
+              <span class="field-tag">{{ fieldTags.hour }}</span>
+              <span class="field-tag">{{ fieldTags.day }}</span>
+              <span class="field-tag">{{ fieldTags.month }}</span>
+              <span class="field-tag">{{ fieldTags.week }}</span>
+              <span v-if="fieldTags.year" class="field-tag">{{ fieldTags.year }}</span>
             </div>
-          </template>
-
-          <template v-else-if="currentFieldType === 'last'">
-            <div class="inline-row">
-              <span class="interval-label">每月最后一个</span>
-              <select v-model="weekLastDay" class="select-field" @change="generateExpression">
-                <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                  {{ day.label }}
-                </option>
-              </select>
+          </div>
+          <div class="expression-row">
+            <label class="field-label">Cron表达式</label>
+            <div class="expression-input-wrapper">
+              <input v-model="cronExpression" type="text" class="expression-input" @blur="onExpressionBlur" />
+              <button class="btn btn-secondary" @click="parseExpression">反解析</button>
+              <button class="btn btn-primary" @click="copyExpression">复制</button>
             </div>
-          </template>
-        </div>
-      </div>
-
-      <div class="expression-box">
-        <div class="expression-row">
-          <label class="field-label">表达式字段</label>
-          <div class="field-tags">
-            <span class="field-tag">{{ fieldTags.second }}</span>
-            <span class="field-tag">{{ fieldTags.minute }}</span>
-            <span class="field-tag">{{ fieldTags.hour }}</span>
-            <span class="field-tag">{{ fieldTags.day }}</span>
-            <span class="field-tag">{{ fieldTags.month }}</span>
-            <span class="field-tag">{{ fieldTags.week }}</span>
-            <span class="field-tag">{{ fieldTags.year }}</span>
           </div>
-        </div>
-        <div class="expression-row">
-          <label class="field-label">Cron表达式</label>
-          <div class="expression-input-wrapper">
-            <input v-model="cronExpression" type="text" class="expression-input" @blur="onExpressionBlur" />
-            <button class="btn btn-sm" @click="parseExpression">反解析</button>
-            <button class="btn btn-sm btn-primary" @click="copyExpression">复制</button>
-          </div>
-        </div>
-        <div class="expression-row">
-          <div class="expression-desc">
-            {{ expressionDesc }}
+          <div class="expression-row">
+            <div class="expression-desc">
+              {{ expressionDesc }}
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="schedule-box">
-        <div class="schedule-title">最近5次运行时间</div>
-        <div class="schedule-list">
-          <div v-if="scheduleList.length === 0" class="schedule-empty">请输入表达式查看执行计划</div>
-          <div v-for="(item, index) in scheduleList" :key="index" class="schedule-item">
-            <span class="index">{{ index + 1 }}</span>
-            <span class="time">{{ item.time }}</span>
-            <span class="remaining">{{ item.remaining }}</span>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">最近 5 次运行时间</span>
+        </div>
+        <div class="panel-body">
+          <div class="schedule-list">
+            <div v-if="scheduleList.length === 0" class="schedule-empty">请输入表达式查看执行计划</div>
+            <div v-for="(item, index) in scheduleList" :key="index" class="schedule-item">
+              <span class="index">{{ index + 1 }}</span>
+              <span class="time">{{ item.time }}</span>
+              <span class="remaining">{{ item.remaining }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="help-section">
-        <div class="help-title">说明</div>
-        <div class="help-content">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">说明</span>
+        </div>
+        <div class="panel-body help-content">
           <p>
             Cron 表达式是一种用于指定定时任务执行时间的字符串表达式。它由 6-7
             个字段组成，分别表示秒、分钟、小时、天数、月份、星期几和年份（可选）。
@@ -315,7 +306,8 @@
 │ │ │ │ ┌──── 月份 (1 - 12)
 │ │ │ │ │ ┌── 星期 (0 - 6, 星期天=0)
 │ │ │ │ │ │
-* * * * * * *  命令</pre>
+* * * * * * *  命令</pre
+            >
           </div>
           <p><strong>特殊字符说明：</strong></p>
           <ul>
@@ -326,7 +318,7 @@
             <li><code>?</code>：仅用于日和周字段，表示不指定具体值（避免冲突）</li>
             <li><code>L</code>：表示最后，如 L 表示每月最后一天</li>
             <li><code>W</code>：表示最近工作日，如 15W 表示每月15日最近的工作日</li>
-            <li><code>#</code>：用于指定第几个星期几，如 2#3 表示每月第3个星期一</li>
+            <li><code>#</code>：用于指定第几个星期几，如 1#3 表示每月第3个星期一</li>
           </ul>
           <p><strong>常用示例：</strong></p>
           <ul>
@@ -334,23 +326,24 @@
             <li><code>0 */5 * * * ?</code>：每5分钟执行一次</li>
             <li><code>0 0 8-18 ? * MON-FRI</code>：周一至周五8点到18点每小时执行</li>
             <li><code>0 0 0 L * ?</code>：每月最后一天执行</li>
-            <li><code>0 0 0 ? * 2#1</code>：每月第一个星期一执行</li>
+            <li><code>0 0 0 ? * 1#1</code>：每月第一个星期一执行</li>
           </ul>
         </div>
       </div>
     </div>
 
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
-  </div>
+  </PageLayout>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useWindowWidth, useToast } from '@/composables'
+import { useToast } from '@/composables'
 import { copyToClipboard, formatDateTime } from '@/utils'
 import Toast from '@/components/Toast.vue'
+import PageLayout from '@/layouts/PageLayout.vue'
+import TabBar from '@/components/TabBar.vue'
 
-const windowWidth = useWindowWidth()
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const FIELD_CONFIG = {
@@ -366,6 +359,32 @@ const FIELD_CONFIG = {
     names: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
   },
   year: { min: 2024, max: 2100, name: '年' }
+}
+
+const WEEK_ALIASES = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 }
+const MONTH_ALIASES = {
+  JAN: 1,
+  FEB: 2,
+  MAR: 3,
+  APR: 4,
+  MAY: 5,
+  JUN: 6,
+  JUL: 7,
+  AUG: 8,
+  SEP: 9,
+  OCT: 10,
+  NOV: 11,
+  DEC: 12
+}
+
+const FIELD_UNITS = {
+  second: '秒',
+  minute: '分钟',
+  hour: '小时',
+  day: '日',
+  month: '月',
+  week: '周',
+  year: '年'
 }
 
 const MONTH_NAMES = [
@@ -395,13 +414,13 @@ const weekDays = [
 ]
 
 const tabs = [
-  { key: 'second', text: '秒' },
-  { key: 'minute', text: '分钟' },
-  { key: 'hour', text: '小时' },
-  { key: 'day', text: '日' },
-  { key: 'month', text: '月' },
-  { key: 'week', text: '周' },
-  { key: 'year', text: '年' }
+  { key: 'second', label: '秒' },
+  { key: 'minute', label: '分钟' },
+  { key: 'hour', label: '小时' },
+  { key: 'day', label: '日' },
+  { key: 'month', label: '月' },
+  { key: 'week', label: '周' },
+  { key: 'year', label: '年' }
 ]
 
 const activeTab = ref('second')
@@ -458,7 +477,7 @@ const specificValues = reactive({
 
 const workDayValue = ref(1)
 const weekRangeFrom = ref('1')
-const weekRangeTo = ref('0')
+const weekRangeTo = ref('5')
 const weekNth = ref('1')
 const weekNthDay = ref('1')
 const weekLastDay = ref('1')
@@ -517,20 +536,34 @@ function toggleSpecific(field, value) {
   generateExpression()
 }
 
-function generateExpression() {
-  const parts = []
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return fallback
+  return Math.min(Math.max(Math.trunc(number), min), max)
+}
 
-  parts.push(generateFieldExpr('second'))
-  parts.push(generateFieldExpr('minute'))
-  parts.push(generateFieldExpr('hour'))
-  parts.push(generateFieldExpr('day'))
-  parts.push(generateFieldExpr('month'))
-  parts.push(generateFieldExpr('week'))
+function generateDayWeekParts() {
+  const dayFree = fieldTypes.day === 'every' || fieldTypes.day === 'notSpecify'
+  const weekFree = fieldTypes.week === 'notSpecify' || fieldTypes.week === 'every'
+
+  if (!dayFree) return { day: generateFieldExpr('day'), week: '?' }
+  if (!weekFree) return { day: '?', week: generateFieldExpr('week') }
+  return { day: '*', week: '?' }
+}
+
+function generateExpression() {
+  const dayWeek = generateDayWeekParts()
+  const parts = [
+    generateFieldExpr('second'),
+    generateFieldExpr('minute'),
+    generateFieldExpr('hour'),
+    dayWeek.day,
+    generateFieldExpr('month'),
+    dayWeek.week
+  ]
 
   const yearExpr = generateFieldExpr('year')
-  if (yearExpr && yearExpr !== '') {
-    parts.push(yearExpr)
-  }
+  if (yearExpr) parts.push(yearExpr)
 
   cronExpression.value = parts.join(' ')
   expressionDesc.value = getExpressionDescription(cronExpression.value)
@@ -545,140 +578,146 @@ function generateFieldExpr(field) {
     case 'every':
       return field === 'year' ? '' : '*'
     case 'notSpecify':
-      return '?'
-    case 'range':
+      return field === 'year' ? '' : '?'
+    case 'range': {
       if (field === 'week') {
-        return `${weekRangeFrom.value}-${weekRangeTo.value}`
+        const from = clampNumber(Number(weekRangeFrom.value), 0, 6, 1)
+        const to = clampNumber(Number(weekRangeTo.value), 0, 6, 5)
+        return from <= to ? `${from}-${to}` : `${to}-${from}`
       }
-      return `${rangeValues[field].from}-${rangeValues[field].to}`
-    case 'interval':
-      return `${intervalValues[field].start}/${intervalValues[field].step}`
+      const from = clampNumber(rangeValues[field].from, config.min, config.max, config.min)
+      const to = clampNumber(rangeValues[field].to, config.min, config.max, config.max)
+      return from <= to ? `${from}-${to}` : `${to}-${from}`
+    }
+    case 'interval': {
+      if (field === 'year' || !intervalValues[field]) return '*'
+      const start = clampNumber(intervalValues[field].start, config.min, config.max, config.min)
+      const step = clampNumber(intervalValues[field].step, 1, config.max, 1)
+      return `${start}/${step}`
+    }
     case 'specific': {
-      if (field === 'year') {
-        return yearSpecificInput.value.trim()
-      }
-      if (specificValues[field].length === 0) return '*'
-      const max = config.max
-      const min = config.min
-      if (specificValues[field].length === max - min + 1) return '*'
-      return specificValues[field].sort((a, b) => a - b).join(',')
+      if (field === 'year') return yearSpecificInput.value.trim()
+      const values = [...new Set(specificValues[field])].filter(
+        (value) => Number.isFinite(value) && value >= config.min && value <= config.max
+      )
+      if (values.length === 0) return '*'
+      if (values.length === config.max - config.min + 1) return '*'
+      return values.sort((a, b) => a - b).join(',')
     }
     case 'workDay':
-      return `${workDayValue.value}W`
+      return `${clampNumber(workDayValue.value, 1, 31, 1)}W`
     case 'lastDay':
       return 'L'
     case 'nth':
-      return `${weekNthDay.value}#${weekNth.value}`
+      return `${clampNumber(weekNthDay.value, 0, 6, 1)}#${clampNumber(weekNth.value, 1, 5, 1)}`
     case 'last':
-      return `${weekLastDay.value}L`
+      return `${clampNumber(weekLastDay.value, 0, 6, 1)}L`
     default:
       return field === 'year' ? '' : '*'
   }
 }
 
-function getExpressionDescription(expression) {
-  const parts = expression.split(/\s+/)
-  if (parts.length < 6) return '格式错误'
-
-  const [second, minute, hour, day, month, week, year] = parts
-  const descs = []
-
-  if (second === '*') {
-    descs.push('每秒')
-  } else {
-    descs.push(`在 ${getFieldDesc('second', second)} 秒`)
-  }
-
-  if (minute === '*') {
-    descs.push('每分钟')
-  } else {
-    descs.push(`在 ${getFieldDesc('minute', minute)} 分`)
-  }
-
-  if (hour === '*') {
-    descs.push('每小时')
-  } else {
-    descs.push(`在 ${getFieldDesc('hour', hour)} 时`)
-  }
-
-  if (day === '?' || day === '*') {
-    if (week !== '*' && week !== '?') {
-      descs.push(`在 ${getFieldDesc('week', week)}`)
-    }
-  } else if (week === '?' || week === '*') {
-    if (day !== '*') {
-      descs.push(`在 ${getFieldDesc('day', day)} 日`)
-    }
-  }
-
-  if (month !== '*') {
-    descs.push(`在 ${getFieldDesc('month', month)} 月`)
-  }
-
-  if (year && year !== '*') {
-    descs.push(`在 ${year} 年`)
-  }
-
-  return descs.join('，') + ' 执行'
+function parseValueToken(token, aliases) {
+  if (token == null) return null
+  const value = String(token).trim().toUpperCase()
+  if (/^\d+$/.test(value)) return Number(value)
+  if (aliases && Object.prototype.hasOwnProperty.call(aliases, value)) return aliases[value]
+  return null
 }
 
-function getFieldDesc(field, expr) {
-  if (expr === '*') return '每' + FIELD_CONFIG[field].name
+function describeValue(field, value) {
+  if (field === 'week') return FIELD_CONFIG.week.names[value] || String(value)
+  if (field === 'month') return MONTH_NAMES[value] || String(value)
+  return String(value)
+}
 
-  if (expr.includes('-')) {
-    const [from, to] = expr.split('-')
-    if (field === 'week') {
-      const names = FIELD_CONFIG.week.names
-      return `${names[parseInt(from)]} 到 ${names[parseInt(to)]}`
+function describeField(field, expr) {
+  const config = FIELD_CONFIG[field]
+
+  if (expr === '*') return field === 'week' ? '每天' : `每${FIELD_UNITS[field]}`
+  if (expr === '?') return ''
+  if (field === 'day' && expr === 'L') return '最后一天'
+  if (field === 'day' && /^\d{1,2}W$/i.test(expr)) return `${expr.slice(0, -1)} 号最近的工作日`
+  if (field === 'week') {
+    const nthMatch = /^([A-Z]{3}|\d)#([1-5])$/i.exec(expr)
+    if (nthMatch) {
+      const day = parseValueToken(nthMatch[1], WEEK_ALIASES)
+      if (day != null) return `第 ${nthMatch[2]} 个${FIELD_CONFIG.week.names[day]}`
     }
-    return `${from} 到 ${to}`
+    const lastMatch = /^([A-Z]{3}|\d)L$/i.exec(expr)
+    if (lastMatch) {
+      const day = parseValueToken(lastMatch[1], WEEK_ALIASES)
+      if (day != null) return `最后一个${FIELD_CONFIG.week.names[day]}`
+    }
   }
 
   if (expr.includes('/')) {
     const [start, step] = expr.split('/')
-    return `${start === '*' ? '0' : start} 开始每隔 ${step}`
+    return `${start === '*' ? config.min : start} 起每 ${step} ${FIELD_UNITS[field]}`
+  }
+
+  const aliases = field === 'week' ? WEEK_ALIASES : field === 'month' ? MONTH_ALIASES : null
+  if (expr.includes('-')) {
+    const [fromToken, toToken] = expr.split('-')
+    const from = parseValueToken(fromToken, aliases)
+    const to = parseValueToken(toToken, aliases)
+    if (from == null || to == null) return expr
+    return `${describeValue(field, from)} 至 ${describeValue(field, to)}`
   }
 
   if (expr.includes(',')) {
-    const values = expr.split(',')
-    if (field === 'week') {
-      const names = FIELD_CONFIG.week.names
-      return values.map((v) => names[parseInt(v)]).join('、')
-    }
-    if (field === 'month') {
-      return values.map((v) => MONTH_NAMES[parseInt(v)]).join('、')
-    }
-    return values.join('、')
+    const values = expr
+      .split(',')
+      .map((token) => parseValueToken(token, aliases))
+      .filter((value) => value != null)
+    return values.map((value) => describeValue(field, value)).join('、')
   }
 
-  if (expr.endsWith('W')) {
-    return `${expr.slice(0, -1)} 号最近工作日`
-  }
+  const value = parseValueToken(expr, aliases)
+  return value == null ? expr : describeValue(field, value)
+}
 
-  if (expr === 'L') {
-    return '最后一天'
-  }
+function timePhrase(field, expr, suffix) {
+  if (expr.includes('/')) return describeField(field, expr)
+  return `在 ${describeField(field, expr)} ${suffix}`
+}
 
-  if (expr.includes('#')) {
-    const [day, nth] = expr.split('#')
-    const names = FIELD_CONFIG.week.names
-    return `第${nth}个${names[parseInt(day)]}`
-  }
+function dayPhrase(expr) {
+  const desc = describeField('day', expr)
+  if (expr === 'L' || /W$/i.test(expr) || desc.endsWith('日')) return desc
+  return `${desc} 日`
+}
 
-  if (expr.endsWith('L') && field === 'week') {
-    const day = expr.slice(0, -1)
-    const names = FIELD_CONFIG.week.names
-    return `最后一个${names[parseInt(day)]}`
-  }
+function getExpressionDescription(expression) {
+  const analysis = analyzeExpression(expression)
+  if (!analysis.valid) return `表达式错误：${analysis.error}`
 
-  if (field === 'week') {
-    return FIELD_CONFIG.week.names[parseInt(expr)]
-  }
-  if (field === 'month') {
-    return MONTH_NAMES[parseInt(expr)]
-  }
+  const [second, minute, hour, day, month, week, year] = analysis.parts
+  const descs = []
 
-  return expr
+  if (hour !== '*') {
+    descs.push(timePhrase('hour', hour, '点'))
+  } else if (minute === '*' && second === '*') {
+    descs.push('每秒')
+  } else if (minute === '*') {
+    descs.push('每分钟')
+  } else {
+    descs.push('每小时')
+  }
+  if (minute !== '*') descs.push(timePhrase('minute', minute, '分'))
+  if (second !== '*') descs.push(timePhrase('second', second, '秒'))
+
+  const dayActive = day !== '*' && day !== '?'
+  const weekActive = week !== '*' && week !== '?'
+  if (month !== '*') descs.push(`在${describeField('month', month)}`)
+  if (year && year !== '*') {
+    const yearDesc = describeField('year', year)
+    descs.push(year.includes('/') ? `在 ${yearDesc}` : `在 ${yearDesc} 年`)
+  }
+  if (dayActive) descs.push(`在每月 ${dayPhrase(day)}`)
+  if (weekActive) descs.push(`在每月 ${describeField('week', week)}`)
+
+  return descs.join('，') + '执行'
 }
 
 function updateScheduleList() {
@@ -700,127 +739,232 @@ function updateScheduleList() {
   }
 }
 
+function parseNumericPart(part, min, max, aliases) {
+  if (!part) return null
+
+  const segments = part.split('/')
+  if (segments.length > 2) return null
+
+  let step = 1
+  const base = segments[0]
+  if (segments.length === 2) {
+    if (!/^\d+$/.test(segments[1])) return null
+    step = Number(segments[1])
+    if (step < 1) return null
+  }
+
+  let start
+  let end
+  if (base === '*') {
+    start = min
+    end = max
+  } else if (base.includes('-')) {
+    const [fromToken, toToken, ...rest] = base.split('-')
+    if (rest.length > 0) return null
+    start = parseValueToken(fromToken, aliases)
+    end = parseValueToken(toToken, aliases)
+    if (start == null || end == null) return null
+  } else {
+    start = parseValueToken(base, aliases)
+    if (start == null) return null
+    end = step > 1 ? max : start
+  }
+
+  if (start < min || end > max || start > end) return null
+
+  const values = []
+  for (let value = start; value <= end; value += step) values.push(value)
+  return values
+}
+
+function parseValueList(expr, min, max, aliases) {
+  if (!expr) return null
+  if (expr === '*') {
+    const values = []
+    for (let value = min; value <= max; value++) values.push(value)
+    return values
+  }
+
+  const values = new Set()
+  for (const rawPart of expr.split(',')) {
+    const part = rawPart.trim().toUpperCase()
+    const parsed = parseNumericPart(part, min, max, aliases)
+    if (!parsed) return null
+    parsed.forEach((value) => values.add(value))
+  }
+  return [...values].sort((a, b) => a - b)
+}
+
+function lastDayOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+}
+
+function nearestWeekday(target, date) {
+  const lastDay = lastDayOfMonth(date)
+  const day = Math.min(Math.max(target, 1), lastDay)
+  const dayOfWeek = new Date(date.getFullYear(), date.getMonth(), day).getDay()
+  if (dayOfWeek === 6) return day > 1 ? day - 1 : day + 2
+  if (dayOfWeek === 0) return day < lastDay ? day + 1 : day - 2
+  return day
+}
+
+function compileDayMatcher(expr) {
+  if (!expr || expr === '*' || expr === '?') return { match: () => true }
+
+  const matchers = []
+  for (const rawPart of expr.split(',')) {
+    const part = rawPart.trim().toUpperCase()
+    if (!part) return null
+
+    if (part === 'L') {
+      matchers.push((date) => date.getDate() === lastDayOfMonth(date))
+      continue
+    }
+    if (part === 'LW') {
+      matchers.push((date) => date.getDate() === nearestWeekday(lastDayOfMonth(date), date))
+      continue
+    }
+    const workday = /^(\d{1,2})W$/.exec(part)
+    if (workday) {
+      const target = Number(workday[1])
+      if (target < 1 || target > 31) return null
+      matchers.push((date) => date.getDate() === nearestWeekday(target, date))
+      continue
+    }
+    if (part.includes('W')) return null
+
+    const values = parseNumericPart(part, 1, 31)
+    if (!values) return null
+    matchers.push((date) => values.includes(date.getDate()))
+  }
+
+  return { match: (date) => matchers.some((fn) => fn(date)) }
+}
+
+function compileWeekMatcher(expr) {
+  if (!expr || expr === '*' || expr === '?') return { match: () => true }
+
+  const matchers = []
+  for (const rawPart of expr.split(',')) {
+    const part = rawPart.trim().toUpperCase()
+    if (!part) return null
+
+    const nthMatch = /^([A-Z]{3}|\d)#([1-5])$/.exec(part)
+    if (nthMatch) {
+      const day = parseValueToken(nthMatch[1], WEEK_ALIASES)
+      if (day == null || day > 6) return null
+      const nth = Number(nthMatch[2])
+      matchers.push((date) => date.getDay() === day && Math.ceil(date.getDate() / 7) === nth)
+      continue
+    }
+    const lastMatch = /^([A-Z]{3}|\d)L$/.exec(part)
+    if (lastMatch) {
+      const day = parseValueToken(lastMatch[1], WEEK_ALIASES)
+      if (day == null || day > 6) return null
+      matchers.push((date) => date.getDay() === day && date.getDate() + 7 > lastDayOfMonth(date))
+      continue
+    }
+
+    const values = parseNumericPart(part, 0, 6, WEEK_ALIASES)
+    if (!values) return null
+    matchers.push((date) => values.includes(date.getDay()))
+  }
+
+  return { match: (date) => matchers.some((fn) => fn(date)) }
+}
+
+function analyzeExpression(expression) {
+  const parts = String(expression || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (parts.length < 6 || parts.length > 7) return { valid: false, error: '应为 6 或 7 个字段' }
+
+  const [second, minute, hour, day, month, week, year] = parts
+  const secondSet = parseValueList(second, 0, 59)
+  if (!secondSet) return { valid: false, error: '秒字段无效' }
+  const minuteSet = parseValueList(minute, 0, 59)
+  if (!minuteSet) return { valid: false, error: '分钟字段无效' }
+  const hourSet = parseValueList(hour, 0, 23)
+  if (!hourSet) return { valid: false, error: '小时字段无效' }
+
+  const dayMatcher = compileDayMatcher(day)
+  if (!dayMatcher) return { valid: false, error: '日字段无效' }
+  const monthSet = parseValueList(month, 1, 12, MONTH_ALIASES)
+  if (!monthSet) return { valid: false, error: '月字段无效' }
+  const weekMatcher = compileWeekMatcher(week)
+  if (!weekMatcher) return { valid: false, error: '周字段无效' }
+  const yearSet = year ? parseValueList(year, 1970, 9999) : null
+  if (year && !yearSet) return { valid: false, error: '年字段无效' }
+
+  return {
+    valid: true,
+    parts,
+    secondSet,
+    minuteSet,
+    hourSet,
+    monthSet,
+    yearSet,
+    dayMatcher,
+    weekMatcher
+  }
+}
+
 function getNextExecutionTimes(expression, count) {
-  const parts = expression.split(/\s+/)
-  if (parts.length < 6) return []
+  const analysis = analyzeExpression(expression)
+  if (!analysis.valid) return []
 
-  const [secondExpr, minuteExpr, hourExpr, dayExpr, monthExpr, weekExpr, yearExpr] = parts
-
+  const { secondSet, minuteSet, hourSet, monthSet, yearSet, dayMatcher, weekMatcher } = analysis
   const results = []
-  const current = new Date()
+  const maxYear = yearSet ? Math.max(...yearSet) : new Date().getFullYear() + 5
+  const maxDate = new Date(maxYear, 11, 31, 23, 59, 59)
+  let current = new Date()
   current.setMilliseconds(0)
+  current.setSeconds(current.getSeconds() + 1)
 
-  const secondSet = parseCronField(secondExpr, 0, 59)
-  const minuteSet = parseCronField(minuteExpr, 0, 59)
-  const hourSet = parseCronField(hourExpr, 0, 23)
-  const daySet = dayExpr === '?' ? null : parseCronField(dayExpr, 1, 31)
-  const monthSet = parseCronField(monthExpr, 1, 12)
-  const weekSet = weekExpr === '?' ? null : parseCronField(weekExpr, 0, 6)
-  const yearSet = yearExpr ? parseCronField(yearExpr, 2024, 2100) : null
+  let iterations = 0
+  while (results.length < count && current <= maxDate && iterations < 200000) {
+    iterations++
 
-  const maxDate = new Date(current.getFullYear() + 3, 11, 31, 23, 59, 59)
-
-  while (results.length < count && current <= maxDate) {
-    if (yearSet && !yearSet.includes(current.getFullYear())) {
-      current.setFullYear(current.getFullYear() + 1)
-      current.setMonth(0, 1)
-      current.setHours(0, 0, 0)
+    const year = current.getFullYear()
+    if (yearSet && !yearSet.includes(year)) {
+      const nextYear = yearSet.find((value) => value > year)
+      if (nextYear == null) break
+      current = new Date(nextYear, 0, 1, 0, 0, 0)
       continue
     }
 
-    if (!monthSet.includes(current.getMonth() + 1)) {
-      current.setMonth(current.getMonth() + 1)
-      current.setDate(1)
-      current.setHours(0, 0, 0)
+    const month = current.getMonth()
+    if (!monthSet.includes(month + 1)) {
+      current = new Date(year, month + 1, 1, 0, 0, 0)
       continue
     }
 
-    let dateMatch
-    if (daySet && weekSet) {
-      dateMatch = daySet.includes(current.getDate()) || weekSet.includes(current.getDay())
-    } else if (weekSet) {
-      dateMatch = weekSet.includes(current.getDay())
-    } else if (daySet) {
-      dateMatch = daySet.includes(current.getDate())
-    } else {
-      dateMatch = true
-    }
-
-    if (!dateMatch) {
-      current.setDate(current.getDate() + 1)
-      current.setHours(0, 0, 0)
+    if (!dayMatcher.match(current) || !weekMatcher.match(current)) {
+      current = new Date(year, month, current.getDate() + 1, 0, 0, 0)
       continue
     }
 
     if (!hourSet.includes(current.getHours())) {
-      current.setHours(current.getHours() + 1)
-      current.setMinutes(0, 0)
+      current = new Date(year, month, current.getDate(), current.getHours() + 1, 0, 0)
       continue
     }
 
     if (!minuteSet.includes(current.getMinutes())) {
-      current.setMinutes(current.getMinutes() + 1)
-      current.setSeconds(0)
+      current = new Date(year, month, current.getDate(), current.getHours(), current.getMinutes() + 1, 0)
       continue
     }
 
     if (!secondSet.includes(current.getSeconds())) {
-      current.setSeconds(current.getSeconds() + 1)
+      current = new Date(current.getTime() + 1000)
       continue
     }
 
     results.push(new Date(current))
-    current.setSeconds(current.getSeconds() + 1)
+    current = new Date(current.getTime() + 1000)
   }
 
   return results
-}
-
-function parseCronField(expr, min, max) {
-  const result = []
-
-  if (!expr || expr === '*' || expr === '?') {
-    for (let i = min; i <= max; i++) {
-      result.push(i)
-    }
-    return result
-  }
-
-  if (expr === 'L') {
-    return [31]
-  }
-
-  if (expr.endsWith('W')) {
-    return [parseInt(expr)]
-  }
-
-  const parts = expr.split(',')
-
-  for (const part of parts) {
-    if (part.includes('-')) {
-      const [start, end] = part.split('-').map(Number)
-      for (let i = start; i <= end; i++) {
-        result.push(i)
-      }
-    } else if (part.includes('/')) {
-      const [startStep, step] = part.split('/')
-      let start = parseInt(startStep)
-      if (part.startsWith('*/')) {
-        start = min
-      }
-      for (let i = start; i <= max; i += parseInt(step)) {
-        result.push(i)
-      }
-    } else if (part.includes('#')) {
-      result.push(Number(part.split('#')[0]))
-    } else if (part.endsWith('L')) {
-      result.push(Number(part.slice(0, -1)))
-    } else {
-      result.push(Number(part))
-    }
-  }
-
-  return result.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b)
 }
 
 function getTimeRemaining(from, to) {
@@ -849,92 +993,121 @@ function parseExpression() {
     return
   }
 
-  const parts = expression.split(/\s+/)
-  if (parts.length < 6 || parts.length > 7) {
-    showError('表达式格式错误，应为 6-7 个字段')
+  const analysis = analyzeExpression(expression)
+  if (!analysis.valid) {
+    expressionDesc.value = `表达式错误：${analysis.error}`
+    scheduleList.value = []
+    showError(`表达式格式错误：${analysis.error}`)
     return
   }
 
   const fieldsToParse = ['second', 'minute', 'hour', 'day', 'month', 'week']
-  if (parts.length === 7) {
-    fieldsToParse.push('year')
-  }
+  if (analysis.parts.length === 7) fieldsToParse.push('year')
 
-  fieldsToParse.forEach((field, index) => {
-    if (index < parts.length) {
-      parseFieldExpression(field, parts[index])
-    }
-  })
+  const fullyParsed = fieldsToParse.every((field, index) => parseFieldExpression(field, analysis.parts[index]))
 
   expressionDesc.value = getExpressionDescription(cronExpression.value)
   updateScheduleList()
-  showSuccess('表达式已反解析')
+  if (fullyParsed) {
+    showSuccess('表达式已反解析')
+  } else {
+    showWarning('部分字段无法完整映射到表单，请以表达式为准')
+  }
 }
 
 function parseFieldExpression(field, expr) {
-  if (expr === '*' || expr === '') {
+  const value = String(expr || '').trim()
+  const upper = value.toUpperCase()
+
+  if (upper === '*' || upper === '') {
     setFieldTypeValue(field, 'every')
-    return
+    return true
   }
 
-  if (expr === '?') {
+  if (upper === '?') {
+    if (field !== 'day' && field !== 'week') return false
     setFieldTypeValue(field, 'notSpecify')
-    return
+    return true
   }
 
-  if (expr === 'L') {
-    setFieldTypeValue(field, 'lastDay')
-    return
-  }
-
-  if (expr.endsWith('W')) {
-    setFieldTypeValue(field, 'workDay')
-    workDayValue.value = parseInt(expr.slice(0, -1))
-    return
-  }
-
-  if (expr.endsWith('L') && field === 'week') {
-    setFieldTypeValue(field, 'last')
-    weekLastDay.value = expr.slice(0, -1)
-    return
-  }
-
-  if (expr.includes('#') && field === 'week') {
-    setFieldTypeValue(field, 'nth')
-    const [day, nth] = expr.split('#')
-    weekNth.value = nth
-    weekNthDay.value = day
-    return
-  }
-
-  if (expr.includes('-')) {
-    setFieldTypeValue(field, 'range')
-    const [from, to] = expr.split('-')
-    if (field === 'week') {
-      weekRangeFrom.value = from
-      weekRangeTo.value = to
-    } else {
-      rangeValues[field].from = parseInt(from)
-      rangeValues[field].to = parseInt(to)
+  if (field === 'day') {
+    if (upper === 'L') {
+      setFieldTypeValue(field, 'lastDay')
+      return true
     }
-    return
+    const workday = /^(\d{1,2})W$/.exec(upper)
+    if (workday) {
+      setFieldTypeValue(field, 'workDay')
+      workDayValue.value = Number(workday[1])
+      return true
+    }
   }
 
-  if (expr.includes('/')) {
-    setFieldTypeValue(field, 'interval')
-    const [start, step] = expr.split('/')
-    intervalValues[field].start = start === '*' ? 0 : parseInt(start)
-    intervalValues[field].step = parseInt(step)
-    return
+  if (field === 'week') {
+    const nthMatch = /^([A-Z]{3}|\d)#([1-5])$/.exec(upper)
+    if (nthMatch) {
+      const day = parseValueToken(nthMatch[1], WEEK_ALIASES)
+      if (day == null) return false
+      setFieldTypeValue(field, 'nth')
+      weekNthDay.value = String(day)
+      weekNth.value = nthMatch[2]
+      return true
+    }
+    const lastMatch = /^([A-Z]{3}|\d)L$/.exec(upper)
+    if (lastMatch) {
+      const day = parseValueToken(lastMatch[1], WEEK_ALIASES)
+      if (day == null) return false
+      setFieldTypeValue(field, 'last')
+      weekLastDay.value = String(day)
+      return true
+    }
   }
+
+  if (field === 'year') {
+    setFieldTypeValue(field, 'specific')
+    yearSpecificInput.value = value
+    return true
+  }
+
+  if (upper.includes('/')) {
+    const [startToken, stepToken] = upper.split('/')
+    if (stepToken == null || !/^\d+$/.test(stepToken)) return false
+    if (!intervalValues[field]) return false
+    setFieldTypeValue(field, 'interval')
+    intervalValues[field].start = startToken === '*' ? FIELD_CONFIG[field].min : Number(startToken)
+    intervalValues[field].step = Number(stepToken)
+    return true
+  }
+
+  if (upper.includes('-')) {
+    const [fromToken, toToken] = upper.split('-')
+    if (toToken == null) return false
+    if (field === 'week') {
+      const from = parseValueToken(fromToken, WEEK_ALIASES)
+      const to = parseValueToken(toToken, WEEK_ALIASES)
+      if (from == null || to == null) return false
+      setFieldTypeValue(field, 'range')
+      weekRangeFrom.value = String(from)
+      weekRangeTo.value = String(to)
+      return true
+    }
+    const aliases = field === 'month' ? MONTH_ALIASES : null
+    const from = parseValueToken(fromToken, aliases)
+    const to = parseValueToken(toToken, aliases)
+    if (from == null || to == null || !rangeValues[field]) return false
+    setFieldTypeValue(field, 'range')
+    rangeValues[field].from = from
+    rangeValues[field].to = to
+    return true
+  }
+
+  const aliases = field === 'week' ? WEEK_ALIASES : field === 'month' ? MONTH_ALIASES : null
+  const values = upper.split(',').map((token) => parseValueToken(token, aliases))
+  if (values.some((item) => item == null)) return false
 
   setFieldTypeValue(field, 'specific')
-  if (field === 'year') {
-    yearSpecificInput.value = expr
-  } else {
-    const values = expr.split(',').map(Number)
-    specificValues[field] = values
-  }
+  specificValues[field] = values
+  return true
 }
 
 function setFieldTypeValue(field, type) {
@@ -964,203 +1137,84 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.cron-container {
-  margin: 0 auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--glass-bg);
-  overflow: hidden;
+.page-body {
+  padding: 12px 16px 16px;
+  width: 100%;
 }
 
-.cron-container header {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 20px 24px 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.cron-container header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 24px;
-  margin-bottom: 6px;
-}
-
-.cron-container header h1 .header-icon {
-  width: 28px;
-  height: 28px;
-}
-
-.cron-container header .subtitle {
-  font-size: 14px;
-  opacity: 1;
-  margin-bottom: 16px;
-}
-
-.field-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.field-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: rgba(255, 255, 255, 0.9);
-  min-width: 60px;
-}
-
-.field-tab:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-2px);
-}
-
-.field-tab.active {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-weight: 600;
-}
-
-.tab-text {
-  font-size: 13px;
-}
-
-.cron-content {
-  padding: 20px 24px;
-  flex: 1;
-  overflow-y: auto;
-  background: rgba(248, 249, 250, 0.5);
-}
-
-.field-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 16px;
-  display: block;
-}
-
-.field-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.field-hint {
-  font-size: 12px;
+.panel-header .field-hint {
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-  margin-bottom: 12px;
-  background: rgba(248, 249, 250, 0.5);
-  padding: 4px 10px;
-  border-radius: 12px;
-  display: inline-block;
 }
 
 .type-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 14px;
 }
 
 .type-option {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 14px;
-  background: var(--glass-bg);
+  padding: 6px 10px;
+  background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 13px;
+  transition: var(--transition-fast);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 
 .type-option:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
+  border-color: var(--border-strong);
 }
 
 .type-option input[type='radio'] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary-color);
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+  accent-color: var(--accent-color);
   cursor: pointer;
 }
 
 .type-option:has(input:checked) {
-  background: rgba(var(--primary-rgb), 0.1);
-  border-color: var(--primary-color);
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  color: var(--text-primary);
 }
 
 .value-config {
   display: flex;
-  align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .inline-row {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .value-config .input-field {
-  width: 70px;
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
+  width: 72px;
   text-align: center;
-  background: var(--glass-bg);
-}
-
-.value-config .input-field:focus {
-  outline: none;
-  border-color: var(--primary-color);
 }
 
 .value-config .select-field {
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--glass-bg);
-  cursor: pointer;
-  min-width: 70px;
-}
-
-.value-config .select-field:focus {
-  outline: none;
-  border-color: var(--primary-color);
+  width: 88px;
 }
 
 .range-separator,
 .interval-label {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .specific-input {
-  width: 200px !important;
+  width: 220px !important;
 }
 
 .specific-grid {
@@ -1185,68 +1239,60 @@ onMounted(() => {
 .specific-grid.week-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .specific-grid.week-grid .specific-item {
   width: auto;
-  min-width: 60px;
-  padding: 6px 12px;
+  min-width: 56px;
+  padding: 0 10px;
 }
 
 .hour-grid-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .time-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .time-section-title {
-  font-size: 14px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--primary-color);
-  padding-left: 4px;
+  color: var(--text-tertiary);
 }
 
 .specific-item {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 12px;
-  transition: var(--transition-normal);
-  background: var(--glass-bg);
+  font-size: var(--font-size-xs);
+  transition: var(--transition-fast);
+  background: var(--surface);
+  color: var(--text-secondary);
 }
 
 .specific-item:hover {
-  border-color: var(--primary-color);
+  border-color: var(--border-strong);
 }
 
 .specific-item.active {
-  background: var(--primary-gradient);
-  color: white;
-  border-color: transparent;
-}
-
-.expression-box {
-  background: rgba(248, 249, 250, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--primary-color);
+  color: var(--text-inverse);
+  border-color: var(--primary-color);
 }
 
 .expression-row {
-  margin-bottom: 15px;
+  margin-bottom: 14px;
 }
 
 .expression-row:last-child {
@@ -1255,136 +1301,111 @@ onMounted(() => {
 
 .field-label {
   display: block;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .field-tags {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 6px;
 }
 
 .field-tag {
-  padding: 6px 12px;
-  background: var(--primary-gradient);
-  color: white;
+  padding: 4px 10px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
+  color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
 }
 
 .expression-input-wrapper {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .expression-input {
   flex: 1;
-  padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
+  height: var(--control-height);
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 16px;
-  background: var(--glass-bg);
+  font-size: var(--font-size-base);
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .expression-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-glow);
 }
 
 .expression-desc {
-  color: var(--text-secondary);
-  font-size: 14px;
-  padding: 10px;
-  background: rgba(var(--primary-rgb), 0.1);
+  padding: 8px 10px;
+  background: var(--surface-muted);
   border-radius: var(--radius-sm);
-}
-
-.schedule-box {
-  background: rgba(248, 249, 250, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.schedule-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 15px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .schedule-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .schedule-empty {
-  color: var(--text-tertiary);
-  font-size: 13px;
+  padding: 16px;
   text-align: center;
-  padding: 20px;
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
 }
 
 .schedule-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 10px 15px;
-  background: var(--glass-bg);
+  gap: 12px;
+  padding: 8px 10px;
+  background: var(--surface-muted);
   border-radius: var(--radius-sm);
 }
 
 .schedule-item .index {
-  width: 24px;
-  height: 24px;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-gradient);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-inverse);
   border-radius: 50%;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
 }
 
 .schedule-item .time {
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   color: var(--text-primary);
 }
 
 .schedule-item .remaining {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
-.help-section {
-  background: rgba(248, 249, 250, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 20px;
-}
-
-.help-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 15px;
-}
-
 .help-content {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
 .help-content p {
@@ -1397,27 +1418,28 @@ onMounted(() => {
 }
 
 .help-content li {
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .help-content code {
-  background: rgba(var(--primary-rgb), 0.1);
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
+  background: var(--surface-muted);
+  color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .cron-structure {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 15px;
+  padding: 12px;
   border-radius: var(--radius-sm);
-  margin: 15px 0;
+  background: var(--surface-muted);
+  margin: 12px 0;
 }
 
 .cron-structure pre {
   margin: 0;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   line-height: 1.6;
 }
 </style>

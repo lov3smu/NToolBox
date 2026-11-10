@@ -1,0 +1,41 @@
+{
+  "name": "unit-test",
+  "version": "1.0.0",
+  "description": "为函数或模块生成覆盖正常、边界和异常路径的单元测试",
+  "author": "NToolBox Community",
+  "category": "code",
+  "tags": ["测试", "单元测试", "质量"],
+  "icon": "test",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "需要编写测试的代码"
+      },
+      "language": {
+        "type": "string",
+        "description": "编程语言，例如 javascript、python、java"
+      },
+      "framework": {
+        "type": "string",
+        "description": "测试框架，例如 vitest、jest、pytest、junit"
+      },
+      "focus": {
+        "type": "string",
+        "description": "重点关注的行为或边界条件"
+      }
+    },
+    "required": ["code"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "code: function divide(a,b){return a/b}, framework: vitest",
+      "output": "生成正常、除零和浮点结果的测试用例"
+    }
+  ],
+  "featured": false,
+  "downloads": 890,
+  "changelog": "首个版本：覆盖正常、边界与异常路径"
+}

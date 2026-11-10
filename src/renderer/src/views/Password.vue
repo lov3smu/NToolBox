@@ -1,159 +1,173 @@
 <template>
-  <div class="password-container" :style="{ width: windowWidth + 'px' }">
-    <header>
-      <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  <PageLayout tool-path="/password" page-class="password-page">
+    <template #actions>
+      <button class="btn btn-primary btn-sm" @click="generate">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+          <path d="M16 21h5v-5" />
         </svg>
-        密码生成器
-      </h1>
-      <div class="subtitle">随机安全密码生成工具</div>
-    </header>
-    <div class="password-content">
-      <div class="password-display-section">
-        <div class="password-output-wrapper">
-          <input
-            v-model="password"
-            :type="visible ? 'text' : 'password'"
-            class="password-output"
-            readonly
-            placeholder="点击生成按钮创建密码"
-          />
-          <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
-            <svg
-              v-if="visible"
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
-              />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </button>
-          <button class="btn-icon" title="复制密码" @click="copyPassword">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-          </button>
-        </div>
-        <button class="btn btn-primary btn-lg generate-btn" @click="generate">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-            <path d="M16 21h5v-5" />
-          </svg>
-          生成密码
-        </button>
-      </div>
+        生成密码
+      </button>
+    </template>
 
-      <div class="section">
-        <div class="length-header">
-          <label>密码长度</label>
-          <span class="length-value">{{ length }}</span>
+    <div class="page-body">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">生成结果</span>
         </div>
-        <div class="slider-container">
-          <input
-            v-model="length"
-            type="range"
-            class="password-slider"
-            min="1"
-            max="100"
-            :style="{ '--progress': progress + '%' }"
-            @input="onSliderInput"
-          />
-          <div class="slider-labels">
-            <span>1</span>
-            <span>25</span>
-            <span>50</span>
-            <span>75</span>
-            <span>100</span>
+        <div class="panel-body">
+          <div class="password-output-wrapper">
+            <input
+              v-model="password"
+              :type="visible ? 'text' : 'password'"
+              class="password-output"
+              readonly
+              placeholder="点击「生成密码」创建密码"
+            />
+            <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
+              <svg
+                v-if="visible"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
+                />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+            <button class="btn-icon" title="复制密码" @click="copyPassword">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <label class="section-title">字符类型</label>
-        <div class="checkbox-group">
-          <label class="checkbox-card" :class="{ active: useUpper }" data-type="uppercase">
-            <input v-model="useUpper" type="checkbox" hidden />
-            <span class="checkbox-icon">A</span>
-            <span class="checkbox-label">大写字母</span>
-            <span class="checkbox-desc">A-Z</span>
-          </label>
-          <label class="checkbox-card" :class="{ active: useLower }" data-type="lowercase">
-            <input v-model="useLower" type="checkbox" hidden />
-            <span class="checkbox-icon">a</span>
-            <span class="checkbox-label">小写字母</span>
-            <span class="checkbox-desc">a-z</span>
-          </label>
-          <label class="checkbox-card" :class="{ active: useNumbers }" data-type="numbers">
-            <input v-model="useNumbers" type="checkbox" hidden />
-            <span class="checkbox-icon">0</span>
-            <span class="checkbox-label">数字</span>
-            <span class="checkbox-desc">0-9</span>
-          </label>
-          <label class="checkbox-card" :class="{ active: useSymbols }" data-type="special">
-            <input v-model="useSymbols" type="checkbox" hidden />
-            <span class="checkbox-icon">#</span>
-            <span class="checkbox-label">特殊字符</span>
-            <span class="checkbox-desc">!@#$%</span>
-          </label>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">密码选项</span>
         </div>
-      </div>
+        <div class="panel-body">
+          <div class="field">
+            <div class="field-head">
+              <label>密码长度</label>
+              <span class="length-value">{{ length }}</span>
+            </div>
+            <input
+              v-model="length"
+              type="range"
+              class="password-slider"
+              min="1"
+              max="100"
+              :style="{ '--progress': progress + '%' }"
+              @input="onSliderInput"
+            />
+            <div class="slider-labels">
+              <span>1</span>
+              <span>25</span>
+              <span>50</span>
+              <span>75</span>
+              <span>100</span>
+            </div>
+          </div>
 
-      <div class="section">
-        <div class="strength-header">
-          <label>密码强度</label>
-          <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
-        </div>
-        <div class="strength-meter">
-          <div class="strength-bar">
-            <div class="strength-fill" :class="strengthClass" />
+          <div class="field">
+            <label>字符类型</label>
+            <div class="checkbox-group">
+              <label class="checkbox-card" :class="{ active: useUpper }">
+                <input v-model="useUpper" type="checkbox" hidden />
+                <span class="checkbox-icon">A</span>
+                <span class="checkbox-text">
+                  <span class="checkbox-label">大写字母</span>
+                  <span class="checkbox-desc">A-Z</span>
+                </span>
+              </label>
+              <label class="checkbox-card" :class="{ active: useLower }">
+                <input v-model="useLower" type="checkbox" hidden />
+                <span class="checkbox-icon">a</span>
+                <span class="checkbox-text">
+                  <span class="checkbox-label">小写字母</span>
+                  <span class="checkbox-desc">a-z</span>
+                </span>
+              </label>
+              <label class="checkbox-card" :class="{ active: useNumbers }">
+                <input v-model="useNumbers" type="checkbox" hidden />
+                <span class="checkbox-icon">0</span>
+                <span class="checkbox-text">
+                  <span class="checkbox-label">数字</span>
+                  <span class="checkbox-desc">0-9</span>
+                </span>
+              </label>
+              <label class="checkbox-card" :class="{ active: useSymbols }">
+                <input v-model="useSymbols" type="checkbox" hidden />
+                <span class="checkbox-icon">#</span>
+                <span class="checkbox-text">
+                  <span class="checkbox-label">特殊字符</span>
+                  <span class="checkbox-desc">!@#$%</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field strength-field">
+            <div class="field-head">
+              <label>密码强度</label>
+              <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-fill" :class="strengthClass" />
+            </div>
+            <div class="strength-hint">{{ strengthHint }}</div>
           </div>
         </div>
-        <div class="strength-hint">
-          {{ strengthHint }}
-        </div>
       </div>
 
-      <div class="section history-section">
-        <div class="history-header">
-          <label class="section-title">历史记录</label>
-          <button class="btn-text" @click="clearHistory">清空</button>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">历史记录</span>
+          <div class="panel-actions">
+            <button class="btn btn-danger btn-sm" @click="clearHistory">清空</button>
+          </div>
         </div>
-        <div class="history-list">
+        <div class="panel-body history-body">
           <div v-if="history.length === 0" class="history-empty">暂无历史记录</div>
           <div v-for="(item, index) in history" :key="index" class="history-item">
             <span class="password-text">{{ maskPassword(item) }}</span>
-            <span class="password-length">{{ item.length }}位</span>
-            <button class="copy-btn" title="复制" @click="handleCopyHistoryItem(item)">📋</button>
+            <span class="password-length">{{ item.length }} 位</span>
+            <button class="btn-icon btn-sm" title="复制" @click="handleCopyHistoryItem(item)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
-  </div>
+  </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useWindowWidth, useToast } from '@/composables'
+import { useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
+import PageLayout from '@/layouts/PageLayout.vue'
 
-const windowWidth = useWindowWidth()
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const CHAR_SETS = {
@@ -378,180 +392,108 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.password-container {
-  margin: 0 auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--glass-bg);
-  overflow: hidden;
-}
-
-.password-container header {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 30px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.password-container header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 28px;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.password-container header h1 .header-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.password-container .subtitle {
-  font-size: 14px;
-  opacity: 1;
-}
-
-.password-content {
-  padding: 30px;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.password-display-section {
-  text-align: center;
-  margin-bottom: 30px;
+.page-body {
+  padding: 12px 16px 16px;
+  width: 100%;
 }
 
 .password-output-wrapper {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
+}
+
+.password-output-wrapper .btn-icon {
+  width: 40px;
+  height: 40px;
 }
 
 .password-output {
   flex: 1;
-  padding: 16px 20px;
-  font-size: 18px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: var(--font-size-md);
   font-family: 'Consolas', 'Monaco', monospace;
-  letter-spacing: 2px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
+  letter-spacing: 1.5px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   text-align: center;
 }
 
+.password-output::placeholder {
+  font-size: var(--font-size-sm);
+  letter-spacing: normal;
+}
+
 .password-output:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-glow);
 }
 
-.btn-icon {
-  width: 52px;
-  height: 52px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: white;
-  cursor: pointer;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.field {
+  margin-bottom: 16px;
 }
 
-.btn-icon:hover {
-  border-color: var(--primary-color);
-  background: var(--glass-bg-hover);
+.field:last-child {
+  margin-bottom: 0;
 }
 
-.generate-btn {
-  width: 100%;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.section {
-  margin-bottom: 28px;
-}
-
-.section-title {
+.field > label,
+.field-head label {
   display: block;
+  margin-bottom: 8px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-  font-size: 14px;
+  color: var(--text-secondary);
 }
 
-.length-header,
-.strength-header {
+.field-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  justify-content: space-between;
 }
 
-.length-header label,
-.strength-header label {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 14px;
+.field-head label {
+  margin-bottom: 8px;
 }
 
 .length-value {
-  font-weight: 700;
-  color: var(--primary-color);
-  font-size: 24px;
-}
-
-.slider-container {
-  padding: 10px 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: var(--text-primary);
 }
 
 .password-slider {
   width: 100%;
-  height: 8px;
+  height: 4px;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
-  border-radius: 4px;
-  outline: none;
   cursor: pointer;
-  position: relative;
-  z-index: 2;
 }
 
 .password-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 28px;
-  height: 28px;
-  background: var(--primary-gradient);
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  background: var(--primary-color);
+  border: 2px solid var(--surface);
   border-radius: 50%;
-  cursor: grab;
-  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.5);
-  border: 3px solid white;
-  margin-top: -10px;
-}
-
-.password-slider::-webkit-slider-thumb:active {
-  cursor: grabbing;
-  transform: scale(1.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .password-slider::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 4px;
+  height: 4px;
+  border-radius: 2px;
   background: linear-gradient(
     to right,
-    var(--primary-color) 0%,
-    var(--primary-color) var(--progress, 18%),
+    var(--slider-fill) 0%,
+    var(--slider-fill) var(--progress, 18%),
     var(--border-color) var(--progress, 18%),
     var(--border-color) 100%
   );
@@ -560,213 +502,168 @@ onMounted(() => {
 .slider-labels {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
-  font-size: 12px;
+  margin-top: 6px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-}
-
-.slider-labels span {
-  text-decoration: none;
-  border: none;
-  background: transparent;
-  position: relative;
-}
-
-.slider-labels span::before,
-.slider-labels span::after {
-  display: none !important;
-  content: none !important;
-  border: none !important;
-  background: none !important;
 }
 
 .checkbox-group {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .checkbox-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 12px 4px;
-  background: white;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  text-align: center;
-  min-width: 0;
-  transition: var(--transition-normal);
+  transition: var(--transition-fast);
 }
 
 .checkbox-card:hover {
-  border-color: rgba(var(--primary-rgb), 0.4);
+  border-color: var(--border-strong);
 }
 
 .checkbox-card.active {
-  border-color: var(--primary-color);
-  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-dark-rgb), 0.1) 100%);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.05);
 }
 
 .checkbox-icon {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  flex-shrink: 0;
+  font-size: var(--font-size-base);
   font-weight: 700;
-  background: var(--primary-gradient);
-  color: white;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
   border-radius: var(--radius-sm);
-  margin-bottom: 8px;
+}
+
+.checkbox-card.active .checkbox-icon {
+  background: var(--primary-color);
+  color: var(--text-inverse);
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .checkbox-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
   color: var(--text-primary);
-  margin-bottom: 2px;
   white-space: nowrap;
 }
 
 .checkbox-desc {
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
-.strength-meter {
-  margin-bottom: 8px;
-}
-
 .strength-bar {
-  height: 8px;
-  background: var(--border-color);
-  border-radius: 4px;
+  height: 6px;
+  background: var(--surface-muted);
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .strength-fill {
   height: 100%;
   width: 0%;
-  border-radius: 4px;
+  border-radius: 3px;
   transition:
-    width 0.3s ease,
-    background-color 0.3s ease;
+    width 0.25s ease,
+    background-color 0.25s ease;
 }
 
 .strength-fill.very-weak {
   width: 10%;
-  background: var(--error-darker);
+  background: var(--error-dark);
 }
 .strength-fill.weak {
   width: 25%;
-  background: linear-gradient(90deg, var(--error-color), var(--error-dark));
+  background: var(--error-color);
 }
 .strength-fill.average {
   width: 50%;
-  background: linear-gradient(90deg, var(--warning-color), var(--warning-dark));
+  background: var(--warning-color);
 }
 .strength-fill.strong {
   width: 75%;
-  background: linear-gradient(90deg, var(--success-color), var(--success-dark));
+  background: var(--success-color);
 }
 .strength-fill.very-strong {
   width: 100%;
-  background: linear-gradient(90deg, var(--info-color), var(--info-dark));
+  background: var(--success-dark);
 }
 
 .strength-text {
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  font-size: 14px;
-  padding: 4px 12px;
-  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .strength-text.very-weak {
   color: var(--error-darker);
-  background: rgba(var(--error-rgb), 0.12);
+  background: rgba(var(--error-rgb), 0.1);
 }
 .strength-text.weak {
   color: var(--error-dark);
-  background: rgba(var(--error-rgb), 0.1);
+  background: rgba(var(--error-rgb), 0.08);
 }
 .strength-text.average {
   color: var(--warning-dark);
-  background: rgba(var(--warning-rgb), 0.1);
+  background: rgba(var(--warning-rgb), 0.12);
 }
 .strength-text.strong {
   color: var(--success-dark);
   background: rgba(var(--success-rgb), 0.1);
 }
 .strength-text.very-strong {
-  color: var(--info-dark);
-  background: rgba(var(--info-rgb), 0.1);
+  color: var(--success-darker);
+  background: rgba(var(--success-rgb), 0.14);
 }
 
 .strength-hint {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-  text-align: center;
 }
 
-.history-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.btn-text {
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.btn-text:hover {
-  color: var(--error-dark);
-}
-
-.history-list {
+.history-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .history-empty {
+  padding: 16px;
   text-align: center;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
-  padding: 20px;
-  font-size: 13px;
-  background: rgba(248, 249, 250, 0.8);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
 }
 
 .history-item {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  background: rgba(248, 249, 250, 0.8);
-  border: 1px solid var(--border-color);
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-muted);
   border-radius: var(--radius-sm);
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
-}
-
-.history-item:last-child {
-  margin-bottom: 0;
+  font-size: var(--font-size-sm);
 }
 
 .password-text {
@@ -778,24 +675,10 @@ onMounted(() => {
 }
 
 .password-length {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-  margin-right: 8px;
   padding: 2px 6px;
-  background: var(--border-color);
+  background: var(--surface);
   border-radius: 4px;
-}
-
-.copy-btn {
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-.copy-btn:hover {
-  opacity: 1;
 }
 </style>

@@ -1,17 +1,67 @@
-import { BrowserWindow, dialog, app } from 'electron'
+import { BrowserWindow, dialog, app, nativeTheme } from 'electron'
 import path from 'path'
 import fs from 'fs'
-import { log, getIconPath } from '../utils'
-import { getConfig } from '../services'
+import { log, getWindowIcon, getAssetsDir } from '../utils'
+import { getConfig, saveConfig } from '../services'
+import { IPC_EVENTS } from '../../shared/ipc'
 
 let mainWindow = null
 let settingsWindow = null
 let splashWindow = null
 let splashStartTime = null
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
-const devServerUrl = 'http://localhost:5173'
+const devServerUrl = process.env.ELECTRON_RENDERER_URL
+const isDev = Boolean(devServerUrl)
+const isMac = process.platform === 'darwin'
 const preloadPath = import.meta.env.ELECTRON_PRELOAD_PATH || path.join(__dirname, '../preload/index.js')
+
+const WINDOW_BACKGROUND = { light: '#f4f5f7', dark: '#141519' }
+const TITLEBAR_OVERLAY = {
+  light: { color: '#f7f8fa', symbolColor: '#1f2328' },
+  dark: { color: '#1b1b1f', symbolColor: '#e6e6ea' }
+}
+
+function getResolvedTheme() {
+  const theme = getConfig()?.theme || 'system'
+  if (theme === 'system') return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+  return theme
+}
+
+function getWindowBackground() {
+  return WINDOW_BACKGROUND[getResolvedTheme()] || WINDOW_BACKGROUND.light
+}
+
+function getTitleBarOptions() {
+  if (isMac) return { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 14 } }
+  return {
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { ...TITLEBAR_OVERLAY[getResolvedTheme()], height: 40 }
+  }
+}
+
+// 窗口启用了 titleBarOverlay（WCO），右侧停靠会被忽略并退回独立窗口，bottom 可稳定停靠在窗口内
+const DEVTOOLS_MODE = 'bottom'
+
+export function toggleDevTools(win) {
+  if (!win || win.isDestroyed()) return
+  const contents = win.webContents
+  if (contents.isDevToolsOpened()) {
+    contents.closeDevTools()
+    return
+  }
+  contents.openDevTools({ mode: DEVTOOLS_MODE })
+}
+
+export function refreshWindowTheme() {
+  const overlay = { ...TITLEBAR_OVERLAY[getResolvedTheme()], height: 40 }
+  for (const win of [mainWindow, settingsWindow]) {
+    if (!win || win.isDestroyed()) continue
+    win.setBackgroundColor(getWindowBackground())
+    if (!isMac && win === mainWindow && typeof win.setTitleBarOverlay === 'function') {
+      win.setTitleBarOverlay(overlay)
+    }
+  }
+}
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
@@ -21,6 +71,7 @@ function createSplashWindow() {
     transparent: true,
     resizable: false,
     backgroundColor: '#00000000',
+    icon: getWindowIcon(),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -29,16 +80,18 @@ function createSplashWindow() {
   })
 
   if (isDev) {
-    splashWindow.loadURL(devServerUrl + '/splash.html')
+    splashWindow.loadURL(devServerUrl + '/splash.html?theme=' + getResolvedTheme())
   } else {
     const splashPath = path.join(__dirname, '../renderer/splash.html')
-    splashWindow.loadFile(splashPath)
+    splashWindow.loadFile(splashPath, { query: { theme: getResolvedTheme() } })
 
-    const iconSrc = path.join(__dirname, '../../assets/icon.png')
     const iconDest = path.join(__dirname, '../renderer/assets/icon.png')
-    if (fs.existsSync(iconSrc) && !fs.existsSync(iconDest)) {
-      fs.mkdirSync(path.dirname(iconDest), { recursive: true })
-      fs.copyFileSync(iconSrc, iconDest)
+    if (!fs.existsSync(iconDest)) {
+      const iconSrc = path.join(getAssetsDir(), 'icon.png')
+      if (fs.existsSync(iconSrc)) {
+        fs.mkdirSync(path.dirname(iconDest), { recursive: true })
+        fs.copyFileSync(iconSrc, iconDest)
+      }
     }
   }
 
@@ -67,14 +120,15 @@ function closeSplashWindow() {
 }
 
 function createMainWindow() {
-  const iconPath = getIconPath()
-
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: 1180,
+    height: 760,
+    minWidth: 940,
+    minHeight: 600,
     show: false,
-    backgroundColor: '#667eea',
-    icon: iconPath,
+    backgroundColor: getWindowBackground(),
+    icon: getWindowIcon(),
+    ...getTitleBarOptions(),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -85,7 +139,7 @@ function createMainWindow() {
 
   if (isDev) {
     mainWindow.loadURL(devServerUrl)
-    mainWindow.webContents.openDevTools()
+    mainWindow.webContents.openDevTools({ mode: DEVTOOLS_MODE })
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
@@ -105,17 +159,22 @@ function createMainWindow() {
 
   mainWindow.on('close', async (event) => {
     if (app.isQuitting) return
-    event.preventDefault()
 
     const config = getConfig()
+
+    if (config.close_action === 'quit') {
+      app.isQuitting = true
+      log.info('应用已退出')
+      // 不拦截本次关闭，避免 preventDefault 与 app.quit() 相互抵消
+      setTimeout(() => app.quit(), 0)
+      return
+    }
+
+    event.preventDefault()
 
     if (config.close_action === 'hide') {
       mainWindow.hide()
       log.info('主窗口已隐藏到系统托盘')
-    } else if (config.close_action === 'quit') {
-      app.isQuitting = true
-      app.quit()
-      log.info('应用已退出')
     } else {
       const result = await dialog.showMessageBox(mainWindow, {
         type: 'question',
@@ -129,11 +188,17 @@ function createMainWindow() {
         checkboxChecked: false
       })
 
+      if (result.checkboxChecked) {
+        config.close_action = result.response === 0 ? 'hide' : 'quit'
+        await saveConfig(config)
+      }
+
       if (result.response === 0) {
         mainWindow.hide()
         log.info('主窗口已隐藏')
       } else {
         app.isQuitting = true
+        log.info('应用已退出')
         app.quit()
       }
     }
@@ -148,21 +213,23 @@ function createMainWindow() {
 
 export function createSettingsWindow(defaultTab = null) {
   if (settingsWindow) {
+    if (defaultTab) settingsWindow.webContents.send(IPC_EVENTS.settingsTab, defaultTab)
     settingsWindow.focus()
     return settingsWindow
   }
 
-  const iconPath = getIconPath()
-
   settingsWindow = new BrowserWindow({
     width: 900,
     height: 650,
-    resizable: false,
-    maximizable: false,
-    minimizable: false,
+    minWidth: 720,
+    minHeight: 520,
+    resizable: true,
+    maximizable: true,
+    minimizable: true,
     autoHideMenuBar: true,
-    backgroundColor: '#667eea',
-    icon: iconPath,
+    backgroundColor: getWindowBackground(),
+    icon: getWindowIcon(),
+    ...(isMac ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 14 } } : { titleBarStyle: 'hidden' }),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -172,6 +239,14 @@ export function createSettingsWindow(defaultTab = null) {
   })
 
   settingsWindow.setMenu(null)
+
+  const sendMaximizedState = () => {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.send(IPC_EVENTS.windowMaximized, settingsWindow.isMaximized())
+    }
+  }
+  settingsWindow.on('maximize', sendMaximizedState)
+  settingsWindow.on('unmaximize', sendMaximizedState)
 
   const hash = defaultTab ? `/settings?tab=${defaultTab}` : '/settings'
   if (isDev) {

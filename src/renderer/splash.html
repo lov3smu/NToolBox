@@ -55,7 +55,7 @@
         object-fit: contain;
         background: white;
         border-radius: 12px;
-        filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
+        filter: drop-shadow(0 4px 12px rgba(31, 31, 34, 0.25));
       }
 
       .title {
@@ -84,9 +84,9 @@
       .loader {
         width: 36px;
         height: 36px;
-        border: 3px solid rgba(102, 126, 234, 0.2);
+        border: 3px solid rgba(31, 31, 34, 0.15);
         border-radius: 50%;
-        border-top-color: #667eea;
+        border-top-color: #596bd4;
         animation: spin 0.8s linear infinite;
       }
 
@@ -94,6 +94,32 @@
         font-size: 12px;
         color: #718096;
         letter-spacing: 1px;
+      }
+
+      html.theme-dark .glass-card {
+        background: rgba(31, 32, 38, 0.96);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #e7e9ee;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.5),
+          0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+
+      html.theme-dark .title {
+        color: #f2f3f5;
+      }
+
+      html.theme-dark .subtitle {
+        color: #aab0bc;
+      }
+
+      html.theme-dark .loading-text {
+        color: #828997;
+      }
+
+      html.theme-dark .loader {
+        border-color: rgba(255, 255, 255, 0.15);
+        border-top-color: #8494f5;
       }
 
       @keyframes fadeIn {
@@ -125,6 +151,11 @@
     </style>
   </head>
   <body>
+    <script>
+      if (new URLSearchParams(location.search).get('theme') === 'dark') {
+        document.documentElement.classList.add('theme-dark')
+      }
+    </script>
     <div class="splash-container">
       <div class="glass-card">
         <div class="logo">

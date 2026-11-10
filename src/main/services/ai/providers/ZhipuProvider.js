@@ -7,17 +7,17 @@ class ZhipuProvider extends BaseProvider {
       apiKey,
       hostname: 'open.bigmodel.cn',
       path: '/api/paas/v4/chat/completions',
-      validateModel: 'glm-4-flash',
+      modelsPath: '/api/paas/v4/models',
+      validateModel: 'glm-4.7-flash',
       models: [
-        { id: 'glm-4-plus', name: 'GLM-4-Plus (推荐)' },
-        { id: 'glm-4-0520', name: 'GLM-4-0520' },
-        { id: 'glm-4', name: 'GLM-4' },
-        { id: 'glm-4-air', name: 'GLM-4-Air (快速)' },
-        { id: 'glm-4-airx', name: 'GLM-4-AirX' },
-        { id: 'glm-4-flash', name: 'GLM-4-Flash (免费)' },
-        { id: 'glm-3-turbo', name: 'GLM-3-Turbo' }
+        { id: 'glm-5.3', name: 'glm-5.3' },
+        { id: 'glm-5.2', name: 'glm-5.2' },
+        { id: 'glm-5', name: 'glm-5' },
+        { id: 'glm-4.7', name: 'glm-4.7' },
+        { id: 'glm-4.7-flash', name: 'glm-4.7-flash' }
       ],
-      defaultModel: 'glm-4-flash',
+      defaultModel: 'glm-5.3',
+      thinkingStyle: 'thinking',
       timeout,
       connectionTimeout
     })

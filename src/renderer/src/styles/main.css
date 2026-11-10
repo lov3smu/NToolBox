@@ -60,7 +60,7 @@ body {
 .back-link {
   color: white;
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   position: relative;
   z-index: 1;
   transition: opacity 0.2s;
@@ -90,11 +90,12 @@ body {
 
 .type-btn:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 .type-btn:hover {
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
   background: var(--glass-bg-hover);
   box-shadow: var(--shadow-md);
 }
@@ -125,7 +126,7 @@ body {
 .result-section {
   margin-top: 30px;
   padding: 24px;
-  background: rgba(248, 249, 250, 0.6);
+  background: var(--content-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
 }
@@ -138,7 +139,7 @@ body {
 }
 
 .result-content {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--panel-strong);
   padding: 16px;
   border-radius: var(--radius-sm);
   border-left: 4px solid var(--primary-color);
@@ -159,7 +160,7 @@ body {
 .file-path {
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: var(--font-size-xs);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--inset-bg);
   padding: 10px;
   border-radius: var(--radius-sm);
   margin-top: 10px;
