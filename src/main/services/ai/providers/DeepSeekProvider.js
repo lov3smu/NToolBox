@@ -7,13 +7,14 @@ class DeepSeekProvider extends BaseProvider {
       apiKey,
       hostname: 'api.deepseek.com',
       path: '/v1/chat/completions',
-      validateModel: 'deepseek-chat',
+      modelsPath: '/models',
+      validateModel: 'deepseek-flash',
       models: [
-        { id: 'deepseek-chat', name: 'DeepSeek-Chat (推荐)' },
-        { id: 'deepseek-coder', name: 'DeepSeek-Coder (编程)' },
-        { id: 'deepseek-reasoner', name: 'DeepSeek-Reasoner (推理)' }
+        { id: 'deepseek-v4-pro', name: 'deepseek-v4-pro' },
+        { id: 'deepseek-flash', name: 'deepseek-flash' }
       ],
-      defaultModel: 'deepseek-chat',
+      defaultModel: 'deepseek-v4-pro',
+      thinkingStyle: 'thinking',
       timeout,
       connectionTimeout
     })

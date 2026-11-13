@@ -12,6 +12,11 @@ const routes = [
     component: () => import('@/views/SqlScriptGenerator.vue')
   },
   {
+    path: '/market',
+    name: 'Market',
+    component: () => import('@/views/Market.vue')
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/Settings.vue')
@@ -40,6 +45,21 @@ const routes = [
     path: '/file-manager',
     name: 'FileManager',
     component: () => import('@/views/FileManager.vue')
+  },
+  {
+    path: '/markdown-editor',
+    name: 'MarkdownEditor',
+    component: () => import('@/views/Markdown.vue')
+  },
+  {
+    path: '/wechat-formatter',
+    name: 'WechatFormatter',
+    component: () => import('@/views/WechatFormatter.vue')
+  },
+  {
+    path: '/clipboard',
+    name: 'Clipboard',
+    component: () => import('@/views/Clipboard.vue')
   },
   {
     path: '/json-parser',

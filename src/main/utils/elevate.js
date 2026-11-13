@@ -1,7 +1,7 @@
 import fs from 'fs'
-import path from 'path'
 import sudo from 'sudo-prompt'
 import log from './logger'
+import { buildElevatedMkdirCommand } from './elevateCommand'
 
 export function mkdirWithElevate(targetPath) {
   return new Promise((resolve, reject) => {
@@ -26,7 +26,7 @@ export function mkdirWithElevate(targetPath) {
 
 function elevateMkdir(targetPath) {
   return new Promise((resolve, reject) => {
-    const command = `cmd /c "if not exist "${targetPath}" mkdir "${targetPath}""`
+    const command = buildElevatedMkdirCommand(targetPath)
     const options = {
       name: 'NToolBox'
     }

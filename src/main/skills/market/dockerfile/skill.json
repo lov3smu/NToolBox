@@ -1,0 +1,41 @@
+{
+  "name": "dockerfile",
+  "version": "1.0.0",
+  "description": "根据技术栈生成多阶段构建、体积友好的 Dockerfile 与运行建议",
+  "author": "NToolBox Community",
+  "category": "code",
+  "tags": ["Docker", "部署", "容器"],
+  "icon": "docker",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "stack": {
+        "type": "string",
+        "description": "技术栈，例如 node、java、python、go"
+      },
+      "runtime_version": {
+        "type": "string",
+        "description": "运行时版本，例如 22、17、3.12"
+      },
+      "port": {
+        "type": "string",
+        "description": "应用监听端口"
+      },
+      "requirements": {
+        "type": "string",
+        "description": "额外要求，例如需要 FFmpeg、只安装生产依赖"
+      }
+    },
+    "required": ["stack"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "stack: node, runtime_version: 22, port: 3000",
+      "output": "生成多阶段 Dockerfile 与 .dockerignore 建议"
+    }
+  ],
+  "featured": false,
+  "downloads": 980,
+  "changelog": "首个版本：支持多阶段构建"
+}

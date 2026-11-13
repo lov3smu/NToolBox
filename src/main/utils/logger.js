@@ -3,6 +3,7 @@ import fs from 'fs'
 import log from 'electron-log'
 import sudo from 'sudo-prompt'
 import { getLogDir } from './path'
+import { buildElevatedMkdirCommand } from './elevateCommand'
 
 let initialized = false
 
@@ -31,7 +32,7 @@ export async function initLogger() {
 
 function elevateMkdir(targetPath) {
   return new Promise((resolve, reject) => {
-    const command = `cmd /c "if not exist "${targetPath}" mkdir "${targetPath}""`
+    const command = buildElevatedMkdirCommand(targetPath)
     const options = {
       name: 'NToolBox'
     }

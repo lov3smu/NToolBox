@@ -1,0 +1,42 @@
+{
+  "name": "nginx-config",
+  "version": "1.0.0",
+  "description": "生成反向代理、HTTPS、静态站点与 SPA 场景的 Nginx 配置",
+  "author": "NToolBox Community",
+  "category": "general",
+  "tags": ["Nginx", "反向代理", "HTTPS"],
+  "icon": "nginx",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "scenario": {
+        "type": "string",
+        "description": "场景：reverse-proxy、static、spa、https",
+        "enum": ["reverse-proxy", "static", "spa", "https"]
+      },
+      "domain": {
+        "type": "string",
+        "description": "域名，例如 example.com"
+      },
+      "upstream": {
+        "type": "string",
+        "description": "上游服务地址，例如 http://127.0.0.1:3000"
+      },
+      "root": {
+        "type": "string",
+        "description": "静态站点根目录"
+      }
+    },
+    "required": ["scenario"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "scenario: reverse-proxy, domain: api.example.com, upstream: http://127.0.0.1:3000",
+      "output": "生成 server 块、代理头和超时配置"
+    }
+  ],
+  "featured": false,
+  "downloads": 760,
+  "changelog": "首个版本：覆盖常见部署场景"
+}

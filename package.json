@@ -1,6 +1,6 @@
 {
-  "name": "ntoolbox",
-  "version": "1.2.1",
+  "name": "NToolBox",
+  "version": "1.2.2",
   "description": "NToolBox - 一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。",
   "main": "./out/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
@@ -12,6 +12,8 @@
     "build:linux": "electron-vite build && electron-builder --linux --x64",
     "build:mac": "electron-vite build && electron-builder --mac --x64",
     "preview": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src --ext .js,.vue,.ts --fix",
     "lint:check": "eslint src --ext .js,.vue,.ts",
     "format": "prettier --write \"src/**/*.{js,vue,ts,json,css,html}\"",
@@ -19,15 +21,22 @@
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/lang-sql": "^6.10.0",
     "@codemirror/language": "^6.12.3",
     "@codemirror/state": "^6.6.0",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.41.1",
     "codemirror": "^6.0.2",
+    "dompurify": "^3.4.17",
     "electron-log": "^5.0.1",
     "electron-updater": "^6.1.7",
+    "highlight.js": "^11.12.0",
     "js-yaml": "^4.1.1",
+    "marked": "^18.2.0",
+    "mathjax-full": "^3.2.2",
+    "mermaid": "^11.17.2",
     "mysql2": "^3.22.1",
     "sudo-prompt": "^9.2.1",
     "vue": "^3.4.21",
@@ -43,12 +52,12 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.8.0",
     "prettier": "^3.8.3",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "vitest": "^3.2.7"
   },
   "build": {
     "appId": "com.ancoka.ntoolbox",
-    "productName": "NToolBox",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },

@@ -20,6 +20,8 @@ module.exports = [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         fetch: 'readonly',
+        AbortController: 'readonly',
+        URLSearchParams: 'readonly',
         localStorage: 'readonly',
         sessionStorage: 'readonly',
         Blob: 'readonly',
@@ -31,6 +33,7 @@ module.exports = [
         HTMLElement: 'readonly',
         Event: 'readonly',
         CustomEvent: 'readonly',
+        CSS: 'readonly',
         // Node.js globals
         process: 'readonly',
         __dirname: 'readonly',

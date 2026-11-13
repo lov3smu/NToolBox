@@ -4,11 +4,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter, Decoration } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
+import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view'
+import { Compartment, EditorState } from '@codemirror/state'
 import { sql, MySQL } from '@codemirror/lang-sql'
 import { autocompletion } from '@codemirror/autocomplete'
 import { defaultHighlightStyle, syntaxHighlighting, bracketMatching, indentOnInput } from '@codemirror/language'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { getResolvedTheme } from '@/utils/theme'
 
 const props = defineProps({
   modelValue: {
@@ -265,7 +267,7 @@ const completionOptions = computed(() => {
 
 const myCompletions = (context) => {
   const word = context.matchBefore(/\w*/)
-  if (!word || (word.from == word.to && !context.explicit)) return null
+  if (!word || (word.from === word.to && !context.explicit)) return null
 
   const options = completionOptions.value.filter((opt) => opt.label.toLowerCase().startsWith(word.text.toLowerCase()))
 
@@ -281,32 +283,34 @@ const theme = EditorView.theme({
     height: '100%',
     fontSize: '13px',
     fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
-    backgroundColor: '#ffffff'
+    backgroundColor: 'var(--editor-bg)',
+    color: 'var(--text-primary)'
   },
   '.cm-content': {
     padding: '10px 0',
-    caretColor: '#0e639c',
+    caretColor: 'var(--editor-caret)',
     minHeight: '100px',
-    backgroundColor: '#ffffff'
+    backgroundColor: 'var(--editor-bg)'
   },
   '.cm-gutters': {
-    backgroundColor: '#f8f9fa',
-    borderRight: '1px solid #e1e4e8'
+    backgroundColor: 'var(--editor-gutter-bg)',
+    borderRight: '1px solid var(--editor-border)',
+    color: 'var(--text-tertiary)'
   },
   '.cm-line': {
     padding: '0 10px'
   },
   '.cm-selectionBackground': {
-    backgroundColor: '#add6ff66'
+    backgroundColor: 'var(--editor-selection)'
   },
   '.cm-cursor': {
-    borderLeftColor: '#0e639c'
+    borderLeftColor: 'var(--editor-caret)'
   },
   '.cm-tooltip-autocomplete': {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    border: '1px solid rgba(102, 126, 234, 0.3)',
+    backgroundColor: 'var(--panel-elevated)',
+    border: '1px solid rgba(var(--accent-rgb), 0.3)',
     borderRadius: '4px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+    boxShadow: 'var(--shadow-md)',
     fontFamily: "'Consolas', 'Monaco', monospace",
     fontSize: '13px'
   },
@@ -317,13 +321,24 @@ const theme = EditorView.theme({
     padding: '4px 8px'
   },
   '.cm-tooltip-autocomplete li[aria-selected]': {
-    backgroundColor: 'rgba(102, 126, 234, 0.2)',
-    color: '#333'
+    backgroundColor: 'rgba(var(--accent-rgb), 0.18)',
+    color: 'var(--text-primary)'
   },
   '.cm-completionLabel': {
     fontFamily: "'Consolas', 'Monaco', monospace"
   }
 })
+
+const themeCompartment = new Compartment()
+
+function getThemeExtensions() {
+  return getResolvedTheme() === 'dark' ? [oneDark, theme] : [theme]
+}
+
+function handleThemeChange() {
+  if (!editorView) return
+  editorView.dispatch({ effects: themeCompartment.reconfigure(getThemeExtensions()) })
+}
 
 const createEditor = () => {
   if (!editorContainer.value) return
@@ -353,7 +368,7 @@ const createEditor = () => {
         activateOnTyping: true,
         maxRenderedCompletions: 50
       }),
-      theme,
+      themeCompartment.of(getThemeExtensions()),
       EditorView.lineWrapping,
       updateListener,
       EditorState.allowMultipleSelections.of(false)
@@ -389,9 +404,11 @@ watch(
 
 onMounted(() => {
   createEditor()
+  window.addEventListener('ntb-theme-changed', handleThemeChange)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('ntb-theme-changed', handleThemeChange)
   if (editorView) {
     editorView.destroy()
   }
@@ -429,13 +446,13 @@ defineExpose({
   padding: 0;
   border: 1px solid var(--border-color);
   border-radius: 0;
-  background: #ffffff;
+  background: var(--editor-bg);
   overflow: hidden;
 }
 
 .sql-editor-container:focus-within {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 .sql-editor-container .cm-editor {

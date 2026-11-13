@@ -7,14 +7,15 @@ class VolcengineProvider extends BaseProvider {
       apiKey,
       hostname: 'ark.cn-beijing.volces.com',
       path: '/api/v3/chat/completions',
-      validateModel: endpointId || 'doubao-pro-32k',
+      modelsPath: '/api/v3/models',
+      validateModel: endpointId || 'doubao-seed-evolving',
       models: [
-        { id: 'doubao-pro-32k', name: 'Doubao-Pro-32K (推荐)' },
-        { id: 'doubao-pro-128k', name: 'Doubao-Pro-128K' },
-        { id: 'doubao-lite-32k', name: 'Doubao-Lite-32K (快速)' },
-        { id: 'doubao-lite-128k', name: 'Doubao-Lite-128K' }
+        { id: 'doubao-seed-evolving', name: 'doubao-seed-evolving' },
+        { id: 'doubao-seed-2.1-pro', name: 'doubao-seed-2.1-pro' },
+        { id: 'doubao-seed-2.0-pro', name: 'doubao-seed-2.0-pro' }
       ],
-      defaultModel: endpointId || 'doubao-pro-32k',
+      defaultModel: endpointId || 'doubao-seed-evolving',
+      thinkingStyle: 'thinking',
       timeout,
       connectionTimeout
     })
@@ -22,16 +23,10 @@ class VolcengineProvider extends BaseProvider {
   }
 
   buildRequestBody(messages, tools, options) {
-    const model = options.model || this.endpointId || this.defaultModel
-    const body = {
-      model,
-      messages,
-      tools,
-      tool_choice: 'auto'
-    }
-    if (options.max_tokens) body.max_tokens = options.max_tokens
-    if (options.temperature !== undefined) body.temperature = options.temperature
-    return body
+    return super.buildRequestBody(messages, tools, {
+      ...options,
+      model: options.model || this.defaultModel || this.endpointId
+    })
   }
 }
 

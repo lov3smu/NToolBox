@@ -23,15 +23,21 @@ const copySplashAssetsPlugin = () => {
     closeBundle() {
       const outRenderer = resolve(__dirname, 'out/renderer')
       const outAssets = resolve(outRenderer, 'assets')
-      
+
       if (!fs.existsSync(outAssets)) {
         fs.mkdirSync(outAssets, { recursive: true })
       }
-      
+
       const iconSrc = resolve(__dirname, 'assets/icon.png')
       if (fs.existsSync(iconSrc)) {
         fs.copyFileSync(iconSrc, resolve(outAssets, 'icon.png'))
         console.log('Copied assets/icon.png to out/renderer/assets/icon.png')
+      }
+
+      const splashSrc = resolve(__dirname, 'src/renderer/splash.html')
+      if (fs.existsSync(splashSrc)) {
+        fs.copyFileSync(splashSrc, resolve(outRenderer, 'splash.html'))
+        console.log('Copied src/renderer/splash.html to out/renderer/splash.html')
       }
     }
   }
@@ -43,11 +49,11 @@ const copySkillsPlugin = () => {
     closeBundle() {
       const skillsSrc = resolve(__dirname, 'src/main/skills')
       const skillsOut = resolve(__dirname, 'out/skills')
-      
+
       if (!fs.existsSync(skillsOut)) {
         fs.mkdirSync(skillsOut, { recursive: true })
       }
-      
+
       const copyDir = (src, dest) => {
         if (!fs.existsSync(dest)) {
           fs.mkdirSync(dest, { recursive: true })
@@ -63,7 +69,7 @@ const copySkillsPlugin = () => {
           }
         }
       }
-      
+
       if (fs.existsSync(skillsSrc)) {
         copyDir(skillsSrc, skillsOut)
         console.log('Copied src/main/skills to out/skills')
@@ -79,7 +85,20 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/main/index.js')
         },
-        external: ['electron', 'electron-log', 'electron-updater', 'fs', 'path', 'child_process', 'crypto', 'stream', 'events', 'util', 'os', 'mysql2']
+        external: [
+          'electron',
+          'electron-log',
+          'electron-updater',
+          'fs',
+          'path',
+          'child_process',
+          'crypto',
+          'stream',
+          'events',
+          'util',
+          'os',
+          'mysql2'
+        ]
       }
     },
     plugins: [copySkillsPlugin()]
@@ -100,7 +119,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
-        '@assets': resolve(__dirname, 'assets')
+        '@assets': resolve(__dirname, 'assets'),
+        '@shared': resolve(__dirname, 'src/shared')
       }
     },
     base: '/',
@@ -111,7 +131,17 @@ export default defineConfig({
         output: {
           assetFileNames: 'assets/[name].[ext]',
           manualChunks: {
-            'codemirror': ['@codemirror/view', '@codemirror/state', '@codemirror/language', '@codemirror/lang-sql', '@codemirror/autocomplete', '@codemirror/theme-one-dark', 'codemirror']
+            codemirror: [
+              '@codemirror/view',
+              '@codemirror/state',
+              '@codemirror/language',
+              '@codemirror/commands',
+              '@codemirror/lang-sql',
+              '@codemirror/lang-markdown',
+              '@codemirror/autocomplete',
+              '@codemirror/theme-one-dark',
+              'codemirror'
+            ]
           }
         }
       }

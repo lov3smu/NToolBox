@@ -1,7 +1,78 @@
 import { log } from '../utils'
 import { getConfig } from './config'
-import { getProvider, PROVIDER_TYPES, PROVIDER_INFO, getAvailableProviders, getProviderModels } from './ai/index.js'
+import {
+  getProvider,
+  createProvider,
+  getAvailableProviders,
+  fetchProviderModels,
+  getDefaultProviderModels,
+  resolveProviderModels,
+  resolveProviderDefaultModel,
+  getContextWindow,
+  PROVIDER_TYPES,
+  PROVIDER_INFO
+} from './ai/index.js'
+import {
+  estimateMessagesTokens,
+  estimateToolsTokens,
+  estimateTextTokens,
+  estimateToolCallsTokens,
+  normalizeUsage
+} from './ai/tokens.js'
 import { getSkillsManager, initSkills } from './skills.js'
+
+const MAX_AGENT_ITERATIONS = 10
+const MAX_PLAN_STEPS = 8
+const DEFAULT_AGENT_TIMEOUT = 5 * 60 * 1000
+const PLANNER_MIN_INPUT_LENGTH = 8
+
+const TERMINATION_TEXT = {
+  goal_reached: '目标完成',
+  cancelled: '用户停止',
+  max_steps: '达到最大轮次',
+  timeout: '执行超时',
+  error: '执行异常'
+}
+
+const EMPTY_LIST_KEYS = [
+  'tables',
+  'databases',
+  'rows',
+  'data',
+  'items',
+  'results',
+  'models',
+  'list',
+  'values',
+  'connections'
+]
+
+const PLANNER_SYSTEM_PROMPT = `你是任务规划器。根据用户最新请求和可用工具，判断任务复杂度并给出执行计划。
+只输出一个 JSON 对象，不要输出任何解释或 Markdown 代码块：
+{"complexity":"simple|complex","goal":"一句话描述任务目标","steps":["步骤1","步骤2"]}
+
+规则：
+- 闲聊、单次问答、无需工具的请求：complexity=simple，steps=[]
+- 一次工具调用即可完成的请求：complexity=simple，steps=[]
+- 需要多步工具调用、跨工具协作、或需要先查询再决策的请求：complexity=complex，steps 给出 2-${MAX_PLAN_STEPS} 个可执行步骤
+- 每个步骤以动词开头，简短具体，不包含具体工具参数
+- 计划只是内部参考，执行过程中可以调整`
+
+const COMPRESSION_DEFAULT_KEEP = 6
+const COMPRESSION_MAX_SUMMARY_CHARS = 8000
+const COMPRESSION_MAX_INPUT_CHARS = 30000
+
+const COMPRESSION_SYSTEM_PROMPT = `你是对话上下文压缩器。请把历史对话压缩成一段结构化摘要，供后续对话继续使用。
+要求：
+- 保留用户目标、已确认的事实与数据、已执行的操作与结果、未解决的问题
+- 保留关键参数：数据库连接名、库名、表名、文件路径、配置项等
+- 使用简洁的 Markdown 列表，合并重复信息
+- 不编造对话中不存在的结论或数据
+- 只输出摘要正文，不要额外解释，控制在 800 字以内`
+
+const CHAT_ONLY_SYSTEM_PROMPT = `你是一个智能助手，可以帮助用户完成各种开发相关的任务。
+当前为仅对话模式：不要调用任何工具，直接根据你的知识回答用户问题。
+如果不确定或需要实时数据，请明确说明。回答使用 Markdown 格式。`
 
 const SYSTEM_PROMPT = `你是一个智能助手，可以帮助用户完成各种开发相关的任务。
 
@@ -407,29 +478,258 @@ async function executeToolCall(name, args) {
   }
 }
 
-function getProviderConfig() {
+function extractLastUserText(messages) {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i]
+    if (message?.role !== 'user') continue
+    if (typeof message.content === 'string') return message.content
+    if (Array.isArray(message.content)) {
+      return message.content
+        .filter((part) => part && part.type === 'text')
+        .map((part) => part.text || '')
+        .join('\n')
+    }
+    return ''
+  }
+  return ''
+}
+
+function sanitizePlanText(value, maxLength) {
+  if (typeof value !== 'string') return ''
+  return value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
+}
+
+function parsePlannerJson(content) {
+  if (typeof content !== 'string' || !content.trim()) return null
+  const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const text = fenced ? fenced[1] : content
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start < 0 || end <= start) return null
+  try {
+    return JSON.parse(text.slice(start, end + 1))
+  } catch {
+    return null
+  }
+}
+
+function normalizePlan(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const steps = Array.isArray(raw.steps)
+    ? raw.steps
+        .map((step) => sanitizePlanText(typeof step === 'string' ? step : step?.title, 120))
+        .filter(Boolean)
+        .slice(0, MAX_PLAN_STEPS)
+    : []
+  if (steps.length === 0) return null
+  return {
+    complexity: raw.complexity === 'complex' ? 'complex' : 'simple',
+    goal: sanitizePlanText(raw.goal, 160) || steps[0],
+    steps
+  }
+}
+
+async function generatePlan(provider, messages, tools, options = {}) {
+  const shouldStop = typeof options.shouldStop === 'function' ? options.shouldStop : () => false
+  const text = extractLastUserText(messages)
+  if (!text || text.trim().length < PLANNER_MIN_INPUT_LENGTH || shouldStop()) return null
+
+  const toolList = (tools || [])
+    .map((tool) => {
+      const fn = tool?.function || tool
+      const name = fn?.name
+      if (!name) return ''
+      const description = String(fn?.description || '')
+        .split('\n')[0]
+        .slice(0, 60)
+      return `- ${name}${description ? `：${description}` : ''}`
+    })
+    .filter(Boolean)
+    .join('\n')
+
+  const summaryBlock = buildContextSummaryBlock(options.contextSummary)
+  const plannerMessages = [
+    { role: 'system', content: `${PLANNER_SYSTEM_PROMPT}${summaryBlock}` },
+    {
+      role: 'user',
+      content: `用户请求：${text.slice(0, 4000)}\n\n可用工具：\n${toolList || '（无）'}`
+    }
+  ]
+
+  try {
+    const planResult = await provider.chat(plannerMessages, [], {
+      model: options.model,
+      max_tokens: 600,
+      temperature: 0.2
+    })
+
+    if (!planResult?.success) {
+      log.warn('生成执行计划失败:', planResult?.error)
+      return null
+    }
+    if (shouldStop()) return null
+
+    return {
+      plan: normalizePlan(parsePlannerJson(planResult.content)),
+      usage: planResult.usage,
+      messages: plannerMessages,
+      content: planResult.content
+    }
+  } catch (error) {
+    log.warn('生成执行计划异常:', error.message)
+    return null
+  }
+}
+
+function createAgentState(plan, options = {}) {
+  const timeout = Number(options.agentTimeout) > 0 ? Number(options.agentTimeout) : DEFAULT_AGENT_TIMEOUT
+  const startedAt = Date.now()
+  return {
+    plan,
+    timeout,
+    startedAt,
+    deadline: startedAt + timeout,
+    iterations: 0,
+    toolCalls: 0,
+    toolSuccess: 0,
+    toolFailed: 0,
+    emptyResults: 0,
+    toolNames: [],
+    reflections: [],
+    termination: null,
+    usage: {
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+      calls: 0,
+      contextTokens: 0,
+      estimated: false
+    }
+  }
+}
+
+function recordUsage(state, rawUsage, messages, tools, output) {
+  if (!state) return
+  const usage = state.usage
+  const normalized = normalizeUsage(rawUsage)
+  const promptTokens = normalized?.prompt_tokens ?? estimateMessagesTokens(messages) + estimateToolsTokens(tools)
+  const completionTokens =
+    normalized?.completion_tokens ?? estimateTextTokens(output?.content) + estimateToolCallsTokens(output?.tool_calls)
+
+  usage.prompt_tokens += promptTokens
+  usage.completion_tokens += completionTokens
+  usage.total_tokens += normalized?.total_tokens ?? promptTokens + completionTokens
+  usage.calls += 1
+  usage.contextTokens = promptTokens
+  if (!normalized) usage.estimated = true
+}
+
+function usageSnapshot(usage) {
+  return { ...usage }
+}
+
+function buildContextSummaryBlock(contextSummary) {
+  if (typeof contextSummary !== 'string') return ''
+  const summary = contextSummary.trim()
+  if (!summary) return ''
+  return `\n\n**历史对话摘要（已压缩，供你保持上下文；如与最新消息冲突，以最新消息为准）**：\n${summary}`
+}
+
+function buildSystemPrompt(toolsEnabled, contextSummary) {
+  const base = toolsEnabled ? SYSTEM_PROMPT : CHAT_ONLY_SYSTEM_PROMPT
+  return `${base}${buildContextSummaryBlock(contextSummary)}`
+}
+
+function isEmptyToolResult(result) {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return false
+  return EMPTY_LIST_KEYS.some((key) => Array.isArray(result[key]) && result[key].length === 0)
+}
+
+function reflectOnToolResult(name, result) {
+  if (!result || result.success === false) {
+    const detail = String(result?.error || '未知错误')
+      .replace(/\s+/g, ' ')
+      .slice(0, 200)
+    return {
+      status: 'error',
+      text: `${name} 执行失败：${detail}`,
+      suggestion: '请检查参数是否正确，或改用其他工具/方式重试，不要编造结果。'
+    }
+  }
+  if (isEmptyToolResult(result)) {
+    return {
+      status: 'warning',
+      text: `${name} 返回空结果`,
+      suggestion: '请确认查询条件或参数是否准确；如仍为空，请如实告知用户，不要编造数据。'
+    }
+  }
+  return null
+}
+
+function buildAgentSummary(state, result) {
+  const termination =
+    state.termination || (result?.cancelled ? 'cancelled' : result?.success ? 'goal_reached' : 'error')
+  const limitations = []
+  if (state.toolFailed > 0) limitations.push(`${state.toolFailed} 次工具调用失败，结果可能不完整`)
+  if (state.emptyResults > 0) limitations.push(`${state.emptyResults} 次工具返回空结果，请核实查询条件`)
+  if (termination === 'timeout') limitations.push('执行超过时长上限被终止，计划可能未全部完成')
+  if (termination === 'max_steps') limitations.push('执行达到最大轮次被终止，计划可能未全部完成')
+  if (termination === 'cancelled') limitations.push('用户手动停止，结果可能不完整')
+  if (termination === 'error') limitations.push('执行过程发生错误，回答可能不完整')
+  if (state.toolCalls === 0 && state.plan) limitations.push('未调用工具，结论基于模型已有知识')
+
+  return {
+    termination,
+    terminationText: TERMINATION_TEXT[termination] || '已结束',
+    duration: Date.now() - state.startedAt,
+    goal: state.plan?.goal || '',
+    plannedSteps: state.plan?.steps || [],
+    iterations: state.iterations,
+    toolCalls: state.toolCalls,
+    toolSuccess: state.toolSuccess,
+    toolFailed: state.toolFailed,
+    tools: state.toolNames,
+    limitations
+  }
+}
+
+function getProviderConfig(providerTypeArg) {
   const config = getConfig()
-  const providerType = config.ai_provider || 'bailian'
+  const providerType = providerTypeArg || config.ai_provider || 'bailian'
   const apiKeys = config.ai_api_keys || {}
+
+  const endpointId = providerType === 'volcengine' ? apiKeys.volcengine_endpoint_id || '' : ''
 
   const providerConfig = {
     apiKey: apiKeys[providerType] || '',
     timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,
-    connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000
+    connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000,
+    models: resolveProviderModels(providerType, config.ai_models),
+    defaultModel: resolveProviderDefaultModel(providerType, config.ai_models, endpointId)
   }
 
   if (providerType === 'minimax') {
     providerConfig.groupId = apiKeys.minimax_group_id || ''
   }
   if (providerType === 'volcengine') {
-    providerConfig.endpointId = apiKeys.volcengine_endpoint_id || ''
+    providerConfig.endpointId = endpointId
   }
 
   return { providerType, providerConfig }
 }
 
-async function chatWithToolsInternal(messages, options = {}) {
-  const { providerType, providerConfig } = getProviderConfig()
+function summarizeToolResult(result) {
+  if (result === undefined || result === null) return ''
+  try {
+    const text = typeof result === 'string' ? result : JSON.stringify(result)
+    return text.length > 4000 ? `${text.slice(0, 4000)}…` : text
+  } catch {
+    return String(result)
+  }
+}
+
+async function chatWithToolsInternal(messages, options = {}, iteration = 0) {
+  const { providerType, providerConfig } = getProviderConfig(options.provider)
   const provider = getProvider(providerType, providerConfig)
 
   if (!provider) {
@@ -441,102 +741,22 @@ async function chatWithToolsInternal(messages, options = {}) {
     return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
   }
 
-  console.log('=== chatWithToolsInternal ===')
-  console.log('Provider:', provider.name)
-  console.log('Messages:', JSON.stringify(messages, null, 2))
+  if (iteration >= MAX_AGENT_ITERATIONS) {
+    return { success: false, error: `已达到最大执行轮次（${MAX_AGENT_ITERATIONS}），已停止自动循环` }
+  }
+
+  log.debug(`[chatWithTools] provider=${provider.name} messages=${messages.length}`)
 
   const model = options.model || provider.getDefaultModel()
-  const allTools = await getAllToolDefinitions()
+  const toolsEnabled = options.toolsEnabled !== false
+  const allTools = toolsEnabled ? await getAllToolDefinitions() : []
 
   const result = await provider.chat(messages, allTools, { model, ...options })
 
   if (!result.success) return result
 
   if (result.tool_calls && result.tool_calls.length > 0) {
-    console.log('=== 检测到 tool_calls ===')
-    console.log('tool_calls:', JSON.stringify(result.tool_calls, null, 2))
-
-    messages.push({
-      role: 'assistant',
-      tool_calls: result.tool_calls
-    })
-
-    for (const call of result.tool_calls) {
-      console.log('执行工具:', call.function.name)
-      const toolResult = await executeToolCall(call.function.name, call.function.arguments)
-      console.log('工具结果:', JSON.stringify(toolResult, null, 2))
-      messages.push({
-        role: 'tool',
-        tool_call_id: call.id,
-        content: JSON.stringify(toolResult)
-      })
-    }
-
-    return await chatWithToolsInternal(messages, { model, ...options })
-  }
-
-  return result
-}
-
-async function chatWithTools(messages, options = {}) {
-  console.log('=== chatWithTools 被调用 ===')
-  console.log('原始 messages:', JSON.stringify(messages, null, 2))
-
-  const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages]
-
-  return chatWithToolsInternal(messagesWithSystem, options)
-}
-
-export async function chat(messages, options = {}) {
-  console.log('=== chat 函数被调用 ===')
-  console.log('messages:', JSON.stringify(messages, null, 2))
-  console.log('options:', options)
-  const result = await chatWithTools(messages, options)
-  console.log('=== chat 返回结果 ===')
-  console.log('result:', JSON.stringify(result, null, 2))
-  return result
-}
-
-export async function chatStream(messages, options = {}, onChunk) {
-  console.log('=== chatStream 函数被调用 ===')
-  console.log('messages:', JSON.stringify(messages, null, 2))
-  console.log('options:', options)
-
-  const { providerType, providerConfig } = getProviderConfig()
-  const provider = getProvider(providerType, providerConfig)
-
-  if (!provider) {
-    return { success: false, error: `未知的 AI Provider: ${providerType}` }
-  }
-
-  const validation = provider.validateConfig()
-  if (!validation.valid) {
-    return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
-  }
-
-  const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages]
-
-  const model = options.model || provider.getDefaultModel()
-  const allTools = await getAllToolDefinitions()
-
-  const result = await chatStreamInternal(provider, messagesWithSystem, allTools, { model, ...options }, onChunk)
-
-  return result
-}
-
-async function chatStreamInternal(provider, messages, tools, options, onChunk) {
-  const model = options.model || provider.getDefaultModel()
-
-  console.log('=== chatStreamInternal ===')
-  console.log('Provider:', provider.name)
-
-  const result = await provider.chatStream(messages, tools, { model, ...options }, onChunk)
-
-  if (!result.success) return result
-
-  if (result.tool_calls && result.tool_calls.length > 0) {
-    console.log('=== 流式检测到 tool_calls ===')
-    console.log('tool_calls:', JSON.stringify(result.tool_calls, null, 2))
+    log.debug(`[chatWithTools] tool_calls=${result.tool_calls.length}`)
 
     messages.push({
       role: 'assistant',
@@ -544,78 +764,385 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk) {
       tool_calls: result.tool_calls
     })
 
-    if (onChunk && result.content) {
-      onChunk('\n\n正在执行操作...\n')
-    }
-
     for (const call of result.tool_calls) {
-      console.log('执行工具:', call.function.name)
+      log.debug(`执行工具: ${call.function.name}`)
       const toolResult = await executeToolCall(call.function.name, call.function.arguments)
-      console.log('工具结果:', JSON.stringify(toolResult, null, 2))
+      log.debug(`工具执行结果: ${toolResult.success ? 'success' : 'failed'}`)
       messages.push({
         role: 'tool',
         tool_call_id: call.id,
         content: JSON.stringify(toolResult)
       })
-
-      if (onChunk) {
-        const toolName = call.function.name
-        if (toolResult.success) {
-          onChunk(`✓ ${toolName} 完成\n`)
-
-          if (toolResult.content) {
-            onChunk('\n' + toolResult.content + '\n')
-          }
-
-          if (toolResult.metadata) {
-            if (toolName === 'db-query' && toolResult.metadata.tables) {
-              onChunk(`\n查询到 ${toolResult.metadata.tables.length} 个表\n`)
-            }
-            if (toolName === 'db-query' && toolResult.metadata.databases) {
-              onChunk(`\n查询到 ${toolResult.metadata.databases.length} 个数据库\n`)
-            }
-            if (toolName === 'db-schema' && toolResult.metadata.fields) {
-              onChunk(`\n查询到 ${toolResult.metadata.fields.length} 个字段\n`)
-            }
-          }
-        } else {
-          onChunk(`✗ ${toolName} 失败: ${toolResult.error}\n`)
-        }
-      }
     }
 
-    if (onChunk) {
-      onChunk('\n')
-    }
-
-    return await chatStreamInternal(provider, messages, tools, { model, ...options }, onChunk)
+    return await chatWithToolsInternal(messages, { model, ...options }, iteration + 1)
   }
 
   return result
 }
 
-export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
-  console.log('=== validateApiKey ===')
-  console.log('provider:', providerType)
-  console.log('apiKey:', apiKey)
-  console.log('extraConfig:', extraConfig)
+async function chatWithTools(messages, options = {}) {
+  const systemPrompt = buildSystemPrompt(options.toolsEnabled !== false, options.contextSummary)
+  const messagesWithSystem = [{ role: 'system', content: systemPrompt }, ...messages]
 
-  const config = {
-    apiKey,
-    ...extraConfig
+  return chatWithToolsInternal(messagesWithSystem, options)
+}
+
+export async function chat(messages, options = {}) {
+  return chatWithTools(messages, options)
+}
+
+export async function chatStream(messages, options = {}, onChunk) {
+  const { providerType, providerConfig } = getProviderConfig(options.provider)
+  const provider = getProvider(providerType, providerConfig)
+
+  if (!provider) {
+    return { success: false, error: `未知的 AI Provider: ${providerType}` }
   }
 
-  const provider = getProvider(providerType, config)
+  const validation = provider.validateConfig()
+  if (!validation.valid) {
+    return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
+  }
+
+  const toolsEnabled = options.toolsEnabled !== false
+  const systemPrompt = buildSystemPrompt(toolsEnabled, options.contextSummary)
+  const messagesWithSystem = [{ role: 'system', content: systemPrompt }, ...messages]
+
+  const model = options.model || provider.getDefaultModel()
+  const allTools = toolsEnabled ? await getAllToolDefinitions() : []
+
+  if (typeof options.shouldStop === 'function' && options.shouldStop()) {
+    return { success: false, cancelled: true, content: '', error: '已停止' }
+  }
+
+  const planResult = toolsEnabled
+    ? await generatePlan(provider, messages, allTools, {
+        model,
+        shouldStop: options.shouldStop,
+        contextSummary: options.contextSummary
+      })
+    : null
+  const state = createAgentState(planResult?.plan || null, options)
+
+  if (planResult) {
+    recordUsage(state, planResult.usage, planResult.messages, [], { content: planResult.content })
+    if (onChunk) onChunk({ kind: 'usage', usage: usageSnapshot(state.usage) })
+  }
+  if (state.plan && onChunk) onChunk({ kind: 'plan', plan: state.plan })
+
+  const result = await chatStreamInternal(provider, messagesWithSystem, allTools, { model, ...options }, onChunk, state)
+
+  if (!state.termination) {
+    state.termination = result?.cancelled ? 'cancelled' : result?.success ? 'goal_reached' : 'error'
+  }
+
+  const summary = buildAgentSummary(state, result)
+  const shouldSummarize = Boolean(state.plan) || state.toolCalls > 0 || state.termination !== 'goal_reached'
+  if (shouldSummarize && onChunk) onChunk({ kind: 'summary', summary })
+
+  return {
+    ...result,
+    termination: state.termination,
+    summary: shouldSummarize ? summary : undefined,
+    plan: state.plan,
+    reflections: state.reflections,
+    usage: usageSnapshot(state.usage),
+    contextWindow: getContextWindow(providerType)
+  }
+}
+
+async function chatStreamInternal(provider, messages, tools, options, onChunk, state, iteration = 0) {
+  const model = options.model || provider.getDefaultModel()
+  const shouldStop = typeof options.shouldStop === 'function' ? options.shouldStop : () => false
+
+  if (shouldStop()) {
+    state.termination = 'cancelled'
+    return { success: false, cancelled: true, content: '', error: '已停止' }
+  }
+
+  if (Date.now() >= state.deadline) {
+    const error = `已超过单次任务时长上限（${Math.round(state.timeout / 1000)} 秒），已停止执行`
+    state.termination = 'timeout'
+    if (onChunk) onChunk({ kind: 'status', text: error })
+    return { success: false, error }
+  }
+
+  if (iteration >= MAX_AGENT_ITERATIONS) {
+    const error = `已达到最大执行轮次（${MAX_AGENT_ITERATIONS}），已停止自动循环`
+    state.termination = 'max_steps'
+    if (onChunk) onChunk({ kind: 'status', text: error })
+    return { success: false, error }
+  }
+
+  state.iterations = iteration + 1
+
+  log.debug(`[chatStream] provider=${provider.name} messages=${messages.length} iteration=${iteration}`)
+
+  const result = await provider.chatStream(messages, tools, { model, ...options }, (event) => {
+    if (onChunk) onChunk(event)
+  })
+
+  recordUsage(state, result?.usage, messages, tools, result)
+  if (onChunk) onChunk({ kind: 'usage', usage: usageSnapshot(state.usage) })
+
+  if (!result.success) return result
+
+  if (result.tool_calls && result.tool_calls.length > 0) {
+    log.debug(`[chatStream] tool_calls=${result.tool_calls.length}`)
+
+    messages.push({
+      role: 'assistant',
+      content: result.content || '',
+      tool_calls: result.tool_calls
+    })
+
+    for (const call of result.tool_calls) {
+      if (shouldStop()) {
+        state.termination = 'cancelled'
+        return { success: false, cancelled: true, content: result.content || '', error: '已停止' }
+      }
+
+      const toolName = call.function.name
+      log.debug(`执行工具: ${toolName}`)
+      if (onChunk) {
+        onChunk({
+          kind: 'tool_start',
+          id: call.id,
+          name: toolName,
+          arguments: call.function.arguments
+        })
+      }
+
+      const startedAt = Date.now()
+      const toolResult = await executeToolCall(toolName, call.function.arguments)
+      const duration = Date.now() - startedAt
+      const reflection = reflectOnToolResult(toolName, toolResult)
+
+      state.toolCalls += 1
+      if (!state.toolNames.includes(toolName)) state.toolNames.push(toolName)
+      if (toolResult?.success === false) {
+        state.toolFailed += 1
+      } else {
+        state.toolSuccess += 1
+      }
+      if (reflection?.status === 'warning') state.emptyResults += 1
+      if (reflection) {
+        state.reflections.push({ name: toolName, status: reflection.status, text: reflection.text })
+      }
+
+      const toolContent = reflection
+        ? `${JSON.stringify(toolResult)}\n\n[系统反思] ${reflection.text}。${reflection.suggestion}`
+        : JSON.stringify(toolResult)
+
+      messages.push({
+        role: 'tool',
+        tool_call_id: call.id,
+        content: toolContent
+      })
+
+      if (onChunk) {
+        onChunk({
+          kind: 'tool_end',
+          id: call.id,
+          name: toolName,
+          success: Boolean(toolResult.success),
+          duration,
+          result: summarizeToolResult(toolResult)
+        })
+        if (reflection) {
+          onChunk({
+            kind: 'reflection',
+            id: call.id,
+            name: toolName,
+            status: reflection.status,
+            text: reflection.text
+          })
+        }
+      }
+    }
+
+    return await chatStreamInternal(provider, messages, tools, { model, ...options }, onChunk, state, iteration + 1)
+  }
+
+  return result
+}
+
+const SUMMARY_ROLE_LABELS = {
+  system: '系统',
+  user: '用户',
+  assistant: '助手',
+  tool: '工具结果'
+}
+
+function flattenMessageText(content) {
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((part) => {
+      if (!part || typeof part !== 'object') return ''
+      if (part.type === 'text') return part.text || ''
+      if (part.type === 'image_url') return '[图片]'
+      return ''
+    })
+    .filter(Boolean)
+    .join('\n')
+}
+
+function formatMessageForSummary(message) {
+  if (!message || typeof message !== 'object') return ''
+  const label = SUMMARY_ROLE_LABELS[message.role] || message.role || '消息'
+  const parts = []
+  const text = flattenMessageText(message.content).trim()
+  if (text) parts.push(text.slice(0, 2000))
+  if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    const names = message.tool_calls.map((call) => call?.function?.name || '').filter(Boolean)
+    if (names.length > 0) parts.push(`调用工具：${names.join(', ')}`)
+  }
+  if (parts.length === 0) return ''
+  return `${label}：${parts.join(' ')}`
+}
+
+export async function compressChatContext(messages, options = {}) {
+  const { providerType, providerConfig } = getProviderConfig(options.provider)
+  const provider = getProvider(providerType, providerConfig)
+
+  if (!provider) {
+    return { success: false, error: `未知的 AI Provider: ${providerType}` }
+  }
+
+  const validation = provider.validateConfig()
+  if (!validation.valid) {
+    return { success: false, error: `${provider.name} ${validation.error}，请在设置中配置` }
+  }
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return { success: false, error: '没有可压缩的对话历史' }
+  }
+
+  const rawKeep = Number(options.keepRecent)
+  const keepRecent = Math.min(
+    20,
+    Math.max(2, Number.isFinite(rawKeep) ? Math.round(rawKeep) : COMPRESSION_DEFAULT_KEEP)
+  )
+
+  if (messages.length <= keepRecent + 1) {
+    return { success: false, error: '历史消息较少，无需压缩' }
+  }
+
+  const compressible = messages.slice(0, -keepRecent)
+  const kept = messages.slice(-keepRecent)
+  const priorSummary = typeof options.contextSummary === 'string' ? options.contextSummary.trim() : ''
+
+  const transcript = compressible
+    .map(formatMessageForSummary)
+    .filter(Boolean)
+    .join('\n')
+    .slice(0, COMPRESSION_MAX_INPUT_CHARS)
+
+  if (!transcript && !priorSummary) {
+    return { success: false, error: '没有可压缩的对话内容' }
+  }
+
+  const userContent = [
+    priorSummary ? `已有摘要：\n${priorSummary}` : '',
+    `待压缩的历史对话：\n${transcript || '（无新增历史）'}`
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+
+  try {
+    const result = await provider.chat(
+      [
+        { role: 'system', content: COMPRESSION_SYSTEM_PROMPT },
+        { role: 'user', content: userContent }
+      ],
+      [],
+      { model: options.model, max_tokens: 1500, temperature: 0.2 }
+    )
+
+    if (!result?.success) {
+      return { success: false, error: result?.error || '上下文压缩失败' }
+    }
+
+    const summary = String(result.content || '')
+      .trim()
+      .slice(0, COMPRESSION_MAX_SUMMARY_CHARS)
+    if (!summary) {
+      return { success: false, error: '上下文压缩返回为空' }
+    }
+
+    return {
+      success: true,
+      summary,
+      compressedCount: compressible.length,
+      keptCount: kept.length,
+      beforeTokens: estimateTextTokens(priorSummary) + estimateMessagesTokens(compressible),
+      afterTokens: estimateTextTokens(summary) + estimateMessagesTokens(kept),
+      usage: normalizeUsage(result.usage),
+      error: null
+    }
+  } catch (error) {
+    log.warn('上下文压缩异常:', error.message)
+    return { success: false, error: error.message }
+  }
+}
+
+export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
+  log.debug(`[validateApiKey] provider=${providerType}`)
+
+  const provider = createProvider(providerType, {
+    apiKey,
+    ...extraConfig
+  })
 
   if (!provider) {
     log.warn(`未知的 Provider: ${providerType}`)
     return false
   }
 
-  console.log('Provider apiKey:', provider.apiKey)
   const result = await provider.validateApiKey()
-  console.log('验证结果:', result)
+  log.debug(`[validateApiKey] result=${result}`)
   return result
 }
 
-export { getAvailableProviders, getProviderModels, PROVIDER_TYPES, PROVIDER_INFO }
+export async function getProviderModels(providerType, options = {}) {
+  const config = getConfig()
+  const apiKeys = config.ai_api_keys || {}
+  const localModels = resolveProviderModels(providerType, config.ai_models)
+  const defaultModel = resolveProviderDefaultModel(providerType, config.ai_models)
+
+  if (options.defaults) {
+    const models = getDefaultProviderModels(providerType)
+    return { success: true, models, defaultModel: models[0]?.id || '', source: 'builtin', error: null }
+  }
+
+  if (!options.refresh) {
+    return { success: true, models: localModels, defaultModel, source: 'config', error: null }
+  }
+
+  const endpointId = providerType === 'volcengine' ? apiKeys.volcengine_endpoint_id || '' : ''
+  const result = await fetchProviderModels(providerType, {
+    apiKey: options.apiKey || apiKeys[providerType] || '',
+    groupId: apiKeys.minimax_group_id || '',
+    endpointId,
+    timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,
+    connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000
+  })
+
+  if (!result.success) {
+    return { success: false, models: localModels, defaultModel, source: 'config', error: result.error }
+  }
+
+  const nextDefault = result.models.some((model) => model.id === defaultModel)
+    ? defaultModel
+    : result.models[0]?.id || ''
+
+  return { success: true, models: result.models, defaultModel: nextDefault, source: 'remote', error: null }
+}
+
+export function getAiProviderCatalog() {
+  return getAvailableProviders(getConfig())
+}
+
+export { PROVIDER_TYPES, PROVIDER_INFO }

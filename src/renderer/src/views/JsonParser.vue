@@ -1,91 +1,52 @@
 <template>
-  <div class="json-parser-container" :style="{ width: windowWidth + 'px' }">
-    <header>
-      <h1>
-        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="4 7 4 4 20 4 20 7" />
-          <polyline points="4 17 4 20 20 20 20 17" />
-          <line x1="9" y1="12" x2="15" y2="12" />
+  <PageLayout tool-path="/json-parser">
+    <template #actions>
+      <button class="btn-icon btn-sm" title="格式化" @click="formatJson">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3" />
         </svg>
-        JSON解析器
-      </h1>
-      <div class="subtitle">JSON格式化、验证、压缩与JSONPath查询工具</div>
-    </header>
+      </button>
+      <button class="btn-icon btn-sm" title="折叠全部" @click="collapseAll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 5L12 9L18 5M6 19L12 15L18 19" />
+        </svg>
+      </button>
+      <button class="btn-icon btn-sm" title="展开全部" @click="expandAll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9L12 5L18 9M6 15L12 19L18 15" />
+        </svg>
+      </button>
+      <span class="toolbar-sep" />
+      <button class="btn-icon btn-sm" title="压缩 JSON 并复制" @click="copyMinified">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3" />
+        </svg>
+      </button>
+      <button class="btn-icon btn-sm" title="压缩转义 JSON 并复制" @click="copyEscaped">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z" />
+        </svg>
+      </button>
+      <button class="btn-icon btn-sm" title="JSON 转 XML" @click="convertToXml">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 6l-6 6l6 6M16 6l6 6l-6 6" />
+        </svg>
+      </button>
+      <span class="toolbar-sep" />
+      <button class="btn-icon btn-sm" title="清空" @click="clearInput">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </template>
 
-    <div class="json-content">
-      <div class="editor-panel">
+    <div class="page-body">
+      <div class="panel editor-panel">
         <div class="panel-header">
+          <span class="panel-title">JSON</span>
           <div class="status-area">
             <span :class="['status', validationStatus]">{{ validationMessage }}</span>
-            <span class="size-info">{{ inputSize }} 字符 | {{ lineCount }} 行</span>
-          </div>
-          <div class="panel-actions">
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="格式化" @click="formatJson">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3"
-                  />
-                </svg>
-              </button>
-              <span class="tooltip">格式化</span>
-            </div>
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="折叠全部" @click="collapseAll">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="none" stroke="currentColor" stroke-width="2" d="M6 5L12 9L18 5M6 19L12 15L18 19" />
-                </svg>
-              </button>
-              <span class="tooltip">折叠全部</span>
-            </div>
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="展开全部" @click="expandAll">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="none" stroke="currentColor" stroke-width="2" d="M6 9L12 5L18 9M6 15L12 19L18 15" />
-                </svg>
-              </button>
-              <span class="tooltip">展开全部</span>
-            </div>
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="压缩JSON并复制" @click="copyMinified">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3"
-                  />
-                </svg>
-              </button>
-              <span class="tooltip">压缩JSON并复制</span>
-            </div>
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="压缩转义JSON并复制" @click="copyEscaped">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="currentColor" d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z" />
-                </svg>
-              </button>
-              <span class="tooltip">压缩转义JSON并复制</span>
-            </div>
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="JSON转XML" @click="convertToXml">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="none" stroke="currentColor" stroke-width="2" d="M8 6l-6 6l6 6M16 6l6 6l-6 6" />
-                </svg>
-              </button>
-              <span class="tooltip">JSON转XML</span>
-            </div>
-            <div class="tooltip-wrapper">
-              <button class="btn-icon" title="清空" @click="clearInput">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="none" stroke="currentColor" stroke-width="2" d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-              <span class="tooltip">清空</span>
-            </div>
+            <span class="size-info">{{ inputSize }} 字符 · {{ lineCount }} 行</span>
           </div>
         </div>
         <div class="editor-wrapper">
@@ -108,40 +69,45 @@
         </div>
       </div>
 
-      <div class="jsonpath-section">
-        <div class="section-header">
-          <label>JSONPath查询</label>
-        </div>
-        <div class="jsonpath-input-row">
-          <input
-            v-model="jsonPathInput"
-            type="text"
-            class="input-field jsonpath-input"
-            placeholder="输入JSONPath表达式，如：$.data.items[0].name"
-          />
-          <button class="btn btn-primary" @click="executeJsonPath">查询</button>
-          <button v-if="jsonPathResult !== null" class="btn btn-secondary" @click="copyJsonPathResult">复制结果</button>
-        </div>
-        <div class="jsonpath-hint">
-          <span>示例：</span>
-          <code @click="setJsonPath('$.')">$. (根对象)</code>
-          <code @click="setJsonPath('$.*')">$.* (所有子元素)</code>
-          <code @click="setJsonPath('$.data')">$.data (指定属性)</code>
-          <code @click="setJsonPath('$.items[*]')">$.items[*] (数组所有元素)</code>
-        </div>
-        <div v-if="jsonPathResult !== null" class="jsonpath-result">
-          <div class="result-header">
-            <span class="result-label">查询结果：</span>
+      <div class="panel jsonpath-panel">
+        <div class="panel-header">
+          <span class="panel-title">JSONPath 查询</span>
+          <div class="panel-actions">
+            <button v-if="jsonPathResult !== null" class="btn btn-secondary btn-sm" @click="copyJsonPathResult">
+              复制结果
+            </button>
+            <button class="btn btn-primary btn-sm" @click="executeJsonPath">查询</button>
           </div>
-          <div class="result-content">
-            <pre>{{ jsonPathResultDisplay }}</pre>
+        </div>
+        <div class="panel-body">
+          <div class="jsonpath-input-row">
+            <input
+              v-model="jsonPathInput"
+              type="text"
+              class="input-field jsonpath-input"
+              placeholder="输入 JSONPath 表达式，如：$.data.items[0].name"
+              @keydown.enter="executeJsonPath"
+            />
+          </div>
+          <div class="jsonpath-hint">
+            <span>示例：</span>
+            <code @click="setJsonPath('$.')">$. (根对象)</code>
+            <code @click="setJsonPath('$.*')">$.* (所有子元素)</code>
+            <code @click="setJsonPath('$.data')">$.data (指定属性)</code>
+            <code @click="setJsonPath('$.items[*]')">$.items[*] (数组所有元素)</code>
+          </div>
+          <div v-if="jsonPathResult !== null" class="jsonpath-result">
+            <div class="result-label">查询结果</div>
+            <pre class="result-content">{{ jsonPathResultDisplay }}</pre>
           </div>
         </div>
       </div>
 
-      <div class="help-section">
-        <div class="help-title">JSONPath语法说明</div>
-        <div class="help-content">
+      <div class="panel help-panel">
+        <div class="panel-header">
+          <span class="panel-title">JSONPath 语法说明</span>
+        </div>
+        <div class="panel-body">
           <table class="syntax-table">
             <thead>
               <tr>
@@ -201,18 +167,18 @@
       <div class="context-menu-item" @click="compressJson">压缩JSON</div>
     </div>
 
-    <Toast :visible="toastVisible" :message="toastMessage" />
-  </div>
+    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
+  </PageLayout>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useWindowWidth, useToast } from '@/composables'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
+import PageLayout from '@/layouts/PageLayout.vue'
 
-const windowWidth = useWindowWidth()
-const { toastVisible, toastMessage, showSuccess, showError, showWarning } = useToast()
+const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const jsonInput = ref('')
 const validationStatus = ref('')
@@ -310,7 +276,7 @@ function autoFormat() {
   }
 }
 
-function renderJson(text, parsed) {
+function renderJson(text) {
   if (!editorRef.value) return
   isRendering = true
   lastRenderedText = text
@@ -639,7 +605,7 @@ async function copyMinified() {
     } else {
       showError('复制失败')
     }
-  } catch (e) {
+  } catch {
     showError('JSON格式错误')
   }
 }
@@ -661,7 +627,7 @@ async function copyEscaped() {
     } else {
       showError('复制失败')
     }
-  } catch (e) {
+  } catch {
     showError('JSON格式错误')
   }
 }
@@ -682,7 +648,7 @@ async function convertToXml() {
     } else {
       showError('复制失败')
     }
-  } catch (e) {
+  } catch {
     showError('JSON格式错误')
   }
 }
@@ -1190,80 +1156,43 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.json-parser-container {
-  margin: 0 auto;
-  height: 100vh;
+.page-body {
+  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
-  background: var(--glass-bg);
-  overflow: hidden;
-}
-
-.json-parser-container header {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 20px 24px 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.json-parser-container header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
-  font-size: 24px;
-  margin-bottom: 6px;
-}
-
-.json-parser-container header h1 .header-icon {
-  width: 28px;
-  height: 28px;
-}
-
-.json-parser-container header .subtitle {
-  font-size: 14px;
-  opacity: 0.9;
-}
-
-.json-content {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
 .editor-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  height: clamp(300px, 48vh, 460px);
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 70vh;
+  overflow: hidden;
 }
 
 .editor-wrapper {
   flex: 1;
   display: flex;
+  min-height: 0;
   overflow: hidden;
-  background: #f5f5f5;
-  min-height: 60vh;
+  background: var(--surface);
 }
 
 .line-numbers {
-  width: 50px;
-  background: #eee;
-  border-right: 1px solid #ddd;
-  overflow-y: hidden;
+  width: 52px;
   flex-shrink: 0;
   padding: 12px 0;
+  background: var(--surface-muted);
+  border-right: 1px solid var(--border-color);
+  overflow-y: hidden;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: var(--font-size-dense);
   line-height: 1.6;
-  color: #999;
+  color: var(--text-tertiary);
   text-align: right;
   user-select: none;
 }
@@ -1276,11 +1205,11 @@ onUnmounted(() => {
   flex: 1;
   padding: 12px;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: var(--font-size-dense);
   line-height: 1.6;
-  background: #f5f5f5;
-  color: #333;
-  overflow-y: auto;
+  background: var(--surface);
+  color: var(--text-primary);
+  overflow: auto;
   outline: none;
   border: none;
 }
@@ -1289,259 +1218,144 @@ onUnmounted(() => {
   outline: none;
 }
 
-.jsonpath-section {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  flex-shrink: 0;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(248, 249, 250, 0.5);
-  border-bottom: 1px solid var(--border-color);
-}
-
 .status-area {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin-left: auto;
 }
 
 .status {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  line-height: 18px;
 }
 
 .status.valid {
-  background: rgba(34, 197, 94, 0.1);
-  color: #15803d;
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success-darker);
 }
 
 .status.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #b91c1c;
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-darker);
 }
 
 .size-info {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
 }
 
-.panel-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.tooltip-wrapper {
-  position: relative;
-  display: inline-flex;
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.btn-icon:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.tooltip {
-  position: absolute;
-  bottom: -32px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.tooltip-wrapper:hover .tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
-.jsonpath-section .section-header {
-  margin-bottom: 12px;
-}
-
-.jsonpath-section .section-header label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
+.jsonpath-panel,
+.help-panel {
+  flex-shrink: 0;
 }
 
 .jsonpath-input-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
-.input-field {
+.jsonpath-input {
   flex: 1;
-  padding: 10px 14px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  background: var(--glass-bg);
-  color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
-.input-field:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
 .jsonpath-hint {
-  margin-top: 8px;
+  margin-top: 10px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-tertiary);
   flex-wrap: wrap;
 }
 
 .jsonpath-hint code {
-  padding: 2px 6px;
-  background: rgba(102, 126, 234, 0.1);
+  padding: 1px 6px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
-  color: var(--primary-color);
+  color: var(--text-secondary);
   font-family: 'Consolas', 'Monaco', monospace;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .jsonpath-hint code:hover {
-  background: rgba(102, 126, 234, 0.2);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .jsonpath-result {
   margin-top: 12px;
-  padding: 12px 16px;
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  padding: 10px 12px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
 }
 
-.result-header {
-  margin-bottom: 8px;
-}
-
 .result-label {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
-  color: #15803d;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
 }
 
-.result-content pre {
+.result-content {
   margin: 0;
-  padding: 8px;
-  background: rgba(248, 249, 250, 0.5);
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-all;
   color: var(--text-primary);
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: 1px solid var(--primary-color);
-  background: var(--primary-color);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 14px;
-  color: white;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-.btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.8);
-  border-color: rgba(102, 126, 234, 0.8);
-}
-
-.btn-secondary {
-  background: transparent;
-  color: var(--primary-color);
-}
-
-.btn-secondary:hover {
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.help-section {
-  background: rgba(248, 249, 250, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.help-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
 }
 
 .syntax-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .syntax-table th,
 .syntax-table td {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color);
   text-align: left;
 }
 
 .syntax-table th {
-  background: rgba(248, 249, 250, 0.5);
+  background: var(--surface-muted);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-secondary);
+}
+
+.syntax-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .syntax-table code {
-  padding: 2px 6px;
-  background: rgba(102, 126, 234, 0.1);
+  padding: 1px 5px;
+  background: var(--surface-muted);
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .context-menu {
   position: fixed;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1552,13 +1366,13 @@ onUnmounted(() => {
 
 .context-menu-item {
   padding: 10px 16px;
-  font-size: 13px;
+  font-size: var(--font-size-dense);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .context-menu-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .context-menu-separator {
@@ -1570,41 +1384,41 @@ onUnmounted(() => {
 
 <style>
 .json-editor .hl-key {
-  color: #c62828;
+  color: var(--json-key);
 }
 
 .json-editor .hl-string {
-  color: #1565c0;
+  color: var(--json-string);
 }
 
 .json-editor .hl-number {
-  color: #2e7d32;
+  color: var(--json-number);
 }
 
 .json-editor .hl-boolean {
-  color: #0d22aa;
+  color: var(--json-boolean);
 }
 
 .json-editor .hl-null {
-  color: #808080;
+  color: var(--json-null);
 }
 
 .json-editor .hl-brace {
-  color: #333;
+  color: var(--json-punct);
   font-weight: bold;
 }
 
 .json-editor .hl-bracket {
-  color: #333;
+  color: var(--json-punct);
   font-weight: bold;
 }
 
 .json-editor .hl-colon {
-  color: #333;
+  color: var(--json-punct);
 }
 
 .json-editor .hl-comma {
-  color: #333;
+  color: var(--json-punct);
 }
 
 .json-editor .fold-toggle {
@@ -1615,10 +1429,10 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--json-muted);
   cursor: pointer;
   user-select: none;
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   border-radius: 2px;
   opacity: 0;
   transition: opacity 0.2s;
@@ -1640,7 +1454,7 @@ onUnmounted(() => {
   line-height: 16px;
   text-align: center;
   content: '▶';
-  font-size: 8px;
+  font-size: var(--font-size-xs);
 }
 
 .json-editor .fold-toggle.fold-open::before {
@@ -1652,8 +1466,8 @@ onUnmounted(() => {
 }
 
 .json-editor .fold-toggle:hover {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent-color);
 }
 
 .json-editor .fold-line {
@@ -1661,12 +1475,12 @@ onUnmounted(() => {
 }
 
 .json-editor .fold-line.collapsed {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
   border-radius: 2px;
 }
 
 .json-editor .fold-ellipsis {
-  color: #999;
+  color: var(--json-muted);
   font-style: italic;
   padding: 0 2px;
 }

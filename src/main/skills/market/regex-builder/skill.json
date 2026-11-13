@@ -1,0 +1,37 @@
+{
+  "name": "regex-builder",
+  "version": "1.0.0",
+  "description": "根据自然语言需求生成正则表达式，逐段解释匹配规则并给出测试样例",
+  "author": "NToolBox Community",
+  "category": "general",
+  "tags": ["正则", "文本", "匹配"],
+  "icon": "regex",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "requirement": {
+        "type": "string",
+        "description": "需要匹配的内容，例如：提取邮箱地址、校验手机号"
+      },
+      "language": {
+        "type": "string",
+        "description": "目标语言：javascript、python、java、go 等，默认 javascript"
+      },
+      "sample": {
+        "type": "string",
+        "description": "可选的测试文本，用于验证正则结果"
+      }
+    },
+    "required": ["requirement"]
+  },
+  "promptTemplate": "prompt.txt",
+  "examples": [
+    {
+      "input": "requirement: 提取文本中的邮箱地址",
+      "output": "给出正则、分组说明和 JavaScript 示例"
+    }
+  ],
+  "featured": true,
+  "downloads": 1580,
+  "changelog": "首个版本：支持生成、解释和样例验证"
+}

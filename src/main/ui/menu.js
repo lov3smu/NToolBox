@@ -1,45 +1,86 @@
-import { Menu, app, dialog } from 'electron'
-import path from 'path'
+import { BrowserWindow, Menu, app } from 'electron'
 import { log } from '../utils'
 import { getConfig } from '../services'
 import { destroyTray } from './tray'
-import { getProjectRoot } from '../utils/path'
+import { toggleDevTools } from '../windows'
+import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '../../shared/tools'
+import { IPC_EVENTS } from '../../shared/ipc'
 
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const packageJson = require(path.join(getProjectRoot(), 'package.json'))
-
-const appVersion = packageJson.version || '1.0.0'
-const appAuthor = packageJson.author || 'lov3smu'
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const isMac = process.platform === 'darwin'
 
 function showAboutDialog(mainWindow) {
-  const appName = 'NToolBox'
-  const description = '一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。'
-  const copyright = `© ${new Date().getFullYear()} ${appAuthor}. All rights reserved.`
-  dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title: '关于软件',
-    message: `${appName} ${appVersion}`,
-    detail: `${description}\n\n作者：${appAuthor}\n\n${copyright}`,
-    buttons: ['确定']
-  })
+  const target = BrowserWindow.getFocusedWindow() || mainWindow
+  if (!target || target.isDestroyed()) return
+  if (!target.isVisible()) target.show()
+  target.focus()
+  target.webContents.send(IPC_EVENTS.showAbout)
+}
+
+export function handleMenuAction(event, action) {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  switch (action) {
+    case 'edit-undo':
+      event.sender.undo()
+      return true
+    case 'edit-redo':
+      event.sender.redo()
+      return true
+    case 'edit-cut':
+      event.sender.cut()
+      return true
+    case 'edit-copy':
+      event.sender.copy()
+      return true
+    case 'edit-paste':
+      event.sender.paste()
+      return true
+    case 'select-all':
+      event.sender.selectAll()
+      return true
+    case 'hide-window':
+      if (win && !win.isDestroyed()) win.hide()
+      return true
+    case 'quit':
+      app.isQuitting = true
+      destroyTray()
+      app.quit()
+      return true
+    case 'about':
+      showAboutDialog(win)
+      return true
+    case 'toggle-devtools':
+      toggleDevTools(win)
+      return true
+    default:
+      return false
+  }
+}
+
+function openTool(mainWindow, tool, createSettingsWindowFn) {
+  if (tool.path === SETTINGS_PATH) {
+    if (createSettingsWindowFn) createSettingsWindowFn()
+    return
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show()
+    mainWindow.webContents.send(IPC_EVENTS.navigateTo, tool.path)
+  }
+}
+
+function buildToolMenuItem(mainWindow, tool, shortcuts, createSettingsWindowFn) {
+  const accelerator = getToolAccelerator(tool, shortcuts)
+  return {
+    label: tool.name,
+    ...(accelerator ? { accelerator } : {}),
+    click: () => openTool(mainWindow, tool, createSettingsWindowFn)
+  }
 }
 
 export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindowFn) {
   const config = getConfig()
-  const shortcuts = config.shortcuts || {
-    password: 'CmdOrCtrl+P',
-    cron: 'CmdOrCtrl+Shift+C',
-    unixtimestamp: 'CmdOrCtrl+Shift+T',
-    yamlEditor: 'CmdOrCtrl+Shift+Y',
-    fileManager: 'CmdOrCtrl+Shift+F',
-    jsonParser: 'CmdOrCtrl+J',
-    htmlViewer: 'CmdOrCtrl+H',
-    chat: 'CmdOrCtrl+L',
-    settings: 'CmdOrCtrl+,'
-  }
+  const shortcuts = config.shortcuts || {}
+  const settingsTool = getToolByPath(SETTINGS_PATH)
 
   const template = [
     ...(isMac
@@ -71,26 +112,9 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
     {
       label: '文件',
       submenu: [
-        {
-          label: '首页',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/')
-            }
-          }
-        },
-        {
-          label: '文件管理器',
-          accelerator: shortcuts.fileManager || 'CmdOrCtrl+Shift+F',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/file-manager')
-            }
-          }
-        },
-        { type: 'separator' },
+        ...(settingsTool
+          ? [buildToolMenuItem(mainWindow, settingsTool, shortcuts, createSettingsWindowFn), { type: 'separator' }]
+          : []),
         {
           label: '隐藏窗口',
           click: () => {
@@ -126,112 +150,6 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
       ]
     },
     {
-      label: '工具',
-      submenu: [
-        {
-          label: 'SQL脚本生成',
-          accelerator: 'CmdOrCtrl+S',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/sql-generator')
-            }
-          }
-        },
-        {
-          label: 'AI聊天助手',
-          accelerator: shortcuts.chat || 'CmdOrCtrl+L',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/chat')
-            }
-          }
-        },
-        {
-          label: '数据库管理',
-          accelerator: 'CmdOrCtrl+D',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/database')
-            }
-          }
-        },
-        { type: 'separator' },
-        {
-          label: '密码生成器',
-          accelerator: shortcuts.password || 'CmdOrCtrl+P',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/password')
-            }
-          }
-        },
-        {
-          label: 'Cron表达式生成器',
-          accelerator: shortcuts.cron || 'CmdOrCtrl+Shift+C',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/cron')
-            }
-          }
-        },
-        {
-          label: 'Unix时间戳互转',
-          accelerator: shortcuts.unixtimestamp || 'CmdOrCtrl+Shift+T',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/unixtimestamp')
-            }
-          }
-        },
-        {
-          label: 'YAML编辑(验证)器',
-          accelerator: shortcuts.yamlEditor || 'CmdOrCtrl+Shift+Y',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/yaml-editor')
-            }
-          }
-        },
-        {
-          label: 'JSON解析器',
-          accelerator: shortcuts.jsonParser || 'CmdOrCtrl+J',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/json-parser')
-            }
-          }
-        },
-        {
-          label: 'HTML查看器',
-          accelerator: shortcuts.htmlViewer || 'CmdOrCtrl+Shift+H',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.show()
-              mainWindow.webContents.send('navigate-to', '/html-viewer')
-            }
-          }
-        },
-        { type: 'separator' },
-        {
-          label: '设置',
-          accelerator: shortcuts.settings || 'CmdOrCtrl+,',
-          click: () => {
-            if (createSettingsWindowFn) {
-              createSettingsWindowFn()
-            }
-          }
-        }
-      ]
-    },
-    {
       label: '帮助',
       submenu: [
         {
@@ -258,9 +176,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
                 label: '开发者工具',
                 accelerator: isMac ? 'Alt+Command+I' : 'F12',
                 click: () => {
-                  if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.webContents.toggleDevTools()
-                  }
+                  toggleDevTools(mainWindow)
                 }
               }
             ]
@@ -271,5 +187,8 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
 
   const menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
+  if (!isMac && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setMenuBarVisibility(false)
+  }
   log.info('应用菜单已创建')
 }
