@@ -39,11 +39,13 @@
 集成多种 AI 大模型，具备 Agent 工具调用与多模态能力的开发助手。
 
 - **多模型支持** - 百炼、Moonshot、智谱、MiniMax、火山引擎、DeepSeek
-- **Agent 能力** - 自动规划并调用工具，支持多轮循环与随时停止
-- **执行链路** - 实时展示思考过程、工具参数与执行结果
-- **多模态输入** - 支持图片与文本文件，可切换思考/快速模式
-- **上下文记忆** - 保持对话连贯性
-- **快捷访问** - Ctrl+L 快速打开
+- **Agent 能力** - 自动规划、多轮工具调用、结果反思与执行总结，支持随时停止
+- **执行链路** - 实时展示思考过程、计划步骤、工具参数与执行结果
+- **多模态输入** - 支持图片与文本文件，可切换 Auto / 思考 / 快速模式
+- **工具审批** - 支持自动审批与仅对话两种模式，技能扩展按需调用
+- **用量统计** - 展示上下文占用比例、累计 token 与每条回复的 token 消耗
+- **上下文压缩** - 上下文达到窗口 70% 时自动压缩历史为摘要，保留最近对话
+- **会话恢复** - 对话列表本地持久化，流式输出中断后可恢复
 
 ### 🔐 密码生成器
 
@@ -63,6 +65,27 @@
 - **表达式解析** - 反解析现有表达式
 - **执行预览** - 显示最近5次执行时间
 - **中文描述** - 自动生成表达式说明
+
+### 📄 Markdown 编辑器
+
+Markdown 编写、实时预览与主题定制。
+
+- **实时预览** - 左侧编辑、右侧即时渲染
+- **语法支持** - GFM 表格、任务列表与代码高亮
+- **主题定制** - 多套预览主题，字号与强调色可调
+- **快捷插入** - 标题、列表、表格、代码块等一键插入
+- **导出** - 将当前内容导出为 Markdown 文件
+
+### 🎨 公众号文章排版
+
+将 Markdown 一键排版为可直接粘贴到公众号的富文本。
+
+- **多套主题** - 内置多种公众号排版样式
+- **内联样式** - 颜色、间距、边框全部内联，复制后排版不丢失
+- **富文本复制** - 一键复制到公众号编辑器，也可复制 Markdown 原文
+- **图表公式** - 支持 Mermaid / PlantUML 图表与数学公式渲染
+- **图片处理** - 本地图片以 Base64 内嵌，支持导入内容
+- **AI 写作** - 支持润色、生成标题与摘要、续写、翻译
 
 ### ⏱️ Unix 时间戳转换器
 
@@ -118,14 +141,34 @@ MySQL 数据库连接与管理。
 - **时间排序** - 按创建时间排列
 - **右键菜单** - 打开、复制路径、查看属性
 
+### 📋 剪切板管理
+
+自动记录剪贴板中的文本与图片。
+
+- **历史记录** - 自动收集最近的复制内容，最多保留 120 条
+- **文本与图片** - 按类型筛选，图片支持缩略图预览
+- **置顶与删除** - 常用内容可置顶，置顶项不会被自动清理
+- **快速复制** - 点击即可重新写入剪贴板
+
+### 🧩 扩展市场
+
+从技能市场发现并安装 AI 扩展。
+
+- **内置扩展** - 内置技能离线可用
+- **在线市场** - 接入开源技能市场 ClawHub，支持搜索与分类
+- **一键安装** - 安装到本机用户目录，由 AI 助手按需调用
+- **统一管理** - 扩展页面与设置页均可查看、更新、卸载
+
 ### 🎨 界面特色
 
-- **现代化 UI** - 毛玻璃设计风格
+- **现代化 UI** - 毛玻璃设计风格与统一设计 token
+- **主题切换** - 支持跟随系统 / 浅色 / 深色，内置 5 套配色主题
+- **字体大小** - 小 / 标准 / 大 / 特大四档，下拉即时生效
 - **全局搜索** - Ctrl+K 快速搜索工具
 - **系统托盘** - 最小化到托盘运行
 - **开机自启** - 可配置自动启动
 - **自动更新** - 支持自动检测更新
-- **快捷键** - 全功能快捷键支持
+- **动效与无障碍** - 页面过渡动效，并适配系统「减少动态效果」设置
 
 ---
 
@@ -169,11 +212,11 @@ npm run dev
 
 ### 全局搜索
 
-按下 `Ctrl+K` 打开全局搜索，快速访问任意工具。
+按下 `Ctrl+K` 打开全局搜索，快速访问任意工具；也可通过左侧导航打开，`Ctrl+,` 直接进入设置。
 
 ### SQL 脚本生成
 
-1. 打开 SQL 脚本生成器（Ctrl+S）
+1. 打开 SQL 脚本生成器
 2. 选择操作类型：FIX / PUBLISH / QUERY
 3. 输入脚本用途描述
 4. 选择目标数据库
@@ -182,14 +225,15 @@ npm run dev
 
 ### AI 助手
 
-1. 打开 AI 助手（Ctrl+L）
+1. 打开 AI 助手
 2. 在设置中配置 AI API Key
 3. 选择平台与模型，可附加图片或文本文件
 4. 按需切换「自动审批 / 仅对话」和「Auto / 思考 / 快速」，开始对话
+5. 输入框上方会显示上下文占用与累计 token，达到 70% 时自动压缩历史
 
 ### 密码生成
 
-1. 打开密码生成器（Ctrl+P）
+1. 打开密码生成器
 2. 选择字符类型
 3. 调节密码长度
 4. 点击生成并复制
@@ -204,16 +248,22 @@ npm run dev
 NToolBox/
 ├── assets/                 # 图标和资源文件
 ├── src/                    # 源代码目录
+│   ├── shared/             # 主进程与渲染进程共享契约
+│   │   ├── ipc.js          # IPC 通道与方法定义
+│   │   └── tools.js        # 工具注册表（导航/菜单/托盘/搜索）
 │   ├── main/               # Electron 主进程
 │   │   ├── index.js        # 主进程入口
 │   │   ├── ipc/            # IPC 通信
 │   │   ├── windows/        # 窗口管理
 │   │   ├── ui/             # 菜单、托盘
 │   │   ├── services/       # 业务服务
+│   │   │   ├── ai/         # AI Provider、能力与用量估算
+│   │   │   ├── chat.js     # AI Agent 循环与上下文压缩
 │   │   │   ├── config.js   # 配置管理
 │   │   │   ├── generator.js# SQL 脚本生成
 │   │   │   ├── updater.js  # 自动更新
-│   │   │   ├── chat.js     # AI 聊天
+│   │   │   ├── skills.js   # 技能扩展
+│   │   │   ├── clawhub.js  # ClawHub 市场
 │   │   │   └── database.js # 数据库管理
 │   │   ├── utils/          # 工具函数
 │   │   └── constants/      # 常量定义
@@ -221,24 +271,31 @@ NToolBox/
 │   └── renderer/           # Vue 渲染进程
 │       └── src/
 │           ├── views/      # 页面组件
-│           │   ├── Dashboard.vue       # 首页
+│           │   ├── Dashboard.vue        # 首页
 │           │   ├── SqlScriptGenerator.vue # SQL 生成
-│           │   ├── Chat.vue            # AI 聊天
-│           │   ├── Password.vue        # 密码生成
-│           │   ├── Cron.vue            # Cron 生成
-│           │   ├── UnixTimestamp.vue   # 时间戳转换
-│           │   ├── YamlEditor.vue      # YAML 编辑
-│           │   ├── JsonParser.vue      # JSON 解析
-│           │   ├── HtmlViewer.vue      # HTML 查看
-│           │   ├── Database.vue        # 数据库管理
-│           │   ├── FileManager.vue     # 文件管理
-│           │   └── Settings.vue        # 设置
+│           │   ├── Chat.vue             # AI 助手
+│           │   ├── Password.vue         # 密码生成
+│           │   ├── Cron.vue             # Cron 生成
+│           │   ├── UnixTimestamp.vue    # 时间戳转换
+│           │   ├── Markdown.vue         # Markdown 编辑
+│           │   ├── WechatFormatter.vue  # 公众号排版
+│           │   ├── Clipboard.vue        # 剪切板管理
+│           │   ├── YamlEditor.vue       # YAML 编辑
+│           │   ├── JsonParser.vue       # JSON 解析
+│           │   ├── HtmlViewer.vue       # HTML 查看
+│           │   ├── Database.vue         # 数据库管理
+│           │   ├── FileManager.vue      # 文件管理
+│           │   ├── Market.vue           # 扩展市场
+│           │   └── Settings.vue         # 设置
 │           ├── components/  # 公共组件
 │           ├── composables/ # 组合式函数
+│           ├── layouts/     # AppShell、标题栏、页面壳层
 │           ├── api/         # API 接口
 │           ├── config/      # 配置文件
-│           ├── styles/      # 样式文件
+│           ├── styles/      # 设计 token 与页面样式
+│           ├── utils/       # 主题、路径、Markdown 等工具
 │           └── router/      # 路由配置
+├── tests/                  # vitest 测试
 ├── .github/
 │   └ workflows/
 │     └ build.yml           # CI/CD 工作流
@@ -264,7 +321,7 @@ npm run build:linux
 npm run build
 ```
 
-### 代码检查
+### 代码检查与测试
 
 ```bash
 # 运行 ESLint 检查
@@ -272,6 +329,9 @@ npm run lint:check
 
 # 自动修复代码问题
 npm run lint
+
+# 运行测试
+npm run test
 ```
 
 ---
@@ -281,7 +341,7 @@ npm run lint
 ### 配置文件位置
 
 - **开发环境**: 项目根目录 `config.json`
-- **打包环境**: `%APPDATA%/ntoolbox/config.json` (Windows) 或 `~/.config/ntoolbox/config.json` (Linux/macOS)
+- **打包环境**: `~/.config/ntoolbox/config.json`（Windows / macOS / Linux 路径一致）
 
 ### 主要配置项
 
@@ -294,27 +354,27 @@ npm run lint
 | `script_types` | 脚本类型配置 |
 | `ai_provider` | AI 服务提供商 |
 | `ai_api_keys` | 各平台 API Key |
+| `ai_models` | 各平台选择的模型 |
 | `dbConnections` | 数据库连接配置 |
-| `shortcuts` | 快捷键配置 |
+| `theme` | 主题模式：`system` / `light` / `dark` |
+| `theme_style` | 配色主题：`sapphire` / `forest` / `mint` / `bee` / `parchment` |
+| `font_size` | 字体大小：`small` / `medium` / `large` / `xlarge` |
+| `shortcuts` | 快捷键配置（仅设置页可配置） |
 | `auto_update` | 自动更新开关 |
 | `auto_start` | 开机自启动开关 |
 | `close_action` | 关闭窗口行为 |
 
-### 快捷键配置
+### 快捷键
 
-| 功能 | 默认快捷键 |
+工具不再占用全局快捷键，通过侧边栏或全局搜索打开。
+
+| 功能 | 快捷键 |
 |:---|:---|
 | 全局搜索 | Ctrl+K |
-| SQL 脚本生成 | Ctrl+S |
-| AI 助手 | Ctrl+L |
-| 密码生成器 | Ctrl+P |
-| Cron 表达式 | Ctrl+Shift+C |
-| 时间戳转换 | Ctrl+Shift+T |
-| YAML 编辑器 | Ctrl+Shift+Y |
-| 文件管理器 | Ctrl+Shift+F |
-| JSON 解析器 | Ctrl+J |
-| HTML 查看器 | Ctrl+H |
 | 设置 | Ctrl+, |
+| 数据库执行查询 | Ctrl+Enter |
+
+设置页的快捷键可在配置中修改（`shortcuts.settings`），macOS 上使用 Cmd 替代 Ctrl。
 
 ---
 
@@ -333,6 +393,12 @@ npm run lint
 | [mysql2](https://github.com/sidorares/node-mysql2) | MySQL 客户端 |
 | [js-yaml](https://github.com/nodeca/js-yaml) | YAML 解析 |
 | [CodeMirror](https://codemirror.net/) | 代码编辑器 |
+| [marked](https://github.com/markedjs/marked) | Markdown 渲染 |
+| [DOMPurify](https://github.com/cure53/DOMPurify) | HTML 安全过滤 |
+| [highlight.js](https://highlightjs.org/) | 代码高亮 |
+| [Mermaid](https://mermaid.js.org/) | 图表渲染 |
+| [MathJax](https://www.mathjax.org/) | 数学公式渲染 |
+| [Vitest](https://vitest.dev/) | 单元测试框架 |
 
 ---
 
