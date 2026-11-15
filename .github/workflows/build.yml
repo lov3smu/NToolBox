@@ -6,87 +6,91 @@ on:
     types: [published]
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
-jobs:    
-  build-all:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run lint:check
+      - run: npm test
+
+  build:
+    needs: verify
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            platform: linux
             artifact: linux-build
-            targets: "AppImage deb"
+            build_args: --linux AppImage deb rpm tar.gz --x64
           - os: windows-latest
-            platform: win
             artifact: windows-build
-            targets: "nsis portable"
+            build_args: --win nsis portable --x64
           - os: macos-latest
-            platform: mac
             artifact: macos-build
-            targets: "dmg zip"
-    
+            build_args: --mac dmg zip --x64 --arm64
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '24'
-    
-    - run: npm ci
-    
-    - name: Build
-      run: npm run build:${{ matrix.platform }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.artifact }}
-        path: release/
-        retention-days: 7
-  
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build
+        shell: bash
+        run: npx electron-vite build && npx electron-builder ${{ matrix.build_args }} --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+            release/*.tar.gz
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/latest*.yml
+          if-no-files-found: error
+          retention-days: 7
+
   release:
     if: github.event_name == 'release'
-    needs: build-all
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
-    - name: Select only main files
-      run: |
-        # 创建发布目录
-        mkdir -p release
-        
-        # 只选择主要的安装文件
-        # Linux: 保留 AppImage 和 deb
-        find artifacts -type f \( -name "*AppImage*" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.rpm" \) -exec cp {} release/ \;
-        
-        # Windows: 保留 nsis 和 portable exe
-        find artifacts -type f \( -name "*NToolBox-*.exe" \) ! -name "*.exe.blockmap" -exec cp {} release/ \;
-        
-        # macOS: 保留 dmg
-        find artifacts -type f -name "*.dmg" -exec cp {} release/ \;
+      - name: List artifacts
+        run: ls -la artifacts
 
-        find artifacts -type f -name "latest.yml" -exec cp {} release/ \;
-        
-        echo "Selected files for release:"
-        ls -la release/
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: release/*
-        draft: false
-        prerelease: false
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

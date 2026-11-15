@@ -1,5 +1,9 @@
 <template>
-  <div class="settings-layout" :class="{ 'menu-collapsed': menuCollapsed }">
+  <div
+    class="settings-layout"
+    :class="{ 'menu-collapsed': menuCollapsed, 'is-resizing': settingsSidebarResizing }"
+    :style="menuCollapsed ? null : { '--settings-sidebar-width': `${settingsSidebarWidth}px` }"
+  >
     <header class="settings-topbar" :class="{ 'platform-darwin': isMac }">
       <div class="settings-nav">
         <button
@@ -220,6 +224,14 @@
           <span class="menu-text">{{ item.text }}</span>
         </div>
       </aside>
+      <SplitHandle
+        v-if="!menuCollapsed"
+        orientation="vertical"
+        :resizing="settingsSidebarResizing"
+        label="拖动调整设置菜单宽度"
+        @pointerdown="startSettingsSidebarResize"
+        @keydown="onSettingsSidebarKeydown"
+      />
 
       <div class="settings-main">
         <div ref="settingsContentRef" class="settings-content">
@@ -344,7 +356,7 @@
             </div>
           </div>
 
-          <div v-show="activeTab === 'api'" class="settings-tab">
+          <div v-show="activeTab === 'api'" class="settings-tab api-settings">
             <div class="form-group">
               <label>默认 AI 平台</label>
               <select v-model="aiProvider" class="select-field" @change="onProviderChange">
@@ -356,93 +368,326 @@
             </div>
 
             <div class="provider-cards">
-              <div v-for="provider in aiProviders" :key="provider.type" class="provider-card">
-                <div class="provider-card-header">
+              <div
+                v-for="provider in aiProviders"
+                :key="provider.type"
+                class="provider-card"
+                :class="{ expanded: isProviderExpanded(provider.type) }"
+              >
+                <div
+                  class="provider-card-header"
+                  role="button"
+                  tabindex="0"
+                  @click="toggleProviderExpanded(provider.type)"
+                  @keydown.enter.prevent="toggleProviderExpanded(provider.type)"
+                >
                   <div class="provider-title">
                     <span class="provider-name">{{ provider.name }}</span>
+                    <span class="provider-id">{{ provider.type }}</span>
                     <span class="provider-tag" :class="{ configured: hasProviderKey(provider.type) }">
                       {{ hasProviderKey(provider.type) ? '已配置' : '未配置' }}
                     </span>
-                    <span v-if="provider.type === aiProvider" class="provider-tag default">默认平台</span>
+                    <span v-if="aiBaseUrls[provider.type]" class="provider-tag custom">自定义地址</span>
+                    <span v-if="provider.type === aiProvider" class="provider-tag default">默认</span>
                   </div>
-                  <button class="link-btn" @click="openProviderDocs(provider)">平台文档</button>
+                  <div class="provider-header-actions">
+                    <button
+                      v-if="provider.type !== aiProvider"
+                      type="button"
+                      class="link-btn"
+                      @click.stop="setDefaultProvider(provider.type)"
+                    >
+                      设为默认
+                    </button>
+                    <button
+                      v-if="provider.docsUrl"
+                      type="button"
+                      class="link-btn"
+                      @click.stop="openProviderDocs(provider)"
+                    >
+                      平台文档
+                    </button>
+                    <svg
+                      class="provider-chevron"
+                      :class="{ rotated: isProviderExpanded(provider.type) }"
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
                 </div>
 
-                <div class="api-key-input-group">
-                  <input
-                    v-model="aiApiKeys[provider.type]"
-                    :type="showApiKey[provider.type] ? 'text' : 'password'"
-                    class="input-field"
-                    :placeholder="`输入 ${provider.name} API Key`"
-                  />
-                  <button class="btn btn-secondary" @click="toggleShowApiKey(provider.type)">
-                    {{ showApiKey[provider.type] ? '隐藏' : '显示' }}
-                  </button>
-                  <button
-                    class="btn btn-primary"
-                    :disabled="!aiApiKeys[provider.type] || testingApiKey[provider.type]"
-                    @click="testApiKey(provider)"
-                  >
-                    {{ testingApiKey[provider.type] ? '验证中...' : '验证' }}
-                  </button>
-                </div>
-                <div
-                  v-if="apiKeyTestResult[provider.type]"
-                  class="api-test-result"
-                  :class="apiKeyTestResult[provider.type].success ? 'success' : 'error'"
-                >
-                  {{ apiKeyTestResult[provider.type].message }}
-                </div>
-              </div>
-            </div>
+                <div v-if="isProviderExpanded(provider.type)" class="provider-card-body">
+                  <div class="provider-field">
+                    <div class="field-label-row">
+                      <label>API 密钥</label>
+                      <span
+                        class="field-help"
+                        :title="
+                          provider.envKey ? `留空时会读取 ${provider.envKey} 环境变量` : '填写平台控制台生成的 API 密钥'
+                        "
+                      >
+                        ?
+                      </span>
+                    </div>
+                    <div class="api-key-input-group">
+                      <input
+                        v-model="aiApiKeys[provider.type]"
+                        :type="showApiKey[provider.type] ? 'text' : 'password'"
+                        class="input-field"
+                        :placeholder="
+                          provider.hasEnvKey ? `已通过 ${provider.envKey} 提供` : `输入 ${provider.name} API Key`
+                        "
+                      />
+                      <button class="btn btn-secondary" @click="toggleShowApiKey(provider.type)">
+                        {{ showApiKey[provider.type] ? '隐藏' : '显示' }}
+                      </button>
+                      <button
+                        class="btn btn-primary"
+                        :disabled="
+                          (!hasStoredApiKey(provider.type) && !provider.hasEnvKey) || testingApiKey[provider.type]
+                        "
+                        @click="testApiKey(provider)"
+                      >
+                        {{ testingApiKey[provider.type] ? '验证中...' : '验证' }}
+                      </button>
+                    </div>
+                    <div
+                      v-if="apiKeyTestResult[provider.type]"
+                      class="api-test-result"
+                      :class="apiKeyTestResult[provider.type].success ? 'success' : 'error'"
+                    >
+                      {{ apiKeyTestResult[provider.type].message }}
+                    </div>
+                    <div
+                      v-if="provider.envKey && !hasStoredApiKey(provider.type)"
+                      class="env-status"
+                      :class="provider.hasEnvKey ? 'detected' : 'missing'"
+                    >
+                      {{
+                        provider.hasEnvKey
+                          ? `已检测到环境变量 ${provider.envKey}，无需填写密钥`
+                          : `未检测到环境变量 ${provider.envKey}，请填写密钥或先设置环境变量`
+                      }}
+                    </div>
+                  </div>
 
-            <div v-if="currentProvider" class="model-config-card">
-              <div class="model-config-header">
-                <div>
-                  <div class="model-config-title">{{ currentProvider.name }} 模型配置</div>
-                  <div class="setting-hint">默认模型用于聊天和内置 AI 工具；支持在线获取最新模型并手动增删改</div>
-                </div>
-                <div class="model-config-actions">
-                  <button class="btn btn-secondary" :disabled="modelFetching" @click="refreshModels">
-                    {{ modelFetching ? '获取中...' : '获取最新模型' }}
-                  </button>
-                  <button class="btn btn-default" :disabled="modelFetching" @click="resetModels">恢复内置模型</button>
-                </div>
-              </div>
+                  <div class="custom-settings">
+                    <button type="button" class="custom-settings-toggle" @click="toggleCustomSettings(provider.type)">
+                      <svg
+                        class="provider-chevron small"
+                        :class="{ rotated: isCustomSettingsOpen(provider.type) }"
+                        viewBox="0 0 24 24"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <polyline points="9 6 15 12 9 18" />
+                      </svg>
+                      <span>自定义设置</span>
+                    </button>
+                    <div v-if="isCustomSettingsOpen(provider.type)" class="custom-settings-body">
+                      <label>API 地址</label>
+                      <input
+                        v-model="aiBaseUrls[provider.type]"
+                        class="input-field"
+                        :placeholder="provider.defaultBaseUrl"
+                      />
+                      <div class="setting-hint">使用 OpenAI 兼容协议，留空则使用平台默认地址</div>
+                    </div>
+                  </div>
 
-              <div v-if="modelFetchMessage" class="api-test-result" :class="modelFetchSuccess ? 'success' : 'error'">
-                {{ modelFetchMessage }}
-              </div>
+                  <div class="model-section">
+                    <div class="model-section-header">
+                      <div class="field-label-row">
+                        <label>模型目录</label>
+                        <span class="field-help" title="模型列表用于聊天时选择；可手动增删并配置高级参数"> ? </span>
+                      </div>
+                      <div class="model-config-actions">
+                        <button
+                          class="btn btn-secondary btn-sm"
+                          :disabled="modelFetching[provider.type]"
+                          @click="refreshModels(provider)"
+                        >
+                          {{ modelFetching[provider.type] ? '获取中...' : '获取最新模型' }}
+                        </button>
+                        <button
+                          class="btn btn-default btn-sm"
+                          :disabled="modelFetching[provider.type]"
+                          @click="resetModels(provider)"
+                        >
+                          恢复内置模型
+                        </button>
+                      </div>
+                    </div>
+                    <div class="setting-hint">{{ modelSourceHint(provider.type) }}</div>
 
-              <div class="form-group model-default-row">
-                <label>默认模型</label>
-                <select v-model="currentModelConfig.default" class="select-field">
-                  <option value="" disabled>请选择默认模型</option>
-                  <option v-for="model in currentModelConfig.models" :key="model.id" :value="model.id">
-                    {{ model.name }}
-                  </option>
-                </select>
-              </div>
+                    <div
+                      v-if="modelFetchMessage[provider.type]"
+                      class="api-test-result"
+                      :class="modelFetchSuccess[provider.type] ? 'success' : 'error'"
+                    >
+                      {{ modelFetchMessage[provider.type] }}
+                    </div>
 
-              <div class="model-list">
-                <div
-                  v-for="(model, index) in currentModelConfig.models"
-                  :key="model.id + '-' + index"
-                  class="model-row"
-                >
-                  <input v-model="model.id" class="input-field model-id" placeholder="模型 ID" />
-                  <input v-model="model.name" class="input-field model-name" placeholder="显示名称" />
-                  <button class="btn btn-default" title="删除模型" @click="removeModel(index)">删除</button>
+                    <div class="model-default-row">
+                      <label>默认模型</label>
+                      <select v-model="modelConfigs[provider.type].default" class="select-field">
+                        <option value="" disabled>请选择默认模型</option>
+                        <option
+                          v-for="model in modelConfigs[provider.type].models.filter((item) => item.id)"
+                          :key="model.id"
+                          :value="model.id"
+                        >
+                          {{ model.name || model.id }}
+                        </option>
+                      </select>
+                    </div>
+
+                    <div class="model-list">
+                      <div
+                        v-for="(model, index) in modelConfigs[provider.type].models"
+                        :key="provider.type + '-model-' + index"
+                        class="model-item"
+                        :class="{
+                          dragging: isModelDragging(provider.type, index),
+                          'drag-over': isModelDragOver(provider.type, index)
+                        }"
+                        :draggable="isModelDragEnabled(provider.type)"
+                        @dragstart="startModelDrag(provider.type, index, $event)"
+                        @dragover.prevent="overModelDrag(provider.type, index)"
+                        @drop.stop.prevent="dropModelDrag(provider.type)"
+                        @dragend="endModelDrag(provider.type)"
+                      >
+                        <div class="model-row">
+                          <span
+                            class="model-drag-handle"
+                            title="拖动排序"
+                            @mousedown="enableModelDrag(provider.type)"
+                            @click="endModelDrag(provider.type)"
+                          >
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                              <circle cx="9" cy="6" r="1.4" />
+                              <circle cx="15" cy="6" r="1.4" />
+                              <circle cx="9" cy="12" r="1.4" />
+                              <circle cx="15" cy="12" r="1.4" />
+                              <circle cx="9" cy="18" r="1.4" />
+                              <circle cx="15" cy="18" r="1.4" />
+                            </svg>
+                          </span>
+                          <input v-model="model.id" class="input-field model-id" placeholder="模型 ID" />
+                          <input v-model="model.name" class="input-field model-name" placeholder="显示名称" />
+                          <button
+                            type="button"
+                            class="model-icon-btn"
+                            :title="isModelExpanded(provider.type, index) ? '收起高级参数' : '展开高级参数'"
+                            @click="toggleModelExpanded(provider.type, index)"
+                          >
+                            <svg
+                              class="provider-chevron small"
+                              :class="{ rotated: isModelExpanded(provider.type, index) }"
+                              viewBox="0 0 24 24"
+                              width="12"
+                              height="12"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            class="model-icon-btn danger"
+                            title="删除模型"
+                            @click="removeModel(provider.type, index)"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="14"
+                              height="14"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                            >
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div v-if="isModelExpanded(provider.type, index)" class="model-advanced">
+                          <div class="advanced-field">
+                            <label>上下文窗口</label>
+                            <input
+                              v-model.number="model.contextWindow"
+                              type="number"
+                              min="1"
+                              class="input-field"
+                              :placeholder="`默认 ${defaultContextWindow(provider)}`"
+                            />
+                          </div>
+                          <div class="advanced-field">
+                            <label>最大输出 token 数</label>
+                            <input
+                              v-model.number="model.maxOutput"
+                              type="number"
+                              min="1"
+                              class="input-field"
+                              placeholder="留空使用平台默认"
+                            />
+                          </div>
+                          <div class="advanced-field">
+                            <label>输入类型</label>
+                            <div class="input-type-options">
+                              <label class="checkbox-field">
+                                <input
+                                  type="checkbox"
+                                  :checked="hasInputType(model, 'text')"
+                                  @change="toggleInputType(model, 'text')"
+                                />
+                                文本
+                              </label>
+                              <label class="checkbox-field">
+                                <input
+                                  type="checkbox"
+                                  :checked="hasInputType(model, 'image')"
+                                  @change="toggleInputType(model, 'image')"
+                                />
+                                图片
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="modelConfigs[provider.type].models.length === 0" class="model-empty">
+                        暂无模型，请获取最新模型或手动添加
+                      </div>
+                    </div>
+
+                    <button type="button" class="add-model-btn" @click="addModel(provider.type)">+ 添加模型</button>
+                  </div>
+
+                  <div class="provider-card-footer">
+                    <button class="btn btn-secondary" @click="cancelProviderCard(provider)">取消</button>
+                    <button
+                      class="btn btn-primary"
+                      :disabled="providerSaving[provider.type]"
+                      @click="saveProviderCard(provider)"
+                    >
+                      {{ providerSaving[provider.type] ? '保存中...' : '保存' }}
+                    </button>
+                  </div>
                 </div>
-                <div v-if="currentModelConfig.models.length === 0" class="model-empty">
-                  暂无模型，请获取最新模型或手动添加
-                </div>
-              </div>
-
-              <div class="model-add-row">
-                <input v-model="newModelId" class="input-field" placeholder="新增模型 ID，如 qwen3.8-max" />
-                <input v-model="newModelName" class="input-field" placeholder="显示名称（可选）" />
-                <button class="btn btn-secondary" :disabled="!newModelId.trim()" @click="addModel">添加</button>
               </div>
             </div>
           </div>
@@ -624,8 +869,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { openUpdateCenter, useToast } from '@/composables'
+import { openUpdateCenter, usePaneResize, useToast } from '@/composables'
 import Toast from '@/components/Toast.vue'
+import SplitHandle from '@/components/SplitHandle.vue'
 import ExtensionsManager from '@/components/ExtensionsManager.vue'
 import {
   getConfig,
@@ -664,7 +910,7 @@ import {
 } from '@/utils/theme'
 
 const route = useRoute()
-const { toastVisible, toastMessage, toastType, showError } = useToast()
+const { toastVisible, toastMessage, toastType, showError, showSuccess } = useToast()
 const isMac = hostPlatform === 'darwin'
 let removeSettingsTabListener = null
 let removeWindowMaximizedListener = null
@@ -674,7 +920,7 @@ const shortcutTools = tools.filter((tool) => tool.shortcutKey)
 const menuItems = [
   { id: 'general', text: '通用' },
   { id: 'appearance', text: '外观' },
-  { id: 'api', text: 'API配置' },
+  { id: 'api', text: '模型' },
   { id: 'database', text: '数据库' },
   { id: 'scripttype', text: '脚本类型' },
   { id: 'shortcuts', text: '快捷键' },
@@ -685,7 +931,10 @@ const menuItems = [
 const tabMeta = {
   general: { title: '通用设置', description: '配置脚本目录、开发者署名、文本编辑器以及启动与关闭行为。' },
   appearance: { title: '外观', description: '选择主题模式、配色方案与字体大小，界面会随系统明暗设置自动适配。' },
-  api: { title: 'AI 平台', description: '管理各平台的 API Key 与默认模型，可在线获取最新模型列表。' },
+  api: {
+    title: 'AI 平台',
+    description: '管理各平台的 API 密钥、自定义地址与模型目录，可在线获取模型并配置上下文等高级参数。'
+  },
   database: { title: '数据库', description: '维护常用数据库名称，供数据库工具快速选择。' },
   scripttype: { title: '脚本类型', description: '定义脚本类型与说明，用于脚本生成与归档。' },
   shortcuts: { title: '快捷键', description: '为常用工具设置全局快捷键，留空则不启用。' },
@@ -745,6 +994,17 @@ function swatchStyle(swatch) {
 const activeTab = ref('general')
 const settingsContentRef = ref(null)
 const menuCollapsed = ref(false)
+const {
+  size: settingsSidebarWidth,
+  resizing: settingsSidebarResizing,
+  startResize: startSettingsSidebarResize,
+  onKeydown: onSettingsSidebarKeydown
+} = usePaneResize({
+  key: 'settingsSidebarWidth',
+  initial: 176,
+  min: 150,
+  max: () => Math.min(360, Math.max(180, window.innerWidth - 620))
+})
 const isMaximized = ref(false)
 const activeMeta = computed(() => tabMeta[activeTab.value] || { title: '', description: '' })
 const tabHistory = ref([])
@@ -812,15 +1072,21 @@ const aiApiKeys = ref({
   deepseek: ''
 })
 const aiProviders = ref([])
+const aiBaseUrls = ref({})
+const savedApiKeys = ref({})
+const savedBaseUrls = ref({})
 const aiModels = ref({})
 const modelConfigs = ref({})
 const initialModelConfigs = ref({})
 const modelConfigSources = ref({})
-const modelFetching = ref(false)
-const modelFetchMessage = ref('')
-const modelFetchSuccess = ref(false)
-const newModelId = ref('')
-const newModelName = ref('')
+const modelFetching = ref({})
+const modelFetchMessage = ref({})
+const modelFetchSuccess = ref({})
+const providerSaving = ref({})
+const expandedProviders = ref({})
+const openCustomSettings = ref({})
+const expandedModels = ref({})
+const modelDrag = ref({ type: '', enabled: false, from: -1, over: -1 })
 const databases = ref([])
 const scriptTypes = ref([])
 const shortcuts = ref({
@@ -837,31 +1103,64 @@ const apiKeyTestResult = ref({})
 
 const year = computed(() => new Date().getFullYear())
 
-const currentProvider = computed(() => {
-  return aiProviders.value.find((p) => p.type === aiProvider.value)
-})
-
-const currentModelConfig = computed(() => {
-  return modelConfigs.value[aiProvider.value] || { default: '', models: [] }
-})
-
 function normalizeModelList(models) {
   return (Array.isArray(models) ? models : [])
-    .map((model) => ({
-      id: String(model?.id || '').trim(),
-      name: String(model?.name || model?.id || '').trim()
-    }))
-    .filter((model) => model.id)
+    .map((model) => {
+      const id = String(model?.id || '').trim()
+      if (!id) return null
+      const name = String(model?.name || id).trim() || id
+      const normalized = { id, name }
+      const contextWindow = Number(model?.contextWindow)
+      if (Number.isFinite(contextWindow) && contextWindow > 0) {
+        normalized.contextWindow = Math.floor(contextWindow)
+      }
+      const maxOutput = Number(model?.maxOutput)
+      if (Number.isFinite(maxOutput) && maxOutput > 0) {
+        normalized.maxOutput = Math.floor(maxOutput)
+      }
+      const inputTypes = Array.isArray(model?.inputTypes)
+        ? [...new Set(model.inputTypes.filter((item) => item === 'text' || item === 'image'))]
+        : ['text', 'image']
+      normalized.inputTypes = inputTypes.length > 0 ? inputTypes : ['text']
+      return normalized
+    })
+    .filter(Boolean)
 }
 
 function isSameModelConfig(a, b) {
   if (!a || !b) return false
-  if ((a.default || '') !== (b.default || '')) return false
-  if (a.models.length !== b.models.length) return false
-  return a.models.every((model, index) => {
-    const other = b.models[index]
-    return model.id === other.id && model.name === other.name
-  })
+  return (
+    JSON.stringify({ default: a.default || '', models: normalizeModelList(a.models) }) ===
+    JSON.stringify({ default: b.default || '', models: normalizeModelList(b.models) })
+  )
+}
+
+function cloneModelConfig(config) {
+  return {
+    default: config.default,
+    models: config.models.map((model) => ({
+      ...model,
+      inputTypes: [...(model.inputTypes || [])]
+    }))
+  }
+}
+
+function createProviderModelConfig(provider) {
+  const saved = aiModels.value[provider.type]
+  if (saved && Array.isArray(saved.models) && saved.models.length > 0) {
+    const config = {
+      default: saved.default || saved.models[0].id,
+      models: normalizeModelList(saved.models)
+    }
+    return { config, initial: cloneModelConfig(config), source: 'config' }
+  }
+
+  const models = normalizeModelList(provider.models)
+  const config = {
+    default: models.some((model) => model.id === provider.defaultModel) ? provider.defaultModel : models[0]?.id || '',
+    models
+  }
+  return { config, initial: cloneModelConfig(config), source: 'builtin' }
 }
 
 function initModelConfigs(providers) {
@@ -869,30 +1168,9 @@ function initModelConfigs(providers) {
   const initial = {}
   const sources = {}
   for (const provider of providers) {
-    const saved = aiModels.value[provider.type]
-    let config
-    let source
-    if (saved && Array.isArray(saved.models) && saved.models.length > 0) {
-      config = {
-        default: saved.default || saved.models[0].id,
-        models: normalizeModelList(saved.models)
-      }
-      source = 'config'
-    } else {
-      const models = normalizeModelList(provider.models)
-      config = {
-        default: models.some((model) => model.id === provider.defaultModel)
-          ? provider.defaultModel
-          : models[0]?.id || '',
-        models
-      }
-      source = 'builtin'
-    }
+    const { config, initial: saved, source } = createProviderModelConfig(provider)
     configs[provider.type] = config
-    initial[provider.type] = {
-      default: config.default,
-      models: config.models.map((model) => ({ ...model }))
-    }
+    initial[provider.type] = saved
     sources[provider.type] = source
   }
   modelConfigs.value = configs
@@ -900,24 +1178,188 @@ function initModelConfigs(providers) {
   modelConfigSources.value = sources
 }
 
+function serializeProviderModels(type) {
+  const config = modelConfigs.value[type]
+  if (!config || config.models.length === 0) return null
+  const source = modelConfigSources.value[type]
+  const changed = !isSameModelConfig(config, initialModelConfigs.value[type])
+  if (source === 'builtin' && !changed) return null
+  return {
+    default: config.default || config.models[0]?.id || '',
+    models: normalizeModelList(config.models)
+  }
+}
+
 function serializeAiModels() {
   const result = {}
   for (const provider of aiProviders.value) {
-    const config = modelConfigs.value[provider.type]
-    if (!config || config.models.length === 0) continue
-    const source = modelConfigSources.value[provider.type]
-    const changed = !isSameModelConfig(config, initialModelConfigs.value[provider.type])
-    if (source === 'builtin' && !changed) continue
-    result[provider.type] = {
-      default: config.default || config.models[0]?.id || '',
-      models: normalizeModelList(config.models)
-    }
+    const entry = serializeProviderModels(provider.type)
+    if (entry) result[provider.type] = entry
   }
   return result
 }
 
-function hasProviderKey(type) {
+function hasStoredApiKey(type) {
   return Boolean((aiApiKeys.value[type] || '').trim())
+}
+
+function isValidBaseUrl(value) {
+  const trimmed = String(value || '').trim()
+  if (!trimmed) return true
+  try {
+    const url = new URL(trimmed)
+    return url.protocol === 'https:' || url.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
+function providerName(type) {
+  return aiProviders.value.find((provider) => provider.type === type)?.name || type
+}
+
+function hasProviderKey(type) {
+  if (hasStoredApiKey(type)) return true
+  return Boolean(aiProviders.value.find((provider) => provider.type === type)?.hasEnvKey)
+}
+
+function isProviderExpanded(type) {
+  return Boolean(expandedProviders.value[type])
+}
+
+function toggleProviderExpanded(type) {
+  expandedProviders.value = { ...expandedProviders.value, [type]: !expandedProviders.value[type] }
+}
+
+function setDefaultProvider(type) {
+  aiProvider.value = type
+  expandedProviders.value = { ...expandedProviders.value, [type]: true }
+}
+
+function isCustomSettingsOpen(type) {
+  return Boolean(openCustomSettings.value[type])
+}
+
+function toggleCustomSettings(type) {
+  openCustomSettings.value = { ...openCustomSettings.value, [type]: !openCustomSettings.value[type] }
+}
+
+function defaultContextWindow(provider) {
+  return Number(provider?.models?.[0]?.contextWindow) || 131072
+}
+
+function modelSourceHint(type) {
+  const source = modelConfigSources.value[type]
+  if (source === 'config') return '正在使用已保存的模型目录'
+  if (source === 'custom') return '正在使用在线获取的模型目录'
+  return '未自定义模型，正在使用平台内置模型目录'
+}
+
+function modelExpandedKey(type, index) {
+  return `${type}:${index}`
+}
+
+function clearExpandedModels(type) {
+  const next = {}
+  for (const [key, value] of Object.entries(expandedModels.value)) {
+    if (!key.startsWith(`${type}:`)) next[key] = value
+  }
+  expandedModels.value = next
+}
+
+function isModelExpanded(type, index) {
+  return Boolean(expandedModels.value[modelExpandedKey(type, index)])
+}
+
+function toggleModelExpanded(type, index) {
+  const key = modelExpandedKey(type, index)
+  expandedModels.value = { ...expandedModels.value, [key]: !expandedModels.value[key] }
+}
+
+function currentInputTypes(model) {
+  if (!Array.isArray(model.inputTypes) || model.inputTypes.length === 0) return ['text', 'image']
+  return model.inputTypes
+}
+
+function hasInputType(model, type) {
+  return currentInputTypes(model).includes(type)
+}
+
+function toggleInputType(model, type) {
+  const types = currentInputTypes(model)
+  const next = types.includes(type) ? types.filter((item) => item !== type) : [...types, type]
+  model.inputTypes = next.length > 0 ? next : ['text']
+}
+
+function isModelDragEnabled(type) {
+  return modelDrag.value.enabled && modelDrag.value.type === type
+}
+
+function isModelDragging(type, index) {
+  return modelDrag.value.type === type && modelDrag.value.from === index
+}
+
+function isModelDragOver(type, index) {
+  const state = modelDrag.value
+  return state.type === type && state.from >= 0 && state.over === index && state.from !== index
+}
+
+function enableModelDrag(type) {
+  modelDrag.value.type = type
+  modelDrag.value.enabled = true
+}
+
+function startModelDrag(type, index, event) {
+  if (!isModelDragEnabled(type)) {
+    event.preventDefault()
+    return
+  }
+  modelDrag.value.from = index
+  modelDrag.value.over = index
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function overModelDrag(type, index) {
+  if (modelDrag.value.type !== type || modelDrag.value.from < 0) return
+  modelDrag.value.over = index
+}
+
+function dropModelDrag(type) {
+  const state = modelDrag.value
+  const config = modelConfigs.value[type]
+  if (!config || state.type !== type || state.from < 0) return
+  if (state.over >= 0 && state.over < config.models.length && state.from !== state.over) {
+    const [moved] = config.models.splice(state.from, 1)
+    config.models.splice(state.over, 0, moved)
+
+    const nextExpanded = {}
+    for (const [key, value] of Object.entries(expandedModels.value)) {
+      const [keyType, keyIndex] = key.split(':')
+      if (keyType !== type) {
+        nextExpanded[key] = value
+        continue
+      }
+      let index = Number(keyIndex)
+      if (index === state.from) {
+        index = state.over
+      } else if (state.from < state.over && index > state.from && index <= state.over) {
+        index -= 1
+      } else if (state.from > state.over && index >= state.over && index < state.from) {
+        index += 1
+      }
+      nextExpanded[modelExpandedKey(type, index)] = value
+    }
+    expandedModels.value = nextExpanded
+  }
+  endModelDrag(type)
+}
+
+function endModelDrag(type) {
+  if (modelDrag.value.type !== type) return
+  modelDrag.value = { type: '', enabled: false, from: -1, over: -1 }
 }
 
 function toggleShowApiKey(type) {
@@ -987,6 +1429,9 @@ onMounted(async () => {
   window.addEventListener('beforeunload', revertUnsavedTheme)
   aiProvider.value = config.ai_provider || 'bailian'
   aiApiKeys.value = { ...aiApiKeys.value, ...(config.ai_api_keys || {}) }
+  aiBaseUrls.value = { ...(config.ai_base_urls || {}) }
+  savedApiKeys.value = { ...aiApiKeys.value }
+  savedBaseUrls.value = { ...aiBaseUrls.value }
   aiModels.value = config.ai_models && typeof config.ai_models === 'object' ? config.ai_models : {}
   databases.value = (config.databases || []).map((name) => ({ name, error: false }))
   scriptTypes.value = (config.script_types || []).map((st) => ({
@@ -1006,6 +1451,10 @@ onMounted(async () => {
   const providers = await getAiProviders()
   aiProviders.value = providers || []
   initModelConfigs(aiProviders.value)
+  expandedProviders.value = { [aiProvider.value]: true }
+  openCustomSettings.value = Object.fromEntries(
+    aiProviders.value.map((provider) => [provider.type, Boolean((aiBaseUrls.value[provider.type] || '').trim())])
+  )
 
   const packageJson = await getPackageInfo()
   if (packageJson.version) version.value = packageJson.version
@@ -1201,6 +1650,12 @@ function validate() {
 async function save() {
   if (!validate()) return
 
+  const invalidBaseUrl = Object.entries(aiBaseUrls.value).find(([, value]) => !isValidBaseUrl(value))
+  if (invalidBaseUrl) {
+    showError(`${providerName(invalidBaseUrl[0])} 的 API 地址必须是有效的 http(s) URL`)
+    return
+  }
+
   const config = {
     base_path: basePath.value,
     developer_ch_name: developerChName.value,
@@ -1214,6 +1669,7 @@ async function save() {
     font_size: fontSize.value,
     ai_provider: aiProvider.value,
     ai_api_keys: { ...aiApiKeys.value },
+    ai_base_urls: { ...aiBaseUrls.value },
     ai_models: serializeAiModels(),
     databases: databases.value.map((db) => db.name.trim()).filter(Boolean),
     script_types: scriptTypes.value
@@ -1266,140 +1722,288 @@ async function checkUpdate() {
 }
 
 async function testApiKey(provider) {
-  const apiKey = (aiApiKeys.value[provider.type] || '').trim()
-  if (!apiKey) return
+  const type = provider.type
+  const apiKey = (aiApiKeys.value[type] || '').trim()
+  if (!apiKey && !provider.hasEnvKey) return
 
-  testingApiKey.value = { ...testingApiKey.value, [provider.type]: true }
-  apiKeyTestResult.value = { ...apiKeyTestResult.value, [provider.type]: null }
+  testingApiKey.value = { ...testingApiKey.value, [type]: true }
+  apiKeyTestResult.value = { ...apiKeyTestResult.value, [type]: null }
 
   try {
-    const isValid = await validateApiKey(provider.type, apiKey)
+    const isValid = await validateApiKey(type, apiKey, {
+      baseUrl: (aiBaseUrls.value[type] || '').trim()
+    })
     apiKeyTestResult.value = {
       ...apiKeyTestResult.value,
-      [provider.type]: isValid
+      [type]: isValid
         ? { success: true, message: `${provider.name} 验证成功` }
-        : { success: false, message: `${provider.name} 验证失败，请检查 Key 是否正确` }
+        : { success: false, message: `${provider.name} 验证失败，请检查密钥是否正确` }
     }
   } catch (e) {
     apiKeyTestResult.value = {
       ...apiKeyTestResult.value,
-      [provider.type]: { success: false, message: '验证失败: ' + e.message }
+      [type]: { success: false, message: '验证失败: ' + e.message }
     }
   }
 
-  testingApiKey.value = { ...testingApiKey.value, [provider.type]: false }
+  testingApiKey.value = { ...testingApiKey.value, [type]: false }
 }
 
-async function refreshModels() {
-  const provider = currentProvider.value
-  if (!provider) return
+function setModelFetchState(type, state) {
+  if (state.fetching !== undefined) {
+    modelFetching.value = { ...modelFetching.value, [type]: Boolean(state.fetching) }
+  }
+  if (state.success !== undefined) {
+    modelFetchSuccess.value = { ...modelFetchSuccess.value, [type]: state.success }
+  }
+  if (state.message !== undefined) {
+    modelFetchMessage.value = { ...modelFetchMessage.value, [type]: state.message }
+  }
+}
 
-  const apiKey = (aiApiKeys.value[provider.type] || '').trim()
-  if (!apiKey) {
-    modelFetchSuccess.value = false
-    modelFetchMessage.value = '请先填写并保存 API Key，再获取最新模型'
+function mergeRemoteModels(remoteModels, previousModels) {
+  return normalizeModelList(
+    remoteModels.map((model) => {
+      const existing = previousModels.find((item) => item.id === model.id)
+      if (!existing) return model
+      return {
+        ...model,
+        name: existing.name || model.name,
+        contextWindow: existing.contextWindow,
+        maxOutput: existing.maxOutput,
+        inputTypes: existing.inputTypes
+      }
+    })
+  )
+}
+
+async function refreshModels(provider) {
+  const type = provider.type
+  const apiKey = (aiApiKeys.value[type] || '').trim()
+  if (!apiKey && !provider.hasEnvKey) {
+    setModelFetchState(type, { success: false, message: '请先填写 API Key 或设置环境变量，再获取最新模型' })
     return
   }
 
-  modelFetching.value = true
-  modelFetchMessage.value = ''
+  setModelFetchState(type, { fetching: true, message: '' })
 
   try {
-    const result = await getProviderModels(provider.type, { apiKey, refresh: true })
+    const result = await getProviderModels(type, {
+      apiKey,
+      baseUrl: (aiBaseUrls.value[type] || '').trim(),
+      refresh: true
+    })
     if (Array.isArray(result)) {
-      modelFetchSuccess.value = false
-      modelFetchMessage.value = '主进程仍在运行旧版本，请重启应用后再获取最新模型'
+      setModelFetchState(type, {
+        fetching: false,
+        success: false,
+        message: '主进程仍在运行旧版本，请重启应用后再获取最新模型'
+      })
       return
     }
     if (!result?.success) {
-      modelFetchSuccess.value = false
-      modelFetchMessage.value = result?.error || `${provider.name} 模型获取失败，请检查 API Key、网络或平台接口状态`
+      setModelFetchState(type, {
+        fetching: false,
+        success: false,
+        message: result?.error || `${provider.name} 模型获取失败，请检查 API Key、网络或平台接口状态`
+      })
       return
     }
 
-    const models = normalizeModelList(result.models)
+    const config = modelConfigs.value[type]
+    const models = mergeRemoteModels(result.models, config.models)
     if (models.length === 0) {
-      modelFetchSuccess.value = false
-      modelFetchMessage.value = '未获取到可用模型'
+      setModelFetchState(type, { fetching: false, success: false, message: '未获取到可用模型' })
       return
     }
 
-    const config = modelConfigs.value[provider.type]
     const keepDefault = models.some((model) => model.id === config.default)
     config.models = models
     config.default = keepDefault ? config.default : result.defaultModel || models[0].id
-    modelConfigSources.value = { ...modelConfigSources.value, [provider.type]: 'custom' }
-    modelFetchSuccess.value = true
-    modelFetchMessage.value = `已获取 ${models.length} 个可用模型`
+    modelConfigSources.value = { ...modelConfigSources.value, [type]: 'custom' }
+    clearExpandedModels(type)
+    setModelFetchState(type, { fetching: false, success: true, message: `已获取 ${models.length} 个可用模型` })
   } catch (e) {
-    modelFetchSuccess.value = false
-    modelFetchMessage.value = `获取 ${provider.name} 模型失败: ` + e.message
+    setModelFetchState(type, {
+      fetching: false,
+      success: false,
+      message: `获取 ${provider.name} 模型失败: ` + e.message
+    })
   }
-
-  modelFetching.value = false
 }
 
-async function resetModels() {
-  const provider = currentProvider.value
-  if (!provider) return
-
-  modelFetching.value = true
-  modelFetchMessage.value = ''
+async function resetModels(provider) {
+  const type = provider.type
+  setModelFetchState(type, { fetching: true, message: '' })
 
   try {
-    const result = await getProviderModels(provider.type, { defaults: true })
+    const result = await getProviderModels(type, { defaults: true })
     if (!result?.success) {
-      modelFetchSuccess.value = false
-      modelFetchMessage.value = result?.error || '恢复内置模型失败'
+      setModelFetchState(type, {
+        fetching: false,
+        success: false,
+        message: result?.error || '恢复内置模型失败'
+      })
       return
     }
 
-    const models = normalizeModelList(result.models)
-    modelConfigs.value[provider.type] = {
+    const fallbackWindow = defaultContextWindow(provider)
+    const models = normalizeModelList(
+      result.models.map((model) => ({
+        ...model,
+        contextWindow: model.contextWindow || fallbackWindow
+      }))
+    )
+    modelConfigs.value[type] = {
       default: result.defaultModel || models[0]?.id || '',
       models
     }
-    modelConfigSources.value = { ...modelConfigSources.value, [provider.type]: 'builtin' }
-    modelFetchSuccess.value = true
-    modelFetchMessage.value = '已恢复内置模型列表'
+    modelConfigSources.value = { ...modelConfigSources.value, [type]: 'builtin' }
+    clearExpandedModels(type)
+    setModelFetchState(type, { fetching: false, success: true, message: '已恢复内置模型列表' })
   } catch (e) {
-    modelFetchSuccess.value = false
-    modelFetchMessage.value = '恢复内置模型失败: ' + e.message
+    setModelFetchState(type, {
+      fetching: false,
+      success: false,
+      message: '恢复内置模型失败: ' + e.message
+    })
   }
-
-  modelFetching.value = false
 }
 
-function addModel() {
-  const config = currentModelConfig.value
-  const id = newModelId.value.trim()
-  if (!config || !id) return
-
-  if (config.models.some((model) => model.id === id)) {
-    showError(`模型 ID "${id}" 已存在`)
-    return
+function addModel(type) {
+  const config = modelConfigs.value[type]
+  if (!config) return
+  config.models.push({ id: '', name: '', inputTypes: ['text', 'image'] })
+  expandedModels.value = {
+    ...expandedModels.value,
+    [modelExpandedKey(type, config.models.length - 1)]: true
   }
-
-  config.models.push({ id, name: newModelName.value.trim() || id })
-  if (!config.default) config.default = id
-  newModelId.value = ''
-  newModelName.value = ''
 }
 
-function removeModel(index) {
-  const config = currentModelConfig.value
+function removeModel(type, index) {
+  const config = modelConfigs.value[type]
   if (!config) return
 
   const [removed] = config.models.splice(index, 1)
   if (removed?.id === config.default) {
-    config.default = config.models[0]?.id || ''
+    config.default = config.models.find((model) => model.id)?.id || ''
+  }
+
+  const nextExpanded = {}
+  for (const [key, value] of Object.entries(expandedModels.value)) {
+    const [keyType, keyIndex] = key.split(':')
+    if (keyType !== type) {
+      nextExpanded[key] = value
+      continue
+    }
+    const expandedIndex = Number(keyIndex)
+    if (expandedIndex < index) nextExpanded[key] = value
+    else if (expandedIndex > index) nextExpanded[modelExpandedKey(type, expandedIndex - 1)] = value
+  }
+  expandedModels.value = nextExpanded
+}
+
+async function saveProviderCard(provider) {
+  const type = provider.type
+  const config = modelConfigs.value[type]
+  if (!config) return
+
+  const baseUrl = (aiBaseUrls.value[type] || '').trim()
+  if (!isValidBaseUrl(baseUrl)) {
+    showError(`${provider.name} 的 API 地址必须是有效的 http(s) URL`)
+    return
+  }
+
+  const models = normalizeModelList(config.models)
+  if (models.length === 0) {
+    showError('请至少保留一个模型')
+    return
+  }
+  const duplicate = models.find((model, index) => models.findIndex((item) => item.id === model.id) !== index)
+  if (duplicate) {
+    showError(`模型 ID "${duplicate.id}" 重复`)
+    return
+  }
+
+  config.models = models
+  if (!models.some((model) => model.id === config.default)) {
+    config.default = models[0].id
+  }
+
+  const nextModels = { ...aiModels.value }
+  const storedModels = serializeProviderModels(type)
+  if (storedModels) nextModels[type] = storedModels
+  else delete nextModels[type]
+
+  const nextApiKeys = { ...savedApiKeys.value, [type]: (aiApiKeys.value[type] || '').trim() }
+  const nextBaseUrls = { ...savedBaseUrls.value }
+  if (baseUrl) nextBaseUrls[type] = baseUrl.replace(/\/+$/, '')
+  else delete nextBaseUrls[type]
+
+  providerSaving.value = { ...providerSaving.value, [type]: true }
+  try {
+    const success = await saveConfig({
+      ai_api_keys: nextApiKeys,
+      ai_base_urls: nextBaseUrls,
+      ai_models: nextModels
+    })
+    if (!success) {
+      showError('保存失败，请检查配置')
+      return
+    }
+
+    savedApiKeys.value = nextApiKeys
+    savedBaseUrls.value = nextBaseUrls
+    aiModels.value = nextModels
+    await reloadConfig()
+
+    const providers = await getAiProviders()
+    if (Array.isArray(providers) && providers.length > 0) aiProviders.value = providers
+
+    const savedProvider = aiProviders.value.find((item) => item.type === type) || provider
+    const { config: savedConfig, initial: savedInitial, source } = createProviderModelConfig(savedProvider)
+    modelConfigs.value = { ...modelConfigs.value, [type]: savedConfig }
+    initialModelConfigs.value = { ...initialModelConfigs.value, [type]: savedInitial }
+    modelConfigSources.value = { ...modelConfigSources.value, [type]: source }
+    clearExpandedModels(type)
+    showSuccess(`${provider.name} 配置已保存`)
+  } catch (e) {
+    showError('保存失败: ' + e.message)
+  } finally {
+    providerSaving.value = { ...providerSaving.value, [type]: false }
   }
 }
 
+function cancelProviderCard(provider) {
+  const type = provider.type
+
+  aiApiKeys.value = { ...aiApiKeys.value, [type]: savedApiKeys.value[type] || '' }
+  aiBaseUrls.value = { ...aiBaseUrls.value, [type]: savedBaseUrls.value[type] || '' }
+
+  const saved = aiModels.value[type]
+  if (saved && Array.isArray(saved.models) && saved.models.length > 0) {
+    modelConfigs.value[type] = {
+      default: saved.default || saved.models[0].id,
+      models: normalizeModelList(saved.models)
+    }
+    modelConfigSources.value = { ...modelConfigSources.value, [type]: 'config' }
+  } else {
+    const models = normalizeModelList(provider.models)
+    const defaultModel = provider.defaultModel
+    modelConfigs.value[type] = {
+      default: models.some((model) => model.id === defaultModel) ? defaultModel : models[0]?.id || '',
+      models
+    }
+    modelConfigSources.value = { ...modelConfigSources.value, [type]: 'builtin' }
+  }
+
+  setModelFetchState(type, { fetching: false, message: '' })
+  apiKeyTestResult.value = { ...apiKeyTestResult.value, [type]: null }
+  clearExpandedModels(type)
+}
+
 function onProviderChange() {
-  modelFetchMessage.value = ''
-  newModelId.value = ''
-  newModelName.value = ''
+  expandedProviders.value = { ...expandedProviders.value, [aiProvider.value]: true }
 }
 
 function openProviderDocs(provider) {
@@ -1500,6 +2104,10 @@ function openProviderDocs(provider) {
   flex-shrink: 0;
   overflow: hidden;
   transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-layout.is-resizing .settings-sidebar {
+  transition: none;
 }
 
 .settings-nav {
@@ -1687,17 +2295,6 @@ function openProviderDocs(provider) {
   color: var(--text-primary);
   margin-bottom: 10px;
   font-size: var(--font-size-dense);
-}
-
-.model-config-card .form-group {
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-
-.model-config-card .form-group:hover {
-  border-color: transparent;
 }
 
 .form-group > label input[type='checkbox'] {
@@ -2109,14 +2706,18 @@ function openProviderDocs(provider) {
 }
 
 .provider-card {
-  padding: 16px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface);
+  overflow: hidden;
   transition: var(--transition-fast);
 }
 
 .provider-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.35);
+}
+
+.provider-card.expanded {
   border-color: rgba(var(--accent-rgb), 0.35);
   box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.08));
 }
@@ -2126,12 +2727,23 @@ function openProviderDocs(provider) {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.provider-card-header:hover {
+  background: var(--surface-hover);
+}
+
+.provider-card.expanded .provider-card-header {
+  border-bottom: 1px solid var(--border-color);
 }
 
 .provider-title {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
@@ -2140,6 +2752,32 @@ function openProviderDocs(provider) {
   font-size: var(--font-size-dense);
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.provider-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.provider-header-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.provider-chevron {
+  color: var(--text-tertiary);
+  transition: transform 0.18s ease;
+}
+
+.provider-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.provider-chevron.small.rotated {
+  transform: rotate(90deg);
 }
 
 .provider-tag {
@@ -2156,6 +2794,12 @@ function openProviderDocs(provider) {
   color: var(--success-dark);
   border-color: rgba(var(--success-rgb), 0.35);
   background: rgba(var(--success-rgb), 0.1);
+}
+
+.provider-tag.custom {
+  color: var(--warning-darker);
+  border-color: rgba(var(--warning-rgb), 0.35);
+  background: rgba(var(--warning-rgb), 0.1);
 }
 
 .provider-tag.default {
@@ -2179,35 +2823,120 @@ function openProviderDocs(provider) {
   text-decoration: underline;
 }
 
+.provider-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.provider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-label-row > label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.field-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1;
+  cursor: help;
+}
+
 .provider-card .api-key-input-group .input-field {
   min-width: 0;
 }
 
-.model-config-card {
-  padding: 16px;
+.env-status {
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.env-status.detected {
+  background: rgba(var(--success-rgb), 0.08);
+  border-color: rgba(var(--success-rgb), 0.3);
+  color: var(--success-dark);
+}
+
+.env-status.missing {
+  background: rgba(var(--warning-rgb), 0.1);
+  border-color: rgba(var(--warning-rgb), 0.35);
+  color: var(--warning-darker);
+}
+
+.custom-settings {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--surface);
-  transition: var(--transition-fast);
 }
 
-.model-config-card:hover {
-  border-color: rgba(var(--accent-rgb), 0.35);
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.08));
-}
-
-.model-config-header {
+.custom-settings-toggle {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
 }
 
-.model-config-title {
-  font-size: var(--font-size-dense);
-  font-weight: 600;
+.custom-settings-toggle:hover {
   color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.custom-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.custom-settings-body > label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.model-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.model-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .model-config-actions {
@@ -2217,22 +2946,67 @@ function openProviderDocs(provider) {
 }
 
 .model-default-row {
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.model-default-row > label {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.model-default-row .select-field {
+  flex: 1;
+  min-width: 0;
 }
 
 .model-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 260px;
+  max-height: 320px;
   overflow-y: auto;
-  margin-bottom: 10px;
+}
+
+.model-item {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition: var(--transition-fast);
+}
+
+.model-item.dragging {
+  opacity: 0.5;
+}
+
+.model-item.drag-over {
+  border-color: var(--accent-color);
 }
 
 .model-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 10px;
+}
+
+.model-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  color: var(--text-tertiary);
+  cursor: grab;
+}
+
+.model-drag-handle svg {
+  width: 14px;
+  height: 14px;
 }
 
 .model-row .model-id {
@@ -2245,8 +3019,88 @@ function openProviderDocs(provider) {
   min-width: 0;
 }
 
-.model-row .btn {
+.model-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.model-icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.model-icon-btn.danger:hover {
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-dark);
+}
+
+.model-advanced {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px 12px 34px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.advanced-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.advanced-field > label {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.input-type-options {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 32px;
+}
+
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.checkbox-field input {
+  accent-color: var(--accent-color);
+}
+
+.add-model-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.add-model-btn:hover {
+  border-color: var(--accent-color);
+  background: rgba(var(--accent-rgb), 0.05);
+  color: var(--accent-color);
 }
 
 .model-empty {
@@ -2259,18 +3113,15 @@ function openProviderDocs(provider) {
   text-align: center;
 }
 
-.model-add-row {
+.provider-card-footer {
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
-.model-add-row .input-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.model-add-row .btn {
-  flex-shrink: 0;
+@media (max-width: 900px) {
+  .model-advanced {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

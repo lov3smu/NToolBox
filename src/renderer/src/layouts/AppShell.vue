@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" :class="{ collapsed }">
+  <div ref="shellRef" class="app-shell" :class="{ collapsed, 'is-resizing': sidebarResizing }" :style="sidebarStyle">
     <AppTitleBar />
 
     <div class="app-body">
@@ -48,6 +48,14 @@
           </button>
         </div>
       </aside>
+      <SplitHandle
+        v-if="!collapsed && !isNarrow"
+        orientation="vertical"
+        :resizing="sidebarResizing"
+        label="拖动调整导航栏宽度"
+        @pointerdown="startSidebarResize"
+        @keydown="onSidebarKeydown"
+      />
 
       <div class="shell-main">
         <slot />
@@ -57,11 +65,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { openSettings as openSettingsWindow, platform } from '@/api'
 import { SETTINGS_PATH, addToRecent, getToolsByMenuGroup, tools } from '@shared/tools'
+import { usePaneResize } from '@/composables/usePaneResize'
 import { useSidebar } from '@/composables/useSidebar'
+import SplitHandle from '@/components/SplitHandle.vue'
 import AppTitleBar from './AppTitleBar.vue'
 import iconUrl from '@assets/icon.png'
 
@@ -70,6 +80,33 @@ const isMac = platform === 'darwin'
 const route = useRoute()
 const router = useRouter()
 const { collapsed } = useSidebar()
+
+const shellRef = ref(null)
+const narrowQuery = window.matchMedia('(max-width: 1000px)')
+const isNarrow = ref(narrowQuery.matches)
+const {
+  size: sidebarWidth,
+  resizing: sidebarResizing,
+  startResize: startSidebarResize,
+  onKeydown: onSidebarKeydown
+} = usePaneResize({
+  key: 'appSidebarWidth',
+  initial: 232,
+  min: 200,
+  max: 360,
+  direction: 'horizontal',
+  container: () => shellRef.value
+})
+const sidebarStyle = computed(() => {
+  if (collapsed.value || isNarrow.value) return null
+  return { '--sidebar-width': `${sidebarWidth.value}px` }
+})
+const syncNarrow = () => {
+  isNarrow.value = narrowQuery.matches
+}
+
+onMounted(() => narrowQuery.addEventListener('change', syncNarrow))
+onUnmounted(() => narrowQuery.removeEventListener('change', syncNarrow))
 
 const homeTool = tools.find((tool) => tool.path === '/')
 const settingsTool = tools.find((tool) => tool.path === SETTINGS_PATH)
@@ -124,11 +161,17 @@ function openSettings() {
   --sidebar-width: 84px;
 }
 
+.app-shell.is-resizing .app-sidebar {
+  transition: none;
+}
+
 .app-body {
   flex: 1;
   display: flex;
   min-height: 0;
   overflow: hidden;
+  /* 分隔线放在标题栏下沿之外，避免被右上角原生窗口控制按钮的覆盖层遮住 */
+  border-top: 1px solid var(--shell-border);
 }
 
 .app-sidebar {

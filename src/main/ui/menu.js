@@ -41,6 +41,27 @@ export function handleMenuAction(event, action) {
     case 'hide-window':
       if (win && !win.isDestroyed()) win.hide()
       return true
+    case 'close-window':
+      if (win && !win.isDestroyed()) win.close()
+      return true
+    case 'reload':
+      event.sender.reload()
+      return true
+    case 'force-reload':
+      event.sender.reloadIgnoringCache()
+      return true
+    case 'reset-zoom':
+      event.sender.setZoomLevel(0)
+      return true
+    case 'zoom-in':
+      event.sender.setZoomLevel(Math.min(event.sender.getZoomLevel() + 0.5, 9))
+      return true
+    case 'zoom-out':
+      event.sender.setZoomLevel(Math.max(event.sender.getZoomLevel() - 0.5, -9))
+      return true
+    case 'toggle-fullscreen':
+      if (win && !win.isDestroyed()) win.setFullScreen(!win.isFullScreen())
+      return true
     case 'quit':
       app.isQuitting = true
       destroyTray()
@@ -121,20 +142,15 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
             if (mainWindow) mainWindow.hide()
           }
         },
-        ...(isMac
-          ? []
-          : [
-              { type: 'separator' },
-              {
-                label: '退出',
-                accelerator: 'Alt+F4',
-                click: () => {
-                  app.isQuitting = true
-                  destroyTray()
-                  app.quit()
-                }
-              }
-            ])
+        { type: 'separator' },
+        {
+          label: '关闭窗口',
+          accelerator: isMac ? 'Command+W' : 'Alt+F4',
+          click: () => {
+            const target = BrowserWindow.getFocusedWindow() || mainWindow
+            if (target && !target.isDestroyed()) target.close()
+          }
+        }
       ]
     },
     {
@@ -147,6 +163,19 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
         { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
         { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
         { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+      ]
+    },
+    {
+      label: '视图',
+      submenu: [
+        { label: '重新载入', accelerator: 'CmdOrCtrl+R', role: 'reload' },
+        { label: '强制重新载入', accelerator: 'Shift+CmdOrCtrl+R', role: 'forceReload' },
+        { type: 'separator' },
+        { label: '实际大小', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+        { label: '放大', accelerator: 'CmdOrCtrl+=', role: 'zoomIn' },
+        { label: '缩小', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+        { type: 'separator' },
+        { label: '切换全屏', accelerator: isMac ? 'Ctrl+Command+F' : 'F11', role: 'togglefullscreen' }
       ]
     },
     {

@@ -156,7 +156,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getConfig, getPackageInfo, openSettings, platform } from '@/api'
+import { getConfig, getPackageInfo, openSettings, platform, skillsList } from '@/api'
 import {
   MAX_RECENT,
   SETTINGS_PATH,
@@ -174,7 +174,7 @@ const TOOL_GROUPS = [
   { key: ['file', 'settings'], title: '文件与系统', description: '文件管理与应用设置' }
 ]
 
-const NEW_TOOL_PATHS = ['/wechat-formatter', '/markdown-editor', '/clipboard']
+const NEW_TOOL_PATHS = ['/image-viewer', '/wechat-formatter', '/markdown-editor', '/clipboard']
 const SEARCH_ACCELERATOR = 'CmdOrCtrl+K'
 
 const SEARCH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -197,6 +197,7 @@ const isMac = platform === 'darwin'
 const version = ref('1.0.0')
 const config = ref({})
 const recentTools = ref([])
+const skills = ref([])
 
 const tools = dashboardTools
 const newTools = computed(() => NEW_TOOL_PATHS.map((path) => tools.find((tool) => tool.path === path)).filter(Boolean))
@@ -212,6 +213,11 @@ const connectionCount = computed(() => (config.value.dbConnections || []).length
 const aiProviderCount = computed(
   () => Object.values(config.value.ai_api_keys || {}).filter((key) => typeof key === 'string' && key.trim()).length
 )
+
+const skillSummary = computed(() => {
+  const builtin = skills.value.filter((skill) => skill.builtin).length
+  return { total: skills.value.length, builtin, installed: skills.value.length - builtin }
+})
 
 const heroTool = computed(
   () => recentTools.value[0] || tools.find((tool) => tool.path === '/wechat-formatter') || tools[0]
@@ -229,6 +235,20 @@ const stats = computed(() => [
       <rect x="14" y="3" width="7" height="7" rx="1.5"/>
       <rect x="3" y="14" width="7" height="7" rx="1.5"/>
       <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+    </svg>`
+  },
+  {
+    key: 'skills',
+    label: '可用技能',
+    value: skillSummary.value.total,
+    hint: skillSummary.value.total
+      ? `内置 ${skillSummary.value.builtin} · 已安装 ${skillSummary.value.installed}`
+      : '前往扩展市场安装',
+    tone: 'info',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="m12 2 9 5-9 5-9-5 9-5z"/>
+      <path d="m3 12 9 5 9-5"/>
+      <path d="m3 17 9 5 9-5"/>
     </svg>`
   },
   {
@@ -339,12 +359,19 @@ function navigateTo(path) {
 onMounted(async () => {
   recentTools.value = getRecentTools()
 
-  const [info, savedConfig] = await Promise.all([getPackageInfo(), getConfig()])
+  const [info, savedConfig, skillList] = await Promise.all([
+    getPackageInfo(),
+    getConfig(),
+    skillsList().catch(() => [])
+  ])
   if (info?.version) {
     version.value = info.version
   }
   if (savedConfig) {
     config.value = savedConfig
+  }
+  if (Array.isArray(skillList)) {
+    skills.value = skillList
   }
 })
 </script>
@@ -636,17 +663,21 @@ onMounted(async () => {
   transform: translateX(2px);
 }
 
+.stats-section {
+  container-type: inline-size;
+}
+
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 12px 14px;
   background: var(--panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -659,9 +690,9 @@ onMounted(async () => {
 }
 
 .stat-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -693,6 +724,11 @@ onMounted(async () => {
   background: rgba(var(--neutral-rgb), 0.14);
 }
 
+.stat-card.info .stat-icon {
+  color: var(--info-color);
+  background: rgba(var(--info-rgb), 0.12);
+}
+
 .stat-info {
   display: flex;
   flex-direction: column;
@@ -713,10 +749,25 @@ onMounted(async () => {
 
 .stat-hint {
   font-size: var(--font-size-xs);
+  line-height: 1.35;
   color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: keep-all;
+}
+
+/* 容器无法容纳五张等宽卡片时改为 3+2 两行，避免第五张卡片单独落单 */
+@container (max-width: 852px) {
+  .stats-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .stat-card {
+    grid-column: span 2;
+  }
+
+  .stat-card:nth-child(4),
+  .stat-card:nth-child(5) {
+    grid-column: span 3;
+  }
 }
 
 .section-head {
@@ -756,10 +807,20 @@ onMounted(async () => {
   color: var(--text-tertiary);
 }
 
+.feature-section {
+  container-type: inline-size;
+}
+
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+@container (min-width: 996px) {
+  .feature-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .feature-card {
@@ -1107,10 +1168,6 @@ onMounted(async () => {
 
   .hero-panel {
     padding: 18px;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 
   .dashboard-footer {

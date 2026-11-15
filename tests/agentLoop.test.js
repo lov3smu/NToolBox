@@ -22,6 +22,7 @@ vi.mock('../src/main/services/ai/index.js', () => ({
   getProvider: () => ({
     name: '测试平台',
     getDefaultModel: () => 'test-model',
+    getModels: () => [],
     validateConfig: () => ({ valid: true }),
     chat: mocks.chat,
     chatStream: mocks.chatStream
@@ -32,6 +33,13 @@ vi.mock('../src/main/services/ai/index.js', () => ({
   getDefaultProviderModels: vi.fn(),
   resolveProviderModels: () => [],
   resolveProviderDefaultModel: () => 'test-model',
+  resolveProviderRuntimeConfig: (type, config) => ({
+    apiKey: (config.ai_api_keys || {})[type] || '',
+    baseUrl: '',
+    models: [],
+    defaultModel: 'test-model'
+  }),
+  getProviderEnvApiKey: () => '',
   getContextWindow: () => 131072,
   PROVIDER_TYPES: {},
   PROVIDER_INFO: {}

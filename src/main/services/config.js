@@ -60,6 +60,17 @@ function normalizeModelName(type, id, name) {
   return LEGACY_MODEL_NAMES[type]?.[id] === trimmed ? id : trimmed
 }
 
+function normalizePositiveInt(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num) || num <= 0) return 0
+  return Math.floor(num)
+}
+
+function normalizeInputTypes(value) {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.filter((type) => type === 'text' || type === 'image'))]
+}
+
 function normalizeAiModels(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const result = {}
@@ -73,15 +84,40 @@ function normalizeAiModels(raw) {
         const id = model.id.trim()
         if (!id || seen.has(id)) continue
         seen.add(id)
-        models.push({
+        const normalized = {
           id,
           name: normalizeModelName(type, id, model.name)
-        })
+        }
+        const contextWindow = normalizePositiveInt(model.contextWindow)
+        if (contextWindow) normalized.contextWindow = contextWindow
+        const maxOutput = normalizePositiveInt(model.maxOutput)
+        if (maxOutput) normalized.maxOutput = maxOutput
+        const inputTypes = normalizeInputTypes(model.inputTypes)
+        if (inputTypes.length > 0) normalized.inputTypes = inputTypes
+        models.push(normalized)
       }
     }
     const defaultModel = typeof entry.default === 'string' ? entry.default.trim() : ''
     if (models.length === 0 && !defaultModel) continue
     result[type] = { default: defaultModel, models }
+  }
+  return result
+}
+
+function normalizeBaseUrls(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const result = {}
+  for (const [type, value] of Object.entries(raw)) {
+    if (typeof value !== 'string') continue
+    const trimmed = value.trim().replace(/\/+$/, '')
+    if (!trimmed) continue
+    try {
+      const url = new URL(trimmed)
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') continue
+    } catch {
+      continue
+    }
+    result[type] = trimmed
   }
   return result
 }
@@ -111,6 +147,7 @@ function getDefaultConfigContent() {
       volcengine_endpoint_id: '',
       deepseek: ''
     },
+    ai_base_urls: {},
     ai_models: {},
     databases: [
       'order_db',
@@ -193,6 +230,7 @@ export async function loadConfig() {
     }
 
     config.ai_models = normalizeAiModels(config.ai_models)
+    config.ai_base_urls = normalizeBaseUrls(config.ai_base_urls)
 
     if (loadedConfig.bailian_api_key && !config.ai_api_keys.bailian) {
       config.ai_api_keys.bailian = loadedConfig.bailian_api_key
@@ -237,6 +275,7 @@ export async function saveConfig(newConfig) {
 
     const configToSave = JSON.parse(JSON.stringify(mergedConfig))
     configToSave.ai_models = normalizeAiModels(configToSave.ai_models)
+    configToSave.ai_base_urls = normalizeBaseUrls(configToSave.ai_base_urls)
 
     if (Array.isArray(configToSave.dbConnections)) {
       for (const conn of configToSave.dbConnections) {
@@ -255,7 +294,11 @@ export async function saveConfig(newConfig) {
       if (error.code !== 'ENOENT') log.error('备份配置文件失败:', error)
     }
     await fs.promises.writeFile(configPath, JSON.stringify(configToSave, null, 2), 'utf8')
-    config = { ...mergedConfig, ai_models: configToSave.ai_models }
+    config = {
+      ...mergedConfig,
+      ai_models: configToSave.ai_models,
+      ai_base_urls: configToSave.ai_base_urls
+    }
     log.info('配置保存成功')
     return true
   } catch (error) {

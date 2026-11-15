@@ -155,7 +155,12 @@
         <span class="wx-config-hint">样式全部内联，复制后可直接粘贴进公众号编辑器</span>
       </div>
 
-      <div class="wx-workbench" :class="`mode-${viewMode}`">
+      <div
+        ref="workbenchRef"
+        class="wx-workbench"
+        :class="[`mode-${viewMode}`, `split-${splitDirection}`]"
+        :style="{ '--split-ratio': `${splitRatio}%` }"
+      >
         <section v-show="viewMode !== 'preview'" class="wx-pane wx-editor-pane">
           <header class="wx-pane-header">
             <span class="wx-pane-title">Markdown</span>
@@ -176,6 +181,15 @@
             />
           </div>
         </section>
+
+        <SplitHandle
+          v-if="viewMode === 'split'"
+          :orientation="splitDirection === 'horizontal' ? 'vertical' : 'horizontal'"
+          :resizing="splitResizing"
+          label="拖动调整编辑与预览大小"
+          @pointerdown="startSplitResize"
+          @keydown="onSplitKeydown"
+        />
 
         <section v-show="viewMode !== 'editor'" class="wx-pane wx-preview-pane">
           <header class="wx-pane-header">
@@ -468,12 +482,13 @@ import PageLayout from '@/layouts/PageLayout.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
-import { useToast } from '@/composables'
+import { usePaneResize, useToast } from '@/composables'
 import { chat, copyRichText, getConfig, openExternal } from '@/api'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatDateTime } from '@/utils/format'
 import { renderWechatArticle } from '@/utils/wechatFormatter'
 import { ensureDiagramsRendered } from '@/utils/wechatMarkdown'
+import SplitHandle from '@/components/SplitHandle.vue'
 import {
   CODE_THEMES,
   DEFAULT_WECHAT_PREFS,
@@ -627,6 +642,28 @@ const aiError = ref('')
 const aiLoading = ref(false)
 const aiModelLabel = ref('')
 const mermaidPending = ref(false)
+
+const workbenchRef = ref(null)
+const splitMedia = window.matchMedia('(max-width: 1100px)')
+const splitDirection = ref(splitMedia.matches ? 'vertical' : 'horizontal')
+const {
+  size: splitRatio,
+  resizing: splitResizing,
+  startResize: startSplitResize,
+  onKeydown: onSplitKeydown
+} = usePaneResize({
+  key: 'wechatSplitRatio',
+  initial: 50,
+  min: 20,
+  max: 80,
+  unit: 'percent',
+  direction: () => splitDirection.value,
+  container: () => workbenchRef.value
+})
+
+function syncSplitDirection() {
+  splitDirection.value = splitMedia.matches ? 'vertical' : 'horizontal'
+}
 
 const themes = WECHAT_THEMES
 const fontSizes = WECHAT_FONT_SIZES
@@ -1156,6 +1193,7 @@ function replaceWithAiResult() {
 }
 
 onMounted(() => {
+  splitMedia.addEventListener('change', syncSplitDirection)
   try {
     const draft = localStorage.getItem(DRAFT_KEY)
     content.value = draft === null ? EXAMPLE : draft
@@ -1169,6 +1207,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  splitMedia.removeEventListener('change', syncSplitDirection)
   clearTimeout(renderTimer)
   clearTimeout(saveTimer)
   renderSeq += 1
@@ -1293,20 +1332,20 @@ onUnmounted(() => {
 .wx-workbench {
   flex: 1;
   min-height: 0;
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
-.wx-workbench.mode-split {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+.wx-workbench.mode-split.split-horizontal {
+  flex-direction: row;
 }
 
-.wx-workbench.mode-editor,
-.wx-workbench.mode-preview {
-  grid-template-columns: minmax(0, 1fr);
+.wx-workbench.mode-split.split-vertical {
+  flex-direction: column;
 }
 
 .wx-pane {
+  flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -1315,6 +1354,16 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface);
+}
+
+.wx-workbench.mode-split.split-horizontal .wx-editor-pane {
+  flex: 0 0 auto;
+  width: var(--split-ratio);
+}
+
+.wx-workbench.mode-split.split-vertical .wx-editor-pane {
+  flex: 0 0 auto;
+  height: var(--split-ratio);
 }
 
 .wx-preview-pane {
@@ -1867,11 +1916,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1100px) {
-  .wx-workbench.mode-split {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(200px, 1fr) minmax(0, 1.2fr);
-  }
-
   .wx-config-hint {
     display: none;
   }

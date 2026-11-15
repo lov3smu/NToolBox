@@ -8,7 +8,7 @@
     </template>
 
     <div class="page-body">
-      <div class="editor-layout">
+      <div ref="editorLayoutRef" class="editor-layout" :style="{ '--split-ratio': `${splitRatio}%` }">
         <div class="panel editor-panel">
           <div class="panel-header">
             <span class="panel-title">YAML 输入</span>
@@ -41,6 +41,14 @@
             <span>字符: {{ inputChars }}</span>
           </div>
         </div>
+
+        <SplitHandle
+          orientation="vertical"
+          :resizing="splitResizing"
+          label="拖动调整输入与输出宽度"
+          @pointerdown="startSplitResize"
+          @keydown="onSplitKeydown"
+        />
 
         <div class="panel editor-panel">
           <div class="panel-header">
@@ -133,9 +141,10 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useToast } from '@/composables'
+import { usePaneResize, useToast } from '@/composables'
 import * as yaml from 'js-yaml'
 import Toast from '@/components/Toast.vue'
+import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
@@ -144,6 +153,21 @@ const textareaRef = ref(null)
 const lineNumbersRef = ref(null)
 const outputTextareaRef = ref(null)
 const outputLineNumbersRef = ref(null)
+const editorLayoutRef = ref(null)
+const {
+  size: splitRatio,
+  resizing: splitResizing,
+  startResize: startSplitResize,
+  onKeydown: onSplitKeydown
+} = usePaneResize({
+  key: 'yamlEditorSplitRatio',
+  initial: 50,
+  min: 20,
+  max: 80,
+  unit: 'percent',
+  direction: 'horizontal',
+  container: () => editorLayoutRef.value
+})
 
 const yamlInput = ref('')
 const outputContent = ref('')
@@ -536,15 +560,19 @@ onMounted(() => {
 
 .editor-layout {
   display: flex;
-  gap: 12px;
   height: 480px;
 }
 
 .editor-panel {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+.editor-layout > .editor-panel:first-child {
+  flex: 0 0 auto;
+  width: var(--split-ratio, 50%);
 }
 
 .editor-panel + .editor-panel {

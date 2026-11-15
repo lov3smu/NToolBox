@@ -180,9 +180,9 @@ MySQL 数据库连接与管理。
 
 | 平台 | 文件格式 | 说明 |
 |:---:|:---:|:---|
-| 🪟 Windows | `.exe` (NSIS 安装程序) | 标准 Windows 安装包 |
+| 🪟 Windows | `.exe` (NSIS 安装程序 / 便携版) | 标准安装包或免安装版本 |
 | 🍎 macOS | `.dmg` / `.zip` | macOS 磁盘镜像和压缩包 |
-| 🐧 Linux | `.AppImage` / `.deb` / `.tar.gz` | Linux 通用格式 |
+| 🐧 Linux | `.AppImage` / `.deb` / `.rpm` / `.tar.gz` | Linux 通用格式 |
 
 ### 系统要求
 

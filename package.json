@@ -46,7 +46,7 @@
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.6",
     "electron": "^41.2.0",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.18.1",
     "electron-vite": "^5.0.0",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
@@ -58,6 +58,9 @@
   "build": {
     "appId": "com.ancoka.ntoolbox",
     "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+    "toolsets": {
+      "appimage": "1.0.3"
+    },
     "directories": {
       "output": "release"
     },
@@ -75,12 +78,20 @@
       }
     ],
     "win": {
-      "target": {
-        "target": "nsis",
-        "arch": [
-          "x64"
-        ]
-      },
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "assets/icon.ico",
       "signtoolOptions": {
         "publisherName": "lov3smu"
@@ -128,6 +139,9 @@
       "installerHeaderIcon": "assets/icon.ico",
       "license": "LICENSE.txt",
       "deleteAppDataOnUninstall": true
+    },
+    "portable": {
+      "artifactName": "${name}-${version}-${os}-${arch}-portable.${ext}"
     },
     "publish": {
       "provider": "github",

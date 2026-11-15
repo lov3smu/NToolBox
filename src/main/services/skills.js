@@ -5,7 +5,7 @@ import { pathToFileURL } from 'url'
 import { log } from '../utils'
 import { isPathWithinBase } from '../utils/sanitize'
 import { getConfig } from './config'
-import { getProvider, resolveProviderModels, resolveProviderDefaultModel } from './ai/index.js'
+import { getProvider, resolveProviderRuntimeConfig } from './ai/index.js'
 import { generateDictionarySql, generateDictionarySqlBatch, generateFunctionGroupSql } from './templateGenerator.js'
 import * as database from './database.js'
 import { generateSQLFile } from './generator.js'
@@ -259,20 +259,7 @@ class SkillsManager {
 
     const config = getConfig()
     const providerType = config.ai_provider || 'bailian'
-    const apiKeys = config.ai_api_keys || {}
-
-    const providerConfig = {
-      apiKey: apiKeys[providerType] || '',
-      models: resolveProviderModels(providerType, config.ai_models),
-      defaultModel: resolveProviderDefaultModel(providerType, config.ai_models, apiKeys.volcengine_endpoint_id || '')
-    }
-
-    if (providerType === 'minimax') {
-      providerConfig.groupId = apiKeys.minimax_group_id || ''
-    }
-    if (providerType === 'volcengine') {
-      providerConfig.endpointId = apiKeys.volcengine_endpoint_id || ''
-    }
+    const providerConfig = resolveProviderRuntimeConfig(providerType, config)
 
     const provider = getProvider(providerType, providerConfig)
 

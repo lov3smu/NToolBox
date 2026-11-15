@@ -110,6 +110,12 @@ export const {
   readFile,
   saveSqlFile,
   writeFile,
+  imageOpenDialog,
+  imageOpenFolder,
+  imageListDir,
+  imageRead,
+  imageThumbnail,
+  imageAcceptDropped,
   skillsInit,
   skillsList,
   skillsGet,
@@ -133,5 +139,13 @@ export const {
   onWindowMaximized,
   onClipboardChanged
 } = generated
+
+export function getPathForFile(file) {
+  try {
+    return bridge.getPathForFile?.(file) || ''
+  } catch {
+    return ''
+  }
+}
 
 export default bridge

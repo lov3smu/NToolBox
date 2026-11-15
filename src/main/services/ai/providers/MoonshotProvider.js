@@ -10,11 +10,13 @@ class MoonshotProvider extends BaseProvider {
       modelsPath: '/v1/models',
       validateModel: 'kimi-k3',
       models: [
-        { id: 'kimi-k3.1-pro', name: 'kimi-k3.1-pro' },
-        { id: 'kimi-k3.1-pro-highspeed', name: 'kimi-k3.1-pro-highspeed' },
-        { id: 'kimi-k3', name: 'kimi-k3' }
+        { id: 'kimi-k3.1-pro', name: 'kimi-k3.1-pro', contextWindow: 1000000 },
+        { id: 'kimi-k3.1-pro-highspeed', name: 'kimi-k3.1-pro-highspeed', contextWindow: 1000000 },
+        { id: 'kimi-k3', name: 'kimi-k3', contextWindow: 1000000 }
       ],
       defaultModel: 'kimi-k3.1-pro',
+      thinkingStyle: 'moonshot',
+      temperatureFixed: true,
       timeout,
       connectionTimeout
     })

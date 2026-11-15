@@ -98,6 +98,53 @@ describe('validateConfig', () => {
     )
   })
 
+  it('validates per-model metadata', () => {
+    expect(
+      validateConfig(
+        createConfig({
+          ai_models: {
+            deepseek: {
+              models: [
+                {
+                  id: 'deepseek-v4-pro',
+                  contextWindow: 131072,
+                  maxOutput: 8192,
+                  inputTypes: ['text', 'image']
+                }
+              ]
+            }
+          }
+        })
+      )
+    ).toBeNull()
+    expect(
+      validateConfig(createConfig({ ai_models: { deepseek: { models: [{ id: 'x', contextWindow: 'big' }] } } }))
+    ).toBe('ai_models.deepseek.models.contextWindow 必须是正数')
+    expect(
+      validateConfig(createConfig({ ai_models: { deepseek: { models: [{ id: 'x', maxOutput: 0 }] } } }))
+    ).toBe('ai_models.deepseek.models.maxOutput 必须是正数')
+    expect(
+      validateConfig(createConfig({ ai_models: { deepseek: { models: [{ id: 'x', inputTypes: 'text' }] } } }))
+    ).toBe('ai_models.deepseek.models.inputTypes 必须是数组')
+    expect(
+      validateConfig(createConfig({ ai_models: { deepseek: { models: [{ id: 'x', inputTypes: ['audio'] }] } } }))
+    ).toBe('ai_models.deepseek.models.inputTypes 值不合法')
+  })
+
+  it('validates ai_base_urls shape', () => {
+    expect(validateConfig(createConfig({ ai_base_urls: { deepseek: 'https://api.deepseek.com/v1' } }))).toBeNull()
+    expect(validateConfig(createConfig({ ai_base_urls: { deepseek: 'http://10.0.0.2:8080/v1' } }))).toBeNull()
+    expect(validateConfig(createConfig({ ai_base_urls: { deepseek: '' } }))).toBeNull()
+    expect(validateConfig(createConfig({ ai_base_urls: [] }))).toBe('ai_base_urls 必须是对象')
+    expect(validateConfig(createConfig({ ai_base_urls: { deepseek: 1 } }))).toBe('ai_base_urls.deepseek 必须是字符串')
+    expect(validateConfig(createConfig({ ai_base_urls: { deepseek: 'api.deepseek.com' } }))).toBe(
+      'ai_base_urls.deepseek 必须是有效的 http(s) 地址'
+    )
+    expect(validateConfig(createConfig({ ai_base_urls: { deepseek: 'ftp://api.deepseek.com' } }))).toBe(
+      'ai_base_urls.deepseek 必须是有效的 http(s) 地址'
+    )
+  })
+
   it('keeps every valid shortcut key aligned with the shared tool registry', () => {
     const configurableKeys = tools.filter((tool) => tool.shortcutKey).map((tool) => tool.shortcutKey)
     expect(VALID_SHORTCUT_KEYS).toEqual(configurableKeys)

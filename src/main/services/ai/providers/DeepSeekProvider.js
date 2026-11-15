@@ -10,8 +10,8 @@ class DeepSeekProvider extends BaseProvider {
       modelsPath: '/models',
       validateModel: 'deepseek-flash',
       models: [
-        { id: 'deepseek-v4-pro', name: 'deepseek-v4-pro' },
-        { id: 'deepseek-flash', name: 'deepseek-flash' }
+        { id: 'deepseek-v4-pro', name: 'deepseek-v4-pro', contextWindow: 1000000 },
+        { id: 'deepseek-flash', name: 'deepseek-flash', contextWindow: 1000000 }
       ],
       defaultModel: 'deepseek-v4-pro',
       thinkingStyle: 'thinking',

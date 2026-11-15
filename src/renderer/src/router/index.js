@@ -47,6 +47,11 @@ const routes = [
     component: () => import('@/views/FileManager.vue')
   },
   {
+    path: '/image-viewer',
+    name: 'ImageViewer',
+    component: () => import('@/views/ImageViewer.vue')
+  },
+  {
     path: '/markdown-editor',
     name: 'MarkdownEditor',
     component: () => import('@/views/Markdown.vue')

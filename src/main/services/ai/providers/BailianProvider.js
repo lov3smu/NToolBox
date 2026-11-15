@@ -10,9 +10,9 @@ class BailianProvider extends BaseProvider {
       modelsPath: '/compatible-mode/v1/models',
       validateModel: 'qwen3.8-flash',
       models: [
-        { id: 'qwen3.8-max', name: 'qwen3.8-max' },
-        { id: 'qwen3.7-plus', name: 'qwen3.7-plus' },
-        { id: 'qwen3.8-flash', name: 'qwen3.8-flash' }
+        { id: 'qwen3.8-max', name: 'qwen3.8-max', contextWindow: 1000000 },
+        { id: 'qwen3.7-plus', name: 'qwen3.7-plus', contextWindow: 1000000 },
+        { id: 'qwen3.8-flash', name: 'qwen3.8-flash', contextWindow: 1000000 }
       ],
       defaultModel: 'qwen3.8-max',
       thinkingStyle: 'enable_thinking',

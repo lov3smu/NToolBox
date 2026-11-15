@@ -8,6 +8,8 @@ import {
   getDefaultProviderModels,
   resolveProviderModels,
   resolveProviderDefaultModel,
+  resolveProviderRuntimeConfig,
+  getProviderEnvApiKey,
   getContextWindow,
   PROVIDER_TYPES,
   PROVIDER_INFO
@@ -696,26 +698,10 @@ function buildAgentSummary(state, result) {
 function getProviderConfig(providerTypeArg) {
   const config = getConfig()
   const providerType = providerTypeArg || config.ai_provider || 'bailian'
-  const apiKeys = config.ai_api_keys || {}
-
-  const endpointId = providerType === 'volcengine' ? apiKeys.volcengine_endpoint_id || '' : ''
-
-  const providerConfig = {
-    apiKey: apiKeys[providerType] || '',
-    timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,
-    connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000,
-    models: resolveProviderModels(providerType, config.ai_models),
-    defaultModel: resolveProviderDefaultModel(providerType, config.ai_models, endpointId)
+  return {
+    providerType,
+    providerConfig: resolveProviderRuntimeConfig(providerType, config)
   }
-
-  if (providerType === 'minimax') {
-    providerConfig.groupId = apiKeys.minimax_group_id || ''
-  }
-  if (providerType === 'volcengine') {
-    providerConfig.endpointId = endpointId
-  }
-
-  return { providerType, providerConfig }
 }
 
 function summarizeToolResult(result) {
@@ -758,11 +744,14 @@ async function chatWithToolsInternal(messages, options = {}, iteration = 0) {
   if (result.tool_calls && result.tool_calls.length > 0) {
     log.debug(`[chatWithTools] tool_calls=${result.tool_calls.length}`)
 
-    messages.push({
+    const assistantMessage = {
       role: 'assistant',
       content: result.content || '',
       tool_calls: result.tool_calls
-    })
+    }
+    // DeepSeek/MiniMax/Kimi 在工具调用多轮中要求回传 reasoning_content，否则返回 400
+    if (result.thinking) assistantMessage.reasoning_content = result.thinking
+    messages.push(assistantMessage)
 
     for (const call of result.tool_calls) {
       log.debug(`执行工具: ${call.function.name}`)
@@ -841,6 +830,8 @@ export async function chatStream(messages, options = {}, onChunk) {
   const shouldSummarize = Boolean(state.plan) || state.toolCalls > 0 || state.termination !== 'goal_reached'
   if (shouldSummarize && onChunk) onChunk({ kind: 'summary', summary })
 
+  const modelInfo = provider.getModels()?.find((item) => item.id === model)
+
   return {
     ...result,
     termination: state.termination,
@@ -848,7 +839,7 @@ export async function chatStream(messages, options = {}, onChunk) {
     plan: state.plan,
     reflections: state.reflections,
     usage: usageSnapshot(state.usage),
-    contextWindow: getContextWindow(providerType)
+    contextWindow: modelInfo?.contextWindow || getContextWindow(providerType)
   }
 }
 
@@ -891,11 +882,14 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk, s
   if (result.tool_calls && result.tool_calls.length > 0) {
     log.debug(`[chatStream] tool_calls=${result.tool_calls.length}`)
 
-    messages.push({
+    const assistantMessage = {
       role: 'assistant',
       content: result.content || '',
       tool_calls: result.tool_calls
-    })
+    }
+    // DeepSeek/MiniMax/Kimi 在工具调用多轮中要求回传 reasoning_content，否则返回 400
+    if (result.thinking) assistantMessage.reasoning_content = result.thinking
+    messages.push(assistantMessage)
 
     for (const call of result.tool_calls) {
       if (shouldStop()) {
@@ -1091,9 +1085,18 @@ export async function compressChatContext(messages, options = {}) {
 export async function validateApiKey(providerType, apiKey, extraConfig = {}) {
   log.debug(`[validateApiKey] provider=${providerType}`)
 
+  const config = getConfig()
+  const baseUrls = config.ai_base_urls || {}
+  const resolvedKey = String(apiKey || '').trim() || getProviderEnvApiKey(providerType)
   const provider = createProvider(providerType, {
-    apiKey,
-    ...extraConfig
+    ...extraConfig,
+    apiKey: resolvedKey,
+    baseUrl:
+      extraConfig.baseUrl !== undefined
+        ? extraConfig.baseUrl
+        : typeof baseUrls[providerType] === 'string'
+          ? baseUrls[providerType]
+          : ''
   })
 
   if (!provider) {
@@ -1122,8 +1125,16 @@ export async function getProviderModels(providerType, options = {}) {
   }
 
   const endpointId = providerType === 'volcengine' ? apiKeys.volcengine_endpoint_id || '' : ''
+  const baseUrls = config.ai_base_urls || {}
+  const storedKey = typeof apiKeys[providerType] === 'string' ? apiKeys[providerType].trim() : ''
   const result = await fetchProviderModels(providerType, {
-    apiKey: options.apiKey || apiKeys[providerType] || '',
+    apiKey: String(options.apiKey || '').trim() || storedKey || getProviderEnvApiKey(providerType),
+    baseUrl:
+      options.baseUrl !== undefined
+        ? options.baseUrl
+        : typeof baseUrls[providerType] === 'string'
+          ? baseUrls[providerType]
+          : '',
     groupId: apiKeys.minimax_group_id || '',
     endpointId,
     timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,

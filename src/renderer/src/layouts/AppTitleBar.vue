@@ -269,7 +269,7 @@ const menus = computed(() => {
         ]
       : []),
     { label: '隐藏窗口', action: 'hide-window', shortcut: isMac ? '⌘H' : '' },
-    { label: '退出', action: 'quit', shortcut: isMac ? '⌘Q' : 'Alt+F4' }
+    { label: '关闭窗口', action: 'close-window', shortcut: isMac ? '⌘W' : 'Alt+F4' }
   ]
 
   const editItems = [
@@ -280,6 +280,17 @@ const menus = computed(() => {
     { label: '复制', action: 'edit-copy', shortcut: formatAccelerator('CmdOrCtrl+C') },
     { label: '粘贴', action: 'edit-paste', shortcut: formatAccelerator('CmdOrCtrl+V') },
     { label: '全选', action: 'select-all', shortcut: formatAccelerator('CmdOrCtrl+A') }
+  ]
+
+  const viewItems = [
+    { label: '重新载入', action: 'reload', shortcut: formatAccelerator('CmdOrCtrl+R') },
+    { label: '强制重新载入', action: 'force-reload', shortcut: formatAccelerator('Shift+CmdOrCtrl+R') },
+    { type: 'separator' },
+    { label: '实际大小', action: 'reset-zoom', shortcut: formatAccelerator('CmdOrCtrl+0') },
+    { label: '放大', action: 'zoom-in', shortcut: formatAccelerator('CmdOrCtrl+=') },
+    { label: '缩小', action: 'zoom-out', shortcut: formatAccelerator('CmdOrCtrl+-') },
+    { type: 'separator' },
+    { label: '切换全屏', action: 'toggle-fullscreen', shortcut: isMac ? '⌃⌘F' : 'F11' }
   ]
 
   const helpItems = [
@@ -300,6 +311,7 @@ const menus = computed(() => {
   return [
     { key: 'file', label: '文件', items: fileItems },
     { key: 'edit', label: '编辑', items: editItems },
+    { key: 'view', label: '视图', items: viewItems },
     { key: 'help', label: '帮助', items: helpItems }
   ]
 })
@@ -354,7 +366,6 @@ async function selectItem(item) {
   padding-left: calc(env(titlebar-area-x, 0px) + 12px);
   padding-right: max(12px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px));
   background: var(--shell-titlebar-bg);
-  border-bottom: 1px solid var(--shell-border);
   color: var(--shell-text);
   -webkit-app-region: drag;
   user-select: none;
