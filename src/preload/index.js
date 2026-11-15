@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC_METHODS, IPC_LISTENERS } from '../shared/ipc'
 
 async function invoke(channel, args) {
@@ -25,6 +25,14 @@ for (const { name, channel } of IPC_LISTENERS) {
     const listener = (_event, payload) => callback(payload)
     ipcRenderer.on(channel, listener)
     return () => ipcRenderer.removeListener(channel, listener)
+  }
+}
+
+api.getPathForFile = (file) => {
+  try {
+    return webUtils.getPathForFile(file)
+  } catch {
+    return ''
   }
 }
 

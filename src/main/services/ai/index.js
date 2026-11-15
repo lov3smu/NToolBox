@@ -22,42 +22,54 @@ export const PROVIDER_INFO = {
     description: '阿里云百炼通义千问',
     requiresGroupId: false,
     requiresEndpointId: false,
-    docsUrl: 'https://bailian.console.aliyun.com/'
+    docsUrl: 'https://bailian.console.aliyun.com/',
+    envKey: 'DASHSCOPE_API_KEY',
+    defaultBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
   },
   [PROVIDER_TYPES.MOONSHOT]: {
     name: 'Kimi',
     description: '月之暗面 Kimi 大模型',
     requiresGroupId: false,
     requiresEndpointId: false,
-    docsUrl: 'https://platform.kimi.com/'
+    docsUrl: 'https://platform.kimi.com/',
+    envKey: 'MOONSHOT_API_KEY',
+    defaultBaseUrl: 'https://api.moonshot.cn/v1'
   },
   [PROVIDER_TYPES.ZHIPU]: {
     name: '智谱AI',
     description: '智谱 GLM 大模型',
     requiresGroupId: false,
     requiresEndpointId: false,
-    docsUrl: 'https://docs.bigmodel.cn/'
+    docsUrl: 'https://docs.bigmodel.cn/',
+    envKey: 'ZHIPUAI_API_KEY',
+    defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4'
   },
   [PROVIDER_TYPES.MINIMAX]: {
     name: 'MiniMax',
     description: 'MiniMax 大模型',
     requiresGroupId: false,
     requiresEndpointId: false,
-    docsUrl: 'https://platform.minimaxi.com/'
+    docsUrl: 'https://platform.minimaxi.com/',
+    envKey: 'MINIMAX_API_KEY',
+    defaultBaseUrl: 'https://api.minimax.cn/v1'
   },
   [PROVIDER_TYPES.VOLCENGINE]: {
     name: '火山方舟',
     description: '火山引擎 Doubao 大模型',
     requiresGroupId: false,
     requiresEndpointId: false,
-    docsUrl: 'https://console.volcengine.com/ark'
+    docsUrl: 'https://console.volcengine.com/ark',
+    envKey: 'ARK_API_KEY',
+    defaultBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3'
   },
   [PROVIDER_TYPES.DEEPSEEK]: {
     name: 'DeepSeek',
     description: 'DeepSeek 大模型',
     requiresGroupId: false,
     requiresEndpointId: false,
-    docsUrl: 'https://platform.deepseek.com/api_keys'
+    docsUrl: 'https://platform.deepseek.com/api_keys',
+    envKey: 'DEEPSEEK_API_KEY',
+    defaultBaseUrl: 'https://api.deepseek.com/v1'
   }
 }
 
@@ -103,6 +115,8 @@ export function createProvider(type, config = {}) {
       return null
   }
 
+  if (!provider) return null
+  if (config.baseUrl) provider.setBaseUrl(config.baseUrl)
   return applyModelOverrides(provider, config)
 }
 
@@ -111,6 +125,7 @@ export function getProvider(type, config = {}) {
     currentProvider.apiKey = config.apiKey
     if (config.groupId !== undefined) currentProvider.groupId = config.groupId
     if (config.endpointId !== undefined) currentProvider.endpointId = config.endpointId
+    currentProvider.setBaseUrl(config.baseUrl)
     applyModelOverrides(currentProvider, config)
     return currentProvider
   }
@@ -119,6 +134,30 @@ export function getProvider(type, config = {}) {
   currentProviderType = type
 
   return currentProvider
+}
+
+export function getProviderEnvApiKey(type) {
+  const envKey = PROVIDER_INFO[type]?.envKey
+  if (!envKey) return ''
+  return String(process.env[envKey] || '').trim()
+}
+
+export function resolveProviderRuntimeConfig(type, config = {}) {
+  const apiKeys = config.ai_api_keys || {}
+  const baseUrls = config.ai_base_urls || {}
+  const endpointId = type === PROVIDER_TYPES.VOLCENGINE ? apiKeys.volcengine_endpoint_id || '' : ''
+  const storedKey = typeof apiKeys[type] === 'string' ? apiKeys[type].trim() : ''
+  const runtime = {
+    apiKey: storedKey || getProviderEnvApiKey(type),
+    baseUrl: typeof baseUrls[type] === 'string' ? baseUrls[type].trim() : '',
+    timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,
+    connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000,
+    models: resolveProviderModels(type, config.ai_models),
+    defaultModel: resolveProviderDefaultModel(type, config.ai_models, endpointId)
+  }
+  if (type === PROVIDER_TYPES.MINIMAX) runtime.groupId = apiKeys.minimax_group_id || ''
+  if (type === PROVIDER_TYPES.VOLCENGINE) runtime.endpointId = endpointId
+  return runtime
 }
 
 export function getDefaultProviderModels(type) {
@@ -134,7 +173,20 @@ function normalizeModelOptions(models) {
       const id = typeof model.id === 'string' ? model.id.trim() : ''
       if (!id) return null
       const name = typeof model.name === 'string' && model.name.trim() ? model.name.trim() : id
-      return { id, name }
+      const normalized = { id, name }
+      const contextWindow = Number(model.contextWindow)
+      if (Number.isFinite(contextWindow) && contextWindow > 0) {
+        normalized.contextWindow = Math.floor(contextWindow)
+      }
+      const maxOutput = Number(model.maxOutput)
+      if (Number.isFinite(maxOutput) && maxOutput > 0) {
+        normalized.maxOutput = Math.floor(maxOutput)
+      }
+      if (Array.isArray(model.inputTypes)) {
+        const inputTypes = [...new Set(model.inputTypes.filter((type) => type === 'text' || type === 'image'))]
+        if (inputTypes.length > 0) normalized.inputTypes = inputTypes
+      }
+      return normalized
     })
     .filter(Boolean)
 }
@@ -165,8 +217,13 @@ export function getCurrentProvider() {
 }
 
 export function getAvailableProviders(config = null) {
+  const apiKeys = config?.ai_api_keys || {}
+  const baseUrls = config?.ai_base_urls || {}
   return Object.entries(PROVIDER_INFO).map(([key, info]) => {
     const models = config ? resolveProviderModels(key, config.ai_models) : getDefaultProviderModels(key)
+    const envKey = info.envKey || ''
+    const hasEnvKey = Boolean(envKey && String(process.env[envKey] || '').trim())
+    const storedKey = typeof apiKeys[key] === 'string' ? apiKeys[key].trim() : ''
     return {
       type: key,
       name: info.name,
@@ -174,13 +231,17 @@ export function getAvailableProviders(config = null) {
       requiresGroupId: info.requiresGroupId,
       requiresEndpointId: info.requiresEndpointId,
       docsUrl: info.docsUrl,
+      envKey,
+      hasEnvKey,
+      baseUrl: typeof baseUrls[key] === 'string' ? baseUrls[key].trim() : '',
+      defaultBaseUrl: info.defaultBaseUrl || '',
       models: models.map((model) => ({
         ...model,
         thinking: supportsThinking(key, model.id),
-        contextWindow: getContextWindow(key)
+        contextWindow: model.contextWindow || getContextWindow(key)
       })),
       defaultModel: config ? resolveProviderDefaultModel(key, config.ai_models) : models[0]?.id || '',
-      hasApiKey: config ? Boolean((config.ai_api_keys || {})[key]?.trim?.()) : false
+      hasApiKey: Boolean(storedKey || hasEnvKey)
     }
   })
 }

@@ -149,10 +149,27 @@ function createMainWindow() {
     const minSplashTime = 1500
     const delay = Math.max(0, minSplashTime - elapsed)
 
-    setTimeout(() => {
+    setTimeout(async () => {
       closeSplashWindow()
-      mainWindow.maximize()
       mainWindow.show()
+
+      if (process.platform === 'linux') {
+        // Wayland 下若在首帧呈现前 maximize，窗口会永久无法 unmaximize（compositor 忽略后续还原），
+        // 因此先 show 并等待首帧绘制完成，再最大化
+        await Promise.race([
+          mainWindow.webContents
+            .executeJavaScript(
+              'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))',
+              true
+            )
+            .catch(() => {}),
+          new Promise((resolve) => setTimeout(resolve, 800))
+        ])
+        await new Promise((resolve) => setTimeout(resolve, 60))
+      }
+
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      mainWindow.maximize()
       log.info('主窗口已显示')
     }, delay)
   })

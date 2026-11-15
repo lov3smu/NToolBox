@@ -5,17 +5,16 @@ class MinimaxProvider extends BaseProvider {
     super({
       name: 'MiniMax',
       apiKey,
-      hostname: 'api.minimaxi.com',
+      hostname: 'api.minimax.cn',
       path: '/v1/chat/completions',
       modelsPath: '/v1/models',
-      validateModel: 'MiniMax-M2.7-highspeed',
+      validateModel: 'MiniMax-M3',
       models: [
-        { id: 'MiniMax-M3.1-Flash', name: 'MiniMax-M3.1-Flash' },
-        { id: 'MiniMax-M3', name: 'MiniMax-M3' },
-        { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7' },
-        { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax-M2.7-highspeed' }
+        { id: 'MiniMax-M3.1-Flash', name: 'MiniMax-M3.1-Flash', contextWindow: 1000000 },
+        { id: 'MiniMax-M3', name: 'MiniMax-M3', contextWindow: 1000000 }
       ],
       defaultModel: 'MiniMax-M3',
+      thinkingStyle: 'minimax',
       timeout,
       connectionTimeout
     })

@@ -12,6 +12,15 @@ export function normalizeShortcuts(raw, defaults) {
   return { ...defaults, ...result }
 }
 
+function isHttpUrl(value) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
 export function validateConfig(cfg) {
   if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) return '配置不是有效对象'
   if (typeof cfg.base_path !== 'string') return 'base_path 必须是字符串'
@@ -22,6 +31,15 @@ export function validateConfig(cfg) {
   if (typeof cfg.auto_start !== 'boolean') return 'auto_start 必须是布尔值'
   if (cfg.ai_provider !== undefined && typeof cfg.ai_provider !== 'string') return 'ai_provider 必须是字符串'
   if (cfg.ai_api_keys !== undefined && typeof cfg.ai_api_keys !== 'object') return 'ai_api_keys 必须是对象'
+  if (cfg.ai_base_urls !== undefined) {
+    if (!cfg.ai_base_urls || typeof cfg.ai_base_urls !== 'object' || Array.isArray(cfg.ai_base_urls)) {
+      return 'ai_base_urls 必须是对象'
+    }
+    for (const [type, value] of Object.entries(cfg.ai_base_urls)) {
+      if (typeof value !== 'string') return `ai_base_urls.${type} 必须是字符串`
+      if (value.trim() && !isHttpUrl(value.trim())) return `ai_base_urls.${type} 必须是有效的 http(s) 地址`
+    }
+  }
   if (cfg.ai_models !== undefined) {
     if (!cfg.ai_models || typeof cfg.ai_models !== 'object' || Array.isArray(cfg.ai_models)) {
       return 'ai_models 必须是对象'
@@ -38,6 +56,26 @@ export function validateConfig(cfg) {
           if (typeof model.id !== 'string' || !model.id.trim()) return `ai_models.${type}.models.id 必须是非空字符串`
           if (model.name !== undefined && typeof model.name !== 'string') {
             return `ai_models.${type}.models.name 必须是字符串`
+          }
+          if (model.contextWindow !== undefined) {
+            if (!Number.isFinite(model.contextWindow) || model.contextWindow <= 0) {
+              return `ai_models.${type}.models.contextWindow 必须是正数`
+            }
+          }
+          if (model.maxOutput !== undefined) {
+            if (!Number.isFinite(model.maxOutput) || model.maxOutput <= 0) {
+              return `ai_models.${type}.models.maxOutput 必须是正数`
+            }
+          }
+          if (model.inputTypes !== undefined) {
+            if (!Array.isArray(model.inputTypes)) {
+              return `ai_models.${type}.models.inputTypes 必须是数组`
+            }
+            for (const inputType of model.inputTypes) {
+              if (inputType !== 'text' && inputType !== 'image') {
+                return `ai_models.${type}.models.inputTypes 值不合法`
+              }
+            }
           }
         }
       }

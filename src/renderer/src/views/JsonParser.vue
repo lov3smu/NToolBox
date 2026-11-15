@@ -40,8 +40,8 @@
       </button>
     </template>
 
-    <div class="page-body">
-      <div class="panel editor-panel">
+    <div ref="pageBodyRef" class="page-body">
+      <div class="panel editor-panel" :style="{ height: `${editorHeight}px` }">
         <div class="panel-header">
           <span class="panel-title">JSON</span>
           <div class="status-area">
@@ -68,6 +68,14 @@
           />
         </div>
       </div>
+
+      <SplitHandle
+        orientation="horizontal"
+        :resizing="splitResizing"
+        label="拖动调整 JSON 编辑区高度"
+        @pointerdown="startSplitResize"
+        @keydown="onSplitKeydown"
+      />
 
       <div class="panel jsonpath-panel">
         <div class="panel-header">
@@ -173,14 +181,30 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useToast } from '@/composables'
+import { usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
+import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
 const jsonInput = ref('')
+const pageBodyRef = ref(null)
+const {
+  size: editorHeight,
+  resizing: splitResizing,
+  startResize: startSplitResize,
+  onKeydown: onSplitKeydown
+} = usePaneResize({
+  key: 'jsonParserEditorHeight',
+  initial: Math.round(Math.min(460, Math.max(300, window.innerHeight * 0.48))),
+  min: 220,
+  max: () => Math.max(360, Math.min(900, window.innerHeight - 180)),
+  unit: 'px',
+  direction: 'vertical',
+  container: () => pageBodyRef.value
+})
 const validationStatus = ref('')
 const validationMessage = ref('等待输入')
 const jsonPathInput = ref('')
@@ -1167,7 +1191,7 @@ onUnmounted(() => {
 }
 
 .editor-panel {
-  height: clamp(300px, 48vh, 460px);
+  min-height: 220px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;

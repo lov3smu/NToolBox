@@ -1,14 +1,16 @@
 <template>
   <PageLayout tool-path="/chat">
     <div class="chat-layout">
-      <aside class="sidebar">
+      <aside class="sidebar" :style="{ width: `${chatSidebarWidth}px` }">
         <div class="sidebar-header">
           <button class="btn btn-primary new-chat-btn" @click="createNewChat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            新建会话
+            <span class="new-chat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </span>
+            新会话
           </button>
         </div>
         <div class="session-list">
@@ -54,6 +56,13 @@
           </div>
         </div>
       </aside>
+      <SplitHandle
+        orientation="vertical"
+        :resizing="chatSidebarResizing"
+        label="拖动调整会话列表宽度"
+        @pointerdown="startChatSidebarResize"
+        @keydown="onChatSidebarKeydown"
+      />
       <main class="chat-main">
         <div v-if="showKeyWarning" class="api-key-banner">
           <span>{{ currentProvider?.name || '当前平台' }} 尚未配置 API Key，AI 助手暂不可用</span>
@@ -61,22 +70,6 @@
         </div>
         <div class="chat-header">
           <h2>{{ currentSession?.title || '新会话' }}</h2>
-          <div class="model-selector">
-            <label>平台：</label>
-            <select v-model="selectedProvider" class="model-select provider-select" @change="onProviderChange">
-              <option v-for="provider in providers" :key="provider.type" :value="provider.type">
-                {{ provider.name }}
-              </option>
-            </select>
-          </div>
-          <div class="model-selector">
-            <label>模型：</label>
-            <select v-model="selectedModel" class="model-select">
-              <option v-for="model in models" :key="model.id" :value="model.id">
-                {{ model.name }}
-              </option>
-            </select>
-          </div>
         </div>
         <div class="messages-wrap">
           <div ref="messagesContainer" class="messages-container" @scroll="handleMessagesScroll">
@@ -459,7 +452,13 @@
                     </svg>
                   </button>
                   <div v-if="plusMenuOpen" class="plus-menu">
-                    <button @click="chooseImages">添加图片</button>
+                    <button
+                      :disabled="!modelSupportsImage"
+                      :title="modelSupportsImage ? '添加图片' : '当前模型未启用图片输入'"
+                      @click="chooseImages"
+                    >
+                      添加图片
+                    </button>
                     <button @click="chooseFiles">添加文件</button>
                   </div>
                 </div>
@@ -493,31 +492,169 @@
                 </label>
               </div>
               <div class="toolbar-right">
-                <label
-                  class="composer-select"
-                  :class="{ disabled: !modelSupportsThinking }"
-                  :title="modelSupportsThinking ? '思考模式' : '当前模型不支持思考开关'"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" />
-                  </svg>
-                  <select v-model="thinkingMode" :disabled="!modelSupportsThinking">
-                    <option value="auto">Auto</option>
-                    <option value="on">思考</option>
-                    <option value="off">快速</option>
-                  </select>
-                  <svg
-                    class="chevron"
-                    viewBox="0 0 24 24"
-                    width="11"
-                    height="11"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
+                <div class="model-picker-wrap">
+                  <button
+                    v-if="selectableProviders.length > 0"
+                    type="button"
+                    class="model-chip"
+                    :class="{ open: modelMenuOpen }"
+                    title="选择模型与推理等级"
+                    @click.stop="toggleModelMenu"
                   >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </label>
+                    <span class="model-chip-name">{{ selectedModelInfo?.name || selectedModel || '选择模型' }}</span>
+                    <span v-if="modelSupportsThinking" class="model-chip-level">{{ reasoningLevelLabel }}</span>
+                    <svg
+                      class="chevron"
+                      :class="{ open: modelMenuOpen }"
+                      viewBox="0 0 24 24"
+                      width="11"
+                      height="11"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <span v-else class="model-chip disabled" title="请先在设置 > 模型中配置 API Key 与模型">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="6" y="6" width="12" height="12" rx="2" />
+                      <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
+                    </svg>
+                    未配置模型
+                  </span>
+                  <div v-if="modelMenuOpen" class="model-menu" @click.stop>
+                    <template v-if="modelMenuView === 'root'">
+                      <button type="button" class="model-menu-row" @click="modelMenuView = 'models'">
+                        <span class="model-menu-key">模型</span>
+                        <span class="model-menu-value">
+                          <span class="model-menu-value-text">{{ selectedModelInfo?.name || '未选择' }}</span>
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="12"
+                            height="12"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </span>
+                      </button>
+                      <button
+                        v-if="modelSupportsThinking"
+                        type="button"
+                        class="model-menu-row"
+                        @click="modelMenuView = 'levels'"
+                      >
+                        <span class="model-menu-key">推理等级</span>
+                        <span class="model-menu-value">
+                          <span class="model-menu-value-text">{{ reasoningLevelLabel }}</span>
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="12"
+                            height="12"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </span>
+                      </button>
+                    </template>
+                    <template v-else-if="modelMenuView === 'models'">
+                      <div class="model-menu-head">
+                        <button type="button" class="model-menu-back" title="返回" @click="modelMenuView = 'root'">
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <polyline points="15 18 9 12 15 6" />
+                          </svg>
+                        </button>
+                        <span>选择模型</span>
+                      </div>
+                      <div class="model-menu-list">
+                        <div v-for="provider in selectableProviders" :key="provider.type" class="model-menu-group">
+                          <div class="model-menu-group-title">{{ provider.name }}</div>
+                          <button
+                            v-for="model in provider.models || []"
+                            :key="`${provider.type}::${model.id}`"
+                            type="button"
+                            class="model-menu-option"
+                            :class="{
+                              active: provider.type === selectedProvider && model.id === selectedModel
+                            }"
+                            @click="chooseModel(provider.type, model.id)"
+                          >
+                            <span class="model-menu-option-name">{{ model.name }}</span>
+                            <svg
+                              v-if="provider.type === selectedProvider && model.id === selectedModel"
+                              class="model-menu-check"
+                              viewBox="0 0 24 24"
+                              width="14"
+                              height="14"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.4"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="model-menu-head">
+                        <button type="button" class="model-menu-back" title="返回" @click="modelMenuView = 'root'">
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <polyline points="15 18 9 12 15 6" />
+                          </svg>
+                        </button>
+                        <span>推理等级</span>
+                      </div>
+                      <div class="model-menu-list">
+                        <button
+                          v-for="level in reasoningLevels"
+                          :key="level.value"
+                          type="button"
+                          class="model-menu-option"
+                          :class="{ active: thinkingMode === level.value }"
+                          @click="chooseReasoningLevel(level.value)"
+                        >
+                          <span class="model-menu-option-name">
+                            {{ level.label }}
+                            <span class="model-menu-option-hint">{{ level.hint }}</span>
+                          </span>
+                          <svg
+                            v-if="thinkingMode === level.value"
+                            class="model-menu-check"
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.4"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
                 <button
                   class="composer-icon-btn"
                   :class="{ recording: isRecording }"
@@ -566,10 +703,11 @@ import {
   onChatStreamChunk,
   onChatStreamEnd
 } from '@/api'
-import { useConfig, useToast } from '@/composables'
+import { useConfig, usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import { renderMarkdown, splitThinkingTags, trimPartialThinkingTag } from '@/utils/markdown'
 import Toast from '@/components/Toast.vue'
+import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 
 const THINKING_PREFS_KEY = 'chat_thinking_prefs'
@@ -600,6 +738,17 @@ const questionTipTop = ref(0)
 const inputRef = ref(null)
 const imageInput = ref(null)
 const fileInput = ref(null)
+const {
+  size: chatSidebarWidth,
+  resizing: chatSidebarResizing,
+  startResize: startChatSidebarResize,
+  onKeydown: onChatSidebarKeydown
+} = usePaneResize({
+  key: 'chatSidebarWidth',
+  initial: 240,
+  min: 180,
+  max: () => Math.min(460, Math.max(240, window.innerWidth - 520))
+})
 const providers = ref([])
 const selectedProvider = ref('')
 const selectedModel = ref('')
@@ -611,8 +760,15 @@ const expandedSteps = ref({})
 const collapsedChains = ref({})
 const attachments = ref([])
 const plusMenuOpen = ref(false)
+const modelMenuOpen = ref(false)
+const modelMenuView = ref('root')
 const approvalMode = ref('auto')
 const thinkingMode = ref('auto')
+const reasoningLevels = [
+  { value: 'auto', label: '自动', hint: '由模型决定' },
+  { value: 'on', label: '高', hint: '深度思考' },
+  { value: 'off', label: '低', hint: '快速响应' }
+]
 const thinkingPrefs = ref(loadThinkingPrefs())
 const isRecording = ref(false)
 let recognition = null
@@ -638,7 +794,17 @@ const questions = computed(() =>
 const currentProvider = computed(() => providers.value.find((p) => p.type === selectedProvider.value))
 const hasCurrentApiKey = computed(() => Boolean(currentProvider.value?.hasApiKey))
 const showKeyWarning = computed(() => providers.value.length > 0 && !hasCurrentApiKey.value)
+const selectableProviders = computed(() =>
+  providers.value.filter((provider) => provider.hasApiKey && (provider.models || []).length > 0)
+)
 const selectedModelInfo = computed(() => models.value.find((model) => model.id === selectedModel.value))
+const reasoningLevelLabel = computed(
+  () => reasoningLevels.find((level) => level.value === thinkingMode.value)?.label || '自动'
+)
+const modelSupportsImage = computed(() => {
+  const inputTypes = selectedModelInfo.value?.inputTypes
+  return !Array.isArray(inputTypes) || inputTypes.length === 0 || inputTypes.includes('image')
+})
 const modelSupportsThinking = computed(() => Boolean(selectedModelInfo.value?.thinking))
 const canSend = computed(
   () => !loading.value && hasCurrentApiKey.value && (Boolean(inputText.value.trim()) || attachments.value.length > 0)
@@ -693,27 +859,46 @@ async function loadProviders() {
     return
   }
 
-  const session = currentSession.value
-  const explicitType = selectedProvider.value
-  const defaultType = config.value?.ai_provider || providers.value[0].type
-  const defaultProvider = providers.value.find((p) => p.type === defaultType)
-  const keyedProvider = providers.value.find((p) => p.hasApiKey)
-  const preferredType =
-    explicitType || session?.provider || (defaultProvider?.hasApiKey ? defaultType : keyedProvider?.type || defaultType)
-  const provider = providers.value.find((p) => p.type === preferredType) || providers.value[0]
+  const usable = providers.value.filter((p) => p.hasApiKey && (p.models || []).length > 0)
+  const defaultType = config.value?.ai_provider || ''
+  const requestedType = selectedProvider.value || currentSession.value?.provider || ''
+  const pool = usable.length > 0 ? usable : providers.value
+  const provider = pool.find((p) => p.type === requestedType) || pool.find((p) => p.type === defaultType) || pool[0]
   selectedProvider.value = provider.type
 
   let preferredModel = ''
-  if (explicitType) {
+  if (requestedType === provider.type) {
     preferredModel = selectedModel.value
-  } else if (session?.model) {
-    preferredModel = session.model
+  } else if (currentSession.value?.model) {
+    preferredModel = currentSession.value.model
   }
   applyProviderModels(provider.type, preferredModel)
 }
 
-function onProviderChange() {
-  applyProviderModels(selectedProvider.value)
+function toggleModelMenu() {
+  if (selectableProviders.value.length === 0) return
+  modelMenuOpen.value = !modelMenuOpen.value
+  if (modelMenuOpen.value) modelMenuView.value = 'root'
+}
+
+function closeModelMenu() {
+  modelMenuOpen.value = false
+}
+
+function chooseModel(type, modelId) {
+  if (!type || !modelId) return
+  if (type !== selectedProvider.value) {
+    selectedProvider.value = type
+    applyProviderModels(type, modelId)
+  } else if (models.value.some((model) => model.id === modelId)) {
+    selectedModel.value = modelId
+  }
+  closeModelMenu()
+}
+
+function chooseReasoningLevel(value) {
+  thinkingMode.value = value
+  closeModelMenu()
 }
 
 function loadViewState() {
@@ -1283,7 +1468,8 @@ async function sendMessage(e) {
     const history = session.messages.slice(0, -1)
     const startIndex = Math.min(Number(session.context?.upToIndex) || 0, history.length)
     const chatMessages = history.slice(startIndex).map(toApiMessage)
-    const thinking = thinkingMode.value === 'auto' ? undefined : thinkingMode.value === 'on'
+    const thinking =
+      modelSupportsThinking.value && thinkingMode.value !== 'auto' ? thinkingMode.value === 'on' : undefined
     await chatStream(chatMessages, {
       provider: selectedProvider.value,
       model: selectedModel.value,
@@ -1520,6 +1706,10 @@ async function addFiles(files, kindHint) {
 
     const isImage = kindHint === 'image' || file.type.startsWith('image/')
     if (isImage) {
+      if (!modelSupportsImage.value) {
+        showError(`${selectedModelInfo.value?.name || '当前模型'} 未启用图片输入，可在设置 > 模型中开启`)
+        continue
+      }
       if (file.size > MAX_IMAGE_BYTES) {
         showError(`${file.name} 超过 10MB，已跳过`)
         continue
@@ -1595,6 +1785,11 @@ function closePlusMenu() {
   plusMenuOpen.value = false
 }
 
+function handleOutsideClick() {
+  closePlusMenu()
+  closeModelMenu()
+}
+
 onMounted(async () => {
   loadViewState()
   loadSessions()
@@ -1602,7 +1797,7 @@ onMounted(async () => {
   applyDraft(currentSessionId.value)
   suppressAutoScroll = true
   loadProviders()
-  document.addEventListener('click', closePlusMenu)
+  document.addEventListener('click', handleOutsideClick)
   await nextTick()
   restoreScroll()
   suppressAutoScroll = false
@@ -1638,7 +1833,7 @@ onUnmounted(() => {
   if (currentRequestId) saveSessions()
   if (removeChunkListener) removeChunkListener()
   if (removeEndListener) removeEndListener()
-  document.removeEventListener('click', closePlusMenu)
+  document.removeEventListener('click', handleOutsideClick)
   recognition?.stop()
   recognition = null
 })
@@ -1697,6 +1892,8 @@ watch(
 
 .sidebar {
   width: 240px;
+  min-width: 180px;
+  max-width: 55vw;
   background: var(--surface-muted);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -1712,6 +1909,17 @@ watch(
 .new-chat-btn {
   width: 100%;
   justify-content: center;
+}
+
+.new-chat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  flex-shrink: 0;
 }
 
 .session-list {
@@ -1853,44 +2061,6 @@ watch(
   flex: 1;
   min-width: 0;
   margin: 0;
-}
-
-.model-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.model-selector label {
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-.model-select {
-  height: var(--control-height-sm);
-  padding: 0 28px 0 10px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  font-family: inherit;
-  background-color: var(--surface);
-  color: var(--text-primary);
-  cursor: pointer;
-  width: 190px;
-  flex-shrink: 0;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-}
-
-.model-select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 .provider-select {
@@ -3215,6 +3385,15 @@ watch(
   background: var(--surface-hover);
 }
 
+.plus-menu button:disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.plus-menu button:disabled:hover {
+  background: transparent;
+}
+
 .composer-select {
   display: inline-flex;
   align-items: center;
@@ -3230,6 +3409,192 @@ watch(
   background: var(--surface-hover);
 }
 
+.model-picker-wrap {
+  position: relative;
+}
+
+.model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  height: 30px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.model-chip:hover,
+.model-chip.open {
+  background: var(--surface-hover);
+}
+
+.model-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.model-chip-level {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.model-chip .chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform 0.15s;
+}
+
+.model-chip .chevron.open {
+  transform: rotate(180deg);
+}
+
+.model-chip.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.model-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  width: 272px;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+}
+
+.model-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.model-menu-row:hover {
+  background: var(--surface-hover);
+}
+
+.model-menu-key {
+  flex-shrink: 0;
+}
+
+.model-menu-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-secondary);
+}
+
+.model-menu-value-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 6px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.model-menu-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.model-menu-back:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.model-menu-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.model-menu-group-title {
+  padding: 6px 10px 2px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.model-menu-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-menu-option:hover {
+  background: var(--surface-hover);
+}
+
+.model-menu-option.active {
+  color: var(--accent-color);
+}
+
+.model-menu-option-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-menu-option-hint {
+  margin-left: 6px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.model-menu-check {
+  flex-shrink: 0;
+  color: var(--accent-color);
+}
+
 .composer-select select {
   padding-right: 2px;
   border: none;
@@ -3243,15 +3608,6 @@ watch(
 
 .composer-select .chevron {
   opacity: 0.6;
-}
-
-.composer-select.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.composer-select.disabled select {
-  cursor: not-allowed;
 }
 
 .send-circle {
@@ -3311,17 +3667,7 @@ watch(
   }
 }
 
-@media (max-width: 960px) {
-  .sidebar {
-    width: 200px;
-  }
-}
-
 @media (max-width: 760px) {
-  .sidebar {
-    width: 168px;
-  }
-
   .chat-header {
     padding: 6px 12px;
   }

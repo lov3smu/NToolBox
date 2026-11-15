@@ -1,3 +1,4 @@
+import http from 'http'
 import https from 'https'
 import { TextDecoder } from 'util'
 import { log } from '../../../utils'
@@ -8,14 +9,60 @@ class BaseProvider {
     this.name = config.name
     this.models = config.models || []
     this.defaultModel = config.defaultModel
-    this.hostname = config.hostname
-    this.path = config.path
-    this.modelsPath = config.modelsPath || ''
+    this.defaultHostname = config.hostname
+    this.defaultPath = config.path
+    this.defaultModelsPath = config.modelsPath || ''
+    this.defaultProtocol = 'https:'
+    this.defaultPort = 443
     this.validateModel = config.validateModel || this.defaultModel
     this.thinkingStyle = config.thinkingStyle || ''
     this.streamUsage = config.streamUsage === true
+    this.temperatureFixed = config.temperatureFixed === true
     this.timeout = config.timeout || 60000
     this.connectionTimeout = config.connectionTimeout || 10000
+    this.setBaseUrl(config.baseUrl || '')
+  }
+
+  resetBaseUrl() {
+    this.baseUrl = ''
+    this.protocol = this.defaultProtocol
+    this.hostname = this.defaultHostname
+    this.port = this.defaultPort
+    this.path = this.defaultPath
+    this.modelsPath = this.defaultModelsPath
+    this.transport = https
+  }
+
+  setBaseUrl(baseUrl) {
+    const value = typeof baseUrl === 'string' ? baseUrl.trim() : ''
+    if (!value) {
+      this.resetBaseUrl()
+      return true
+    }
+
+    let parsed
+    try {
+      parsed = new URL(value)
+    } catch {
+      log.warn(`${this.name} API 地址格式无效: ${value}`)
+      this.resetBaseUrl()
+      return false
+    }
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      log.warn(`${this.name} API 地址仅支持 http/https: ${value}`)
+      this.resetBaseUrl()
+      return false
+    }
+
+    const basePath = parsed.pathname.replace(/\/+$/, '')
+    this.baseUrl = value
+    this.protocol = parsed.protocol
+    this.hostname = parsed.hostname
+    this.port = parsed.port ? Number(parsed.port) : parsed.protocol === 'https:' ? 443 : 80
+    this.path = `${basePath}/chat/completions`
+    this.modelsPath = `${basePath}/models`
+    this.transport = parsed.protocol === 'https:' ? https : http
+    return true
   }
 
   getModels() {
@@ -24,6 +71,10 @@ class BaseProvider {
 
   getDefaultModel() {
     return this.defaultModel
+  }
+
+  getModelInfo(modelId) {
+    return this.models.find((model) => model && model.id === modelId) || null
   }
 
   validateConfig() {
@@ -47,19 +98,63 @@ class BaseProvider {
       body.tools = tools
       body.tool_choice = 'auto'
     }
-    if (options.max_tokens) body.max_tokens = options.max_tokens
-    if (options.temperature !== undefined) body.temperature = options.temperature
+    const modelMaxOutput = this.getModelInfo(model)?.maxOutput
+    let maxTokens = options.max_tokens
+    if (!maxTokens && modelMaxOutput) maxTokens = modelMaxOutput
+    if (maxTokens && modelMaxOutput && maxTokens > modelMaxOutput) maxTokens = modelMaxOutput
+    if (maxTokens) body.max_tokens = maxTokens
+    if (options.temperature !== undefined && !this.temperatureFixed) {
+      body.temperature = options.temperature
+    }
     this.applyThinkingOptions(body, options)
     return body
   }
 
   applyThinkingOptions(body, options) {
-    if (options.thinking === undefined || options.thinking === null) return
-    if (this.thinkingStyle === 'enable_thinking') {
-      body.enable_thinking = Boolean(options.thinking)
-    } else if (this.thinkingStyle === 'thinking') {
-      body.thinking = { type: options.thinking ? 'enabled' : 'disabled' }
+    const thinking = options.thinking
+    if (this.thinkingStyle === 'minimax') {
+      this.applyMinimaxThinking(body, thinking)
+      return
     }
+    if (thinking === undefined || thinking === null) return
+    if (this.thinkingStyle === 'enable_thinking') {
+      body.enable_thinking = Boolean(thinking)
+    } else if (this.thinkingStyle === 'thinking') {
+      body.thinking = { type: thinking ? 'enabled' : 'disabled' }
+    } else if (this.thinkingStyle === 'zhipu') {
+      this.applyZhipuThinking(body, thinking)
+    } else if (this.thinkingStyle === 'moonshot') {
+      if (!/kimi-k3/i.test(String(body.model || ''))) return
+      body.reasoning_effort = thinking ? 'high' : 'low'
+    }
+  }
+
+  applyZhipuThinking(body, thinking) {
+    const model = String(body.model || '')
+    if (/^glm-5\.3/i.test(model)) {
+      // GLM-5.3 始终思考，仅接受 type=enabled；用 reasoning_effort 区分快慢
+      body.thinking = { type: 'enabled' }
+      body.reasoning_effort = thinking ? 'high' : 'low'
+      return
+    }
+    if (!/^glm-(5|4\.7)/i.test(model)) return
+    body.thinking = { type: thinking ? 'enabled' : 'disabled' }
+  }
+
+  applyMinimaxThinking(body, thinking) {
+    if (!/^MiniMax-M3/i.test(String(body.model || ''))) return
+    // 不返回 reasoning_split 时接口不输出 reasoning_content
+    body.reasoning_split = true
+    if (thinking === undefined || thinking === null) return
+
+    const isFlash = /^MiniMax-M3\.1-Flash/i.test(String(body.model || ''))
+    if (isFlash) {
+      // M3.1-Flash 不支持 thinking.type=disabled
+      body.thinking = { type: 'adaptive' }
+      body.reasoning_effort = thinking ? 'high' : 'low'
+      return
+    }
+    body.thinking = { type: thinking ? 'adaptive' : 'disabled' }
   }
 
   parseResponse(responseData) {
@@ -79,7 +174,7 @@ class BaseProvider {
 
     log.debug(`[${this.name}] chat 请求，消息数: ${messages.length}`)
 
-    const result = await this.makeRequest(this.hostname, 443, this.path, requestBody)
+    const result = await this.makeRequest(this.hostname, this.port, this.path, requestBody)
 
     if (!result.success) return result
 
@@ -147,10 +242,10 @@ class BaseProvider {
         req?.destroy()
       }
 
-      req = https.request(
+      req = this.transport.request(
         {
           hostname: this.hostname,
-          port: 443,
+          port: this.port,
           path: this.path,
           method: 'POST',
           headers: {
@@ -301,7 +396,7 @@ class BaseProvider {
       max_tokens: 5
     }
 
-    const result = await this.makeRequest(this.hostname, 443, this.path, requestBody)
+    const result = await this.makeRequest(this.hostname, this.port, this.path, requestBody)
     return result.success
   }
 
@@ -325,10 +420,10 @@ class BaseProvider {
 
   requestModels(apiKey = this.apiKey) {
     return new Promise((resolve) => {
-      const req = https.request(
+      const req = this.transport.request(
         {
           hostname: this.hostname,
-          port: 443,
+          port: this.port,
           path: this.modelsPath,
           method: 'GET',
           headers: {
@@ -387,10 +482,10 @@ class BaseProvider {
 
   async makeRequest(hostname, port, path, requestBody) {
     return new Promise((resolve) => {
-      const req = https.request(
+      const req = this.transport.request(
         {
           hostname,
-          port: port || 443,
+          port: port || this.port || 443,
           path,
           method: 'POST',
           headers: {

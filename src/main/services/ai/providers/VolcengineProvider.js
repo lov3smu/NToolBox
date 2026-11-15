@@ -10,9 +10,9 @@ class VolcengineProvider extends BaseProvider {
       modelsPath: '/api/v3/models',
       validateModel: endpointId || 'doubao-seed-evolving',
       models: [
-        { id: 'doubao-seed-evolving', name: 'doubao-seed-evolving' },
-        { id: 'doubao-seed-2.1-pro', name: 'doubao-seed-2.1-pro' },
-        { id: 'doubao-seed-2.0-pro', name: 'doubao-seed-2.0-pro' }
+        { id: 'doubao-seed-evolving', name: 'doubao-seed-evolving', contextWindow: 1048576 },
+        { id: 'doubao-seed-2.1-pro', name: 'doubao-seed-2.1-pro', contextWindow: 1048576 },
+        { id: 'doubao-seed-2.0-pro', name: 'doubao-seed-2.0-pro', contextWindow: 262144 }
       ],
       defaultModel: endpointId || 'doubao-seed-evolving',
       thinkingStyle: 'thinking',

@@ -122,7 +122,12 @@
     </template>
 
     <div class="markdown-page">
-      <div class="md-workbench" :class="`mode-${viewMode}`">
+      <div
+        ref="workbenchRef"
+        class="md-workbench"
+        :class="[`mode-${viewMode}`, `split-${splitDirection}`]"
+        :style="{ '--split-ratio': `${splitRatio}%` }"
+      >
         <section v-show="viewMode !== 'preview'" class="md-pane md-editor-pane">
           <header class="md-pane-header">
             <span class="md-pane-title">Markdown</span>
@@ -133,6 +138,15 @@
             <MarkdownEditor ref="editorRef" v-model="content" @scroll="onEditorScroll" />
           </div>
         </section>
+
+        <SplitHandle
+          v-if="viewMode === 'split'"
+          :orientation="splitDirection === 'horizontal' ? 'vertical' : 'horizontal'"
+          :resizing="splitResizing"
+          label="拖动调整编辑与预览大小"
+          @pointerdown="startSplitResize"
+          @keydown="onSplitKeydown"
+        />
 
         <section v-show="viewMode !== 'editor'" class="md-pane md-preview-pane">
           <header class="md-pane-header">
@@ -207,11 +221,12 @@ import PageLayout from '@/layouts/PageLayout.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
-import { useToast } from '@/composables'
+import { usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatDateTime } from '@/utils/format'
 import { openExternal } from '@/api'
 import { decorateMarkdownPreview, renderMarkdownPreview } from '@/utils/markdownEditor'
+import SplitHandle from '@/components/SplitHandle.vue'
 import '@/styles/markdown.css'
 
 const DRAFT_KEY = 'ntb_markdown_draft'
@@ -281,6 +296,28 @@ const viewMode = ref('split')
 const syncScroll = ref(true)
 const savedAt = ref(0)
 const content = ref('')
+
+const workbenchRef = ref(null)
+const splitMedia = window.matchMedia('(max-width: 1100px)')
+const splitDirection = ref(splitMedia.matches ? 'vertical' : 'horizontal')
+const {
+  size: splitRatio,
+  resizing: splitResizing,
+  startResize: startSplitResize,
+  onKeydown: onSplitKeydown
+} = usePaneResize({
+  key: 'markdownSplitRatio',
+  initial: 50,
+  min: 20,
+  max: 80,
+  unit: 'percent',
+  direction: () => splitDirection.value,
+  container: () => workbenchRef.value
+})
+
+function syncSplitDirection() {
+  splitDirection.value = splitMedia.matches ? 'vertical' : 'horizontal'
+}
 
 const themes = THEMES
 const fontSizes = FONT_SIZES
@@ -509,6 +546,7 @@ function clearContent() {
 }
 
 onMounted(() => {
+  splitMedia.addEventListener('change', syncSplitDirection)
   try {
     content.value = localStorage.getItem(DRAFT_KEY) || EXAMPLE
   } catch {
@@ -522,6 +560,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  splitMedia.removeEventListener('change', syncSplitDirection)
   clearTimeout(renderTimer)
   clearTimeout(saveTimer)
 })
@@ -537,20 +576,20 @@ onUnmounted(() => {
 .md-workbench {
   height: 100%;
   min-height: 0;
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
-.md-workbench.mode-split {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+.md-workbench.mode-split.split-horizontal {
+  flex-direction: row;
 }
 
-.md-workbench.mode-editor,
-.md-workbench.mode-preview {
-  grid-template-columns: minmax(0, 1fr);
+.md-workbench.mode-split.split-vertical {
+  flex-direction: column;
 }
 
 .md-pane {
+  flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -559,6 +598,16 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface);
+}
+
+.md-workbench.mode-split.split-horizontal .md-editor-pane {
+  flex: 0 0 auto;
+  width: var(--split-ratio);
+}
+
+.md-workbench.mode-split.split-vertical .md-editor-pane {
+  flex: 0 0 auto;
+  height: var(--split-ratio);
 }
 
 .md-pane-header {
@@ -702,11 +751,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1100px) {
-  .md-workbench.mode-split {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
   .md-preview-controls {
     gap: 6px;
   }

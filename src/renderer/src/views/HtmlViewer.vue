@@ -53,7 +53,7 @@
     </template>
 
     <div class="page-body">
-      <div class="editor-preview-wrapper">
+      <div ref="wrapperRef" class="editor-preview-wrapper" :style="{ '--split-ratio': `${splitRatio}%` }">
         <div class="panel editor-panel">
           <div class="panel-header">
             <span class="panel-title">HTML</span>
@@ -77,6 +77,14 @@
           </div>
         </div>
 
+        <SplitHandle
+          orientation="vertical"
+          :resizing="splitResizing"
+          label="拖动调整编辑与预览宽度"
+          @pointerdown="startSplitResize"
+          @keydown="onSplitKeydown"
+        />
+
         <div class="panel preview-panel">
           <div class="panel-header">
             <span class="panel-title">预览</span>
@@ -95,8 +103,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useToast } from '@/composables'
+import { usePaneResize, useToast } from '@/composables'
 import Toast from '@/components/Toast.vue'
+import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
@@ -114,6 +123,21 @@ const displayLineCount = ref(1)
 const editorRef = ref(null)
 const lineNumbersRef = ref(null)
 const previewFrame = ref(null)
+const wrapperRef = ref(null)
+const {
+  size: splitRatio,
+  resizing: splitResizing,
+  startResize: startSplitResize,
+  onKeydown: onSplitKeydown
+} = usePaneResize({
+  key: 'htmlViewerSplitRatio',
+  initial: 50,
+  min: 20,
+  max: 80,
+  unit: 'percent',
+  direction: 'horizontal',
+  container: () => wrapperRef.value
+})
 
 let updateTimeout = null
 
@@ -427,15 +451,22 @@ onUnmounted(() => {
 
 .editor-preview-wrapper {
   display: flex;
-  gap: 12px;
   flex: 1;
   min-height: 0;
   min-width: 0;
 }
 
-.editor-panel,
+.editor-panel {
+  flex: 0 0 auto;
+  width: var(--split-ratio, 50%);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
 .preview-panel {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-width: 0;

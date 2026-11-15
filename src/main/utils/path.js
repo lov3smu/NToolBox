@@ -47,7 +47,8 @@ export function getWindowIcon() {
 
 export function getLogDir() {
   if (app.isPackaged) {
-    return path.join(getInstallDir(), 'logs')
+    // AppImage 的安装目录是只读挂载点，安装目录下无法创建日志
+    return path.join(app.getPath('userData'), 'logs')
   } else {
     return path.join(getProjectRoot(), 'logs')
   }
