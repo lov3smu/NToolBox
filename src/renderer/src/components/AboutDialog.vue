@@ -9,7 +9,7 @@
               <span v-if="version" class="about-badge">v{{ version }}</span>
             </div>
             <button type="button" class="about-close" aria-label="关闭" @click="emit('close')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -41,7 +41,7 @@
           </div>
 
           <footer class="about-footer">
-            <button type="button" class="btn btn-default btn-sm" @click="openReleasePage">打开发布页</button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="openReleasePage">打开发布页</button>
             <span class="about-footer-spacer" />
             <button type="button" class="btn btn-primary btn-sm" @click="emit('close')">关闭</button>
           </footer>
@@ -112,7 +112,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }

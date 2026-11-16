@@ -47,11 +47,40 @@
           </div>
         </div>
         <div v-else class="history-list">
+          <div class="snippet-folder-bar">
+            <button :class="['folder-chip', { active: !activeFolder }]" @click="selectFolder('')">
+              全部 ({{ querySnippets.length }})
+            </button>
+            <button
+              v-for="folder in snippetFolders"
+              :key="folder"
+              :class="['folder-chip', { active: activeFolder === folder }]"
+              @click="selectFolder(folder)"
+            >
+              {{ folder }} ({{ folderCounts[folder] }})
+            </button>
+            <button class="btn btn-xs btn-secondary snippet-folder-create" @click="createSnippetFolder">
+              新建收藏夹
+            </button>
+          </div>
+          <div v-if="activeFolder" class="snippet-folder-hint">新保存的片段将归入「{{ activeFolder }}」</div>
           <div v-if="filteredSnippets.length === 0" class="history-empty">暂无 SQL 片段</div>
           <div v-for="item in filteredSnippets" :key="item.id" class="history-item">
-            <div class="snippet-name">{{ item.name }}</div>
+            <div class="snippet-head">
+              <div class="snippet-name">{{ item.name }}</div>
+              <select
+                class="snippet-folder-select"
+                :value="item.folder || ''"
+                title="移动到收藏夹"
+                @change="changeFolder(item, $event.target.value)"
+              >
+                <option value="">未分组</option>
+                <option v-for="folder in snippetFolders" :key="folder" :value="folder">{{ folder }}</option>
+              </select>
+            </div>
             <pre class="history-sql" @click="loadSqlIntoEditor(item.sql)">{{ item.sql }}</pre>
             <div class="history-meta">
+              <span v-if="item.folder" class="snippet-folder-tag">{{ item.folder }}</span>
               <span>{{ formatTime(item.createdAt) }}</span>
             </div>
             <div class="history-actions">
@@ -87,13 +116,16 @@ const {
   clearHistory,
   closeHistoryDialog,
   copySql,
+  createSnippetFolder,
   deleteSnippet,
   historyDialog,
   loadSqlIntoEditor,
   queryHistory,
   querySnippets,
+  snippetFolders: snippetFolderList,
   removeHistoryItem,
-  saveSnippetSql
+  saveSnippetSql,
+  setSnippetFolder
 } = databaseStore
 
 const filteredHistory = computed(() => {
@@ -113,19 +145,59 @@ const filteredHistory = computed(() => {
   )
 })
 
+const activeFolder = computed(() => historyDialog.value.folder || '')
+
+const snippetFolders = computed(() => {
+  const folders = []
+  const push = (value) => {
+    const folder = String(value || '').trim()
+    if (folder && !folders.includes(folder)) folders.push(folder)
+  }
+  for (const folder of snippetFolderList.value || []) push(folder)
+  for (const item of querySnippets.value) push(item.folder)
+  return folders
+})
+
+const folderCounts = computed(() => {
+  const counts = {}
+  for (const item of querySnippets.value) {
+    const folder = String(item.folder || '').trim()
+    if (!folder) continue
+    counts[folder] = (counts[folder] || 0) + 1
+  }
+  return counts
+})
+
 const filteredSnippets = computed(() => {
   const keyword = historyDialog.value.keyword.trim().toLowerCase()
-  if (!keyword) return querySnippets.value
-  return querySnippets.value.filter(
-    (item) =>
+  const folder = activeFolder.value
+  return querySnippets.value.filter((item) => {
+    if (folder && String(item.folder || '').trim() !== folder) return false
+    if (!keyword) return true
+    return (
       String(item.name || '')
         .toLowerCase()
         .includes(keyword) ||
       String(item.sql || '')
         .toLowerCase()
+        .includes(keyword) ||
+      String(item.folder || '')
+        .toLowerCase()
         .includes(keyword)
-  )
+    )
+  })
 })
+
+function selectFolder(folder) {
+  historyDialog.value.folder = folder
+}
+
+function changeFolder(item, folder) {
+  setSnippetFolder(item.id, folder)
+  if (activeFolder.value && activeFolder.value !== folder) {
+    historyDialog.value.folder = folder
+  }
+}
 
 function formatTime(timestamp) {
   if (!timestamp) return ''

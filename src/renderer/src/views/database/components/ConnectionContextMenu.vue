@@ -237,6 +237,25 @@
         </svg>
         新建查询
       </div>
+      <div class="menu-item" @click="handleOpenCreateTableAndHide()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="3" y1="9" x2="21" y2="9" />
+          <line x1="9" y1="21" x2="9" y2="9" />
+          <line x1="15" y1="14" x2="15" y2="20" />
+          <line x1="12" y1="17" x2="18" y2="17" />
+        </svg>
+        新建表
+      </div>
+      <div class="menu-item" @click="handleOpenSchemaDiffAndHide()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="18" rx="1" />
+          <rect x="14" y="3" width="7" height="18" rx="1" />
+          <line x1="10" y1="8" x2="14" y2="8" />
+          <line x1="10" y1="16" x2="14" y2="16" />
+        </svg>
+        结构对比
+      </div>
       <div class="menu-item" @click="handleRunSqlFileAndHide()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -271,6 +290,17 @@
       </div>
     </template>
     <template v-if="contextMenu.type === 'category'">
+      <div v-if="contextMenu.target.category === 'tables'" class="menu-item" @click="handleOpenCreateTableAndHide()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="3" y1="9" x2="21" y2="9" />
+          <line x1="9" y1="21" x2="9" y2="9" />
+          <line x1="15" y1="14" x2="15" y2="20" />
+          <line x1="12" y1="17" x2="18" y2="17" />
+        </svg>
+        新建表
+      </div>
+      <div v-if="contextMenu.target.category === 'tables'" class="menu-divider" />
       <div class="menu-item" @click="handleRefreshCategoryAndHide()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10" />
@@ -282,13 +312,21 @@
       </div>
     </template>
     <template v-if="contextMenu.type === 'table'">
-      <div class="menu-item" @click="handleOpenNewQueryAndHide()">
+      <div class="menu-item" @click="handleOpenTableAndHide()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <line x1="3" y1="9" x2="21" y2="9" />
           <line x1="9" y1="21" x2="9" y2="9" />
         </svg>
         打开表
+      </div>
+      <div class="menu-item" @click="handleOpenTableDesignerAndHide()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+          />
+        </svg>
+        设计表
       </div>
       <div class="menu-divider" />
       <div class="menu-item danger" @click="handleDeleteTableAndHide()">
@@ -298,7 +336,7 @@
         </svg>
         删除表
       </div>
-      <div class="menu-item danger" @click="handleOpenTableAndHide()">
+      <div class="menu-item danger" @click="handleEmptyTableAndHide()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -347,13 +385,13 @@
         </div>
       </div>
       <div class="menu-divider" />
-      <div class="menu-item" @click="handleEmptyTableAndHide()">
+      <div class="menu-item" @click="handleRenameTableAndHide()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
         </svg>
         重命名
       </div>
-      <div class="menu-item" @click="handleRenameTableAndHide()">
+      <div class="menu-item" @click="handleRefreshTableAndHide()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10" />
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
@@ -399,10 +437,13 @@ const {
   handleOpenDatabaseAndHide,
   handleOpenManageAndHide,
   handleOpenNewGroupAndHide,
-  handleOpenNewQueryAndHide,
+  handleOpenCreateTableAndHide,
+  handleOpenSchemaDiffAndHide,
   handleOpenTableAndHide,
+  handleOpenTableDesignerAndHide,
   handleRefreshCategoryAndHide,
   handleRefreshDatabaseAndHide,
+  handleRefreshTableAndHide,
   handleRemoveFromGroupAndHide,
   handleRenameTableAndHide,
   handleRunSqlFileAndHide,

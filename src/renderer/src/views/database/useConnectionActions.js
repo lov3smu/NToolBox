@@ -7,11 +7,12 @@ import {
   dbQueryDatabases,
   dbQueryTables,
   getConfig,
-  saveConfig
+  patchConfig
 } from '@/api'
 export function createConnectionActions(state, api) {
   const {
     connecting,
+    connectionDatabases,
     connectionInfo,
     connections,
     databaseInfo,
@@ -46,7 +47,7 @@ export function createConnectionActions(state, api) {
       newConn.name = name
 
       dbConnections.push(newConn)
-      await saveConfig({ ...config, dbConnections })
+      await patchConfig({ dbConnections })
       await api.loadConnections()
     } catch (error) {
       console.error('复制连接失败:', error)
@@ -67,6 +68,9 @@ export function createConnectionActions(state, api) {
     tableInfo.value = null
     if (conn.active) {
       loadConnectionInfo(conn.name)
+      if (!connectionDatabases.value[conn.name]) {
+        api.loadConnectionDatabases(conn.name)
+      }
     }
   }
 
@@ -106,6 +110,13 @@ export function createConnectionActions(state, api) {
     selectConnection(conn)
     if (!conn.active) {
       await connectToDatabase()
+      return
+    }
+    if (!expandedConnections.value.includes(conn.name)) {
+      expandedConnections.value.push(conn.name)
+    }
+    if (!connectionDatabases.value[conn.name]) {
+      await api.loadConnectionDatabases(conn.name)
     }
   }
 
@@ -140,6 +151,13 @@ export function createConnectionActions(state, api) {
       if (selectedConnection.value.enableWriteTimeout) {
         connConfig.writeTimeout = selectedConnection.value.writeTimeout
       }
+
+      if (selectedConnection.value.readOnly) {
+        connConfig.readOnly = true
+      }
+
+      connConfig.ssh = { ...selectedConnection.value.ssh }
+      connConfig.ssl = { ...selectedConnection.value.ssl }
 
       const result = await dbCreateConnection(selectedConnection.value.name, connConfig)
 
@@ -213,7 +231,9 @@ export function createConnectionActions(state, api) {
         host: newConnection.value.host,
         port: newConnection.value.port || 3306,
         user: newConnection.value.user || 'root',
-        password: newConnection.value.password
+        password: newConnection.value.password,
+        ssh: { ...newConnection.value.ssh },
+        ssl: { ...newConnection.value.ssl }
       }
 
       if (newConnection.value.charset) {
@@ -251,7 +271,9 @@ export function createConnectionActions(state, api) {
         host: editingConnection.value.host,
         port: editingConnection.value.port || 3306,
         user: editingConnection.value.user || 'root',
-        password: editingConnection.value.password
+        password: editingConnection.value.password,
+        ssh: { ...editingConnection.value.ssh },
+        ssl: { ...editingConnection.value.ssl }
       }
 
       if (editingConnection.value.charset) {
@@ -294,7 +316,7 @@ export function createConnectionActions(state, api) {
 
       if (index >= 0) {
         dbConnections.splice(index, 1)
-        await saveConfig({ ...config, dbConnections })
+        await patchConfig({ dbConnections })
       }
 
       selectedConnection.value = null

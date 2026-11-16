@@ -35,6 +35,38 @@
     background: rgba(var(--error-rgb), 0.1);
   }
 
+  .menu-title {
+    padding: 4px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 4px;
+  }
+
+  .menu-title-field {
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+  }
+
+  .menu-title-value {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-dense);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-item.disabled {
+    color: var(--text-tertiary);
+    cursor: default;
+  }
+
+  .menu-item.disabled:hover {
+    background: transparent;
+  }
+
   .menu-item svg {
     width: var(--icon-size-xs);
     height: var(--icon-size-xs);

@@ -1,7 +1,8 @@
 import BaseProvider from './BaseProvider.js'
+import { getThinkingStyle } from '../thinking.js'
 
 class VolcengineProvider extends BaseProvider {
-  constructor(apiKey, endpointId, timeout = 60000, connectionTimeout = 10000) {
+  constructor({ apiKey, endpointId, timeout, connectionTimeout } = {}) {
     super({
       name: '火山方舟',
       apiKey,
@@ -15,7 +16,7 @@ class VolcengineProvider extends BaseProvider {
         { id: 'doubao-seed-2.0-pro', name: 'doubao-seed-2.0-pro', contextWindow: 262144 }
       ],
       defaultModel: endpointId || 'doubao-seed-evolving',
-      thinkingStyle: 'thinking',
+      thinkingStyle: getThinkingStyle('volcengine'),
       timeout,
       connectionTimeout
     })

@@ -1,5 +1,5 @@
 <template>
-  <header class="app-titlebar" :class="`platform-${platform}`">
+  <header class="app-titlebar" :class="`platform-${platform}`" @dblclick="onTitlebarDoubleClick">
     <div class="titlebar-nav no-drag" role="group" aria-label="导航">
       <button
         type="button"
@@ -103,16 +103,37 @@
     </div>
 
     <span class="titlebar-spacer" aria-hidden="true" />
+
+    <WindowControls
+      v-if="!isMac"
+      :fullscreen="isFullscreen"
+      @minimize="windowMinimize"
+      @maximize="windowToggleMaximize"
+      @exit-fullscreen="menuAction('toggle-fullscreen')"
+      @close="windowClose"
+    />
   </header>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getConfig, menuAction, onConfigChanged, openSettings, platform } from '@/api'
+import {
+  getConfig,
+  menuAction,
+  onConfigChanged,
+  onWindowFullscreen,
+  openSettings,
+  platform,
+  windowClose,
+  windowIsFullscreen,
+  windowMinimize,
+  windowToggleMaximize
+} from '@/api'
 import { openUpdateCenter } from '@/composables'
 import { useSidebar } from '@/composables/useSidebar'
 import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '@shared/tools'
+import WindowControls from '@/components/WindowControls.vue'
 
 const isMac = platform === 'darwin'
 const isDev = import.meta.env.DEV
@@ -140,7 +161,9 @@ const menuRootRef = ref(null)
 const openMenu = ref(null)
 const activeMenuIndex = ref(-1)
 const shortcuts = ref({})
+const isFullscreen = ref(false)
 let removeConfigListener = null
+let removeFullscreenListener = null
 
 async function loadShortcuts() {
   try {
@@ -156,6 +179,12 @@ onMounted(() => {
   document.addEventListener('keydown', onDocumentKeyDown)
   window.addEventListener('blur', closeMenu)
   removeConfigListener = onConfigChanged(loadShortcuts)
+  removeFullscreenListener = onWindowFullscreen((value) => {
+    isFullscreen.value = Boolean(value)
+  })
+  windowIsFullscreen().then((value) => {
+    isFullscreen.value = Boolean(value)
+  })
   loadShortcuts()
 })
 
@@ -164,11 +193,18 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onDocumentKeyDown)
   window.removeEventListener('blur', closeMenu)
   removeConfigListener?.()
+  removeFullscreenListener?.()
   removeHistoryListener()
 })
 
 function onDocumentPointerDown(event) {
   if (!menuRootRef.value?.contains(event.target)) closeMenu()
+}
+
+function onTitlebarDoubleClick(event) {
+  if (isFullscreen.value) return
+  if (event.target.closest('button, .menu-entry')) return
+  windowToggleMaximize()
 }
 
 function onDocumentKeyDown(event) {
@@ -363,8 +399,8 @@ async function selectItem(item) {
   gap: 6px;
   height: 40px;
   flex-shrink: 0;
-  padding-left: calc(env(titlebar-area-x, 0px) + 12px);
-  padding-right: max(12px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px));
+  padding-left: 12px;
+  padding-right: 0;
   background: var(--shell-titlebar-bg);
   color: var(--shell-text);
   -webkit-app-region: drag;

@@ -26,7 +26,8 @@
         "description": "额外要求，例如需要 FFmpeg、只安装生产依赖"
       }
     },
-    "required": ["stack"]
+    "required": ["stack"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

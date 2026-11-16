@@ -267,7 +267,7 @@
             <div class="structure-ddl-actions">
               <button class="btn btn-sm btn-secondary" @click="copySql(structureDialog.meta.ddl)">复制 DDL</button>
             </div>
-            <pre class="sql-preview-block">{{ structureDialog.meta.ddl || '无法获取 DDL' }}</pre>
+            <SqlHighlight class="sql-preview-block" :code="structureDialog.meta.ddl" placeholder="无法获取 DDL" />
           </template>
         </template>
       </div>
@@ -283,6 +283,7 @@
 
 <script setup>
 import { inject, ref, watch } from 'vue'
+import SqlHighlight from '@/components/SqlHighlight.vue'
 
 const databaseStore = inject('database')
 const {

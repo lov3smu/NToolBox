@@ -2,6 +2,7 @@
 @scope (.database-page) {
   .query-panel {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -11,6 +12,7 @@
 
   .query-content {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -20,11 +22,17 @@
 
   .result-body {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
     overflow: hidden;
   }
 
   .query-body {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -79,6 +87,7 @@
 
   .query-result-wrapper {
     flex: 1 1 auto;
+    min-width: 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -163,12 +172,20 @@
   .table-query-toolbar {
     border-bottom: 1px solid var(--border-color);
     justify-content: flex-start;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .table-query-toolbar .toolbar-btn {
+    padding: 6px 8px;
   }
 
   .toolbar-btn {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
     padding: 6px 12px;
     border: none;
     border-radius: var(--radius-sm);
@@ -207,6 +224,7 @@
 
   .table-query-body {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;

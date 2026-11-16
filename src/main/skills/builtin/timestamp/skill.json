@@ -1,7 +1,7 @@
 {
   "name": "timestamp",
   "version": "1.0.0",
-  "description": "Unix时间戳与日期时间互转，支持秒和毫秒",
+  "description": "Unix时间戳与日期时间互转，支持秒和毫秒，并可按指定时区展示",
   "author": "system",
   "type": "builtin",
   "category": "general",
@@ -12,14 +12,19 @@
     "properties": {
       "timestamp": {
         "type": "integer",
-        "description": "Unix时间戳（秒或毫秒）"
+        "description": "Unix时间戳：10 位按秒、13 位按毫秒解析，其他按数值大小推断"
       },
       "date_string": {
         "type": "string",
-        "description": "日期字符串，格式如 2024-01-01 或 2024-01-01 12:00:00"
+        "description": "日期字符串，格式如 2024-01-01 或 2024-01-01 12:00:00，按本地时区解析"
+      },
+      "timezone": {
+        "type": "string",
+        "description": "输出时区，IANA 名称，如 Asia/Shanghai；默认使用系统时区"
       }
     },
-    "required": []
+    "required": [],
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [

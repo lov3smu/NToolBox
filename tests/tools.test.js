@@ -14,7 +14,11 @@ import {
   getRecentTools,
   addToRecent,
   RECENT_TOOLS_KEY,
-  MAX_RECENT
+  MAX_RECENT,
+  RECENT_TOOLS_LIMIT_OPTIONS,
+  normalizeRecentToolsLimit,
+  setRecentToolsLimit,
+  getRecentToolsLimit
 } from '../src/shared/tools.js'
 
 const ROUTER_FILE = path.join(process.cwd(), 'src/renderer/src/router/index.js')
@@ -49,10 +53,21 @@ describe('tool registry', () => {
   it('excludes the dashboard and extension pages from dashboardTools and includes settings', () => {
     const extensionTools = tools.filter((tool) => tool.menuGroup === 'extensions')
     expect(extensionTools.length).toBeGreaterThan(0)
-    expect(dashboardTools).toHaveLength(tools.length - 1 - extensionTools.length)
+    expect(dashboardTools).toHaveLength(tools.filter((tool) => !tool.hidden).length - 1 - extensionTools.length)
     expect(dashboardTools.some((tool) => tool.path === '/')).toBe(false)
     expect(dashboardTools.some((tool) => tool.path === '/market')).toBe(false)
     expect(dashboardTools.some((tool) => tool.path === SETTINGS_PATH)).toBe(true)
+  })
+
+  it('keeps hidden entries out of navigation, dashboard and search', () => {
+    const hiddenTools = tools.filter((tool) => tool.hidden)
+    expect(hiddenTools.map((tool) => tool.path)).toEqual(['/memory'])
+    for (const tool of hiddenTools) {
+      expect(dashboardTools.some((item) => item.path === tool.path)).toBe(false)
+      expect(getToolsByMenuGroup(tool.menuGroup).some((item) => item.path === tool.path)).toBe(false)
+      expect(searchTools(tool.name).some((item) => item.path === tool.path)).toBe(false)
+    }
+    expect(getToolByPath('/memory')?.name).toBe('记忆与知识库')
   })
 
   it('derives menu, tray and lookup collections from the registry', () => {
@@ -85,6 +100,7 @@ describe('recent tools', () => {
   })
 
   afterEach(() => {
+    setRecentToolsLimit(MAX_RECENT)
     delete globalThis.localStorage
   })
 
@@ -92,6 +108,13 @@ describe('recent tools', () => {
     addToRecent(getToolByPath('/'))
     expect(store.has(RECENT_TOOLS_KEY)).toBe(false)
     expect(getRecentTools()).toEqual([])
+  })
+
+  it('never records hidden pages', () => {
+    addToRecent(getToolByPath('/memory'))
+    expect(store.has(RECENT_TOOLS_KEY)).toBe(false)
+    store.set(RECENT_TOOLS_KEY, JSON.stringify(['/memory', '/chat']))
+    expect(getRecentTools().map((tool) => tool.path)).toEqual(['/chat'])
   })
 
   it('drops legacy dashboard entries', () => {
@@ -112,5 +135,23 @@ describe('recent tools', () => {
     expect(getRecentTools().map((tool) => tool.path)).toEqual(
       ['/yaml-editor', '/cron', '/chat', '/password'].slice(0, MAX_RECENT)
     )
+  })
+
+  it('limits the stored recent list to the configured count', () => {
+    expect(RECENT_TOOLS_LIMIT_OPTIONS.map((option) => option.value)).toEqual([2, 3, 4, 5, 6, 8])
+    expect(normalizeRecentToolsLimit(6)).toBe(6)
+    expect(normalizeRecentToolsLimit(1)).toBe(2)
+    expect(normalizeRecentToolsLimit(99)).toBe(8)
+    expect(normalizeRecentToolsLimit('abc')).toBe(MAX_RECENT)
+
+    setRecentToolsLimit(2)
+    expect(getRecentToolsLimit()).toBe(2)
+    addToRecent(getToolByPath('/chat'))
+    addToRecent(getToolByPath('/password'))
+    addToRecent(getToolByPath('/cron'))
+    expect(getRecentTools().map((tool) => tool.path)).toEqual(['/cron', '/password'])
+
+    setRecentToolsLimit(6)
+    expect(getRecentTools()).toHaveLength(2)
   })
 })

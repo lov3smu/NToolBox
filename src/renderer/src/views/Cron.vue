@@ -5,300 +5,305 @@
     </template>
 
     <div class="page-body">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">{{ getFieldTitle(activeTab) }}</span>
-          <span class="field-hint">{{ getFieldHint(activeTab) }}</span>
-        </div>
-        <div class="panel-body">
-          <div class="type-options">
-            <label v-if="activeTab !== 'week' && activeTab !== 'day'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
-              <span>每{{ getFieldTitle(activeTab) }}</span>
-            </label>
-            <label v-if="activeTab === 'week' || activeTab === 'year' || activeTab === 'day'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="notSpecify" />
-              <span>不指定</span>
-            </label>
-            <label v-if="activeTab === 'day'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
-              <span>每日</span>
-            </label>
-            <label v-if="activeTab !== 'year'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="range" />
-              <span>周期</span>
-            </label>
-            <label v-if="activeTab !== 'week' && activeTab !== 'year'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="interval" />
-              <span>循环</span>
-            </label>
-            <label class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="specific" />
-              <span>指定</span>
-            </label>
-            <label v-if="activeTab === 'day'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="workDay" />
-              <span>工作日</span>
-            </label>
-            <label v-if="activeTab === 'day'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="lastDay" />
-              <span>最后一天</span>
-            </label>
-            <label v-if="activeTab === 'week'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="nth" />
-              <span>第几个星期几</span>
-            </label>
-            <label v-if="activeTab === 'week'" class="type-option">
-              <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="last" />
-              <span>最后一个星期几</span>
-            </label>
+      <div class="cron-grid">
+        <section class="panel field-panel">
+          <div class="panel-header">
+            <span class="panel-title">字段设置</span>
+            <span class="field-hint">{{ getFieldHint(activeTab) }}</span>
           </div>
+          <div class="panel-body">
+            <div class="type-options">
+              <label v-if="activeTab !== 'week' && activeTab !== 'day'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
+                <span>每{{ getFieldTitle(activeTab) }}</span>
+              </label>
+              <label v-if="activeTab === 'week' || activeTab === 'year' || activeTab === 'day'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="notSpecify" />
+                <span>不指定</span>
+              </label>
+              <label v-if="activeTab === 'day'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="every" />
+                <span>每日</span>
+              </label>
+              <label v-if="activeTab !== 'year'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="range" />
+                <span>周期</span>
+              </label>
+              <label v-if="activeTab !== 'week' && activeTab !== 'year'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="interval" />
+                <span>循环</span>
+              </label>
+              <label class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="specific" />
+                <span>指定</span>
+              </label>
+              <label v-if="activeTab === 'day'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="workDay" />
+                <span>工作日</span>
+              </label>
+              <label v-if="activeTab === 'day'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="lastDay" />
+                <span>最后一天</span>
+              </label>
+              <label v-if="activeTab === 'week'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="nth" />
+                <span>第几个星期几</span>
+              </label>
+              <label v-if="activeTab === 'week'" class="type-option">
+                <input v-model="currentFieldType" type="radio" :name="activeTab + 'Type'" value="last" />
+                <span>最后一个星期几</span>
+              </label>
+            </div>
 
-          <div class="value-config">
-            <template v-if="currentFieldType === 'range'">
-              <template v-if="activeTab === 'week'">
-                <div class="inline-row">
-                  <select v-model="weekRangeFrom" class="select-field" @change="generateExpression">
-                    <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                      {{ day.label }}
-                    </option>
-                  </select>
+            <div v-if="needsConfig" class="value-config">
+              <template v-if="currentFieldType === 'range'">
+                <template v-if="activeTab === 'week'">
+                  <div class="inline-row">
+                    <select v-model="weekRangeFrom" class="select-field" @change="generateExpression">
+                      <option v-for="day in weekDays" :key="day.value" :value="day.value">
+                        {{ day.label }}
+                      </option>
+                    </select>
+                    <span class="range-separator">至</span>
+                    <select v-model="weekRangeTo" class="select-field" @change="generateExpression">
+                      <option v-for="day in weekDays" :key="day.value" :value="day.value">
+                        {{ day.label }}
+                      </option>
+                    </select>
+                  </div>
+                </template>
+                <template v-else>
+                  <input
+                    v-model.number="rangeValues[activeTab].from"
+                    type="number"
+                    class="input-field"
+                    :min="FIELD_CONFIG[activeTab]?.min"
+                    :max="FIELD_CONFIG[activeTab]?.max"
+                    @input="generateExpression"
+                  />
                   <span class="range-separator">至</span>
-                  <select v-model="weekRangeTo" class="select-field" @change="generateExpression">
+                  <input
+                    v-model.number="rangeValues[activeTab].to"
+                    type="number"
+                    class="input-field"
+                    :min="FIELD_CONFIG[activeTab]?.min"
+                    :max="FIELD_CONFIG[activeTab]?.max"
+                    @input="generateExpression"
+                  />
+                </template>
+              </template>
+
+              <template v-else-if="currentFieldType === 'interval'">
+                <span class="interval-label">从</span>
+                <input
+                  v-model.number="intervalValues[activeTab].start"
+                  type="number"
+                  class="input-field"
+                  :min="FIELD_CONFIG[activeTab]?.min"
+                  :max="FIELD_CONFIG[activeTab]?.max"
+                  @input="generateExpression"
+                />
+                <span class="interval-label">开始，每</span>
+                <input
+                  v-model.number="intervalValues[activeTab].step"
+                  type="number"
+                  class="input-field"
+                  :min="1"
+                  :max="FIELD_CONFIG[activeTab]?.max"
+                  @input="generateExpression"
+                />
+                <span class="interval-label">{{ getFieldTitle(activeTab) }}执行一次</span>
+              </template>
+
+              <template v-else-if="currentFieldType === 'specific'">
+                <template v-if="activeTab === 'year'">
+                  <input
+                    v-model="yearSpecificInput"
+                    type="text"
+                    class="input-field specific-input"
+                    placeholder="例如: 2024,2025,2026"
+                    @input="generateExpression"
+                  />
+                </template>
+                <template v-else-if="activeTab === 'hour'">
+                  <div class="hour-grid-container">
+                    <div class="time-section">
+                      <div class="time-section-title">上午</div>
+                      <div class="specific-grid hour-grid">
+                        <div
+                          v-for="n in 12"
+                          :key="'am-' + n"
+                          class="specific-item"
+                          :class="{ active: specificValues.hour?.includes(n - 1) }"
+                          @click="toggleSpecific('hour', n - 1)"
+                        >
+                          {{ (n - 1).toString().padStart(2, '0') }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="time-section">
+                      <div class="time-section-title">下午</div>
+                      <div class="specific-grid hour-grid">
+                        <div
+                          v-for="n in 12"
+                          :key="'pm-' + n"
+                          class="specific-item"
+                          :class="{ active: specificValues.hour?.includes(n + 11) }"
+                          @click="toggleSpecific('hour', n + 11)"
+                        >
+                          {{ (n + 11).toString().padStart(2, '0') }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div
+                    class="specific-grid"
+                    :class="{
+                      'month-grid': activeTab === 'month',
+                      'day-grid': activeTab === 'day',
+                      'week-grid': activeTab === 'week'
+                    }"
+                  >
+                    <template v-if="activeTab === 'week'">
+                      <div
+                        v-for="day in weekDays"
+                        :key="day.value"
+                        class="specific-item"
+                        :class="{ active: specificValues.week?.includes(parseInt(day.value)) }"
+                        @click="toggleSpecific('week', parseInt(day.value))"
+                      >
+                        {{ day.label }}
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div
+                        v-for="n in FIELD_CONFIG[activeTab]?.max - FIELD_CONFIG[activeTab]?.min + 1"
+                        :key="n"
+                        class="specific-item"
+                        :class="{
+                          active: specificValues[activeTab]?.includes(n - 1 + FIELD_CONFIG[activeTab]?.min)
+                        }"
+                        @click="toggleSpecific(activeTab, n - 1 + FIELD_CONFIG[activeTab]?.min)"
+                      >
+                        {{ activeTab === 'month' ? MONTH_NAMES[n] : n - 1 + FIELD_CONFIG[activeTab]?.min }}
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </template>
+
+              <template v-else-if="currentFieldType === 'workDay'">
+                <span class="interval-label">每月</span>
+                <input
+                  v-model.number="workDayValue"
+                  type="number"
+                  class="input-field"
+                  min="1"
+                  max="31"
+                  @input="generateExpression"
+                />
+                <span class="interval-label">号最近的工作日</span>
+              </template>
+
+              <template v-else-if="currentFieldType === 'nth'">
+                <div class="inline-row">
+                  <span class="interval-label">每月第</span>
+                  <select v-model="weekNth" class="select-field" @change="generateExpression">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                  <span class="interval-label">个</span>
+                  <select v-model="weekNthDay" class="select-field" @change="generateExpression">
                     <option v-for="day in weekDays" :key="day.value" :value="day.value">
                       {{ day.label }}
                     </option>
                   </select>
                 </div>
               </template>
-              <template v-else>
-                <input
-                  v-model.number="rangeValues[activeTab].from"
-                  type="number"
-                  class="input-field"
-                  :min="FIELD_CONFIG[activeTab]?.min"
-                  :max="FIELD_CONFIG[activeTab]?.max"
-                  @input="generateExpression"
-                />
-                <span class="range-separator">至</span>
-                <input
-                  v-model.number="rangeValues[activeTab].to"
-                  type="number"
-                  class="input-field"
-                  :min="FIELD_CONFIG[activeTab]?.min"
-                  :max="FIELD_CONFIG[activeTab]?.max"
-                  @input="generateExpression"
-                />
-              </template>
-            </template>
 
-            <template v-else-if="currentFieldType === 'interval'">
-              <span class="interval-label">从</span>
-              <input
-                v-model.number="intervalValues[activeTab].start"
-                type="number"
-                class="input-field"
-                :min="FIELD_CONFIG[activeTab]?.min"
-                :max="FIELD_CONFIG[activeTab]?.max"
-                @input="generateExpression"
-              />
-              <span class="interval-label">开始，每</span>
-              <input
-                v-model.number="intervalValues[activeTab].step"
-                type="number"
-                class="input-field"
-                :min="1"
-                :max="FIELD_CONFIG[activeTab]?.max"
-                @input="generateExpression"
-              />
-              <span class="interval-label">{{ getFieldTitle(activeTab) }}执行一次</span>
-            </template>
-
-            <template v-else-if="currentFieldType === 'specific'">
-              <template v-if="activeTab === 'year'">
-                <input
-                  v-model="yearSpecificInput"
-                  type="text"
-                  class="input-field specific-input"
-                  placeholder="例如: 2024,2025,2026"
-                  @input="generateExpression"
-                />
-              </template>
-              <template v-else-if="activeTab === 'hour'">
-                <div class="hour-grid-container">
-                  <div class="time-section">
-                    <div class="time-section-title">上午</div>
-                    <div class="specific-grid hour-grid">
-                      <div
-                        v-for="n in 12"
-                        :key="'am-' + n"
-                        class="specific-item"
-                        :class="{ active: specificValues.hour?.includes(n - 1) }"
-                        @click="toggleSpecific('hour', n - 1)"
-                      >
-                        {{ (n - 1).toString().padStart(2, '0') }}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="time-section">
-                    <div class="time-section-title">下午</div>
-                    <div class="specific-grid hour-grid">
-                      <div
-                        v-for="n in 12"
-                        :key="'pm-' + n"
-                        class="specific-item"
-                        :class="{ active: specificValues.hour?.includes(n + 11) }"
-                        @click="toggleSpecific('hour', n + 11)"
-                      >
-                        {{ (n + 11).toString().padStart(2, '0') }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </template>
-              <template v-else>
-                <div
-                  class="specific-grid"
-                  :class="{
-                    'month-grid': activeTab === 'month',
-                    'day-grid': activeTab === 'day',
-                    'week-grid': activeTab === 'week'
-                  }"
-                >
-                  <template v-if="activeTab === 'week'">
-                    <div
-                      v-for="day in weekDays"
-                      :key="day.value"
-                      class="specific-item"
-                      :class="{ active: specificValues.week?.includes(parseInt(day.value)) }"
-                      @click="toggleSpecific('week', parseInt(day.value))"
-                    >
+              <template v-else-if="currentFieldType === 'last'">
+                <div class="inline-row">
+                  <span class="interval-label">每月最后一个</span>
+                  <select v-model="weekLastDay" class="select-field" @change="generateExpression">
+                    <option v-for="day in weekDays" :key="day.value" :value="day.value">
                       {{ day.label }}
-                    </div>
-                  </template>
-                  <template v-else>
-                    <div
-                      v-for="n in FIELD_CONFIG[activeTab]?.max - FIELD_CONFIG[activeTab]?.min + 1"
-                      :key="n"
-                      class="specific-item"
-                      :class="{
-                        active: specificValues[activeTab]?.includes(n - 1 + FIELD_CONFIG[activeTab]?.min)
-                      }"
-                      @click="toggleSpecific(activeTab, n - 1 + FIELD_CONFIG[activeTab]?.min)"
-                    >
-                      {{ activeTab === 'month' ? MONTH_NAMES[n] : n - 1 + FIELD_CONFIG[activeTab]?.min }}
-                    </div>
-                  </template>
+                    </option>
+                  </select>
                 </div>
               </template>
-            </template>
+            </div>
+            <div v-else class="panel-empty config-empty">当前规则无需额外参数，表达式已应用通配符</div>
+          </div>
+        </section>
 
-            <template v-else-if="currentFieldType === 'workDay'">
-              <span class="interval-label">每月</span>
-              <input
-                v-model.number="workDayValue"
-                type="number"
-                class="input-field"
-                min="1"
-                max="31"
-                @input="generateExpression"
-              />
-              <span class="interval-label">号最近的工作日</span>
-            </template>
-
-            <template v-else-if="currentFieldType === 'nth'">
-              <div class="inline-row">
-                <span class="interval-label">每月第</span>
-                <select v-model="weekNth" class="select-field" @change="generateExpression">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-                <span class="interval-label">个</span>
-                <select v-model="weekNthDay" class="select-field" @change="generateExpression">
-                  <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                    {{ day.label }}
-                  </option>
-                </select>
+        <section class="panel expression-panel">
+          <div class="panel-header">
+            <span class="panel-title">Cron 表达式</span>
+            <span class="panel-hint">输入后失焦自动解析</span>
+          </div>
+          <div class="panel-body">
+            <div class="expression-row">
+              <label class="field-label">表达式字段</label>
+              <div class="field-tags">
+                <span class="field-tag"><span class="tag-label">秒</span>{{ fieldTags.second }}</span>
+                <span class="field-tag"><span class="tag-label">分</span>{{ fieldTags.minute }}</span>
+                <span class="field-tag"><span class="tag-label">时</span>{{ fieldTags.hour }}</span>
+                <span class="field-tag"><span class="tag-label">日</span>{{ fieldTags.day }}</span>
+                <span class="field-tag"><span class="tag-label">月</span>{{ fieldTags.month }}</span>
+                <span class="field-tag"><span class="tag-label">周</span>{{ fieldTags.week }}</span>
+                <span v-if="fieldTags.year" class="field-tag">
+                  <span class="tag-label">年</span>{{ fieldTags.year }}
+                </span>
               </div>
-            </template>
-
-            <template v-else-if="currentFieldType === 'last'">
-              <div class="inline-row">
-                <span class="interval-label">每月最后一个</span>
-                <select v-model="weekLastDay" class="select-field" @change="generateExpression">
-                  <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                    {{ day.label }}
-                  </option>
-                </select>
+            </div>
+            <div class="expression-row">
+              <label class="field-label">Cron 表达式</label>
+              <div class="expression-input-wrapper">
+                <input v-model="cronExpression" type="text" class="expression-input" @blur="onExpressionBlur" />
+                <button class="btn btn-secondary" @click="parseExpression">反解析</button>
+                <button class="btn btn-primary" @click="copyExpression">复制</button>
               </div>
-            </template>
+            </div>
+            <div class="expression-desc">{{ expressionDesc }}</div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">表达式</span>
-        </div>
-        <div class="panel-body">
-          <div class="expression-row">
-            <label class="field-label">表达式字段</label>
-            <div class="field-tags">
-              <span class="field-tag">{{ fieldTags.second }}</span>
-              <span class="field-tag">{{ fieldTags.minute }}</span>
-              <span class="field-tag">{{ fieldTags.hour }}</span>
-              <span class="field-tag">{{ fieldTags.day }}</span>
-              <span class="field-tag">{{ fieldTags.month }}</span>
-              <span class="field-tag">{{ fieldTags.week }}</span>
-              <span v-if="fieldTags.year" class="field-tag">{{ fieldTags.year }}</span>
+        <section class="panel schedule-panel">
+          <div class="panel-header">
+            <span class="panel-title">最近 5 次运行时间</span>
+            <span class="panel-hint">按当前表达式推算</span>
+          </div>
+          <div class="panel-body">
+            <div class="schedule-list">
+              <div v-if="scheduleList.length === 0" class="panel-empty schedule-empty">请输入表达式查看执行计划</div>
+              <div v-for="(item, index) in scheduleList" :key="index" class="schedule-item">
+                <span class="index">{{ index + 1 }}</span>
+                <span class="time">{{ item.time }}</span>
+                <span class="remaining">{{ item.remaining }}</span>
+              </div>
             </div>
           </div>
-          <div class="expression-row">
-            <label class="field-label">Cron表达式</label>
-            <div class="expression-input-wrapper">
-              <input v-model="cronExpression" type="text" class="expression-input" @blur="onExpressionBlur" />
-              <button class="btn btn-secondary" @click="parseExpression">反解析</button>
-              <button class="btn btn-primary" @click="copyExpression">复制</button>
-            </div>
-          </div>
-          <div class="expression-row">
-            <div class="expression-desc">
-              {{ expressionDesc }}
-            </div>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">最近 5 次运行时间</span>
-        </div>
-        <div class="panel-body">
-          <div class="schedule-list">
-            <div v-if="scheduleList.length === 0" class="schedule-empty">请输入表达式查看执行计划</div>
-            <div v-for="(item, index) in scheduleList" :key="index" class="schedule-item">
-              <span class="index">{{ index + 1 }}</span>
-              <span class="time">{{ item.time }}</span>
-              <span class="remaining">{{ item.remaining }}</span>
-            </div>
+        <section class="panel help-panel">
+          <div class="panel-header">
+            <span class="panel-title">说明</span>
+            <span class="panel-hint">Cron 语法速查</span>
           </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">说明</span>
-        </div>
-        <div class="panel-body help-content">
-          <p>
-            Cron 表达式是一种用于指定定时任务执行时间的字符串表达式。它由 6-7
-            个字段组成，分别表示秒、分钟、小时、天数、月份、星期几和年份（可选）。
-          </p>
-          <div class="cron-structure">
-            <pre>
+          <div class="panel-body help-content">
+            <p class="help-intro">
+              Cron 表达式由 6-7 个字段组成，依次表示秒、分钟、小时、天数、月份、星期几和年份（可选）。
+            </p>
+            <div class="help-grid">
+              <div class="help-section">
+                <h4>字段结构</h4>
+                <div class="cron-structure">
+                  <pre>
 ┌──────────── [可选] 秒 (0 - 59)
 │ ┌────────── 分钟 (0 - 59)
 │ │ ┌──────── 小时 (0 - 23)
@@ -307,28 +312,35 @@
 │ │ │ │ │ ┌── 星期 (0 - 6, 星期天=0)
 │ │ │ │ │ │
 * * * * * * *  命令</pre
-            >
+                  >
+                </div>
+              </div>
+              <div class="help-section">
+                <h4>特殊字符</h4>
+                <ul>
+                  <li><code>*</code>：匹配任意值，如分钟字段的 * 表示每分钟执行</li>
+                  <li><code>,</code>：分隔多个值，如 1,3,5 表示第 1、3、5 点执行</li>
+                  <li><code>-</code>：指定范围，如 10-20 表示从 10 到 20</li>
+                  <li><code>/</code>：指定间隔，如 */5 表示每 5 分钟执行一次</li>
+                  <li><code>?</code>：仅用于日和周字段，表示不指定（避免冲突）</li>
+                  <li><code>L</code>：表示最后，如 L 表示每月最后一天</li>
+                  <li><code>W</code>：最近工作日，如 15W 表示每月 15 日最近的工作日</li>
+                  <li><code>#</code>：第几个星期几，如 1#3 表示每月第 3 个星期一</li>
+                </ul>
+              </div>
+              <div class="help-section">
+                <h4>常用示例</h4>
+                <ul class="example-list">
+                  <li><code>0 0 12 * * ?</code><span>每天中午 12 点执行</span></li>
+                  <li><code>0 */5 * * * ?</code><span>每 5 分钟执行一次</span></li>
+                  <li><code>0 0 8-18 ? * MON-FRI</code><span>周一至周五 8 点到 18 点每小时执行</span></li>
+                  <li><code>0 0 0 L * ?</code><span>每月最后一天执行</span></li>
+                  <li><code>0 0 0 ? * 1#1</code><span>每月第一个星期一执行</span></li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <p><strong>特殊字符说明：</strong></p>
-          <ul>
-            <li><code>*</code>：表示匹配任意值，如分钟字段的 * 表示每分钟都执行</li>
-            <li><code>,</code>：用于分隔多个值，如 1,3,5 表示第1、3、5点执行</li>
-            <li><code>-</code>：用于指定范围，如 10-20 表示从10到20</li>
-            <li><code>/</code>：用于指定间隔，如 */5 表示每5分钟执行一次</li>
-            <li><code>?</code>：仅用于日和周字段，表示不指定具体值（避免冲突）</li>
-            <li><code>L</code>：表示最后，如 L 表示每月最后一天</li>
-            <li><code>W</code>：表示最近工作日，如 15W 表示每月15日最近的工作日</li>
-            <li><code>#</code>：用于指定第几个星期几，如 1#3 表示每月第3个星期一</li>
-          </ul>
-          <p><strong>常用示例：</strong></p>
-          <ul>
-            <li><code>0 0 12 * * ?</code>：每天中午12点执行</li>
-            <li><code>0 */5 * * * ?</code>：每5分钟执行一次</li>
-            <li><code>0 0 8-18 ? * MON-FRI</code>：周一至周五8点到18点每小时执行</li>
-            <li><code>0 0 0 L * ?</code>：每月最后一天执行</li>
-            <li><code>0 0 0 ? * 1#1</code>：每月第一个星期一执行</li>
-          </ul>
-        </div>
+        </section>
       </div>
     </div>
 
@@ -448,6 +460,10 @@ const currentFieldType = computed({
     generateExpression()
   }
 })
+
+const needsConfig = computed(() =>
+  ['range', 'interval', 'specific', 'workDay', 'nth', 'last'].includes(currentFieldType.value)
+)
 
 const rangeValues = reactive({
   second: { from: 1, to: 2 },
@@ -1138,30 +1154,69 @@ onMounted(() => {
 
 <style scoped>
 .page-body {
-  padding: 12px 16px 16px;
   width: 100%;
 }
 
-.panel-header .field-hint {
+.cron-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+  grid-template-areas:
+    'field expression'
+    'help schedule';
+  gap: 14px;
+  align-items: stretch;
+}
+
+.cron-grid > .panel {
+  margin-top: 0;
+}
+
+.field-panel {
+  grid-area: field;
+  display: flex;
+  flex-direction: column;
+}
+
+.field-panel .panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.expression-panel {
+  grid-area: expression;
+}
+
+.schedule-panel {
+  grid-area: schedule;
+}
+
+.help-panel {
+  grid-area: help;
+}
+
+.field-hint {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
+/* ---------- 规则类型 ---------- */
 .type-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 14px;
 }
 
 .type-option {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  height: 30px;
+  padding: 0 12px;
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   cursor: pointer;
   transition: var(--transition-fast);
   font-size: var(--font-size-sm);
@@ -1170,41 +1225,53 @@ onMounted(() => {
 
 .type-option:hover {
   border-color: var(--border-strong);
-}
-
-.type-option input[type='radio'] {
-  width: var(--icon-size-xs);
-  height: var(--icon-size-xs);
-  accent-color: var(--accent-color);
-  cursor: pointer;
-}
-
-.type-option:has(input:checked) {
-  background: rgba(var(--accent-rgb), 0.06);
-  border-color: rgba(var(--accent-rgb), 0.45);
   color: var(--text-primary);
 }
 
+.type-option input[type='radio'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.type-option:has(input:checked) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-inverse);
+}
+
+.type-option:has(input:focus-visible) {
+  box-shadow: var(--shadow-glow);
+}
+
+/* ---------- 取值配置 ---------- */
 .value-config {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-}
-
-.inline-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .value-config .input-field {
-  width: 72px;
+  width: 76px;
   text-align: center;
 }
 
 .value-config .select-field {
-  width: 88px;
+  width: 92px;
+}
+
+.inline-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .range-separator,
@@ -1214,7 +1281,7 @@ onMounted(() => {
 }
 
 .specific-input {
-  width: 220px !important;
+  width: 240px;
 }
 
 .specific-grid {
@@ -1222,6 +1289,10 @@ onMounted(() => {
   grid-template-columns: repeat(10, 1fr);
   gap: 6px;
   align-self: flex-start;
+  margin-top: 0;
+  padding: 0;
+  background: none;
+  border: 0;
 }
 
 .specific-grid.hour-grid {
@@ -1267,61 +1338,71 @@ onMounted(() => {
 }
 
 .specific-item {
-  width: 32px;
+  width: 34px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-size-xs);
-  transition: var(--transition-fast);
-  background: var(--surface);
   color: var(--text-secondary);
+  transition: var(--transition-fast);
 }
 
 .specific-item:hover {
   border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .specific-item.active {
   background: var(--primary-color);
-  color: var(--text-inverse);
   border-color: var(--primary-color);
+  color: var(--text-inverse);
 }
 
+/* ---------- 表达式 ---------- */
 .expression-row {
   margin-bottom: 14px;
 }
 
-.expression-row:last-child {
-  margin-bottom: 0;
-}
-
 .field-label {
   display: block;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
   margin-bottom: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
 .field-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .field-tag {
-  padding: 4px 10px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 56px;
+  padding: 6px 10px;
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: 600;
+  line-height: 1.4;
+}
+
+.tag-label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--text-tertiary);
 }
 
 .expression-input-wrapper {
@@ -1331,14 +1412,16 @@ onMounted(() => {
 
 .expression-input {
   flex: 1;
-  height: var(--control-height);
-  padding: 0 10px;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: var(--font-size-base);
-  background: var(--surface);
   color: var(--text-primary);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: var(--font-size-md);
+  letter-spacing: 0.5px;
 }
 
 .expression-input:focus {
@@ -1348,98 +1431,195 @@ onMounted(() => {
 }
 
 .expression-desc {
-  padding: 8px 10px;
-  background: var(--surface-muted);
+  padding: 10px 12px;
+  background: rgba(var(--accent-rgb), 0.06);
+  border-left: 3px solid var(--accent-color);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+  line-height: 1.6;
 }
 
+/* ---------- 执行计划 ---------- */
 .schedule-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .schedule-empty {
-  padding: 16px;
-  text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
+  min-height: 120px;
 }
 
 .schedule-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 9px 12px;
   background: var(--surface-muted);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
 }
 
 .schedule-item .index {
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-color);
-  color: var(--text-inverse);
+  margin-right: 0;
+  background: rgba(var(--accent-rgb), 0.12);
   border-radius: 50%;
+  color: var(--accent-color);
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
 
 .schedule-item .time {
+  flex: 1;
+  color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: var(--font-size-sm);
-  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .schedule-item .remaining {
-  margin-left: auto;
-  font-size: var(--font-size-xs);
+  margin-left: 0;
+  padding: 2px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
   color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
 }
 
+/* ---------- 语法说明 ---------- */
 .help-content {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   line-height: 1.7;
 }
 
-.help-content p {
-  margin-bottom: 10px;
+.help-intro {
+  margin: 0 0 14px;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.help-section h4 {
+  margin: 0 0 8px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .help-content ul {
-  margin: 10px 0;
-  padding-left: 20px;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .help-content li {
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .help-content code {
   padding: 1px 5px;
   border-radius: 3px;
-  background: var(--surface-muted);
+  background: var(--inset-bg);
   color: var(--text-primary);
   font-family: 'Consolas', 'Monaco', monospace;
+  font-size: var(--font-size-xs);
 }
 
 .cron-structure {
   padding: 12px;
-  border-radius: var(--radius-sm);
   background: var(--surface-muted);
-  margin: 12px 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
 }
 
 .cron-structure pre {
   margin: 0;
+  color: var(--text-secondary);
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: var(--font-size-xs);
-  line-height: 1.6;
+  line-height: 1.7;
+}
+
+.example-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.example-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 0;
+}
+
+.example-list code {
+  align-self: flex-start;
+}
+
+.example-list span {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1200px) {
+  .help-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .help-section:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .help-section:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .cron-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'field'
+      'expression'
+      'schedule'
+      'help';
+  }
+}
+
+@media (max-width: 760px) {
+  .help-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .help-section:first-child,
+  .help-section:last-child {
+    grid-column: auto;
+  }
+
+  .expression-input-wrapper {
+    flex-wrap: wrap;
+  }
+
+  .expression-input {
+    flex-basis: 100%;
+  }
 }
 </style>

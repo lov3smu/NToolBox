@@ -32,7 +32,7 @@
           H3
         </button>
         <button type="button" class="btn-icon btn-sm" title="粗体 (Ctrl+B)" @click="applyFormat('bold')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z" />
           </svg>
         </button>
@@ -1221,7 +1221,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 20px 20px;
+  padding: 16px 20px 20px;
 }
 
 .wx-config-bar {
@@ -1428,7 +1428,7 @@ onUnmounted(() => {
   overflow-y: auto;
   padding: 18px;
   background:
-    radial-gradient(circle at 1px 1px, rgba(120, 130, 145, 0.16) 1px, transparent 0) 0 0 / 16px 16px,
+    radial-gradient(circle at 1px 1px, var(--border-color) 1px, transparent 0) 0 0 / 16px 16px,
     var(--surface-muted);
 }
 
@@ -1436,7 +1436,7 @@ onUnmounted(() => {
   margin: 0 auto;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 6px 24px rgba(20, 28, 45, 0.1);
+  box-shadow: var(--shadow-md);
   transition: max-width 0.2s ease;
 }
 
@@ -1484,7 +1484,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 
@@ -1544,7 +1544,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(15, 23, 42, 0.36);
+  background: var(--overlay-bg);
   display: flex;
 }
 
@@ -1567,7 +1567,7 @@ onUnmounted(() => {
   flex-direction: column;
   background: var(--surface);
   border-left: 1px solid var(--border-color);
-  box-shadow: -12px 0 36px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--shadow-lg);
 }
 
 .wx-drawer-header,
@@ -1716,7 +1716,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 
@@ -1871,7 +1871,7 @@ onUnmounted(() => {
 .wx-ai-error {
   margin: 10px 0 0;
   font-size: var(--font-size-dense);
-  color: var(--danger-color, #dc2626);
+  color: var(--error-color);
 }
 
 .wx-ai-run {
@@ -1923,7 +1923,7 @@ onUnmounted(() => {
 
 @media (max-width: 900px) {
   .wechat-page {
-    padding: 10px 12px 14px;
+    padding: 12px 16px 20px;
   }
 
   .wx-cursor-stats {

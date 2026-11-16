@@ -1,7 +1,7 @@
 export default async function handler(params, context) {
   const { log, executeFunctionGroupSql } = context
 
-  log.info('执行 function-group-sql Skill', params)
+  log.debug('执行 function-group-sql Skill')
 
   if (!executeFunctionGroupSql) {
     return { success: false, error: 'executeFunctionGroupSql 函数未提供' }

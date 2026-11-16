@@ -552,10 +552,9 @@ onMounted(() => {
 
 <style scoped>
 .page-body {
-  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .editor-layout {

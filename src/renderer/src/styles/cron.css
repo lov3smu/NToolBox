@@ -213,7 +213,7 @@
 .specific-grid label:has(input:checked) {
   background: var(--accent-gradient);
   border-color: var(--accent-color);
-  color: white;
+  color: var(--text-inverse);
 }
 
 .specific-grid input {
@@ -367,7 +367,7 @@
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);
   background: var(--primary-gradient);
-  color: white;
+  color: var(--text-inverse);
   border-radius: 50%;
   display: flex;
   align-items: center;

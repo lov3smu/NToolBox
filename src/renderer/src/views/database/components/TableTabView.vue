@@ -14,6 +14,21 @@
       <span class="toolbar-btn-text">筛选排序</span>
       <span v-if="activeFilterCount > 0" class="toolbar-badge">{{ activeFilterCount }}</span>
     </button>
+    <button
+      class="toolbar-btn"
+      :class="{ active: showColumnPanel }"
+      :disabled="tab.executing"
+      title="列显示、列宽与冻结"
+      @click="showColumnPanel = !showColumnPanel"
+    >
+      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <line x1="9" y1="4" x2="9" y2="20" />
+        <line x1="15" y1="4" x2="15" y2="20" />
+      </svg>
+      <span class="toolbar-btn-text">列</span>
+      <span v-if="hiddenFieldCount > 0" class="toolbar-badge">{{ hiddenFieldCount }}</span>
+    </button>
     <button class="toolbar-btn" :disabled="tab.executing" title="刷新" @click="refreshTableData(tab)">
       <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="23 4 23 10 17 10" />
@@ -23,7 +38,12 @@
       <span class="toolbar-btn-text">刷新</span>
     </button>
     <div class="toolbar-divider" />
-    <button class="toolbar-btn" :disabled="tab.executing || !canEditTable(tab)" title="新增行" @click="addRow(tab)">
+    <button
+      class="toolbar-btn"
+      :disabled="tab.executing || !canEditTable(tab)"
+      :title="canEditTable(tab) ? '新增行' : '视图或没有主键的表不支持直接编辑'"
+      @click="addRow(tab)"
+    >
       <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="12" y1="5" x2="12" y2="19" />
         <line x1="5" y1="12" x2="19" y2="12" />
@@ -33,7 +53,7 @@
     <button
       class="toolbar-btn"
       :disabled="tab.executing || !canEditTable(tab)"
-      title="删除选中行"
+      :title="canEditTable(tab) ? '删除选中行' : '视图或没有主键的表不支持直接编辑'"
       @click="deleteSelectedRows(tab)"
     >
       <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -44,48 +64,41 @@
     </button>
     <button
       class="toolbar-btn"
-      :disabled="tab.executing || !hasPendingChanges(tab)"
-      title="预览待执行的 SQL"
-      @click="previewChanges(tab)"
+      :disabled="tab.executing"
+      title="复制选中行为 INSERT 语句"
+      @click="copyRowsAsInsert(tab)"
     >
       <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
       </svg>
-      <span class="toolbar-btn-text">预览 SQL</span>
-    </button>
-    <button
-      class="toolbar-btn primary"
-      :disabled="tab.executing || !hasPendingChanges(tab)"
-      title="保存修改"
-      @click="saveTableChanges(tab)"
-    >
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-        <polyline points="17 21 17 13 7 13 7 21" />
-        <polyline points="7 3 7 8 15 8" />
-      </svg>
-      <span class="toolbar-btn-text">保存</span>
+      <span class="toolbar-btn-text">复制 SQL</span>
     </button>
     <div class="toolbar-divider" />
-    <button class="toolbar-btn" :disabled="tab.executing" title="查看和修改表结构" @click="openStructureDialog(tab)">
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <line x1="3" y1="9" x2="21" y2="9" />
-        <line x1="9" y1="21" x2="9" y2="9" />
-      </svg>
-      <span class="toolbar-btn-text">结构</span>
-    </button>
-    <button class="toolbar-btn" :disabled="tab.executing" title="查看数据库 ER 图" @click="openErDialog(tab)">
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="3" width="8" height="6" rx="1" />
-        <rect x="14" y="15" width="8" height="6" rx="1" />
-        <rect x="2" y="15" width="8" height="6" rx="1" />
-        <path d="M6 9v3h12v3" />
-        <path d="M6 15v-3" />
-      </svg>
-      <span class="toolbar-btn-text">ER 图</span>
-    </button>
+    <div class="table-toolbar-menu">
+      <button
+        class="toolbar-btn"
+        :class="{ active: structureMenuOpen }"
+        :disabled="tab.executing"
+        title="查看结构、设计表、ER 图"
+        @click.stop="structureMenuOpen = !structureMenuOpen"
+      >
+        <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="3" y1="9" x2="21" y2="9" />
+          <line x1="9" y1="21" x2="9" y2="9" />
+        </svg>
+        <span class="toolbar-btn-text">结构</span>
+        <svg class="toolbar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div v-if="structureMenuOpen" class="toolbar-dropdown" @click.stop>
+        <button class="toolbar-dropdown-item" @click="runStructureAction(openStructureDialog, tab)">查看表结构</button>
+        <button class="toolbar-dropdown-item" @click="runStructureAction(openTableDesigner, tab)">可视化设计表</button>
+        <button class="toolbar-dropdown-item" @click="runStructureAction(openErDialog, tab)">数据库 ER 图</button>
+      </div>
+    </div>
     <div class="toolbar-spacer" />
     <div class="table-search-group">
       <input
@@ -127,41 +140,139 @@
   </div>
 
   <div v-if="tableToolbarState.filterSortActive" class="table-filter-panel">
-    <div v-for="(filter, index) in tab.filters" :key="index" class="table-filter-row">
-      <select v-model="filter.field" class="filter-select">
-        <option v-for="column in tab.columns" :key="column.name" :value="column.name">{{ column.name }}</option>
-      </select>
-      <select v-model="filter.operator" class="filter-select filter-operator">
-        <option v-for="operator in filterOperators" :key="operator" :value="operator">{{ operator }}</option>
-      </select>
-      <input
-        v-if="!['IS NULL', 'IS NOT NULL'].includes(filter.operator)"
-        v-model="filter.value"
-        type="text"
-        class="filter-value"
-        :placeholder="filterPlaceholder(filter.operator)"
-        @keyup.enter="applyTableFilters(tab)"
-      />
-      <button class="toolbar-icon-btn" title="移除条件" @click="removeTableFilter(tab, index)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
+    <div class="filter-panel-section">
+      <div class="filter-section-head">
+        <span class="filter-section-title">筛选条件</span>
+        <span v-if="!tab.filters.length" class="filter-section-hint">暂无筛选条件，可按字段过滤当前表数据</span>
+        <span v-else-if="tab.filters.length > 1" class="filter-section-hint">
+          每行可选 且 / 或，条件按从上到下顺序组合
+        </span>
+        <button
+          class="btn btn-sm btn-secondary filter-add-btn"
+          :disabled="!tab.columns.length"
+          @click="addTableFilter(tab)"
+        >
+          添加条件
+        </button>
+      </div>
+      <div v-for="(filter, index) in tab.filters" :key="index" class="table-filter-row">
+        <span v-if="index === 0" class="filter-prefix">当</span>
+        <select v-else v-model="filter.connector" class="filter-select filter-connector" title="与上一条件的组合方式">
+          <option value="AND">且</option>
+          <option value="OR">或</option>
+        </select>
+        <select v-model="filter.field" class="filter-select filter-field" @change="onFilterFieldChange(tab, filter)">
+          <option v-for="column in tab.columns" :key="column.name" :value="column.name">{{ column.name }}</option>
+        </select>
+        <select v-model="filter.operator" class="filter-select filter-operator">
+          <option v-for="operator in operatorsFor(filter.field)" :key="operator" :value="operator">
+            {{ operatorLabel(operator) }}
+          </option>
+        </select>
+        <input
+          v-if="!['IS NULL', 'IS NOT NULL'].includes(filter.operator)"
+          v-model="filter.value"
+          type="text"
+          class="filter-value"
+          :placeholder="filterPlaceholder(filter.operator)"
+          @keyup.enter="applyTableFilters(tab)"
+        />
+        <button class="toolbar-icon-btn filter-remove-btn" title="移除条件" @click="removeTableFilter(tab, index)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="table-filter-actions">
+        <button class="btn btn-sm btn-primary" :disabled="tab.executing" @click="applyTableFilters(tab)">
+          应用筛选
+        </button>
+        <button class="btn btn-sm btn-secondary" :disabled="tab.executing" @click="resetTableFilters(tab)">
+          重置全部
+        </button>
+        <span class="filter-action-hint">输入后按回车可直接应用</span>
+      </div>
     </div>
-    <div class="table-filter-actions">
-      <select v-model="tab.filterLogic" class="filter-select filter-logic">
-        <option value="AND">并且 (AND)</option>
-        <option value="OR">或者 (OR)</option>
-      </select>
-      <button class="btn btn-sm btn-secondary" :disabled="!tab.columns.length" @click="addTableFilter(tab)">
-        添加条件
+
+    <div class="filter-panel-section filter-sort-section">
+      <div class="filter-section-head">
+        <span class="filter-section-title">排序</span>
+        <span class="filter-section-hint">点击表头切换排序，Shift + 点击可追加多列排序</span>
+        <button
+          class="btn btn-sm btn-secondary filter-add-btn"
+          :disabled="!nextSortField(tab)"
+          :title="nextSortField(tab) ? '添加下一列排序' : '所有字段均已参与排序'"
+          @click="addTableSort(tab, nextSortField(tab))"
+        >
+          添加排序
+        </button>
+      </div>
+      <div v-if="!tab.sorts?.length" class="filter-section-hint">暂无排序，可点击表头或添加排序</div>
+      <div v-for="(sortItem, index) in tab.sorts || []" :key="sortItem.field" class="table-sort-row">
+        <span class="sort-order-index">{{ index + 1 }}</span>
+        <select
+          class="filter-select filter-sort-field"
+          :value="sortItem.field"
+          @change="changeTableSortField(tab, index, $event.target.value)"
+        >
+          <option v-for="fieldName in allFields" :key="fieldName" :value="fieldName">{{ fieldName }}</option>
+        </select>
+        <div class="sort-direction-group">
+          <button
+            :class="{ active: sortItem.order === 'ASC' }"
+            @click="changeTableSortOrder(tab, sortItem.field, 'ASC')"
+          >
+            升序
+          </button>
+          <button
+            :class="{ active: sortItem.order === 'DESC' }"
+            @click="changeTableSortOrder(tab, sortItem.field, 'DESC')"
+          >
+            降序
+          </button>
+        </div>
+        <button class="toolbar-icon-btn" title="移除该排序" @click="removeTableSort(tab, sortItem.field)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showColumnPanel" class="table-column-panel">
+    <div class="filter-section-head">
+      <span class="filter-section-title">列显示</span>
+      <span class="filter-section-hint">{{ fields.length }} / {{ allFields.length }} 列可见</span>
+      <button class="btn btn-sm btn-secondary" :disabled="!hiddenFieldCount" @click="showAllColumns(tab)">
+        全部显示
       </button>
-      <button class="btn btn-sm btn-primary" @click="applyTableFilters(tab)">应用</button>
-      <button class="btn btn-sm btn-secondary" @click="resetTableFilters(tab)">重置</button>
-      <span v-if="tab.sortField" class="filter-sort-info">
-        排序: {{ tab.sortField }} {{ tab.sortDirection === 'DESC' ? '降序' : '升序' }}
-      </span>
+      <button class="btn btn-sm btn-secondary" @click="resetColumnWidths(tab)">重置列宽</button>
+    </div>
+    <div class="column-toggle-list">
+      <label v-for="fieldName in allFields" :key="fieldName" class="column-toggle-item">
+        <input
+          type="checkbox"
+          :checked="!isFieldHidden(tab, fieldName)"
+          :disabled="fields.length === 1 && !isFieldHidden(tab, fieldName)"
+          @change="toggleColumnVisibility(tab, fieldName)"
+        />
+        <span class="column-toggle-name" :title="fieldName">{{ fieldName }}</span>
+        <span class="column-toggle-type">{{ columnMeta(fieldName)?.columnType }}</span>
+      </label>
+    </div>
+    <div class="column-panel-footer">
+      <label class="column-freeze-group">
+        <span>冻结列</span>
+        <select :value="tab.frozenCount || 0" @change="setFrozenColumnCount(tab, $event.target.value)">
+          <option v-for="count in freezeOptions" :key="count" :value="count">
+            {{ count === 0 ? '不冻结' : `前 ${count} 列` }}
+          </option>
+        </select>
+      </label>
+      <span class="filter-section-hint">拖动表头右侧边缘可调整列宽，按表记忆；右键单元格可按值快速筛选</span>
     </div>
   </div>
 
@@ -176,10 +287,16 @@
           <div v-if="tab.queryResult.success" class="result-body">
             <div class="result-table-wrapper">
               <div class="result-table-scroll">
-                <table class="result-table editable-table">
+                <table class="result-table editable-table" :class="{ 'has-frozen-columns': tab.frozenCount > 0 }">
+                  <colgroup>
+                    <col style="width: 36px" />
+                    <col style="width: 56px" />
+                    <col v-for="fieldName in fields" :key="fieldName" :style="columnWidthStyle(tab, fieldName)" />
+                    <col v-if="canEditTable(tab)" style="width: 112px" />
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th class="row-select-col">
+                      <th class="row-select-col" :class="{ 'is-frozen': tab.frozenCount > 0 }">
                         <input
                           type="checkbox"
                           :checked="isAllSelected(tab)"
@@ -188,25 +305,38 @@
                           @change="toggleAllRows(tab, $event.target.checked)"
                         />
                       </th>
-                      <th class="row-index-col">#</th>
+                      <th class="row-index-col" :class="{ 'is-frozen': tab.frozenCount > 0 }">#</th>
                       <th
                         v-for="fieldName in fields"
                         :key="fieldName"
                         :class="[
                           'auto-width',
                           {
-                            'has-sort': tab.sortField === fieldName,
-                            'sort-asc': tab.sortField === fieldName && tab.sortDirection === 'asc',
-                            'sort-desc': tab.sortField === fieldName && tab.sortDirection === 'desc'
+                            'has-sort': sortIndex(tab, fieldName) >= 0,
+                            'sort-asc': sortIndex(tab, fieldName) >= 0 && sortOrder(tab, fieldName) === 'ASC',
+                            'sort-desc': sortIndex(tab, fieldName) >= 0 && sortOrder(tab, fieldName) === 'DESC',
+                            'is-frozen': isFrozenField(tab, fieldName)
                           }
                         ]"
+                        :style="frozenStyle(tab, fieldName)"
                         draggable="true"
                         @dragstart="onFieldDragStart($event, tab, fieldName)"
                         @dragover.prevent="onFieldDragOver($event)"
                         @drop.prevent="onFieldDrop($event, tab, fieldName)"
                       >
                         <div class="th-content">
-                          <span class="th-name" :title="fieldTitle(fieldName)" @click="toggleFieldSort(tab, fieldName)">
+                          <span
+                            v-if="sortIndex(tab, fieldName) >= 0"
+                            class="sort-rank-badge"
+                            :title="`排序优先级 ${sortIndex(tab, fieldName) + 1}`"
+                          >
+                            {{ sortIndex(tab, fieldName) + 1 }}
+                          </span>
+                          <span
+                            class="th-name"
+                            :title="fieldTitle(fieldName)"
+                            @click="toggleFieldSort(tab, fieldName, $event)"
+                          >
                             {{ fieldName }}
                           </span>
                           <span v-if="columnMeta(fieldName)?.columnKey === 'PRI'" class="pk-badge">PK</span>
@@ -219,71 +349,130 @@
                             </svg>
                           </div>
                         </div>
+                        <span
+                          class="col-resizer"
+                          title="拖动调整列宽"
+                          @mousedown.stop.prevent="startColumnResize($event, tab, fieldName)"
+                          @click.stop
+                        />
                       </th>
                       <th v-if="canEditTable(tab)" class="row-action-col" />
                     </tr>
                   </thead>
                   <tbody>
                     <tr
-                      v-for="(row, index) in rows"
-                      :key="rowKey(tab, row) || index"
+                      v-for="rowView in displayRows"
+                      :key="rowView.renderKey"
+                      v-memo="[rowView, isEditingRow(rowView)]"
                       :class="{
-                        'deleted-row': isRowDeleted(tab, row),
-                        'updated-row': isRowUpdated(tab, row),
-                        'selected-row': isRowSelected(tab, row)
+                        'deleted-row': rowView.deleted,
+                        'updated-row': rowView.updated,
+                        'selected-row': rowView.selected
                       }"
                     >
-                      <td class="row-select-col">
+                      <td class="row-select-col" :class="{ 'is-frozen': tab.frozenCount > 0 }">
                         <input
                           type="checkbox"
-                          :checked="isRowSelected(tab, row)"
-                          :disabled="!canEditTable(tab) || isRowDeleted(tab, row)"
-                          @change="toggleRowSelection(tab, row)"
+                          :checked="rowView.selected"
+                          :disabled="!canEditTable(tab) || rowView.deleted"
+                          @change="toggleRowSelection(tab, rowView.row)"
                         />
                       </td>
-                      <td class="row-index-col">{{ rowNumber(index) }}</td>
+                      <td class="row-index-col" :class="{ 'is-frozen': tab.frozenCount > 0 }">
+                        {{ rowNumber(rowView.index) }}
+                      </td>
                       <td
-                        v-for="fieldName in fields"
-                        :key="fieldName"
-                        :class="{ 'edited-cell': isCellEdited(tab, row, fieldName) }"
+                        v-for="cell in rowView.cells"
+                        :key="cell.field"
+                        :class="{
+                          'edited-cell': cell.edited,
+                          'is-frozen': cell.frozen
+                        }"
+                        :style="cell.frozenStyle"
+                        @dblclick="showCellViewer(tab, rowView.row, cell.field)"
+                        @contextmenu.prevent="
+                          openCellFilterMenu($event, tab, cell.field, getCellValue(tab, rowView.row, cell.field))
+                        "
                       >
-                        <template v-if="isRowDeleted(tab, row)">{{ formatCellValue(row[fieldName]) }}</template>
-                        <template v-else-if="canEditTable(tab) && isEditableColumn(fieldName)">
+                        <template v-if="rowView.deleted">{{ cell.text }}</template>
+                        <template v-else-if="cell.editable">
                           <input
+                            v-if="isEditingCell(tab, rowView.row, cell.field)"
+                            :ref="setCellEditorRef"
                             class="cell-editor"
-                            :value="cellInputValue(tab, row, fieldName)"
-                            @change="updateCell(tab, row, fieldName, $event.target.value)"
+                            :value="cellInputValue(tab, rowView.row, cell.field)"
+                            @change="updateCell(tab, rowView.row, cell.field, $event.target.value)"
+                            @blur="endCellEdit"
+                            @keydown.enter.prevent="$event.currentTarget.blur()"
+                            @keydown.esc.prevent="cancelCellEdit"
                           />
+                          <span
+                            v-else
+                            class="cell-text"
+                            :class="cell.class"
+                            @click="beginCellEdit(tab, rowView.row, cell.field)"
+                          >
+                            {{ cell.text }}
+                          </span>
                         </template>
-                        <template v-else>{{ formatCellValue(getCellValue(tab, row, fieldName)) }}</template>
+                        <template v-else>
+                          <span class="cell-text" :class="cell.class">{{ cell.text }}</span>
+                        </template>
                       </td>
                       <td v-if="canEditTable(tab)" class="row-action-col">
                         <button
-                          v-if="isRowDeleted(tab, row)"
+                          v-if="rowView.deleted"
                           class="row-action-btn"
                           title="撤销删除"
-                          @click="restoreDeletedRow(tab, row)"
+                          @click="restoreDeletedRow(tab, rowView.row)"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="1 4 1 10 7 10" />
                             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                           </svg>
                         </button>
-                        <button v-else class="row-action-btn danger" title="删除行" @click="deleteRow(tab, row)">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                        </button>
+                        <template v-else>
+                          <button class="row-action-btn" title="复制为新行" @click="duplicateRow(tab, rowView.row)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          </button>
+                          <button
+                            class="row-action-btn"
+                            title="复制为 INSERT 语句"
+                            @click="copyRowAsInsert(tab, rowView.row)"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="16 18 22 12 16 6" />
+                              <polyline points="8 6 2 12 8 18" />
+                            </svg>
+                          </button>
+                          <button class="row-action-btn danger" title="删除行" @click="deleteRow(tab, rowView.row)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path
+                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                              />
+                            </svg>
+                          </button>
+                        </template>
                       </td>
                     </tr>
                     <tr v-for="(draft, index) in tab.rowInserts" :key="'insert-' + index" class="insert-row">
-                      <td class="row-select-col"><span class="insert-badge">+</span></td>
-                      <td class="row-index-col">新</td>
-                      <td v-for="fieldName in fields" :key="fieldName">
+                      <td class="row-select-col" :class="{ 'is-frozen': tab.frozenCount > 0 }">
+                        <span class="insert-badge">+</span>
+                      </td>
+                      <td class="row-index-col" :class="{ 'is-frozen': tab.frozenCount > 0 }">新</td>
+                      <td
+                        v-for="fieldName in fields"
+                        :key="fieldName"
+                        :class="{ 'is-frozen': isFrozenField(tab, fieldName) }"
+                        :style="frozenStyle(tab, fieldName)"
+                      >
                         <input
                           class="cell-editor"
-                          :value="draft.values[fieldName]"
+                          :value="formatCellInput(draft.values[fieldName])"
                           :placeholder="isAutoIncrement(fieldName) ? '自动' : ''"
                           @change="setNewRowValue(tab, index, fieldName, $event.target.value)"
                         />
@@ -311,13 +500,44 @@
         </div>
         <div v-else class="result-empty">点击刷新加载表数据</div>
       </div>
+      <div v-if="hasPendingChanges(tab)" class="pending-changes-bar">
+        <div class="pending-changes-info">
+          <span class="pending-changes-dot" />
+          <span class="pending-changes-title">数据已修改</span>
+          <span class="pending-changes-counts">
+            <span v-if="pendingCounts.updated" class="pending-change-chip">更新 {{ pendingCounts.updated }} 行</span>
+            <span v-if="pendingCounts.deleted" class="pending-change-chip removed">
+              删除 {{ pendingCounts.deleted }} 行
+            </span>
+            <span v-if="pendingCounts.inserted" class="pending-change-chip added">
+              新增 {{ pendingCounts.inserted }} 行
+            </span>
+          </span>
+        </div>
+        <div class="pending-changes-actions">
+          <button class="btn btn-sm btn-secondary" :disabled="tab.executing" @click="previewChanges(tab)">
+            预览 SQL
+          </button>
+          <button class="btn btn-sm btn-secondary" :disabled="tab.executing" @click="discardTableChanges(tab)">
+            撤销
+          </button>
+          <button class="btn btn-sm btn-primary" :disabled="tab.executing" @click="saveTableChanges(tab)">
+            {{ tab.executing ? '提交中...' : '提交修改' }}
+          </button>
+        </div>
+      </div>
       <div class="result-footer">
         <div class="footer-left">
           <span v-if="tab.queryResult && tab.queryResult.success" class="result-stats">
-            共 {{ tab.queryResult.totalRows ?? rows.length }} 行
+            {{ tab.queryResult.countApproximate ? '约' : '共' }}
+            {{ tab.queryResult.totalRows ?? rows.length }} 行
           </span>
-          <span v-if="hasPendingChanges(tab)" class="pending-summary">
-            待保存: 改 {{ pendingCounts.updated }} · 删 {{ pendingCounts.deleted }} · 增 {{ pendingCounts.inserted }}
+          <span
+            v-if="tab.queryResult && tab.queryResult.success && !canEditTable(tab)"
+            class="readonly-badge"
+            title="视图或没有主键的表不支持直接编辑"
+          >
+            只读
           </span>
           <div
             v-if="tab.queryResult && tab.queryResult.success && tab.queryResult.totalPages && rows.length > 0"
@@ -392,51 +612,70 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { formatBytes, formatCellInput, isBinaryColumn, isBinaryValue } from '../cellFormat'
 
 const databaseStore = inject('database')
 const {
   addRow,
   addTableFilter,
+  addTableSort,
   applyTableFilters,
   canEditTable,
+  changeTableSortField,
+  changeTableSortOrder,
+  copyRowAsInsert,
+  copyRowsAsInsert,
+  defaultFilterOperator,
   deleteRow,
   deleteSelectedRows,
+  discardTableChanges,
+  duplicateRow,
   exportData,
   firstPage,
   formatCellValue,
   getCellValue,
+  fetchTableCellValue,
   getPendingCounts,
   hasPendingChanges,
   importData,
   isAllSelected,
+  isComparisonColumn,
+  isLazyCell,
   isRowDeleted,
-  isRowSelected,
-  isRowUpdated,
   jumpToPage,
   lastPage,
   nextPage,
   onFieldDragOver,
   onFieldDragStart,
   onFieldDrop,
+  openCellFilterMenu,
+  openCellViewer,
   openErDialog,
   openStructureDialog,
+  openTableDesigner,
   prevPage,
   previewChanges,
   refreshTableData,
   removeNewRow,
+  removeTableSort,
   removeTableFilter,
+  resetColumnWidths,
   resetTableFilters,
   restoreDeletedRow,
+  setColumnWidth,
+  setFrozenColumnCount,
   rowKey,
   saveTableChanges,
   searchTableData,
   setNewRowValue,
   setTablePageSize,
+  showAllColumns,
   showFieldSortMenu,
   tableToolbarState,
   toggleAllRows,
   toggleFieldSort,
+  toggleColumnVisibility,
   toggleFilterSort,
   toggleRowSelection,
   updateCell
@@ -446,31 +685,125 @@ const props = defineProps({
   tab: { type: Object, required: true }
 })
 
-const filterOperators = [
-  '=',
-  '!=',
-  '>',
-  '>=',
-  '<',
-  '<=',
-  'LIKE',
-  'NOT LIKE',
-  'IN',
-  'NOT IN',
-  'BETWEEN',
-  'IS NULL',
-  'IS NOT NULL'
-]
+const TEXT_OPERATORS = ['=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'BETWEEN', 'IS NULL', 'IS NOT NULL']
+const COMPARISON_OPERATORS = ['=', '!=', '>', '>=', '<', '<=', 'IN', 'NOT IN', 'BETWEEN', 'IS NULL', 'IS NOT NULL']
 
-const pageSizeOptions = [50, 100, 200, 500, 1000]
+const OPERATOR_LABELS = {
+  '=': '等于 (=)',
+  '!=': '不等于 (!=)',
+  '>': '大于 (>)',
+  '>=': '大于等于 (>=)',
+  '<': '小于 (<)',
+  '<=': '小于等于 (<=)',
+  LIKE: '包含 (LIKE)',
+  'NOT LIKE': '不包含 (NOT LIKE)',
+  IN: '在列表中 (IN)',
+  'NOT IN': '不在列表中 (NOT IN)',
+  BETWEEN: '介于 (BETWEEN)',
+  'IS NULL': '为空',
+  'IS NOT NULL': '不为空'
+}
 
-const fields = computed(() => {
+const pageSizeOptions = [50, 100, 200, 500]
+
+const showColumnPanel = ref(false)
+const structureMenuOpen = ref(false)
+const editingCell = ref(null)
+const cellEditorEl = ref(null)
+const freezeOptions = [0, 1, 2, 3, 4, 5]
+const DEFAULT_COLUMN_WIDTH = 150
+
+function closeStructureMenu() {
+  structureMenuOpen.value = false
+}
+
+onMounted(() => document.addEventListener('click', closeStructureMenu))
+onBeforeUnmount(() => document.removeEventListener('click', closeStructureMenu))
+
+function runStructureAction(action, tab) {
+  structureMenuOpen.value = false
+  action(tab)
+}
+
+const allFields = computed(() => {
   const order = props.tab.fieldOrder || []
   if (order.length) return order
   return (props.tab.queryResult?.fields || []).map((field) => field.name)
 })
 
+const fields = computed(() => {
+  const hidden = props.tab.hiddenFields || []
+  return allFields.value.filter((name) => !hidden.includes(name))
+})
+
+const hiddenFieldCount = computed(() => (props.tab.hiddenFields || []).length)
+
+function isFieldHidden(tab, fieldName) {
+  return (tab.hiddenFields || []).includes(fieldName)
+}
+
+function sortIndex(tab, fieldName) {
+  return (tab.sorts || []).findIndex((item) => item.field === fieldName)
+}
+
+function sortOrder(tab, fieldName) {
+  return (tab.sorts || []).find((item) => item.field === fieldName)?.order || ''
+}
+
+function nextSortField(tab) {
+  return allFields.value.find((name) => !(tab.sorts || []).some((item) => item.field === name)) || ''
+}
+
+function columnWidth(tab, fieldName) {
+  const width = Number(tab.fieldWidths?.[fieldName])
+  return width > 0 ? width : DEFAULT_COLUMN_WIDTH
+}
+
+function isFrozenField(tab, fieldName) {
+  if (!(tab.frozenCount > 0)) return false
+  const index = fields.value.indexOf(fieldName)
+  return index >= 0 && index < tab.frozenCount
+}
+
+function columnWidthStyle(tab, fieldName) {
+  if (!isFrozenField(tab, fieldName) && !tab.fieldWidths?.[fieldName]) return undefined
+  return { width: `${columnWidth(tab, fieldName)}px` }
+}
+
+function frozenStyle(tab, fieldName) {
+  if (!isFrozenField(tab, fieldName)) return undefined
+  let left = 36 + 56
+  const index = fields.value.indexOf(fieldName)
+  for (let i = 0; i < index; i++) {
+    left += columnWidth(tab, fields.value[i])
+  }
+  return { left: `${left}px` }
+}
+
+function startColumnResize(event, tab, fieldName) {
+  const th = event.currentTarget.closest('th')
+  const startX = event.clientX
+  const startWidth = th?.offsetWidth || columnWidth(tab, fieldName)
+  const onMove = (moveEvent) => {
+    const width = Math.min(720, Math.max(60, Math.round(startWidth + moveEvent.clientX - startX)))
+    tab.fieldWidths = { ...(tab.fieldWidths || {}), [fieldName]: width }
+  }
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    setColumnWidth(tab, fieldName, tab.fieldWidths?.[fieldName] || startWidth)
+  }
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
+}
+
 const rows = computed(() => props.tab.queryResult?.rows || [])
+
+const columnMap = computed(() => new Map((props.tab.columns || []).map((column) => [column.name, column])))
+
+function columnMeta(fieldName) {
+  return columnMap.value.get(fieldName)
+}
 
 const pendingCounts = computed(() => getPendingCounts(props.tab))
 
@@ -478,8 +811,55 @@ const activeFilterCount = computed(() => (props.tab.filters || []).filter((filte
 
 const colSpan = computed(() => fields.value.length + 2 + (canEditTable(props.tab) ? 1 : 0))
 
-function columnMeta(fieldName) {
-  return (props.tab.columns || []).find((column) => column.name === fieldName)
+const displayRows = computed(() => {
+  const tab = props.tab
+  const editable = canEditTable(tab)
+  const fieldList = fields.value
+  const rowDeletes = tab.rowDeletes || {}
+  const rowEdits = tab.rowEdits || {}
+  const selectedRows = tab.selectedRows || {}
+  return rows.value.map((row, index) => {
+    const key = rowKey(tab, row)
+    const deleted = Boolean(key && rowDeletes[key])
+    const editValues = key && rowEdits[key] ? rowEdits[key].values : null
+    const cells = fieldList.map((fieldName) => {
+      const lazy = isLazyCell(tab, fieldName)
+      const edited = Boolean(editValues && Object.prototype.hasOwnProperty.call(editValues, fieldName))
+      let value = row[fieldName]
+      if (!deleted && edited) {
+        value = editValues[fieldName]
+      }
+      const isNullValue = value === null || value === undefined
+      return {
+        field: fieldName,
+        editable: editable && isEditableColumn(fieldName),
+        edited: !deleted && edited,
+        frozen: isFrozenField(tab, fieldName),
+        frozenStyle: frozenStyle(tab, fieldName),
+        text: lazy ? (isNullValue ? 'NULL' : `[二进制 ${formatBytes(value)}]`) : formatCellValue(value),
+        class: {
+          'is-null': isNullValue,
+          'is-binary': lazy ? !isNullValue : isBinaryValue(value),
+          'is-json': !lazy && isStructuredValue(value)
+        }
+      }
+    })
+    return {
+      row,
+      index,
+      key,
+      renderKey: key || `row-${index}`,
+      deleted,
+      updated: Boolean(key && rowEdits[key]),
+      selected: Boolean(key && selectedRows[key]),
+      cells
+    }
+  })
+})
+
+function isEditingRow(rowView) {
+  const current = editingCell.value
+  return Boolean(current && current.tabId === props.tab.id && current.key === rowView.key)
 }
 
 function fieldTitle(fieldName) {
@@ -491,23 +871,62 @@ function fieldTitle(fieldName) {
 function isEditableColumn(fieldName) {
   const meta = columnMeta(fieldName)
   if (!meta) return true
-  return !/GENERATED/i.test(String(meta.extra || ''))
+  if (/GENERATED/i.test(String(meta.extra || ''))) return false
+  return !isBinaryColumn(meta.dataType || meta.columnType)
 }
 
 function isAutoIncrement(fieldName) {
   return /auto_increment/i.test(String(columnMeta(fieldName)?.extra || ''))
 }
 
-function cellInputValue(tab, row, fieldName) {
-  const value = getCellValue(tab, row, fieldName)
-  return value === null || value === undefined ? '' : value
+function isStructuredValue(value) {
+  return value !== null && typeof value === 'object' && !(value instanceof Date) && !isBinaryValue(value)
 }
 
-function isCellEdited(tab, row, fieldName) {
+function cellInputValue(tab, row, fieldName) {
+  return formatCellInput(getCellValue(tab, row, fieldName))
+}
+
+function isEditingCell(tab, row, fieldName) {
+  const current = editingCell.value
+  if (!current || current.tabId !== tab.id || current.field !== fieldName) return false
+  return current.key === rowKey(tab, row)
+}
+
+function setCellEditorRef(el) {
+  cellEditorEl.value = el
+}
+
+async function beginCellEdit(tab, row, fieldName) {
+  if (!canEditTable(tab) || !isEditableColumn(fieldName) || isRowDeleted(tab, row)) return
   const key = rowKey(tab, row)
-  if (!key) return false
-  const entry = tab.rowEdits?.[key]
-  return Boolean(entry && Object.prototype.hasOwnProperty.call(entry.values, fieldName))
+  if (!key) return
+  editingCell.value = { tabId: tab.id, key, field: fieldName }
+  await nextTick()
+  cellEditorEl.value?.focus()
+}
+
+function endCellEdit() {
+  editingCell.value = null
+}
+
+function cancelCellEdit() {
+  editingCell.value = null
+}
+
+function showCellViewer(tab, row, fieldName) {
+  if (canEditTable(tab) && isEditableColumn(fieldName) && !isRowDeleted(tab, row)) return
+  const meta = columnMeta(fieldName)
+  const columnType = meta?.columnType || meta?.dataType || ''
+  if (isLazyCell(tab, fieldName)) {
+    const length = Number(getCellValue(tab, row, fieldName))
+    openCellViewer(fieldName, columnType, null, {
+      byteLength: Number.isFinite(length) ? length : 0,
+      load: () => fetchTableCellValue(tab, row, fieldName)
+    })
+    return
+  }
+  openCellViewer(fieldName, columnType, getCellValue(tab, row, fieldName))
 }
 
 function rowNumber(index) {
@@ -521,6 +940,21 @@ function filterPlaceholder(operator) {
   if (operator === 'BETWEEN') return '起止值用逗号分隔'
   if (operator === 'LIKE' || operator === 'NOT LIKE') return '使用 % 作为通配符'
   return '筛选值'
+}
+
+function operatorsFor(fieldName) {
+  return isComparisonColumn(columnMeta(fieldName)) ? COMPARISON_OPERATORS : TEXT_OPERATORS
+}
+
+function operatorLabel(operator) {
+  return OPERATOR_LABELS[operator] || operator
+}
+
+function onFilterFieldChange(tab, filter) {
+  const allowed = operatorsFor(filter.field)
+  if (!allowed.includes(filter.operator)) {
+    filter.operator = defaultFilterOperator(columnMeta(filter.field))
+  }
 }
 
 function onPageSizeChange(event) {

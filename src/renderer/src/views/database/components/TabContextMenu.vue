@@ -5,7 +5,7 @@
     :style="{ left: tabContextMenu.x + 'px', top: tabContextMenu.y + 'px' }"
     @click.stop
   >
-    <div class="menu-item" @click="handleRefreshTableAndHide()">
+    <div class="menu-item" @click="closeCurrentTab()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18" />
         <line x1="6" y1="6" x2="18" y2="18" />
@@ -48,6 +48,20 @@
 import { inject } from 'vue'
 
 const databaseStore = inject('database')
-const { closeAllTabs, closeOtherTabs, closeTabsToLeft, closeTabsToRight, handleRefreshTableAndHide, tabContextMenu } =
-  databaseStore
+const {
+  closeAllTabs,
+  closeOtherTabs,
+  closeTab,
+  closeTabsToLeft,
+  closeTabsToRight,
+  hideTabContextMenu,
+  tabContextMenu
+} = databaseStore
+
+function closeCurrentTab() {
+  const tab = tabContextMenu.value.tab
+  if (!tab) return
+  closeTab(tab.id)
+  hideTabContextMenu()
+}
 </script>

@@ -134,6 +134,14 @@
               <span>自动连接</span>
             </label>
           </div>
+          <div class="form-inline-group">
+            <label class="checkbox-label-inline">
+              <input v-model="newConnection.readOnly" type="checkbox" />
+              <span>只读连接</span>
+            </label>
+            <div class="setting-hint">只读连接禁止执行写入与结构变更，查询与状态面板不受影响</div>
+          </div>
+          <ConnectionNetworkFields v-model="newConnection" />
         </template>
       </div>
       <div class="dialog-footer">
@@ -151,6 +159,7 @@
 
 <script setup>
 import { inject } from 'vue'
+import ConnectionNetworkFields from './ConnectionNetworkFields.vue'
 
 const databaseStore = inject('database')
 const {

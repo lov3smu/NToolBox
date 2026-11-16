@@ -65,5 +65,3 @@ export function getConfigPath() {
     return path.join(getProjectRoot(), 'config.json')
   }
 }
-
-export const installDir = getInstallDir()

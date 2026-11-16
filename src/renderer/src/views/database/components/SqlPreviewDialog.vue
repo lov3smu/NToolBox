@@ -1,6 +1,6 @@
 <template>
-  <div v-if="sqlPreviewDialog.show" class="dialog-overlay" @click.self="closeSqlPreview">
-    <div class="dialog dialog-wide">
+  <div v-if="sqlPreviewDialog.show" class="dialog-overlay sql-preview-overlay" @click.self="closeSqlPreview">
+    <div class="dialog dialog-wide sql-preview-dialog">
       <div class="dialog-header">
         <h3>{{ sqlPreviewDialog.title }}</h3>
         <button class="btn-icon btn-sm" title="关闭" @click="closeSqlPreview">
@@ -11,7 +11,7 @@
         </button>
       </div>
       <div class="dialog-content">
-        <pre class="sql-preview-block">{{ sqlPreviewDialog.sql }}</pre>
+        <SqlHighlight class="sql-preview-block" :code="sqlPreviewDialog.sql" />
       </div>
       <div class="dialog-footer">
         <button class="btn btn-secondary" @click="copySql(sqlPreviewDialog.sql)">复制 SQL</button>
@@ -23,6 +23,7 @@
 
 <script setup>
 import { inject } from 'vue'
+import SqlHighlight from '@/components/SqlHighlight.vue'
 
 const databaseStore = inject('database')
 const { closeSqlPreview, copySql, sqlPreviewDialog } = databaseStore

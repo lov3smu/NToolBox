@@ -10,7 +10,7 @@
         </svg>
         {{ paused ? '恢复记录' : '暂停记录' }}
       </button>
-      <button class="btn btn-secondary btn-sm" :disabled="entries.length === 0" @click="clearVisible = true">
+      <button class="btn btn-danger btn-sm" :disabled="entries.length === 0" @click="clearVisible = true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
         </svg>
@@ -18,7 +18,7 @@
       </button>
     </template>
 
-    <div class="clipboard-page">
+    <div class="page-body clipboard-page">
       <div v-if="paused" class="clipboard-banner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10" />
@@ -111,13 +111,15 @@
         </article>
       </div>
 
-      <div v-else class="clipboard-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="9" y="9" width="12" height="12" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-        <p class="clipboard-empty-title">{{ emptyTitle }}</p>
-        <p class="clipboard-empty-hint">{{ emptyHint }}</p>
+      <div v-else class="empty-state clipboard-empty">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="9" y="9" width="12" height="12" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </span>
+        <p class="empty-state-title">{{ emptyTitle }}</p>
+        <p class="empty-state-hint">{{ emptyHint }}</p>
       </div>
     </div>
 
@@ -274,7 +276,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 20px 20px;
 }
 
 .clipboard-banner {
@@ -531,31 +532,6 @@ onUnmounted(() => {
 
 .clipboard-empty {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.clipboard-empty > svg {
-  width: 44px;
-  height: 44px;
-  color: var(--border-strong);
-}
-
-.clipboard-empty-title {
-  margin: 0;
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.clipboard-empty-hint {
-  margin: 0;
-  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 720px) {

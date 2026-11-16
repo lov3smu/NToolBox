@@ -20,10 +20,12 @@
       "database": {
         "type": "string",
         "description": "数据库类型，例如 mysql、postgresql",
-        "enum": ["mysql", "postgresql", "oracle", "sqlserver"]
+        "enum": ["mysql", "postgresql", "oracle", "sqlserver"],
+        "default": "mysql"
       }
     },
-    "required": ["sql"]
+    "required": ["sql"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

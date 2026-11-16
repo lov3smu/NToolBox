@@ -1,7 +1,14 @@
-import http from 'http'
-import https from 'https'
 import { TextDecoder } from 'util'
 import { log } from '../../../utils'
+import { createRequest } from '../../network.js'
+import {
+  RETRY_DEFAULTS,
+  isRetryableNetworkCode,
+  isRetryableStatus,
+  withRetry,
+  computeRetryDelay,
+  waitForDelay
+} from '../retry.js'
 
 class BaseProvider {
   constructor(config) {
@@ -18,8 +25,11 @@ class BaseProvider {
     this.thinkingStyle = config.thinkingStyle || ''
     this.streamUsage = config.streamUsage === true
     this.temperatureFixed = config.temperatureFixed === true
+    // 部分网关（如 OpenCode）的模型列表接口公开，只能通过实际对话校验密钥
+    this.validateWithChat = config.validateWithChat === true
     this.timeout = config.timeout || 60000
     this.connectionTimeout = config.connectionTimeout || 10000
+    this.maxRetries = Number.isInteger(config.maxRetries) ? Math.max(0, config.maxRetries) : RETRY_DEFAULTS.retries
     this.setBaseUrl(config.baseUrl || '')
   }
 
@@ -30,7 +40,6 @@ class BaseProvider {
     this.port = this.defaultPort
     this.path = this.defaultPath
     this.modelsPath = this.defaultModelsPath
-    this.transport = https
   }
 
   setBaseUrl(baseUrl) {
@@ -61,7 +70,6 @@ class BaseProvider {
     this.port = parsed.port ? Number(parsed.port) : parsed.protocol === 'https:' ? 443 : 80
     this.path = `${basePath}/chat/completions`
     this.modelsPath = `${basePath}/models`
-    this.transport = parsed.protocol === 'https:' ? https : http
     return true
   }
 
@@ -82,6 +90,15 @@ class BaseProvider {
       return { valid: false, error: 'API Key 未配置' }
     }
     return { valid: true }
+  }
+
+  // 子类可扩展 options（如会话 id）覆盖请求头
+  getHeaders(extra = {}, apiKey = this.apiKey) {
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      ...extra
+    }
   }
 
   buildRequestBody(messages, tools, options) {
@@ -174,7 +191,14 @@ class BaseProvider {
 
     log.debug(`[${this.name}] chat 请求，消息数: ${messages.length}`)
 
-    const result = await this.makeRequest(this.hostname, this.port, this.path, requestBody)
+    const result = await this.makeRequest(this.hostname, this.port, this.path, requestBody, {
+      retries: options.retries,
+      baseDelay: options.retryBaseDelay,
+      maxDelay: options.retryMaxDelay,
+      shouldStop: options.shouldStop,
+      onRetry: options.onRetry,
+      conversationId: options.conversationId
+    })
 
     if (!result.success) return result
 
@@ -184,7 +208,59 @@ class BaseProvider {
     return this.parseResponse(responseData)
   }
 
-  chatStream(messages, tools, options = {}, onChunk) {
+  async chatStream(messages, tools, options = {}, onChunk) {
+    const shouldStop = typeof options.shouldStop === 'function' ? options.shouldStop : () => false
+    const retries = Number.isInteger(options.retries) ? Math.max(0, options.retries) : this.maxRetries
+
+    for (let attempt = 0; ; attempt += 1) {
+      let emitted = false
+      const guardedChunk =
+        typeof onChunk === 'function'
+          ? (event) => {
+              emitted = true
+              onChunk(event)
+            }
+          : undefined
+
+      let result
+      try {
+        result = await this.chatStreamOnce(messages, tools, options, guardedChunk)
+      } catch (error) {
+        result = {
+          success: false,
+          cancelled: Boolean(error?.cancelled),
+          error: typeof error?.error === 'string' ? error.error : error?.message || String(error),
+          status: error?.status,
+          retryable: error?.retryable === true,
+          content: typeof error?.content === 'string' ? error.content : '',
+          thinking: typeof error?.thinking === 'string' ? error.thinking : ''
+        }
+      }
+
+      if (result && emitted) result.emitted = true
+      if (!result || result.success || result.cancelled || result.emitted || result.retryable !== true) {
+        return result
+      }
+      if (attempt >= retries || shouldStop()) return result
+
+      const delay = computeRetryDelay(attempt + 1, options.retryBaseDelay, options.retryMaxDelay)
+      if (typeof options.onRetry === 'function') {
+        options.onRetry({ attempt: attempt + 1, retries, delay, error: result.error || '' })
+      }
+      if (typeof onChunk === 'function') {
+        onChunk({
+          kind: 'status',
+          text: `模型请求失败（${result.error || '未知错误'}），${Math.round(delay / 1000)} 秒后重试（${attempt + 1}/${retries}）`
+        })
+      }
+      const canContinue = await waitForDelay(delay, shouldStop)
+      if (!canContinue) {
+        return { ...result, success: false, cancelled: true, error: '已停止' }
+      }
+    }
+  }
+
+  chatStreamOnce(messages, tools, options = {}, onChunk) {
     return new Promise((resolve, reject) => {
       const shouldStop = typeof options.shouldStop === 'function' ? options.shouldStop : () => false
 
@@ -219,14 +295,14 @@ class BaseProvider {
         if (settled) return
         settled = true
         clearTimers()
-        resolve(payload)
+        resolve({ content: fullContent, thinking: fullThinking, ...payload })
       }
 
       const fail = (payload) => {
         if (settled) return
         settled = true
         clearTimers()
-        reject(payload)
+        reject({ content: fullContent, thinking: fullThinking, ...payload })
       }
 
       const stop = () => {
@@ -239,36 +315,56 @@ class BaseProvider {
           usage: streamUsage,
           error: '已停止'
         })
-        req?.destroy()
+        req?.cancel()
       }
 
-      req = this.transport.request(
+      req = createRequest(
+        this.protocol,
         {
           hostname: this.hostname,
           port: this.port,
           path: this.path,
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.apiKey}`
-          }
+          headers: this.getHeaders({}, this.apiKey, options)
         },
         (res) => {
           let lastDataTime = Date.now()
 
           streamTimeout = setTimeout(() => {
             log.error(`${this.name} 流式响应超时（无数据传输）`)
-            fail({ success: false, error: `响应超时（${this.timeout / 1000}秒），请稍后重试` })
-            req.destroy()
+            fail({ success: false, error: `响应超时（${this.timeout / 1000}秒），请稍后重试`, retryable: true })
+            req.cancel()
           }, this.timeout)
 
           keepAliveCheck = setInterval(() => {
             if (Date.now() - lastDataTime > this.timeout) {
               log.error(`${this.name} 流式连接中断`)
-              fail({ success: false, error: `连接中断，请稍后重试` })
-              req.destroy()
+              fail({ success: false, error: `连接中断，请稍后重试`, retryable: true })
+              req.cancel()
             }
           }, 5000)
+
+          if (res.statusCode !== 200) {
+            let errorBody = ''
+            res.on('data', (chunk) => {
+              if (errorBody.length >= 8192) return
+              errorBody += decoder.decode(chunk, { stream: true })
+            })
+            res.on('end', () => {
+              const text = errorBody.trim()
+              const message =
+                extractErrorMessage(parseJsonSafe(text)) || text.slice(0, 300) || `请求失败: ${res.statusCode}`
+              log.error(`${this.name} 流式请求失败: ${res.statusCode} ${message}`)
+              fail({
+                success: false,
+                error: message,
+                status: res.statusCode,
+                errorBody: text.slice(0, 2000),
+                retryable: isRetryableStatus(res.statusCode)
+              })
+            })
+            return
+          }
 
           res.on('data', (chunk) => {
             if (shouldStop()) {
@@ -333,12 +429,6 @@ class BaseProvider {
           res.on('end', () => {
             if (settled) return
 
-            if (res.statusCode !== 200) {
-              log.error(`${this.name} 流式请求失败: ${res.statusCode}`)
-              fail({ success: false, error: `请求失败: ${res.statusCode}` })
-              return
-            }
-
             if (shouldStop()) {
               stop()
               return
@@ -371,7 +461,7 @@ class BaseProvider {
           errorMessage = `连接超时，请检查网络或稍后重试`
         }
 
-        fail({ success: false, error: errorMessage })
+        fail({ success: false, error: errorMessage, code: e.code, retryable: isRetryableNetworkCode(e.code) })
       })
 
       stopWatcher = setInterval(() => {
@@ -384,10 +474,12 @@ class BaseProvider {
   }
 
   async validateApiKey() {
-    if (this.modelsPath) {
+    if (!this.validateWithChat && this.modelsPath) {
       const result = await this.requestModels()
-      if (result.success) return true
-      if (result.status !== 404 && result.status !== 405) return false
+      if (result.success) return { valid: true, status: 200, error: '' }
+      if (result.status !== 404 && result.status !== 405) {
+        return { valid: false, status: result.status || 0, error: result.error || '' }
+      }
     }
 
     const requestBody = {
@@ -397,7 +489,8 @@ class BaseProvider {
     }
 
     const result = await this.makeRequest(this.hostname, this.port, this.path, requestBody)
-    return result.success
+    if (result.success) return { valid: true, status: 200, error: '' }
+    return { valid: false, status: result.status || 0, error: result.error || '' }
   }
 
   async listRemoteModels(apiKey = this.apiKey) {
@@ -413,23 +506,21 @@ class BaseProvider {
 
     const models = parseModelList(result.data)
     if (models.length === 0) {
-      return { success: false, models: [], error: '平台未返回可用的对话模型' }
+      return { success: false, models: [], error: '服务商未返回可用的对话模型' }
     }
     return { success: true, models, error: null }
   }
 
   requestModels(apiKey = this.apiKey) {
     return new Promise((resolve) => {
-      const req = this.transport.request(
+      const req = createRequest(
+        this.protocol,
         {
           hostname: this.hostname,
           port: this.port,
           path: this.modelsPath,
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            Accept: 'application/json'
-          }
+          headers: this.getHeaders({ Accept: 'application/json' }, apiKey)
         },
         (res) => {
           const decoder = new TextDecoder('utf-8')
@@ -465,7 +556,7 @@ class BaseProvider {
       )
 
       const timer = setTimeout(() => {
-        req.destroy()
+        req.cancel()
         resolve({ success: false, error: '获取模型列表超时', status: 0 })
       }, this.connectionTimeout)
 
@@ -480,18 +571,26 @@ class BaseProvider {
     })
   }
 
-  async makeRequest(hostname, port, path, requestBody) {
+  async makeRequest(hostname, port, path, requestBody, retryOptions = {}) {
+    return withRetry(() => this.makeRequestOnce(hostname, port, path, requestBody, retryOptions), {
+      retries: Number.isInteger(retryOptions.retries) ? retryOptions.retries : this.maxRetries,
+      baseDelay: retryOptions.baseDelay,
+      maxDelay: retryOptions.maxDelay,
+      shouldStop: retryOptions.shouldStop,
+      onRetry: retryOptions.onRetry
+    })
+  }
+
+  async makeRequestOnce(hostname, port, path, requestBody, options = {}) {
     return new Promise((resolve) => {
-      const req = this.transport.request(
+      const req = createRequest(
+        this.protocol,
         {
           hostname,
           port: port || this.port || 443,
           path,
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.apiKey}`
-          }
+          headers: this.getHeaders({}, this.apiKey, options)
         },
         (res) => {
           const decoder = new TextDecoder('utf-8')
@@ -502,31 +601,37 @@ class BaseProvider {
           res.on('end', () => {
             data += decoder.decode()
             clearTimeout(timeoutTimer)
-            try {
-              const responseData = JSON.parse(data)
-              if (res.statusCode !== 200) {
-                log.error(`${this.name} API 错误:`, responseData)
-                resolve({
-                  success: false,
-                  error: responseData.error?.message || `请求失败: ${res.statusCode}`
-                })
-                return
-              }
-              resolve({ success: true, data: responseData })
-            } catch (e) {
-              log.error('解析响应失败:', e)
-              resolve({ success: false, error: '解析响应失败' })
+            const responseData = parseJsonSafe(data)
+            if (res.statusCode !== 200) {
+              const text = data.trim()
+              const message = extractErrorMessage(responseData) || text.slice(0, 300) || `请求失败: ${res.statusCode}`
+              log.error(`${this.name} API 错误: ${res.statusCode} ${message}`)
+              resolve({
+                success: false,
+                error: message,
+                status: res.statusCode,
+                errorBody: text.slice(0, 2000),
+                retryable: isRetryableStatus(res.statusCode)
+              })
+              return
             }
+            if (!responseData) {
+              log.error('解析响应失败:', data.slice(0, 200))
+              resolve({ success: false, error: '解析响应失败', status: res.statusCode })
+              return
+            }
+            resolve({ success: true, data: responseData })
           })
         }
       )
 
       const timeoutTimer = setTimeout(() => {
-        req.destroy()
+        req.cancel()
         log.error(`${this.name} API 请求超时`)
         resolve({
           success: false,
-          error: `请求超时（${this.timeout / 1000}秒），请检查网络连接或稍后重试`
+          error: `请求超时（${this.timeout / 1000}秒），请检查网络连接或稍后重试`,
+          retryable: true
         })
       }, this.timeout)
 
@@ -543,7 +648,7 @@ class BaseProvider {
           errorMessage = `连接超时，请检查网络或稍后重试`
         }
 
-        resolve({ success: false, error: errorMessage })
+        resolve({ success: false, error: errorMessage, retryable: isRetryableNetworkCode(e.code) })
       })
 
       req.write(JSON.stringify(requestBody))
@@ -561,6 +666,15 @@ function extractErrorMessage(payload) {
   return payload.error?.message || payload.message || payload.msg || ''
 }
 
+function parseJsonSafe(text) {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
 function normalizeModelItem(item) {
   if (!item || typeof item !== 'object') return null
   if (item.domain && !/llm|vlm|language|chat/i.test(String(item.domain))) return null
@@ -569,7 +683,20 @@ function normalizeModelItem(item) {
   if (!id || NON_CHAT_MODEL_PATTERN.test(id)) return null
 
   const name = String(item.name || item.display_name || item.displayName || '').trim()
-  return { id, name: name && name !== id ? name : id }
+  const model = { id, name: name && name !== id ? name : id }
+
+  const contextWindow = Number(item.limit?.context ?? item.max_input_tokens)
+  if (Number.isFinite(contextWindow) && contextWindow > 0) model.contextWindow = Math.floor(contextWindow)
+  const maxOutput = Number(item.limit?.output ?? item.max_tokens ?? item.max_output_tokens)
+  if (Number.isFinite(maxOutput) && maxOutput > 0) model.maxOutput = Math.floor(maxOutput)
+
+  const inputs = item.modalities?.input
+  if (Array.isArray(inputs)) {
+    const hasImage = inputs.some((type) => /^image\//i.test(String(type)))
+    model.inputTypes = hasImage ? ['text', 'image'] : ['text']
+  }
+
+  return model
 }
 
 function parseModelList(payload) {

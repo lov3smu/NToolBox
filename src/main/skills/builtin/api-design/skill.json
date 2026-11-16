@@ -17,15 +17,18 @@
       "style": {
         "type": "string",
         "description": "API风格：restful、graphql、rpc",
-        "enum": ["restful", "graphql", "rpc"]
+        "enum": ["restful", "graphql", "rpc"],
+        "default": "restful"
       },
       "output_format": {
         "type": "string",
         "description": "输出格式：swagger、markdown、json",
-        "enum": ["swagger", "markdown", "json"]
+        "enum": ["swagger", "markdown", "json"],
+        "default": "markdown"
       }
     },
-    "required": ["requirement"]
+    "required": ["requirement"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

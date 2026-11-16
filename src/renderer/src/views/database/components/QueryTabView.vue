@@ -96,6 +96,12 @@
           <path d="M17 8l-4 8" />
         </svg>
       </button>
+      <button class="toolbar-icon-btn" :disabled="!tab.queryResult" title="复制结果为 CSV" @click="copyResultCsv(tab)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      </button>
       <button class="toolbar-icon-btn" :disabled="!tab.queryResult" title="导出查询结果" @click="openExportDialog(tab)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" />
@@ -131,7 +137,12 @@
         v-model="tab.sqlQuery"
         :tables="getTabTables(tab)"
         :databases="getTabDatabases(tab)"
+        :schema="getTabSchema(tab)"
         :placeholder="getTabPlaceholder(tab)"
+        :connection-name="tab.connectionName"
+        :database="tab.database"
+        :settings="databaseEditor"
+        @execute="executeEditorStatement(tab, $event)"
       />
     </div>
 
@@ -156,25 +167,176 @@
             </div>
           </div>
           <span v-else class="result-title">查询结果</span>
-          <span class="result-info">
-            {{ tab.queryResult.success ? `成功 - 耗时: ${tab.queryResult.duration}ms` : '失败' }}
-          </span>
+          <div class="result-header-actions">
+            <span v-if="tab.queryResult.editLoading" class="result-edit-hint">正在识别可编辑性…</span>
+            <span
+              v-else-if="tab.queryResult.editSource"
+              class="result-edit-badge"
+              :title="`来源表 ${tab.queryResult.editSource.database}.${tab.queryResult.editSource.tableName}`"
+            >
+              可编辑<template v-if="tab.queryResult.editSource.isUniqueKey"> · 唯一键</template>
+            </span>
+            <span
+              v-else-if="tab.queryResult.editChecked && tab.queryResult.readonlyReason"
+              class="result-readonly-badge"
+              :title="tab.queryResult.readonlyReason"
+            >
+              只读
+            </span>
+            <button
+              v-if="tab.previousResult && tab.queryResult.success"
+              class="btn btn-xs btn-secondary result-compare-btn"
+              title="与上一次执行结果对比"
+              @click="openResultCompare(tab)"
+            >
+              对比上次
+            </button>
+            <template v-if="canEditResult(tab.queryResult) && tab.queryResult.editMode">
+              <button
+                class="btn btn-sm btn-secondary"
+                :disabled="tab.queryResult.saving"
+                @click="addResultRow(tab.queryResult)"
+              >
+                新增行
+              </button>
+              <button
+                class="btn btn-sm btn-secondary"
+                :disabled="tab.queryResult.saving"
+                @click="deleteSelectedResultRows(tab.queryResult)"
+              >
+                删除选中
+              </button>
+            </template>
+            <button
+              v-if="canEditResult(tab.queryResult)"
+              class="btn btn-sm btn-secondary"
+              :disabled="tab.queryResult.saving"
+              @click="toggleResultEditMode(tab.queryResult)"
+            >
+              {{ tab.queryResult.editMode ? '退出编辑' : '编辑结果' }}
+            </button>
+            <span class="result-info">
+              {{ tab.queryResult.success ? `成功 - 耗时: ${tab.queryResult.duration}ms` : '失败' }}
+            </span>
+          </div>
         </div>
         <div v-if="tab.queryResult.success" class="query-result-content">
           <div v-if="tab.queryResult.rows && tab.queryResult.rows.length > 0" class="result-table-wrapper">
             <div class="result-table-scroll">
-              <table class="result-table">
+              <table :class="['result-table', { 'editable-table': tab.queryResult.editMode }]">
                 <thead>
                   <tr>
-                    <th v-for="field in tab.queryResult.fields" :key="field.name" class="auto-width">
-                      {{ field.name }}
+                    <th v-if="tab.queryResult.editMode" class="row-select-col">
+                      <input
+                        type="checkbox"
+                        :checked="isAllResultRowsSelected(tab.queryResult)"
+                        :disabled="tab.queryResult.saving"
+                        title="全选当前页"
+                        @change="toggleAllResultRows(tab.queryResult, $event.target.checked)"
+                      />
                     </th>
+                    <th v-for="field in tab.queryResult.fields" :key="field.name" class="auto-width">
+                      <span class="th-inline">
+                        {{ field.name }}
+                        <span v-if="tab.queryResult.editSource?.primaryKeys?.includes(field.name)" class="pk-badge">
+                          PK
+                        </span>
+                      </span>
+                    </th>
+                    <th v-if="tab.queryResult.editMode" class="row-action-col" />
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(row, index) in tab.queryResult.rows" :key="index">
+                  <tr
+                    v-for="(row, index) in tab.queryResult.rows"
+                    :key="index"
+                    :class="{
+                      'deleted-row': isResultRowDeleted(tab.queryResult, row),
+                      'updated-row': isResultRowUpdated(tab.queryResult, row),
+                      'selected-row': isResultRowSelected(tab.queryResult, row)
+                    }"
+                  >
+                    <td v-if="tab.queryResult.editMode" class="row-select-col">
+                      <input
+                        type="checkbox"
+                        :checked="isResultRowSelected(tab.queryResult, row)"
+                        :disabled="isResultRowDeleted(tab.queryResult, row) || tab.queryResult.saving"
+                        @change="toggleResultRowSelection(tab.queryResult, row)"
+                      />
+                    </td>
+                    <td
+                      v-for="field in tab.queryResult.fields"
+                      :key="field.name"
+                      :class="{ 'edited-cell': isResultCellEdited(tab.queryResult, row, field.name) }"
+                      @dblclick="onResultCellDblclick(tab, row, field.name)"
+                    >
+                      <template v-if="tab.queryResult.editMode && isResultRowDeleted(tab.queryResult, row)">
+                        {{ formatCellValue(row[field.name]) }}
+                      </template>
+                      <template
+                        v-else-if="tab.queryResult.editMode && isEditableResultField(tab.queryResult, field.name)"
+                      >
+                        <input
+                          class="cell-editor"
+                          :value="resultCellInputValue(tab.queryResult, row, field.name)"
+                          @change="updateResultCell(tab.queryResult, row, field.name, $event.target.value)"
+                        />
+                      </template>
+                      <template v-else>{{
+                        formatCellValue(getResultCellValue(tab.queryResult, row, field.name))
+                      }}</template>
+                    </td>
+                    <td v-if="tab.queryResult.editMode" class="row-action-col">
+                      <button
+                        v-if="isResultRowDeleted(tab.queryResult, row)"
+                        class="row-action-btn"
+                        title="撤销删除"
+                        @click="restoreResultDeletedRow(tab.queryResult, row)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="1 4 1 10 7 10" />
+                          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                        </svg>
+                      </button>
+                      <button
+                        v-else
+                        class="row-action-btn danger"
+                        title="删除行"
+                        @click="deleteResultRow(tab.queryResult, row)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(draft, index) in tab.queryResult.rowInserts"
+                    v-show="tab.queryResult.editMode"
+                    :key="'insert-' + index"
+                    class="insert-row"
+                  >
+                    <td class="row-select-col"><span class="insert-badge">+</span></td>
                     <td v-for="field in tab.queryResult.fields" :key="field.name">
-                      {{ formatCellValue(row[field.name]) }}
+                      <input
+                        class="cell-editor"
+                        :value="formatCellInput(draft.values[field.name])"
+                        :placeholder="resultColumnMeta(tab.queryResult, field.name)?.autoIncrement ? '自动' : ''"
+                        @change="setResultNewRowValue(tab.queryResult, index, field.name, $event.target.value)"
+                      />
+                    </td>
+                    <td class="row-action-col">
+                      <button
+                        class="row-action-btn danger"
+                        title="移除新增行"
+                        @click="removeResultNewRow(tab.queryResult, index)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -185,6 +347,46 @@
         </div>
         <div v-else class="result-error">
           {{ tab.queryResult.error }}
+        </div>
+      </div>
+      <div v-if="tab.queryResult.editMode && hasResultPendingChanges(tab.queryResult)" class="pending-changes-bar">
+        <div class="pending-changes-info">
+          <span class="pending-changes-dot" />
+          <span class="pending-changes-title">结果已修改</span>
+          <span class="pending-changes-counts">
+            <span v-if="pendingResultCounts(tab.queryResult).updated" class="pending-change-chip">
+              更新 {{ pendingResultCounts(tab.queryResult).updated }} 行
+            </span>
+            <span v-if="pendingResultCounts(tab.queryResult).deleted" class="pending-change-chip removed">
+              删除 {{ pendingResultCounts(tab.queryResult).deleted }} 行
+            </span>
+            <span v-if="pendingResultCounts(tab.queryResult).inserted" class="pending-change-chip added">
+              新增 {{ pendingResultCounts(tab.queryResult).inserted }} 行
+            </span>
+          </span>
+        </div>
+        <div class="pending-changes-actions">
+          <button
+            class="btn btn-sm btn-secondary"
+            :disabled="tab.queryResult.saving"
+            @click="previewResultChanges(tab.queryResult)"
+          >
+            预览 SQL
+          </button>
+          <button
+            class="btn btn-sm btn-secondary"
+            :disabled="tab.queryResult.saving"
+            @click="discardResultChanges(tab.queryResult)"
+          >
+            撤销
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            :disabled="tab.queryResult.saving"
+            @click="saveResultChanges(tab, tab.queryResult)"
+          >
+            {{ tab.queryResult.saving ? '提交中...' : '提交修改' }}
+          </button>
         </div>
       </div>
       <div class="result-footer">
@@ -296,46 +498,134 @@
 
 <script setup>
 import SqlEditor from '@/components/SqlEditor.vue'
-import { inject, ref } from 'vue'
+import { copyToClipboard } from '@/utils/clipboard'
+import { inject, ref, watch } from 'vue'
+import { formatCellInput, isBinaryColumn } from '../cellFormat'
 
 const databaseStore = inject('database')
+const databaseEditor = inject('databaseEditor', null)
 const {
+  addResultRow,
   autoLimit,
   beginTransactionForTab,
+  canEditResult,
   clearQueryForTab,
   commitTransactionForTab,
   connections,
+  deleteResultRow,
+  deleteSelectedResultRows,
+  discardResultChanges,
   executeQueryForTab,
   explainQueryForTab,
   firstPage,
   formatCellValue,
   formatSqlForTab,
+  getResultCellValue,
+  getResultPendingCounts,
   getTabDatabases,
   getTabPlaceholder,
+  getTabSchema,
   getTabTables,
+  hasResultPendingChanges,
+  isAllResultRowsSelected,
+  isResultCellEdited,
+  isResultRowDeleted,
+  isResultRowSelected,
+  isResultRowUpdated,
   jumpToPage,
   lastPage,
   limitCount,
   limitSettingsDialog,
+  loadTabSchema,
   nextPage,
   onTabConnectionChange,
   onTabDatabaseChange,
   openAiDialog,
+  openCellViewer,
   openExportDialog,
+  openResultCompare,
   openHistoryDialog,
   prevPage,
+  previewResultChanges,
+  removeResultNewRow,
+  resultColumnMeta,
+  restoreResultDeletedRow,
   rollbackTransactionForTab,
+  saveResultChanges,
   saveSnippetFromTab,
+  setResultNewRowValue,
+  showMessage,
   stopQueryForTab,
   switchResultTab,
-  toggleLimitSettingsDialog
+  toggleAllResultRows,
+  toggleLimitSettingsDialog,
+  toggleResultEditMode,
+  toggleResultRowSelection,
+  updateResultCell
 } = databaseStore
 
-defineProps({
+const props = defineProps({
   tab: { type: Object, required: true }
 })
 
+watch(
+  () => [props.tab.connectionName, props.tab.database],
+  ([connectionName, database]) => {
+    if (connectionName && database) loadTabSchema(props.tab)
+  },
+  { immediate: true }
+)
+
 const resizingTabId = ref(null)
+
+function executeEditorStatement(tab, sql) {
+  if (tab.executing) return
+  executeQueryForTab(tab, sql)
+}
+
+function escapeCsvCell(value) {
+  if (value === null || value === undefined) return ''
+  const text = String(value)
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+function isEditableResultField(result, fieldName) {
+  const meta = resultColumnMeta(result, fieldName)
+  if (!meta) return false
+  if (/GENERATED/i.test(String(meta.extra || ''))) return false
+  return !isBinaryColumn(meta.dataType || meta.columnType)
+}
+
+function resultCellInputValue(result, row, fieldName) {
+  return formatCellInput(getResultCellValue(result, row, fieldName))
+}
+
+function pendingResultCounts(result) {
+  return getResultPendingCounts(result)
+}
+
+function onResultCellDblclick(tab, row, fieldName) {
+  const result = tab.queryResult
+  if (result.editMode && !isResultRowDeleted(result, row) && isEditableResultField(result, fieldName)) return
+  const meta = resultColumnMeta(result, fieldName)
+  openCellViewer(fieldName, meta?.columnType || '', getResultCellValue(result, row, fieldName))
+}
+
+async function copyResultCsv(tab) {
+  const result = tab.queryResult
+  const rows = result?.rows || []
+  const fields = (result?.fields || []).map((field) => field.name)
+  if (!rows.length || !fields.length) {
+    await showMessage('当前结果没有可复制的数据', 'warning')
+    return
+  }
+  const lines = [fields.map(escapeCsvCell).join(',')]
+  for (const row of rows) {
+    lines.push(fields.map((field) => escapeCsvCell(row[field])).join(','))
+  }
+  const copied = await copyToClipboard(lines.join('\n'))
+  await showMessage(copied ? `已复制 ${rows.length} 行 CSV` : '复制失败', copied ? 'success' : 'error')
+}
 
 function editorRatio(tab) {
   return tab.editorRatio ?? 50

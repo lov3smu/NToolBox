@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { IPC_CHANNELS } from '../src/shared/ipc.js'
 
 vi.mock('electron', () => ({
+  app: { isPackaged: false, getPath: vi.fn(() => '/tmp') },
   ipcMain: { handle: vi.fn() },
   BrowserWindow: { fromWebContents: vi.fn() },
   dialog: {
@@ -25,6 +26,7 @@ vi.mock('../src/main/utils/sanitize.js', () => ({
 
 vi.mock('../src/main/services/index.js', () => ({
   getConfig: vi.fn(() => ({ base_path: '/tmp/scripts' })),
+  getPublicConfig: vi.fn(() => ({ base_path: '/tmp/scripts' })),
   saveConfig: vi.fn(async () => true),
   loadConfig: vi.fn(async () => ({})),
   generateSQLFile: vi.fn(async () => ({})),
@@ -32,7 +34,8 @@ vi.mock('../src/main/services/index.js', () => ({
   openFolder: vi.fn(),
   setAutoStart: vi.fn(),
   getAutoStart: vi.fn(),
-  checkForUpdates: vi.fn()
+  checkForUpdates: vi.fn(),
+  getUpdateReleases: vi.fn(async () => ({ success: true, releases: [] }))
 }))
 
 vi.mock('../src/main/services/chat.js', () => ({
@@ -88,7 +91,7 @@ vi.mock('../src/main/ui/index.js', () => ({
 import { ipcMain, BrowserWindow } from 'electron'
 import { setupIPCHandlers } from '../src/main/ipc/index.js'
 import { getMainWindow, getSettingsWindow } from '../src/main/windows/index.js'
-import { getConfig } from '../src/main/services/index.js'
+import { getPublicConfig } from '../src/main/services/index.js'
 import { chat } from '../src/main/services/chat.js'
 
 function getHandler(channel) {
@@ -106,7 +109,7 @@ describe('IPC startup smoke test', () => {
   })
 
   it('wraps successful responses in the unified envelope', async () => {
-    getConfig.mockReturnValueOnce({ base_path: '/tmp/custom' })
+    getPublicConfig.mockReturnValueOnce({ base_path: '/tmp/custom' })
     const result = await getHandler(IPC_CHANNELS.getConfig)({})
     expect(result).toEqual({ __ipc: true, ok: true, data: { base_path: '/tmp/custom' } })
   })
@@ -168,5 +171,22 @@ describe('IPC startup smoke test', () => {
     expect(mainWindow.show).toHaveBeenCalled()
     expect(mainWindow.focus).toHaveBeenCalled()
     expect(settingsWindow.close).toHaveBeenCalled()
+  })
+
+  it('returns the main window home when settings is rendered inside it', async () => {
+    const webContents = { send: vi.fn() }
+    const mainWindow = {
+      isDestroyed: () => false,
+      isMinimized: () => false,
+      isVisible: () => true,
+      focus: vi.fn(),
+      webContents
+    }
+    getMainWindow.mockReturnValue(mainWindow)
+    getSettingsWindow.mockReturnValue(null)
+
+    const result = await getHandler(IPC_CHANNELS.returnToApp)({ sender: webContents })
+    expect(result).toEqual({ __ipc: true, ok: true, data: true })
+    expect(webContents.send).toHaveBeenCalledWith('navigate-to', '/')
   })
 })

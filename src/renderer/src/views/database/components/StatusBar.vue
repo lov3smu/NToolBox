@@ -1,32 +1,33 @@
 <template>
-  <div class="status-bar">
+  <div class="status-bar" :style="{ '--db-sidebar-width': `${sidebarWidth}px` }">
     <div class="status-left">
-      <template v-if="selectedConnection">
-        <span class="status-item">
-          <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-          </svg>
-          {{ selectedConnection.name }}
-        </span>
-        <span class="status-divider">|</span>
-        <span :class="['status-item', selectedConnection.active ? 'connected' : 'disconnected']">
-          {{ selectedConnection.active ? '已连接' : '未连接' }}
-        </span>
-      </template>
-      <template v-else>
-        <span class="status-item">
-          <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-          </svg>
-          共 {{ connections.length }} 个连接
-        </span>
-      </template>
-      <template v-if="lastExecutedSql">
-        <span class="status-divider">|</span>
+      <div class="status-connection">
+        <template v-if="selectedConnection">
+          <span class="status-item">
+            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3" />
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+            </svg>
+            {{ selectedConnection.name }}
+          </span>
+          <span class="status-divider">|</span>
+          <span :class="['status-item', selectedConnection.active ? 'connected' : 'disconnected']">
+            {{ selectedConnection.active ? '已连接' : '未连接' }}
+          </span>
+        </template>
+        <template v-else>
+          <span class="status-item">
+            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3" />
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+            </svg>
+            共 {{ connections.length }} 个连接
+          </span>
+        </template>
+      </div>
+      <div v-if="lastExecutedSql" class="status-sql">
         <span class="sql-preview" :title="lastExecutedSql">{{ truncateSql(lastExecutedSql) }}</span>
         <button class="copy-btn" title="复制SQL" @click="copyLastSql">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -35,7 +36,7 @@
           </svg>
         </button>
         <span class="sql-time">{{ lastExecutedTime }}ms</span>
-      </template>
+      </div>
     </div>
     <div class="status-right">
       <button :class="['layout-btn', { active: layoutMode === 'two' }]" title="双栏布局" @click="layoutMode = 'two'">
@@ -63,6 +64,14 @@
 import { inject } from 'vue'
 
 const databaseStore = inject('database')
-const { connections, copyLastSql, lastExecutedSql, lastExecutedTime, layoutMode, selectedConnection, truncateSql } =
-  databaseStore
+const {
+  connections,
+  copyLastSql,
+  lastExecutedSql,
+  lastExecutedTime,
+  layoutMode,
+  selectedConnection,
+  sidebarWidth,
+  truncateSql
+} = databaseStore
 </script>

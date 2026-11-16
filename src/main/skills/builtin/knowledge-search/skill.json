@@ -1,0 +1,39 @@
+{
+  "name": "knowledge-search",
+  "version": "1.0.0",
+  "description": "检索用户导入的外挂知识库（目录或文本文件），按关键词返回匹配的文件路径、相关度和原文片段。回答涉及项目文档、规范或资料的问题时先使用。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["知识库", "检索", "文档", "资料"],
+  "icon": "search",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "检索关键词或问题，支持中文与英文"
+      },
+      "top_k": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 20,
+        "default": 5,
+        "description": "最多返回的结果数"
+      }
+    },
+    "required": ["query"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "query: 数据库连接配置",
+      "output": "返回知识库中匹配的文件与原文片段"
+    },
+    {
+      "input": "query: deployment pipeline, top_k: 3",
+      "output": "返回 3 条最相关的资料"
+    }
+  ]
+}

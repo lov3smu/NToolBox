@@ -446,7 +446,6 @@ onUnmounted(() => {
   flex: 1;
   min-height: 0;
   display: flex;
-  padding: 12px 16px 16px;
 }
 
 .editor-preview-wrapper {

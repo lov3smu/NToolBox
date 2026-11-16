@@ -117,19 +117,19 @@
       <div v-else-if="selectedObject.type === 'view'" class="object-detail">
         <div class="view-definition">
           <p class="definition-label">视图定义:</p>
-          <pre class="definition-code">{{ viewDefinition }}</pre>
+          <SqlHighlight class="definition-code" :code="viewDefinition" />
         </div>
       </div>
       <div v-else-if="selectedObject.type === 'function'" class="object-detail">
         <div class="function-definition">
           <p class="definition-label">函数定义:</p>
-          <pre class="definition-code">{{ functionDefinition }}</pre>
+          <SqlHighlight class="definition-code" :code="functionDefinition" />
         </div>
       </div>
       <div v-else-if="['procedure', 'trigger', 'event'].includes(selectedObject.type)" class="object-detail">
         <div class="object-definition">
           <p class="definition-label">{{ objectTypeLabel }}定义:</p>
-          <pre class="definition-code">{{ objectDefinition || '加载中...' }}</pre>
+          <SqlHighlight class="definition-code" :code="objectDefinition" placeholder="加载中..." />
         </div>
       </div>
     </div>
@@ -138,6 +138,7 @@
 
 <script setup>
 import { inject } from 'vue'
+import SqlHighlight from '@/components/SqlHighlight.vue'
 
 const databaseStore = inject('database')
 const {

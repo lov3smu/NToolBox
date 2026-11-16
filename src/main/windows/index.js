@@ -16,10 +16,6 @@ const isMac = process.platform === 'darwin'
 const preloadPath = import.meta.env.ELECTRON_PRELOAD_PATH || path.join(__dirname, '../preload/index.js')
 
 const WINDOW_BACKGROUND = { light: '#f4f5f7', dark: '#141519' }
-const TITLEBAR_OVERLAY = {
-  light: { color: '#f7f8fa', symbolColor: '#1f2328' },
-  dark: { color: '#1b1b1f', symbolColor: '#e6e6ea' }
-}
 
 function getResolvedTheme() {
   const theme = getConfig()?.theme || 'system'
@@ -33,13 +29,10 @@ function getWindowBackground() {
 
 function getTitleBarOptions() {
   if (isMac) return { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 14 } }
-  return {
-    titleBarStyle: 'hidden',
-    titleBarOverlay: { ...TITLEBAR_OVERLAY[getResolvedTheme()], height: 40 }
-  }
+  return { titleBarStyle: 'hidden' }
 }
 
-// 窗口启用了 titleBarOverlay（WCO），右侧停靠会被忽略并退回独立窗口，bottom 可稳定停靠在窗口内
+// 自绘窗口控制按钮，DevTools 固定底部停靠以保持既有布局
 const DEVTOOLS_MODE = 'bottom'
 
 export function toggleDevTools(win) {
@@ -53,13 +46,9 @@ export function toggleDevTools(win) {
 }
 
 export function refreshWindowTheme() {
-  const overlay = { ...TITLEBAR_OVERLAY[getResolvedTheme()], height: 40 }
   for (const win of [mainWindow, settingsWindow]) {
     if (!win || win.isDestroyed()) continue
     win.setBackgroundColor(getWindowBackground())
-    if (!isMac && win === mainWindow && typeof win.setTitleBarOverlay === 'function') {
-      win.setTitleBarOverlay(overlay)
-    }
   }
 }
 
@@ -173,6 +162,22 @@ function createMainWindow() {
       log.info('主窗口已显示')
     }, delay)
   })
+
+  const sendFullscreenState = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    mainWindow.webContents.send(IPC_EVENTS.windowFullscreen, mainWindow.isFullScreen())
+  }
+
+  mainWindow.on('enter-full-screen', sendFullscreenState)
+  mainWindow.on('leave-full-screen', sendFullscreenState)
+
+  const sendMaximizedState = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    mainWindow.webContents.send(IPC_EVENTS.windowMaximized, mainWindow.isMaximized())
+  }
+
+  mainWindow.on('maximize', sendMaximizedState)
+  mainWindow.on('unmaximize', sendMaximizedState)
 
   mainWindow.on('close', async (event) => {
     if (app.isQuitting) return

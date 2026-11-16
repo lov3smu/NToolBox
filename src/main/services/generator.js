@@ -103,12 +103,15 @@ export async function generateSQLFile(scriptInfo) {
     }
 
     const safeUsage = escapeSql(scriptInfo.usage)
+    const safeUsageComment = String(scriptInfo.usage)
+      .replace(/[\r\n]+/g, ' ')
+      .trim()
     const safeDevEnName = escapeSql(config.developer_en_name)
     const safeFilename = escapeSql(filename)
     const safeDbIdentifier = escapeIdentifier(scriptInfo.database)
 
     const content = `-- Please use UTF8 encoding without BOM
--- Script Usage: ${scriptInfo.usage}
+-- Script Usage: ${safeUsageComment}
 -- Script Author: ${config.developer_ch_name}
 -- Creation Time: ${currentDate}
 

@@ -21,6 +21,13 @@ describe('capabilities', () => {
     expect(supportsThinking('zhipu', 'glm-4.5')).toBe(false)
   })
 
+  it('exposes thinking controls for Xiaomi MiMo V2.6', () => {
+    expect(supportsThinking('mimo', 'mimo-v2.6-pro')).toBe(true)
+    expect(supportsThinking('mimo', 'mimo-v2.6-flash')).toBe(true)
+    expect(supportsThinking('mimo', 'mimo-v2.6-pro-ultraspeed')).toBe(true)
+    expect(supportsThinking('mimo', 'mimo-v2.5-pro')).toBe(false)
+  })
+
   it('rejects unknown providers and empty models', () => {
     expect(supportsThinking('unknown', 'kimi-k3')).toBe(false)
     expect(supportsThinking('deepseek', '')).toBe(false)
@@ -33,6 +40,10 @@ describe('capabilities', () => {
     expect(getContextWindow('minimax')).toBe(204800)
     expect(getContextWindow('volcengine')).toBe(262144)
     expect(getContextWindow('deepseek')).toBe(1000000)
+    expect(getContextWindow('mimo')).toBe(1048576)
+    expect(getContextWindow('openai')).toBe(1050000)
+    expect(getContextWindow('google')).toBe(1000000)
+    expect(getContextWindow('anthropic')).toBe(1000000)
     expect(getContextWindow('unknown')).toBe(131072)
   })
 })

@@ -32,7 +32,7 @@
           H3
         </button>
         <button type="button" class="btn-icon btn-sm" title="粗体 (Ctrl+B)" @click="applyFormat('bold')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z" />
           </svg>
         </button>
@@ -570,7 +570,13 @@ onUnmounted(() => {
 .markdown-page {
   flex: 1;
   min-height: 0;
-  padding: 12px 20px 20px;
+  padding: 16px 20px 20px;
+}
+
+@media (max-width: 900px) {
+  .markdown-page {
+    padding: 12px 16px 20px;
+  }
 }
 
 .md-workbench {

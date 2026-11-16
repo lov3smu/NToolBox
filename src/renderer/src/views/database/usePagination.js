@@ -1,6 +1,6 @@
 import { dbExecuteQuery } from '@/api'
 export function createPagination(state, api) {
-  const { limitCount, lastExecutedSql } = state
+  const { lastExecutedSql, lastExecutedTime, limitCount } = state
 
   async function firstPage(tab) {
     if (!tab.queryResult || tab.queryResult.currentPage <= 1) return
@@ -70,6 +70,9 @@ export function createPagination(state, api) {
       const duration = Date.now() - startedAt
 
       if (!tab.queryResult) return
+
+      lastExecutedSql.value = sql
+      lastExecutedTime.value = duration
 
       Object.assign(tab.queryResult, {
         success: result.success,

@@ -2,7 +2,9 @@
   <AppShell v-if="!standalone">
     <router-view v-slot="{ Component }">
       <Transition name="page" mode="out-in">
-        <component :is="Component" :key="route.path" @open-search="searchVisible = true" />
+        <KeepAlive :include="['Chat']">
+          <component :is="Component" :key="route.path" @open-search="searchVisible = true" />
+        </KeepAlive>
       </Transition>
     </router-view>
   </AppShell>
@@ -21,7 +23,7 @@ import UpdateDialog from '@/components/UpdateDialog.vue'
 import AboutDialog from '@/components/AboutDialog.vue'
 import { getConfig, onConfigChanged, onNavigateTo, onShowAbout } from '@/api'
 import { syncThemeFromConfig, syncThemeStyleFromConfig, syncFontSizeFromConfig } from '@/utils/theme'
-import { SETTINGS_PATH } from '@shared/tools'
+import { SETTINGS_PATH, setRecentToolsLimit } from '@shared/tools'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,11 +39,17 @@ async function loadThemeFromConfig() {
   syncThemeFromConfig(config?.theme)
   syncThemeStyleFromConfig(config?.theme_style)
   syncFontSizeFromConfig(config?.font_size)
+  setRecentToolsLimit(config?.recent_tools_limit)
 }
 
 onMounted(async () => {
-  removeNavigateListener = onNavigateTo((path) => {
-    if (!standalone.value) router.push(path)
+  removeNavigateListener = onNavigateTo((target) => {
+    if (typeof target === 'string') {
+      router.push(target)
+      return
+    }
+    if (!target?.path) return
+    router.push(target.prompt ? { path: target.path, query: { prompt: target.prompt } } : target.path)
   })
   removeConfigListener = onConfigChanged(loadThemeFromConfig)
   removeAboutListener = onShowAbout(() => {

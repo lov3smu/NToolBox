@@ -2,7 +2,7 @@ export default async function handler(params, context) {
   const { log, database, getConfig } = context
   const { action, connection_name } = params
 
-  log.info('执行 db-connect Skill', params)
+  log.debug(`执行 db-connect Skill: action=${action}`)
 
   const config = getConfig()
   const dbConnections = config.dbConnections || []

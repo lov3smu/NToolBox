@@ -1,159 +1,171 @@
 <template>
   <PageLayout tool-path="/password" page-class="password-page">
-    <template #actions>
-      <button class="btn btn-primary btn-sm" @click="generate">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-          <path d="M3 3v5h5" />
-          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-          <path d="M16 21h5v-5" />
-        </svg>
-        生成密码
-      </button>
-    </template>
-
     <div class="page-body">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">生成结果</span>
-        </div>
-        <div class="panel-body">
-          <div class="password-output-wrapper">
-            <input
-              v-model="password"
-              :type="visible ? 'text' : 'password'"
-              class="password-output"
-              readonly
-              placeholder="点击「生成密码」创建密码"
-            />
-            <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
-              <svg
-                v-if="visible"
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
-                />
-              </svg>
-              <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </button>
-            <button class="btn-icon" title="复制密码" @click="copyPassword">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
+      <div class="password-grid">
+        <section class="panel output-panel">
+          <div class="panel-header">
+            <span class="panel-title">生成结果</span>
+            <div class="panel-actions">
+              <button class="btn btn-primary btn-sm" @click="generate">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 21h5v-5" />
+                </svg>
+                生成密码
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+          <div class="panel-body">
+            <div class="password-output-wrapper">
+              <input
+                v-model="password"
+                :type="visible ? 'text' : 'password'"
+                class="password-output"
+                readonly
+                placeholder="点击「生成密码」创建密码"
+              />
+              <button class="btn-icon" title="显示/隐藏" @click="visible = !visible">
+                <svg
+                  v-if="visible"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+              <button class="btn-icon" title="复制密码" @click="copyPassword">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
+            </div>
+            <div class="output-hint">密码仅在本地生成，不会上传到任何服务器</div>
+          </div>
+        </section>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">密码选项</span>
-        </div>
-        <div class="panel-body">
-          <div class="field">
-            <div class="field-head">
-              <label>密码长度</label>
-              <span class="length-value">{{ length }}</span>
-            </div>
-            <input
-              v-model="length"
-              type="range"
-              class="password-slider"
-              min="1"
-              max="100"
-              :style="{ '--progress': progress + '%' }"
-              @input="onSliderInput"
-            />
-            <div class="slider-labels">
-              <span>1</span>
-              <span>25</span>
-              <span>50</span>
-              <span>75</span>
-              <span>100</span>
-            </div>
+        <section class="panel options-panel">
+          <div class="panel-header">
+            <span class="panel-title">密码选项</span>
+            <span class="panel-hint">长度与字符类型会影响密码强度</span>
           </div>
+          <div class="panel-body">
+            <div class="field">
+              <div class="field-head">
+                <label>密码长度</label>
+                <span class="length-value">{{ length }}</span>
+              </div>
+              <input
+                v-model="length"
+                type="range"
+                class="password-slider"
+                min="1"
+                max="100"
+                :style="{ '--progress': progress + '%' }"
+                @input="onSliderInput"
+              />
+              <div class="slider-labels">
+                <span>1</span>
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+              </div>
+            </div>
 
-          <div class="field">
-            <label>字符类型</label>
-            <div class="checkbox-group">
-              <label class="checkbox-card" :class="{ active: useUpper }">
-                <input v-model="useUpper" type="checkbox" hidden />
-                <span class="checkbox-icon">A</span>
-                <span class="checkbox-text">
-                  <span class="checkbox-label">大写字母</span>
-                  <span class="checkbox-desc">A-Z</span>
-                </span>
-              </label>
-              <label class="checkbox-card" :class="{ active: useLower }">
-                <input v-model="useLower" type="checkbox" hidden />
-                <span class="checkbox-icon">a</span>
-                <span class="checkbox-text">
-                  <span class="checkbox-label">小写字母</span>
-                  <span class="checkbox-desc">a-z</span>
-                </span>
-              </label>
-              <label class="checkbox-card" :class="{ active: useNumbers }">
-                <input v-model="useNumbers" type="checkbox" hidden />
-                <span class="checkbox-icon">0</span>
-                <span class="checkbox-text">
-                  <span class="checkbox-label">数字</span>
-                  <span class="checkbox-desc">0-9</span>
-                </span>
-              </label>
-              <label class="checkbox-card" :class="{ active: useSymbols }">
-                <input v-model="useSymbols" type="checkbox" hidden />
-                <span class="checkbox-icon">#</span>
-                <span class="checkbox-text">
-                  <span class="checkbox-label">特殊字符</span>
-                  <span class="checkbox-desc">!@#$%</span>
-                </span>
-              </label>
+            <div class="field">
+              <label>字符类型</label>
+              <div class="checkbox-group">
+                <label class="checkbox-card" :class="{ active: useUpper }">
+                  <input v-model="useUpper" type="checkbox" hidden />
+                  <span class="checkbox-icon">A</span>
+                  <span class="checkbox-text">
+                    <span class="checkbox-label">大写字母</span>
+                    <span class="checkbox-desc">A-Z</span>
+                  </span>
+                </label>
+                <label class="checkbox-card" :class="{ active: useLower }">
+                  <input v-model="useLower" type="checkbox" hidden />
+                  <span class="checkbox-icon">a</span>
+                  <span class="checkbox-text">
+                    <span class="checkbox-label">小写字母</span>
+                    <span class="checkbox-desc">a-z</span>
+                  </span>
+                </label>
+                <label class="checkbox-card" :class="{ active: useNumbers }">
+                  <input v-model="useNumbers" type="checkbox" hidden />
+                  <span class="checkbox-icon">0</span>
+                  <span class="checkbox-text">
+                    <span class="checkbox-label">数字</span>
+                    <span class="checkbox-desc">0-9</span>
+                  </span>
+                </label>
+                <label class="checkbox-card" :class="{ active: useSymbols }">
+                  <input v-model="useSymbols" type="checkbox" hidden />
+                  <span class="checkbox-icon">#</span>
+                  <span class="checkbox-text">
+                    <span class="checkbox-label">特殊字符</span>
+                    <span class="checkbox-desc">!@#$%</span>
+                  </span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div class="field strength-field">
-            <div class="field-head">
-              <label>密码强度</label>
-              <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
+            <div class="field strength-field">
+              <div class="field-head">
+                <label>密码强度</label>
+                <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
+              </div>
+              <div class="strength-bar">
+                <div class="strength-fill" :class="strengthClass" />
+              </div>
+              <div class="strength-hint">{{ strengthHint }}</div>
             </div>
-            <div class="strength-bar">
-              <div class="strength-fill" :class="strengthClass" />
-            </div>
-            <div class="strength-hint">{{ strengthHint }}</div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">历史记录</span>
-          <div class="panel-actions">
-            <button class="btn btn-danger btn-sm" @click="clearHistory">清空</button>
+        <aside class="panel history-panel">
+          <div class="panel-header">
+            <span class="panel-title">历史记录</span>
+            <div class="panel-actions">
+              <span class="history-count">{{ history.length }}</span>
+              <button v-if="history.length" class="btn btn-danger btn-sm" @click="clearHistory">清空</button>
+            </div>
           </div>
-        </div>
-        <div class="panel-body history-body">
-          <div v-if="history.length === 0" class="history-empty">暂无历史记录</div>
-          <div v-for="(item, index) in history" :key="index" class="history-item">
-            <span class="password-text">{{ maskPassword(item) }}</span>
-            <span class="password-length">{{ item.length }} 位</span>
-            <button class="btn-icon btn-sm" title="复制" @click="handleCopyHistoryItem(item)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
+          <div class="panel-body history-body">
+            <div v-if="history.length === 0" class="panel-empty">暂无历史记录</div>
+            <div v-for="(item, index) in history" :key="index" class="history-item">
+              <span class="password-text">{{ maskPassword(item) }}</span>
+              <span class="password-length">{{ item.length }} 位</span>
+              <button class="btn-icon btn-sm" title="复制" @click="handleCopyHistoryItem(item)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
 
@@ -393,13 +405,48 @@ onMounted(() => {
 
 <style scoped>
 .page-body {
-  padding: 12px 16px 16px;
   width: 100%;
+}
+
+.password-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.password-grid > .panel {
+  margin-top: 0;
+}
+
+.output-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.options-panel {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.history-panel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.output-panel .panel-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .password-output-wrapper {
   display: flex;
   gap: 8px;
+  margin-bottom: 0;
 }
 
 .password-output-wrapper .btn-icon {
@@ -430,6 +477,12 @@ onMounted(() => {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: var(--shadow-glow);
+}
+
+.output-hint {
+  margin-top: 10px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
 }
 
 .field {
@@ -509,18 +562,21 @@ onMounted(() => {
 
 .checkbox-group {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
 .checkbox-card {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  min-height: 58px;
+  padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  text-align: left;
   cursor: pointer;
   transition: var(--transition-fast);
 }
@@ -535,12 +591,13 @@ onMounted(() => {
 }
 
 .checkbox-icon {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-bottom: 0;
   font-size: var(--font-size-base);
   font-weight: 700;
   background: var(--surface-muted);
@@ -556,10 +613,12 @@ onMounted(() => {
 .checkbox-text {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
 }
 
 .checkbox-label {
+  margin-bottom: 0;
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--text-primary);
@@ -642,17 +701,25 @@ onMounted(() => {
   color: var(--text-tertiary);
 }
 
+.history-panel .panel-body {
+  flex: 1;
+}
+
+.history-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent-color);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-align: center;
+}
+
 .history-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.history-empty {
-  padding: 16px;
-  text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
 }
 
 .history-item {
@@ -661,9 +728,16 @@ onMounted(() => {
   gap: 8px;
   padding: 8px 10px;
   background: var(--surface-muted);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: var(--font-size-sm);
+  transition: var(--transition-fast);
+}
+
+.history-item:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
 }
 
 .password-text {
@@ -680,5 +754,35 @@ onMounted(() => {
   padding: 2px 6px;
   background: var(--surface);
   border-radius: 4px;
+}
+
+@media (max-width: 1100px) {
+  .password-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .output-panel,
+  .options-panel,
+  .history-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .history-panel {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 760px) {
+  .checkbox-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .checkbox-group {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

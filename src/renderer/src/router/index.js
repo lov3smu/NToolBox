@@ -52,6 +52,11 @@ const routes = [
     component: () => import('@/views/ImageViewer.vue')
   },
   {
+    path: '/image-hosting',
+    name: 'ImageHosting',
+    component: () => import('@/views/ImageHosting.vue')
+  },
+  {
     path: '/markdown-editor',
     name: 'MarkdownEditor',
     component: () => import('@/views/Markdown.vue')
@@ -80,6 +85,11 @@ const routes = [
     path: '/chat',
     name: 'Chat',
     component: () => import('@/views/Chat.vue')
+  },
+  {
+    path: '/memory',
+    name: 'Memory',
+    component: () => import('@/views/Memory.vue')
   },
   {
     path: '/database',

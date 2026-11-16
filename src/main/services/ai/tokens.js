@@ -60,9 +60,12 @@ export function normalizeUsage(rawUsage) {
   if (!Number.isFinite(rawPrompt) && !Number.isFinite(rawCompletion)) return null
   const prompt = Number.isFinite(rawPrompt) ? rawPrompt : 0
   const completion = Number.isFinite(rawCompletion) ? rawCompletion : 0
+  const details = rawUsage.prompt_tokens_details || rawUsage.input_tokens_details || {}
+  const rawCached = Number(details.cached_tokens ?? rawUsage.prompt_cache_hit_tokens ?? rawUsage.cached_tokens)
   return {
     prompt_tokens: prompt,
     completion_tokens: completion,
-    total_tokens: Number.isFinite(rawTotal) ? rawTotal : prompt + completion
+    total_tokens: Number.isFinite(rawTotal) ? rawTotal : prompt + completion,
+    cached_tokens: Number.isFinite(rawCached) && rawCached > 0 ? rawCached : 0
   }
 }

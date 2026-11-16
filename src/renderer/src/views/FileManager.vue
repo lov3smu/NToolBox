@@ -105,7 +105,7 @@
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2.5"
+          stroke-width="2"
         >
           <path d="M20 6L9 17l-5-5" />
         </svg>
@@ -118,18 +118,43 @@
         {{ error }}
       </div>
 
-      <div v-else-if="!config?.base_path || isDirectoryNotExist" class="empty-message">
-        文件目录未设置，请到设置中设置
+      <div v-else-if="!config?.base_path || isDirectoryNotExist" class="empty-state">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+            <path d="M9 13h6" />
+          </svg>
+        </span>
+        <p class="empty-state-title">文件目录未设置</p>
+        <p class="empty-state-hint">请到设置中设置脚本根目录后再使用文件管理。</p>
+        <div class="empty-state-actions">
+          <button class="btn btn-secondary btn-sm" @click="goToSettings">前往设置</button>
+        </div>
       </div>
 
       <div v-else-if="isSearchMode && searching" class="loading">搜索中...</div>
 
       <div v-else-if="isSearchMode && searchError" class="error-message">{{ searchError }}</div>
 
-      <div v-else-if="isSearchMode && searchResults.length === 0" class="empty-message">未找到匹配的文件或文件夹</div>
+      <div v-else-if="isSearchMode && searchResults.length === 0" class="empty-state">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </span>
+        <p class="empty-state-title">没有匹配的文件或文件夹</p>
+        <p class="empty-state-hint">试试更换关键词，或切换到其他目录搜索。</p>
+      </div>
 
-      <div v-else-if="!isSearchMode && directories.length === 0 && files.length === 0" class="empty-message">
-        暂时没有文件哦!
+      <div v-else-if="!isSearchMode && directories.length === 0 && files.length === 0" class="empty-state">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+          </svg>
+        </span>
+        <p class="empty-state-title">该目录暂无文件</p>
+        <p class="empty-state-hint">把文件放入当前目录后，即可在这里查看和管理。</p>
       </div>
 
       <template v-else>
@@ -239,7 +264,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useToast, useConfig } from '@/composables'
-import { readDirectory, searchDirectory, copyToClipboard, openFile, openFolder, getItemInfo } from '@/api'
+import { readDirectory, searchDirectory, copyToClipboard, openFile, openFolder, getItemInfo, openSettings } from '@/api'
 import { joinPath } from '@/utils/path'
 import Toast from '@/components/Toast.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
@@ -381,6 +406,10 @@ function navigateToRoot() {
     resetSearch()
     loadDirectory(base)
   }
+}
+
+function goToSettings() {
+  openSettings('sql-generator')
 }
 
 function navigateToPath(index) {
@@ -706,15 +735,13 @@ onUnmounted(() => {
 }
 
 .page-body {
-  padding: 12px 16px 16px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
 .loading,
-.error-message,
-.empty-message {
+.error-message {
   text-align: center;
   padding: 40px 16px;
   color: var(--text-tertiary);
@@ -723,6 +750,10 @@ onUnmounted(() => {
 
 .error-message {
   color: var(--error-dark);
+}
+
+.page-body > .empty-state {
+  min-height: 100%;
 }
 
 .segmented-item {
@@ -991,7 +1022,7 @@ onUnmounted(() => {
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(20, 20, 24, 0.14);
+  box-shadow: var(--shadow-md);
   padding: 4px;
   min-width: 180px;
   z-index: 1000;
@@ -1046,19 +1077,21 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 9999;
 }
 
 .properties-dialog {
   position: fixed;
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 40px rgba(20, 20, 24, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   width: 400px;
   max-width: 90vw;
   overflow: hidden;

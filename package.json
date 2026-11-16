@@ -2,6 +2,7 @@
   "name": "NToolBox",
   "version": "1.3.0",
   "description": "NToolBox - 一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。",
+  "desktopName": "ntoolbox.desktop",
   "main": "./out/main/index.js",
   "author": "lov3smu <imancoka@gmail.com>",
   "license": "MIT",
@@ -14,6 +15,7 @@
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "eval": "vitest run tests/agentEval.test.js --reporter=verbose",
     "lint": "eslint src --ext .js,.vue,.ts --fix",
     "lint:check": "eslint src --ext .js,.vue,.ts",
     "format": "prettier --write \"src/**/*.{js,vue,ts,json,css,html}\"",
@@ -25,9 +27,13 @@
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/lang-sql": "^6.10.0",
     "@codemirror/language": "^6.12.3",
+    "@codemirror/lint": "^6.9.8",
     "@codemirror/state": "^6.6.0",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.41.1",
+    "@ddietr/codemirror-themes": "^1.5.2",
+    "@lezer/highlight": "^1.2.5",
+    "@marimo-team/codemirror-sql": "^0.3.1",
     "codemirror": "^6.0.2",
     "dompurify": "^3.4.17",
     "electron-log": "^5.0.1",
@@ -127,7 +133,8 @@
         "tar.gz"
       ],
       "icon": "assets/icon.png",
-      "category": "Development"
+      "category": "Development",
+      "syncDesktopName": true
     },
     "nsis": {
       "oneClick": false,

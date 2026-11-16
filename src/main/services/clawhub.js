@@ -1,5 +1,6 @@
-const CLAWHUB_API_BASE = 'https://clawhub.ai/api/v1'
-const CLAWHUB_WEB_BASE = 'https://clawhub.ai'
+import { CLAWHUB_DEFAULT_BASE } from '../../shared/network.js'
+import { netFetch } from './network.js'
+
 const REQUEST_TIMEOUT = 10000
 const MAX_LIST_LIMIT = 100
 const MAX_PROMPT_LENGTH = 200 * 1024
@@ -93,7 +94,7 @@ async function requestJson(url) {
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
   try {
-    const response = await fetch(url, {
+    const response = await netFetch(url, {
       signal: controller.signal,
       headers: { accept: 'application/json', 'user-agent': 'NToolBox' }
     })
@@ -137,24 +138,30 @@ function normalizeListSkill(item, options = {}) {
     changelog: trimText(item.latestVersion?.changelog, 400),
     license: item.latestVersion?.license || '',
     source: 'clawhub',
-    sourceUrl: sourcePath ? `${CLAWHUB_WEB_BASE}${sourcePath}` : '',
+    sourceUrl: sourcePath ? `${options.webBase || CLAWHUB_DEFAULT_BASE}${sourcePath}` : '',
     remote: true
   }
 }
 
-export async function fetchClawHubMarket({ limit = 60 } = {}) {
-  const safeLimit = Math.min(Math.max(Number(limit) || 60, 1), MAX_LIST_LIMIT)
-  const payload = await requestJson(`${CLAWHUB_API_BASE}/skills?limit=${safeLimit}`)
-  const items = Array.isArray(payload?.items) ? payload.items : []
-  return items.map((item) => normalizeListSkill(item)).filter(Boolean)
+function resolveRoot(base) {
+  return (String(base || '').trim() || CLAWHUB_DEFAULT_BASE).replace(/\/+$/, '')
 }
 
-export async function searchClawHubSkills(query, { limit = 10 } = {}) {
+export async function fetchClawHubMarket({ limit = 60, base } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 60, 1), MAX_LIST_LIMIT)
+  const root = resolveRoot(base)
+  const payload = await requestJson(`${root}/api/v1/skills?limit=${safeLimit}`)
+  const items = Array.isArray(payload?.items) ? payload.items : []
+  return items.map((item) => normalizeListSkill(item, { webBase: root })).filter(Boolean)
+}
+
+export async function searchClawHubSkills(query, { limit = 10, base } = {}) {
   const keyword = String(query || '').trim()
   if (!keyword) return []
 
   const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50)
-  const payload = await requestJson(`${CLAWHUB_API_BASE}/search?q=${encodeURIComponent(keyword)}&limit=${safeLimit}`)
+  const root = resolveRoot(base)
+  const payload = await requestJson(`${root}/api/v1/search?q=${encodeURIComponent(keyword)}&limit=${safeLimit}`)
   const results = Array.isArray(payload?.results) ? payload.results : []
 
   return results
@@ -179,11 +186,12 @@ export async function searchClawHubSkills(query, { limit = 10 } = {}) {
     .filter(Boolean)
 }
 
-export async function fetchClawHubSkillDetail({ ownerHandle, slug }) {
+export async function fetchClawHubSkillDetail({ ownerHandle, slug, base }) {
   if (!ownerHandle || !slug) throw new Error('在线扩展缺少来源信息')
 
+  const root = resolveRoot(base)
   const query = new URLSearchParams({ owner: ownerHandle })
-  const payload = await requestJson(`${CLAWHUB_API_BASE}/skills/${encodeURIComponent(slug)}?${query.toString()}`)
+  const payload = await requestJson(`${root}/api/v1/skills/${encodeURIComponent(slug)}?${query.toString()}`)
   const skill = payload?.skill
   if (!skill) throw new Error('ClawHub 未返回技能详情')
 
@@ -203,6 +211,6 @@ export async function fetchClawHubSkillDetail({ ownerHandle, slug }) {
     downloads: Number(skill.stats?.downloads) || 0,
     version: sanitizeVersion(skill.tags?.latest),
     category: guessCategory(topics, skill.slug || slug, summary),
-    sourceUrl: `${CLAWHUB_WEB_BASE}/${ownerHandle}/skills/${slug}`
+    sourceUrl: `${root}/${ownerHandle}/skills/${slug}`
   }
 }

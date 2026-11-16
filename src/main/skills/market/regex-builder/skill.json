@@ -15,14 +15,16 @@
       },
       "language": {
         "type": "string",
-        "description": "目标语言：javascript、python、java、go 等，默认 javascript"
+        "description": "目标语言：javascript、python、java、go 等，默认 javascript",
+        "default": "javascript"
       },
       "sample": {
         "type": "string",
         "description": "可选的测试文本，用于验证正则结果"
       }
     },
-    "required": ["requirement"]
+    "required": ["requirement"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

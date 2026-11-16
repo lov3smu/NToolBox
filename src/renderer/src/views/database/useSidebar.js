@@ -11,6 +11,7 @@ export function createSidebar(state, api) {
     expandedDatabases,
     expandedObjectCategories,
     newConnection,
+    objectCategoryLoading,
     openedDatabases,
     selectedCategory,
     selectedConnection,
@@ -112,12 +113,14 @@ export function createSidebar(state, api) {
     }
   }
 
-  function toggleObjectCategory(category) {
-    const index = expandedObjectCategories.value.indexOf(category)
+  function toggleObjectCategory(connName, dbName, categoryType) {
+    const key = `${connName}_${dbName}_${categoryType}`
+    const index = expandedObjectCategories.value.indexOf(key)
     if (index >= 0) {
       expandedObjectCategories.value.splice(index, 1)
     } else {
-      expandedObjectCategories.value.push(category)
+      expandedObjectCategories.value.push(key)
+      loadDatabaseCategory(connName, dbName, categoryType)
     }
   }
 
@@ -135,6 +138,7 @@ export function createSidebar(state, api) {
     if (!expandedObjectCategories.value.includes(`${key}_${categoryType}`)) {
       expandedObjectCategories.value.push(`${key}_${categoryType}`)
     }
+    loadDatabaseCategory(connection.name, database, categoryType)
   }
 
   function handleHeaderStatClick(categoryType) {
@@ -166,9 +170,6 @@ export function createSidebar(state, api) {
     if (!expandedDatabases.value.includes(key)) {
       expandedDatabases.value.push(key)
     }
-    if (!databaseObjectsMap.value[key]) {
-      loadDatabaseObjects(connection.name, database)
-    }
 
     selectCategory(connection, database, categoryType)
   }
@@ -183,65 +184,90 @@ export function createSidebar(state, api) {
     }
     if (!expandedDatabases.value.includes(key)) {
       expandedDatabases.value.push(key)
-      await loadDatabaseObjects(conn.name, dbName)
+    }
+    await loadDatabaseObjects(conn.name, dbName)
+  }
+
+  function isObjectCategoryLoaded(connName, dbName, categoryType) {
+    const objects = databaseObjectsMap.value[`${connName}_${dbName}`]
+    return Array.isArray(objects?.[categoryType])
+  }
+
+  function isObjectCategoryLoading(connName, dbName, categoryType) {
+    return Boolean(objectCategoryLoading.value[`${connName}_${dbName}_${categoryType}`])
+  }
+
+  function mergeDatabaseObjects(key, patch) {
+    databaseObjectsMap.value[key] = { ...(databaseObjectsMap.value[key] || {}), ...patch }
+  }
+
+  function objectNames(result) {
+    if (!result?.success || !Array.isArray(result.rows)) return []
+    return result.rows.map((row) => row.name)
+  }
+
+  async function loadDatabaseCategory(connName, dbName, categoryType, options = {}) {
+    if (!categoryType) return
+    if (!options.force && isObjectCategoryLoaded(connName, dbName, categoryType)) return
+    if (isObjectCategoryLoading(connName, dbName, categoryType)) return
+
+    const key = `${connName}_${dbName}`
+    objectCategoryLoading.value = { ...objectCategoryLoading.value, [`${key}_${categoryType}`]: true }
+    try {
+      if (categoryType === 'tables' || categoryType === 'views') {
+        const result = await dbQueryTables(connName, dbName)
+        const details = result.success ? result.details || [] : []
+        mergeDatabaseObjects(key, {
+          tables: details.filter((item) => !item.isView).map((item) => item.name),
+          views: details.filter((item) => item.isView).map((item) => item.name)
+        })
+        return
+      }
+
+      const categoryQueries = {
+        functions: {
+          sql: "SELECT ROUTINE_NAME AS name FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'FUNCTION'",
+          params: [dbName]
+        },
+        procedures: {
+          sql: "SELECT ROUTINE_NAME AS name FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'PROCEDURE'",
+          params: [dbName]
+        },
+        triggers: {
+          sql: 'SELECT TRIGGER_NAME AS name FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?',
+          params: [dbName]
+        },
+        events: {
+          sql: 'SELECT EVENT_NAME AS name FROM information_schema.EVENTS WHERE EVENT_SCHEMA = ?',
+          params: [dbName]
+        }
+      }
+      const query = categoryQueries[categoryType]
+      if (!query) return
+      const result = await dbExecuteQuery(connName, query.sql, query.params, { autoLimit: false })
+      mergeDatabaseObjects(key, { [categoryType]: objectNames(result) })
+    } catch (error) {
+      console.error('加载数据库对象失败:', error)
+      mergeDatabaseObjects(key, { [categoryType]: [] })
+    } finally {
+      const next = { ...objectCategoryLoading.value }
+      delete next[`${key}_${categoryType}`]
+      objectCategoryLoading.value = next
     }
   }
 
-  async function loadDatabaseObjects(connName, dbName) {
-    const key = `${connName}_${dbName}`
-    try {
-      const tablesResult = await dbQueryTables(connName, dbName)
-      const viewsResult = await dbExecuteQuery(
-        connName,
-        `SELECT TABLE_NAME FROM information_schema.VIEWS WHERE TABLE_SCHEMA = '${dbName}'`,
-        [],
-        { autoLimit: false }
-      )
-      const functionsResult = await dbExecuteQuery(
-        connName,
-        `SELECT ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'FUNCTION'`,
-        [dbName],
-        { autoLimit: false }
-      )
-      const proceduresResult = await dbExecuteQuery(
-        connName,
-        `SELECT ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'PROCEDURE'`,
-        [dbName],
-        { autoLimit: false }
-      )
-      const triggersResult = await dbExecuteQuery(
-        connName,
-        `SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?`,
-        [dbName],
-        { autoLimit: false }
-      )
-      const eventsResult = await dbExecuteQuery(
-        connName,
-        `SELECT EVENT_NAME FROM information_schema.EVENTS WHERE EVENT_SCHEMA = ?`,
-        [dbName],
-        { autoLimit: false }
-      )
-
-      databaseObjectsMap.value[key] = {
-        tables: tablesResult.success ? tablesResult.tables : [],
-        views: viewsResult.success && viewsResult.rows ? viewsResult.rows.map((r) => r.TABLE_NAME) : [],
-        functions:
-          functionsResult.success && functionsResult.rows ? functionsResult.rows.map((r) => r.ROUTINE_NAME) : [],
-        procedures:
-          proceduresResult.success && proceduresResult.rows ? proceduresResult.rows.map((r) => r.ROUTINE_NAME) : [],
-        triggers: triggersResult.success && triggersResult.rows ? triggersResult.rows.map((r) => r.TRIGGER_NAME) : [],
-        events: eventsResult.success && eventsResult.rows ? eventsResult.rows.map((r) => r.EVENT_NAME) : []
-      }
-    } catch (error) {
-      console.error('加载数据库对象失败:', error)
-      databaseObjectsMap.value[key] = {
-        tables: [],
-        views: [],
-        functions: [],
-        procedures: [],
-        triggers: [],
-        events: []
-      }
+  async function loadDatabaseObjects(connName, dbName, categories = ['tables', 'views'], options = {}) {
+    if (!Array.isArray(categories)) {
+      options = categories
+      categories = ['tables', 'views']
+    }
+    const list = [...categories]
+    if (list.includes('tables') || list.includes('views')) {
+      await loadDatabaseCategory(connName, dbName, 'tables', options)
+    }
+    for (const categoryType of list) {
+      if (categoryType === 'tables' || categoryType === 'views') continue
+      await loadDatabaseCategory(connName, dbName, categoryType, options)
     }
   }
 
@@ -437,6 +463,16 @@ export function createSidebar(state, api) {
     api.hideContextMenu()
   }
 
+  function handleOpenCreateTableAndHide() {
+    api.openCreateTableDialog(contextMenu.value.target)
+    api.hideContextMenu()
+  }
+
+  function handleOpenSchemaDiffAndHide() {
+    api.openSchemaDiffDialog(contextMenu.value.target)
+    api.hideContextMenu()
+  }
+
   function handleRunSqlFileAndHide() {
     api.runSqlFile(contextMenu.value.target)
     api.hideContextMenu()
@@ -454,6 +490,11 @@ export function createSidebar(state, api) {
 
   function handleOpenTableAndHide() {
     api.openTable(contextMenu.value.target)
+    api.hideContextMenu()
+  }
+
+  function handleOpenTableDesignerAndHide() {
+    api.openTableDesignerTarget(contextMenu.value.target)
     api.hideContextMenu()
   }
 
@@ -498,6 +539,7 @@ export function createSidebar(state, api) {
     handleHeaderStatClick,
     openDatabaseFromSidebar,
     loadDatabaseObjects,
+    loadDatabaseCategory,
     handleSelectConnectionDatabase,
     handleSelectConnectionDatabaseTable,
     handleSelectConnectionDatabaseView,
@@ -533,10 +575,13 @@ export function createSidebar(state, api) {
     handleEditDatabaseAndHide,
     handleDeleteDatabaseAndHide,
     handleNewQueryForDatabaseAndHide,
+    handleOpenCreateTableAndHide,
+    handleOpenSchemaDiffAndHide,
     handleRunSqlFileAndHide,
     handleRefreshDatabaseAndHide,
     handleRefreshCategoryAndHide,
     handleOpenTableAndHide,
+    handleOpenTableDesignerAndHide,
     handleDeleteTableAndHide,
     handleEmptyTableAndHide,
     handleTruncateTableAndHide,

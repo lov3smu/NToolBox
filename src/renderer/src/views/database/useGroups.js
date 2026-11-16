@@ -1,4 +1,4 @@
-import { getConfig, saveConfig } from '@/api'
+import { getConfig, patchConfig } from '@/api'
 export function createGroups(state, api) {
   const {
     activeTabId,
@@ -66,7 +66,7 @@ export function createGroups(state, api) {
         dbConnectionGroups.push(newGroupName.value)
       }
 
-      await saveConfig({ ...config, dbConnectionGroups })
+      await patchConfig({ dbConnectionGroups })
 
       showGroupDialog.value = false
       editingGroup.value = null
@@ -97,7 +97,7 @@ export function createGroups(state, api) {
           }
         })
 
-        await saveConfig({ ...config, dbConnectionGroups })
+        await patchConfig({ dbConnectionGroups })
         await api.loadConnections()
       }
     } catch (error) {
@@ -132,7 +132,7 @@ export function createGroups(state, api) {
 
       if (index >= 0) {
         dbConnections[index].group = groupName
-        await saveConfig({ ...config, dbConnections })
+        await patchConfig({ dbConnections })
         await api.loadConnections()
       }
     } catch (error) {
@@ -149,7 +149,7 @@ export function createGroups(state, api) {
 
       if (index >= 0) {
         dbConnections[index].group = ''
-        await saveConfig({ ...config, dbConnections })
+        await patchConfig({ dbConnections })
         await api.loadConnections()
       }
     } catch (error) {

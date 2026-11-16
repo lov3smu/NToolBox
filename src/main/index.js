@@ -5,6 +5,10 @@ import { log, initLogger, getIconPath } from './utils'
 import { APP_ID } from './constants'
 import { loadConfig, startAutoUpdateCheck, promptAutoStartOnFirstLaunch, checkForUpdates } from './services'
 import { initClipboardHistory, stopClipboardHistory } from './services/clipboard.js'
+import { closeAllSshTunnels } from './services/sshTunnel.js'
+import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler.js'
+import { initMcp, stopMcp } from './services/mcp.js'
+import { applyNetworkConfig } from './services/network.js'
 import { setupIPCHandlers } from './ipc'
 import { initWindows, getMainWindow, refreshWindowTheme } from './windows'
 import { createTray, destroyTray, createAppMenu } from './ui'
@@ -56,6 +60,9 @@ if (process.platform === 'win32') {
 
 app.on('before-quit', () => {
   app.isQuitting = true
+  stopBackupScheduler()
+  closeAllSshTunnels()
+  stopMcp()
   stopClipboardHistory()
   destroyTray()
 })
@@ -83,6 +90,12 @@ app.whenReady().then(async () => {
   nativeTheme.themeSource = loadedConfig.theme || 'system'
   nativeTheme.on('updated', refreshWindowTheme)
 
+  try {
+    await applyNetworkConfig(loadedConfig)
+  } catch (error) {
+    log.warn('应用网络配置失败:', error.message)
+  }
+
   // 开发模式下 macOS 的 Dock 图标是 Electron 默认图标，需要手动替换；打包后由 .icns 提供
   if (process.platform === 'darwin' && !app.isPackaged && app.dock) {
     const devIcon = getIconPath()
@@ -91,6 +104,9 @@ app.whenReady().then(async () => {
 
   setupIPCHandlers()
   await initClipboardHistory()
+  startBackupScheduler()
+
+  initMcp().catch((error) => log.warn('初始化 MCP 服务失败:', error.message))
 
   const { mainWindow, createSettingsWindow } = initWindows()
   createAppMenu(mainWindow, checkForUpdates, createSettingsWindow)

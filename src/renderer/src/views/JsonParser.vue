@@ -1181,13 +1181,16 @@ onUnmounted(() => {
 
 <style scoped>
 .page-body {
-  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.page-body > .panel {
+  margin-top: 0;
 }
 
 .editor-panel {
@@ -1382,7 +1385,7 @@ onUnmounted(() => {
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   padding: 4px 0;
   min-width: 180px;
   z-index: 1000;

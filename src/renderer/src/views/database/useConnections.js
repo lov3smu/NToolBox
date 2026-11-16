@@ -1,4 +1,23 @@
-import { dbGetActiveConnections, getConfig, saveConfig } from '@/api'
+import { dbGetActiveConnections, getConfig, patchConfig } from '@/api'
+
+function normalizeSsh(raw = {}) {
+  return {
+    enabled: raw.enabled === true,
+    host: raw.host || '',
+    port: Number(raw.port) || 22,
+    user: raw.user || '',
+    keyPath: raw.keyPath || ''
+  }
+}
+
+function normalizeSsl(raw = {}) {
+  return {
+    enabled: raw.enabled === true,
+    verify: raw.verify !== false,
+    caPath: raw.caPath || ''
+  }
+}
+
 export function createConnections(state, api) {
   const {
     connections,
@@ -33,6 +52,9 @@ export function createConnections(state, api) {
         enableWriteTimeout: conn.enableWriteTimeout ?? true,
         writeTimeout: conn.writeTimeout ?? 30,
         autoConnect: conn.autoConnect ?? false,
+        readOnly: conn.readOnly === true,
+        ssh: normalizeSsh(conn.ssh),
+        ssl: normalizeSsl(conn.ssl),
         active: activeConnections.includes(conn.name)
       }))
       groups.value = savedGroups
@@ -84,7 +106,7 @@ export function createConnections(state, api) {
       }
 
       dbConnections.push(connection)
-      await saveConfig({ ...config, dbConnections })
+      await patchConfig({ dbConnections })
 
       showCreateDialog.value = false
       resetNewConnection()
@@ -119,7 +141,10 @@ export function createConnections(state, api) {
       readTimeout: 30,
       enableWriteTimeout: true,
       writeTimeout: 30,
-      autoConnect: false
+      autoConnect: false,
+      readOnly: false,
+      ssh: normalizeSsh({}),
+      ssl: normalizeSsl({})
     }
     createDialogTab.value = 'basic'
   }
@@ -142,7 +167,10 @@ export function createConnections(state, api) {
       readTimeout: conn.readTimeout ?? 30,
       enableWriteTimeout: conn.enableWriteTimeout ?? true,
       writeTimeout: conn.writeTimeout ?? 30,
-      autoConnect: conn.autoConnect ?? false
+      autoConnect: conn.autoConnect ?? false,
+      readOnly: conn.readOnly === true,
+      ssh: normalizeSsh(conn.ssh),
+      ssl: normalizeSsl(conn.ssl)
     }
     editDialogTab.value = 'basic'
     showEditDialog.value = true
@@ -180,7 +208,7 @@ export function createConnections(state, api) {
           }
         }
         dbConnections[index] = connection
-        await saveConfig({ ...config, dbConnections })
+        await patchConfig({ dbConnections })
       }
 
       showEditDialog.value = false

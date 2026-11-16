@@ -1,0 +1,95 @@
+{
+  "name": "file-ops",
+  "version": "1.0.0",
+  "description": "安全读写本地文件：列出、读取、写入、追加、建目录、复制、移动、删除、搜索和查看属性。路径限制在设置中的脚本根目录（base_path，与文件管理器一致）内。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["文件", "目录", "读写", "搜索", "整理"],
+  "icon": "doc",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["list", "read", "write", "append", "mkdir", "copy", "move", "delete", "search", "stat"],
+        "description": "操作类型"
+      },
+      "path": {
+        "type": "string",
+        "default": ".",
+        "description": "目标文件或目录，相对 base_path 或绝对路径，必须位于 base_path 内"
+      },
+      "destination": {
+        "type": "string",
+        "description": "copy/move 的目标路径"
+      },
+      "content": {
+        "type": "string",
+        "description": "write/append 写入的文本内容"
+      },
+      "pattern": {
+        "type": "string",
+        "description": "search 的文件名关键字（不区分大小写）"
+      },
+      "content_match": {
+        "type": "string",
+        "description": "search 时可选的文件内容关键字，仅检查 1MB 内的文本文件"
+      },
+      "recursive": {
+        "type": "boolean",
+        "default": false,
+        "description": "复制目录或递归删除时设为 true；search 总是递归"
+      },
+      "overwrite": {
+        "type": "boolean",
+        "description": "write 默认覆盖已存在的文件，显式传 false 表示不覆盖；copy/move 默认不覆盖，需显式传 true"
+      },
+      "create_dirs": {
+        "type": "boolean",
+        "default": false,
+        "description": "写入或复制时自动创建缺失的父目录"
+      },
+      "confirm": {
+        "type": "boolean",
+        "default": false,
+        "description": "delete 必须显式设为 true"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "default": 100,
+        "description": "list/search 最多返回条目数"
+      },
+      "max_bytes": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1048576,
+        "default": 204800,
+        "description": "read 允许读取的最大字节数"
+      }
+    },
+    "required": ["action"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "action: list, path: .",
+      "output": "列出 base_path 下的文件和目录"
+    },
+    {
+      "input": "action: read, path: reports/summary.md",
+      "output": "返回文件内容，超过 max_bytes 时提示"
+    },
+    {
+      "input": "action: write, path: out/result.json, content: {}, create_dirs: true",
+      "output": "覆盖写入文件并返回相对路径"
+    },
+    {
+      "input": "action: search, pattern: sql, content_match: CREATE TABLE",
+      "output": "递归搜索文件名和文本内容"
+    }
+  ]
+}

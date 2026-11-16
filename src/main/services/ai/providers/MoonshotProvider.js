@@ -1,7 +1,8 @@
 import BaseProvider from './BaseProvider.js'
+import { getThinkingStyle } from '../thinking.js'
 
 class MoonshotProvider extends BaseProvider {
-  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
+  constructor({ apiKey, timeout, connectionTimeout } = {}) {
     super({
       name: 'Kimi',
       apiKey,
@@ -15,7 +16,7 @@ class MoonshotProvider extends BaseProvider {
         { id: 'kimi-k3', name: 'kimi-k3', contextWindow: 1000000 }
       ],
       defaultModel: 'kimi-k3.1-pro',
-      thinkingStyle: 'moonshot',
+      thinkingStyle: getThinkingStyle('moonshot'),
       temperatureFixed: true,
       timeout,
       connectionTimeout

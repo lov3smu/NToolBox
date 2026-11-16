@@ -48,7 +48,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { watch, onUnmounted } from 'vue'
+
+const props = defineProps({
   visible: {
     type: Boolean,
     default: false
@@ -82,6 +84,25 @@ function cancel() {
   emit('cancel')
   close()
 }
+
+function handleKeydown(event) {
+  if (event.key !== 'Escape') return
+  event.stopPropagation()
+  cancel()
+}
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) window.addEventListener('keydown', handleKeydown, true)
+    else window.removeEventListener('keydown', handleKeydown, true)
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown, true)
+})
 </script>
 
 <style scoped>
@@ -91,7 +112,7 @@ function cancel() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;

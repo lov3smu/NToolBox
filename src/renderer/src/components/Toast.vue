@@ -51,7 +51,7 @@ const icon = computed(() => {
   left: 50%;
   transform: translateX(-50%);
   background: var(--success-gradient);
-  color: white;
+  color: var(--text-inverse);
   padding: 12px 24px;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);

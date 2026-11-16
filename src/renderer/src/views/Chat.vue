@@ -1,62 +1,43 @@
 <template>
   <PageLayout tool-path="/chat">
     <div class="chat-layout">
-      <aside class="sidebar" :style="{ width: `${chatSidebarWidth}px` }">
-        <div class="sidebar-header">
-          <button class="btn btn-primary new-chat-btn" @click="createNewChat">
-            <span class="new-chat-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </span>
-            新会话
-          </button>
-        </div>
-        <div class="session-list">
-          <div
-            v-for="session in sessions"
-            :key="session.id"
-            :class="['session-item', { active: currentSessionId === session.id }]"
-            @click="selectSession(session.id)"
-          >
-            <div class="session-info">
-              <div v-if="editingSessionId !== session.id" class="session-title">
-                {{ session.title || '新会话' }}
-              </div>
-              <input
-                v-else
-                v-model="editingTitle"
-                class="session-edit-input"
-                @keydown.enter="saveEditTitle(session.id, $event)"
-                @keydown.escape="cancelEditTitle"
-                @blur="saveEditTitle(session.id)"
-              />
-              <div class="session-time">
-                {{ formatTime(session.updatedAt) }}
-              </div>
-            </div>
-            <div class="session-actions">
-              <button class="session-edit" title="重命名" @click.stop="startEditTitle(session.id, session.title)">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-              </button>
-              <button class="session-delete" title="删除" @click.stop="deleteSession(session.id)">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div v-if="sessions.length === 0" class="session-empty">
-            <p>暂无会话</p>
-            <p class="hint">点击上方按钮创建新会话</p>
-          </div>
-        </div>
-      </aside>
+      <SessionRail
+        v-if="!chatSidebarCollapsed"
+        v-model:editing-title="editingTitle"
+        v-model:search="sessionSearch"
+        :width="chatSidebarWidth"
+        :workspace-groups="workspaceGroups"
+        :collapsed-groups="collapsedGroups"
+        :current-session-id="currentSessionId"
+        :session-menu="sessionMenu"
+        :workspace-menu="workspaceMenu"
+        :editing-session-id="editingSessionId"
+        :search-open="sessionSearchOpen"
+        :workspace-open="workspaceSectionOpen"
+        :rail-more-open="railMoreOpen"
+        :show-archived="showArchived"
+        :format-time="formatTime"
+        :group-title="workspaceGroupTitle"
+        @new-chat="createNewChat"
+        @open-memory="openMemoryPage"
+        @open-market="router.push('/market')"
+        @add-workspace="openWorkspaceDialog"
+        @toggle-search="toggleSessionSearch"
+        @toggle-workspace="workspaceSectionOpen = !workspaceSectionOpen"
+        @toggle-group="toggleGroup"
+        @select-session="selectSession"
+        @session-menu="toggleSessionMenu"
+        @workspace-menu="toggleWorkspaceMenu"
+        @workspace-new-chat="createWorkspaceChat"
+        @save-title="saveEditTitle"
+        @cancel-title="cancelEditTitle"
+        @toggle-rail-more="railMoreOpen = !railMoreOpen"
+        @rail-more="onRailMore"
+        @clear-menu="closeRailMenus"
+        @collapse="collapseChatSidebar"
+      />
       <SplitHandle
+        v-if="!chatSidebarCollapsed"
         orientation="vertical"
         :resizing="chatSidebarResizing"
         label="拖动调整会话列表宽度"
@@ -65,286 +46,74 @@
       />
       <main class="chat-main">
         <div v-if="showKeyWarning" class="api-key-banner">
-          <span>{{ currentProvider?.name || '当前平台' }} 尚未配置 API Key，AI 助手暂不可用</span>
+          <span>{{ currentProvider?.name || '当前服务商' }} 尚未配置 API Key，AI 助手暂不可用</span>
           <button class="btn btn-secondary btn-sm" @click="openSettings('api')">去设置</button>
         </div>
         <div class="chat-header">
-          <h2>{{ currentSession?.title || '新会话' }}</h2>
-        </div>
-        <div class="messages-wrap">
-          <div ref="messagesContainer" class="messages-container" @scroll="handleMessagesScroll">
-            <div v-if="currentMessages.length === 0" class="messages-empty">
-              <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1">
-                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
-                <path d="M12 11v4M12 7h.01" />
-              </svg>
-              <p>开始与 AI 助手对话吧</p>
-              <p class="hint">支持图片与文件输入、工具调用、思考过程与执行链路展示</p>
-            </div>
-            <div
-              v-for="(msg, index) in currentMessages"
-              :key="index"
-              class="message"
-              :class="msg.role"
-              :data-message-index="index"
+          <button v-if="chatSidebarCollapsed" class="rail-restore" title="展开会话侧栏" @click="expandChatSidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+              <polyline points="9.5 10 12 12 9.5 14" />
+            </svg>
+          </button>
+          <div class="chat-view-tabs" role="tablist" aria-label="聊天视图切换">
+            <button
+              type="button"
+              role="tab"
+              class="chat-view-tab"
+              :class="{ active: chatTab === 'chat' }"
+              :aria-selected="chatTab === 'chat'"
+              @click="switchChatTab('chat')"
             >
-              <div class="message-avatar">
-                <span v-if="msg.role === 'user'">你</span>
-                <span v-else>AI</span>
-              </div>
-              <div class="message-content">
-                <div v-if="msg.plan && msg.plan.steps && msg.plan.steps.length" class="agent-plan">
-                  <div class="agent-plan-head">
-                    <span class="agent-plan-badge">计划</span>
-                    <span class="agent-plan-goal">{{ msg.plan.goal }}</span>
-                  </div>
-                  <ol class="agent-plan-list">
-                    <li v-for="(step, stepIndex) in msg.plan.steps" :key="stepIndex" class="agent-plan-step">
-                      <span class="agent-plan-index">{{ stepIndex + 1 }}</span>
-                      <span class="agent-plan-text">{{ step }}</span>
-                    </li>
-                  </ol>
-                </div>
-                <div v-if="msg.thinking" class="thinking-block">
-                  <div class="thinking-header" @click="toggleThinking(index)">
-                    <svg
-                      class="thinking-icon"
-                      :class="{ expanded: expandedThinking[index] }"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                    <span v-if="msg.isStreaming" class="thinking-pulse" aria-hidden="true" />
-                    <span class="thinking-title">
-                      {{ msg.isStreaming ? '正在思考...' : '已思考' }}
-                    </span>
-                    <span class="thinking-duration">点击展开</span>
-                  </div>
-                  <div v-show="expandedThinking[index]" class="thinking-content">
-                    {{ msg.thinking }}
-                  </div>
-                </div>
-                <div v-if="msg.steps && msg.steps.length" class="agent-steps">
-                  <button type="button" class="agent-steps-header" @click="toggleChain(index)">
-                    <span class="agent-steps-icon">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="12"
-                        height="12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <circle cx="6" cy="6" r="2" />
-                        <circle cx="18" cy="18" r="2" />
-                        <path d="M6 8v4a4 4 0 0 0 4 4h4" />
-                      </svg>
-                    </span>
-                    <span class="agent-steps-title">执行链路</span>
-                    <span class="agent-steps-summary">{{ chainSummary(msg.steps) }}</span>
-                    <svg
-                      class="agent-steps-chevron"
-                      :class="{ expanded: !isChainCollapsed(index) }"
-                      viewBox="0 0 24 24"
-                      width="12"
-                      height="12"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  <div v-show="!isChainCollapsed(index)" class="agent-steps-list">
-                    <div v-for="step in msg.steps" :key="step.id || step.name" class="agent-step" :class="step.status">
-                      <div class="agent-step-rail">
-                        <span class="agent-step-dot">
-                          <span v-if="step.status === 'running'" class="mini-spinner" />
-                          <svg
-                            v-else-if="step.status === 'success'"
-                            viewBox="0 0 24 24"
-                            width="11"
-                            height="11"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="3"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          <svg
-                            v-else
-                            viewBox="0 0 24 24"
-                            width="11"
-                            height="11"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="3"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        </span>
-                      </div>
-                      <div class="agent-step-main">
-                        <button type="button" class="agent-step-head" @click="toggleStep(index, step)">
-                          <span class="agent-step-name">{{ step.name }}</span>
-                          <span class="agent-step-status">{{ step.statusText }}</span>
-                          <span v-if="step.duration" class="agent-step-duration">{{
-                            formatDuration(step.duration)
-                          }}</span>
-                          <svg
-                            class="agent-step-chevron"
-                            :class="{ expanded: isStepExpanded(index, step) }"
-                            viewBox="0 0 24 24"
-                            width="12"
-                            height="12"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </button>
-                        <div v-if="isStepExpanded(index, step)" class="agent-step-body">
-                          <div v-if="step.arguments" class="step-block">
-                            <div class="step-label">参数</div>
-                            <pre>{{ pretty(step.arguments) }}</pre>
-                          </div>
-                          <div v-if="step.result" class="step-block">
-                            <div class="step-label">结果</div>
-                            <pre>{{ step.result }}</pre>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-if="msg.reflections && msg.reflections.length" class="agent-reflections">
-                  <div
-                    v-for="(reflection, reflectionIndex) in msg.reflections"
-                    :key="reflectionIndex"
-                    class="agent-reflection"
-                    :class="reflection.status"
-                  >
-                    <span class="agent-reflection-icon" aria-hidden="true">
-                      <svg
-                        v-if="reflection.status === 'error'"
-                        viewBox="0 0 24 24"
-                        width="11"
-                        height="11"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                      <svg
-                        v-else
-                        viewBox="0 0 24 24"
-                        width="11"
-                        height="11"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <line x1="12" y1="5" x2="12" y2="13" />
-                        <line x1="12" y1="18" x2="12.01" y2="18" />
-                      </svg>
-                    </span>
-                    <span class="agent-reflection-text">{{ reflection.text }}</span>
-                  </div>
-                </div>
-                <div v-if="msg.contextNote" class="agent-context-note">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12a9 9 0 1 1-3-6.7" />
-                    <polyline points="21 3 21 9 15 9" />
-                  </svg>
-                  <span>{{ msg.contextNote }}</span>
-                </div>
-                <div v-if="msg.notices && msg.notices.length" class="agent-notices">
-                  <div v-for="(note, noteIndex) in msg.notices" :key="noteIndex">{{ note }}</div>
-                </div>
-                <div v-if="msg.attachments && msg.attachments.length" class="message-attachments">
-                  <template v-for="att in msg.attachments" :key="att.id || att.name">
-                    <img v-if="att.kind === 'image'" :src="att.dataUrl" :alt="att.name" class="message-image" />
-                    <div v-else class="message-file">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="13"
-                        height="13"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                      <span>{{ att.name }}</span>
-                    </div>
-                  </template>
-                </div>
-                <div
-                  v-if="msg.content || (msg.isStreaming && !msg.thinking && !(msg.steps && msg.steps.length))"
-                  class="message-bubble"
-                >
-                  <div v-if="msg.content" class="message-text" v-html="messageHtml(msg)" />
-                  <div
-                    v-if="msg.isStreaming && !msg.content && !msg.thinking && !(msg.steps && msg.steps.length)"
-                    class="loading-indicator"
-                  >
-                    <span /><span /><span />
-                  </div>
-                  <button
-                    v-if="msg.role === 'assistant' && msg.content && !msg.isStreaming"
-                    class="copy-btn"
-                    title="复制"
-                    @click="copyMessage(msg.content)"
-                  >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                  </button>
-                </div>
-                <div v-if="msg.summary" class="agent-summary">
-                  <div class="agent-summary-head">
-                    <span class="agent-summary-title">执行摘要</span>
-                    <span class="agent-summary-badge" :class="msg.summary.termination">
-                      {{ msg.summary.terminationText }}
-                    </span>
-                  </div>
-                  <div class="agent-summary-metrics">
-                    <span>轮次 {{ msg.summary.iterations }}</span>
-                    <span>工具 {{ msg.summary.toolCalls }} 次</span>
-                    <span>成功 {{ msg.summary.toolSuccess }} / 失败 {{ msg.summary.toolFailed }}</span>
-                    <span>耗时 {{ formatDuration(msg.summary.duration) || '0ms' }}</span>
-                  </div>
-                  <div v-if="msg.summary.tools && msg.summary.tools.length" class="agent-summary-tools">
-                    使用工具：{{ msg.summary.tools.join('、') }}
-                  </div>
-                  <ul
-                    v-if="msg.summary.limitations && msg.summary.limitations.length"
-                    class="agent-summary-limitations"
-                  >
-                    <li v-for="(item, itemIndex) in msg.summary.limitations" :key="itemIndex">{{ item }}</li>
-                  </ul>
-                </div>
-                <div v-if="msg.usage" class="message-usage">
-                  <span>输入 {{ formatTokens(msg.usage.prompt_tokens) }}</span>
-                  <span>输出 {{ formatTokens(msg.usage.completion_tokens) }}</span>
-                  <span>合计 {{ formatTokens(msg.usage.total_tokens) }} tokens</span>
-                  <span v-if="msg.usage.estimated" class="message-usage-estimated">含估算</span>
-                </div>
-                <div v-if="msg.stopped" class="message-stopped">已停止生成</div>
-              </div>
-            </div>
+              对话
+              <span
+                v-if="pendingApprovals.length"
+                class="chat-tab-dot"
+                :title="`${pendingApprovals.length} 个操作等待授权`"
+              />
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="chat-view-tab"
+              :class="{ active: chatTab === 'traces' }"
+              :aria-selected="chatTab === 'traces'"
+              @click="switchChatTab('traces')"
+            >
+              轨迹
+            </button>
           </div>
+          <button
+            class="header-icon-btn"
+            :class="{ active: contextPanelOpen }"
+            :title="contextPanelOpen ? '收起上下文面板' : '展开上下文面板'"
+            @click="toggleContextPanel"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+              <line x1="18" y1="9" x2="18.01" y2="9" />
+              <line x1="18" y1="12" x2="18.01" y2="12" />
+              <line x1="18" y1="15" x2="18.01" y2="15" />
+            </svg>
+          </button>
+        </div>
+        <div v-show="chatTab === 'chat'" class="messages-wrap">
+          <MessageList
+            ref="messageListRef"
+            :messages="currentMessages"
+            :starter-prompts="starterPrompts"
+            :empty-label="emptyWorkspaceLabel"
+            :rollback-busy="rollbackBusy"
+            :format-tokens="formatTokens"
+            @scroll="handleMessagesScroll"
+            @use-starter="useStarter"
+            @respond-approval="respondApproval"
+            @open-trace="openRunTrace"
+            @copy="copyMessage"
+            @rollback="requestRollback"
+          />
           <aside v-if="currentMessages.length" ref="questionRail" class="question-rail">
             <div ref="questionList" class="question-list">
               <button
@@ -379,36 +148,40 @@
             </button>
           </aside>
         </div>
-        <div class="composer-area">
-          <div v-if="currentMessages.length" class="chat-usage">
-            <div class="usage-context">
-              <span class="usage-label">上下文</span>
-              <div class="usage-track">
-                <div
-                  class="usage-fill"
-                  :class="contextState"
-                  :style="{ width: `${contextPercent}%` }"
-                  role="progressbar"
-                  :aria-valuenow="contextPercent"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-label="上下文使用量"
-                />
-              </div>
-              <span class="usage-value">
-                {{ formatTokens(contextTokens) }} / {{ formatTokens(contextWindowSize) }}
+        <RunTracePanel v-if="chatTab === 'traces'" :key="tracePanelKey" :focus-run-id="traceFocusId" />
+        <Transition name="dock-slide">
+          <div
+            v-if="chatTab === 'chat' && pendingApprovals.length"
+            class="approval-dock"
+            role="alertdialog"
+            aria-label="等待授权的操作"
+          >
+            <div class="approval-dock-head">
+              <span class="approval-dock-badge">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                  <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                </svg>
+                等待授权
               </span>
-              <span class="usage-percent" :class="contextState">{{ contextPercent }}%</span>
+              <span class="approval-dock-copy">
+                AI 需要确认 {{ pendingApprovals.length }} 个
+                {{ pendingApprovals[0]?.risk === 'destructive' ? '高危' : '写' }}操作后才能继续
+              </span>
             </div>
-            <div class="usage-meta">
-              <span v-if="currentSession?.context" class="usage-chip" title="已压缩的历史上下文">
-                已压缩 {{ formatTokens(currentSession.context.beforeTokens) }} →
-                {{ formatTokens(currentSession.context.afterTokens) }}
-              </span>
-              <span class="usage-chip">累计 {{ formatTokens(sessionTokenTotal) }} tokens</span>
-              <span v-if="sessionUsageEstimated" class="usage-chip muted">含估算</span>
+            <div class="approval-dock-list">
+              <ChatApprovalCard
+                v-for="approval in pendingApprovals"
+                :key="approval.approvalId"
+                :approval="approval"
+                compact
+                @respond="respondApproval"
+              />
             </div>
           </div>
+        </Transition>
+        <div v-show="chatTab === 'chat'" class="composer-area">
           <div class="composer">
             <div v-if="attachments.length" class="composer-attachments">
               <div v-for="att in attachments" :key="att.id" class="attachment-chip">
@@ -433,7 +206,7 @@
               ref="inputRef"
               v-model="inputText"
               class="composer-input"
-              placeholder="给 AI 助手发送消息，支持图片与文件..."
+              placeholder="Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件"
               :disabled="!hasCurrentApiKey"
               @input="resizeInput"
               @keydown.enter.exact="sendMessage"
@@ -475,7 +248,9 @@
                     <polyline points="8 12 11 15 16 9" />
                   </svg>
                   <select v-model="approvalMode">
-                    <option value="auto">自动审批</option>
+                    <option value="all">写操作前询问</option>
+                    <option value="high-risk">仅高危操作询问</option>
+                    <option value="auto">自动执行</option>
                     <option value="chat">仅对话</option>
                   </select>
                   <svg
@@ -593,18 +368,12 @@
                             @click="chooseModel(provider.type, model.id)"
                           >
                             <span class="model-menu-option-name">{{ model.name }}</span>
-                            <svg
+                            <span
                               v-if="provider.type === selectedProvider && model.id === selectedModel"
-                              class="model-menu-check"
-                              viewBox="0 0 24 24"
-                              width="14"
-                              height="14"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2.4"
-                            >
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
+                              class="model-menu-dot"
+                              title="当前选中"
+                              aria-label="当前选中"
+                            />
                           </button>
                         </div>
                       </div>
@@ -668,7 +437,7 @@
                   </svg>
                 </button>
                 <button v-if="!loading" class="send-circle" :disabled="!canSend" title="发送" @click="sendMessage">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
                     <line x1="12" y1="19" x2="12" y2="5" />
                     <polyline points="6 11 12 5 18 11" />
                   </svg>
@@ -681,55 +450,734 @@
               </div>
             </div>
           </div>
-          <div class="composer-hint">Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件</div>
+          <div class="composer-meta">
+            <div class="composer-workspace">
+              <button
+                v-if="!currentSession?.workspace"
+                type="button"
+                class="composer-workspace-pick"
+                title="为当前会话绑定工作区，绑定后不可更换"
+                @click="pickWorkspace"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <line x1="12" y1="10.5" x2="12" y2="15.5" />
+                  <line x1="9.5" y1="13" x2="14.5" y2="13" />
+                </svg>
+                <span>选择工作区</span>
+              </button>
+              <span v-else class="composer-workspace-bound" :title="workspaceTooltip(currentSession.workspace)">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  :style="
+                    workspaceIconColor(currentSession.workspace)
+                      ? { color: workspaceIconColor(currentSession.workspace) }
+                      : null
+                  "
+                >
+                  <path :d="workspaceIconPath(currentSession.workspace)" />
+                </svg>
+                <span class="composer-workspace-name">{{ workspaceLabel(currentSession.workspace) }}</span>
+                <span class="composer-workspace-tag">已绑定</span>
+              </span>
+            </div>
+            <div v-if="currentMessages.length" class="chat-stats">
+              <button
+                class="stat-chip"
+                :class="{ open: usageDetail === 'context' }"
+                :aria-expanded="usageDetail === 'context'"
+                title="点击查看上下文详情"
+                @click.stop="toggleUsageDetail('context')"
+              >
+                <span class="stat-ring" :class="contextState" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <circle class="ring-track" cx="12" cy="12" r="9" />
+                    <circle class="ring-value" cx="12" cy="12" r="9" :style="contextRingStyle" />
+                  </svg>
+                </span>
+                <span class="stat-text"
+                  >上下文 <b>{{ contextPercent }}%</b></span
+                >
+              </button>
+              <button
+                class="stat-chip"
+                :class="{ open: usageDetail === 'rate' }"
+                :disabled="!hasRateData"
+                :aria-expanded="usageDetail === 'rate'"
+                :title="hasRateData ? '点击查看速率详情' : '暂无速率数据'"
+                @click.stop="toggleUsageDetail('rate')"
+              >
+                <span class="stat-text"
+                  >速率 <b>{{ rateDisplay }}</b></span
+                >
+              </button>
+              <button
+                class="stat-chip"
+                :class="{ open: usageDetail === 'total' }"
+                :disabled="!hasUsageData"
+                :aria-expanded="usageDetail === 'total'"
+                :title="hasUsageData ? '点击查看 token 用量详情' : '暂无用量数据'"
+                @click.stop="toggleUsageDetail('total')"
+              >
+                <span class="stat-text"
+                  >累计 <b>{{ totalDisplay }}</b></span
+                >
+              </button>
+              <button
+                class="stat-chip"
+                :class="{ open: usageDetail === 'cache' }"
+                :disabled="!hasCacheData"
+                :aria-expanded="usageDetail === 'cache'"
+                :title="hasCacheData ? '点击查看缓存命中详情' : '暂无缓存数据'"
+                @click.stop="toggleUsageDetail('cache')"
+              >
+                <span class="stat-text"
+                  >缓存命中 <b>{{ cacheDisplay }}</b></span
+                >
+              </button>
+
+              <div v-if="usageDetail" class="usage-pop" @click.stop>
+                <template v-if="usageDetail === 'context'">
+                  <div class="usage-pop-title">上下文使用</div>
+                  <div class="usage-pop-grid">
+                    <span>窗口大小</span><b>{{ formatTokens(contextWindowSize) }} tokens</b> <span>已用</span
+                    ><b>{{ formatTokens(contextTokens) }} tokens</b> <span>剩余</span
+                    ><b>{{ formatTokens(remainingContextTokens) }} tokens</b> <span>占比</span
+                    ><b :class="contextState">{{ contextPercent }}%</b>
+                  </div>
+                  <div v-if="currentSession?.context" class="usage-pop-note">
+                    已压缩 {{ formatTokens(currentSession.context.beforeTokens) }} →
+                    {{ formatTokens(currentSession.context.afterTokens) }} tokens
+                  </div>
+                </template>
+                <template v-else-if="usageDetail === 'rate'">
+                  <div class="usage-pop-title">Token 速率</div>
+                  <div class="usage-pop-grid">
+                    <span>生成速率</span><b>{{ sessionTokenRate }} t/s</b> <span>输出 tokens</span
+                    ><b>{{ formatTokens(sessionCompletionTokens) }}</b> <span>生成耗时</span
+                    ><b>{{ generationMs ? formatDuration(generationMs) : '--' }}</b> <span>请求次数</span
+                    ><b>{{ sessionCallCount }} 次</b>
+                  </div>
+                  <div v-if="!generationMs" class="usage-pop-note">旧会话缺少计时数据，速率从下一条回复开始统计</div>
+                </template>
+                <template v-else-if="usageDetail === 'total'">
+                  <div class="usage-pop-title">Token 用量</div>
+                  <div class="usage-pop-grid">
+                    <span>输入</span><b>{{ formatTokens(sessionPromptTokens) }}</b> <span>输出</span
+                    ><b>{{ formatTokens(sessionCompletionTokens) }}</b> <span>合计</span
+                    ><b>{{ formatTokens(sessionTokenTotal) }}</b> <span>请求次数</span><b>{{ sessionCallCount }} 次</b>
+                  </div>
+                  <div v-if="sessionUsageEstimated" class="usage-pop-note">部分用量为本地估算值</div>
+                </template>
+                <template v-else>
+                  <div class="usage-pop-title">缓存命中</div>
+                  <div class="usage-pop-grid">
+                    <span>命中率</span><b>{{ cacheHitPercent }}%</b> <span>命中 tokens</span
+                    ><b>{{ formatTokens(sessionCachedTokens) }}</b> <span>提示 tokens</span
+                    ><b>{{ formatTokens(sessionPromptTokens) }}</b> <span>未命中</span
+                    ><b>{{ formatTokens(unCachedTokens) }}</b>
+                  </div>
+                  <div class="usage-pop-note">命中率基于服务商返回的缓存用量，未返回时显示 0%</div>
+                </template>
+              </div>
+            </div>
+          </div>
         </div>
         <input ref="imageInput" type="file" accept="image/*" multiple class="hidden-file" @change="onImagePicked" />
         <input ref="fileInput" type="file" multiple class="hidden-file" @change="onFilePicked" />
       </main>
+      <div v-if="contextPanelOpen" class="context-scrim" @click="toggleContextPanel" />
+      <template v-if="contextPanelOpen">
+        <div class="context-resize-handle" @mousedown="startContextResize" />
+        <aside class="context-panel" :style="{ width: `${contextPanelWidth}px` }">
+          <div class="context-head">
+            <div class="context-head-title">
+              <span class="context-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 5h16M4 12h10M4 19h7" />
+                  <circle cx="18" cy="12" r="2" />
+                  <circle cx="15" cy="19" r="2" />
+                </svg>
+              </span>
+              <span>上下文</span>
+            </div>
+            <button class="context-close" title="收起面板" @click="toggleContextPanel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          <div v-if="!currentSession" class="context-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+            </svg>
+            <p>创建会话后查看上下文</p>
+          </div>
+
+          <div v-else class="context-scroll">
+            <section class="ctx-overview">
+              <div class="ctx-updated">
+                <span class="ctx-live-dot" :class="{ active: loading }" />
+                更新于 {{ formatDateTime(currentSession.updatedAt) }}
+              </div>
+              <div class="ctx-overview-title">{{ currentSession.title || '新会话' }}</div>
+              <div class="ctx-overview-desc">
+                {{ currentSession.workspace ? '工作区协作会话' : '尚未绑定工作区' }} ·
+                {{ currentProvider?.name || '未选择服务商' }}
+              </div>
+              <div class="ctx-metrics">
+                <div>
+                  <strong>{{ turnCount }}</strong>
+                  <span>轮对话</span>
+                </div>
+                <div>
+                  <strong>{{ sessionToolRuns.length }}</strong>
+                  <span>次工具</span>
+                </div>
+                <div>
+                  <strong>{{ formatTokens(sessionTokenTotal) }}</strong>
+                  <span>tokens</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="ctx-section">
+              <div class="ctx-section-head">
+                <span class="ctx-section-title">环境信息</span>
+                <span v-if="currentSession.workspace" class="ctx-link is-static">已绑定</span>
+              </div>
+              <div v-if="!currentSession.workspace" class="ctx-empty-row">
+                <span>未绑定工作区，可在输入框下方选择</span>
+              </div>
+              <div v-else class="ctx-env">
+                <div class="env-row">
+                  <span class="env-key">工作区</span>
+                  <button class="env-value link" :title="currentSession.workspace" @click="openWorkspaceRoot">
+                    {{ workspaceLabel(currentSession.workspace) }}
+                  </button>
+                </div>
+                <div v-if="workspaceDescription(currentSession.workspace)" class="env-row">
+                  <span class="env-key">描述</span>
+                  <span class="env-value">{{ workspaceDescription(currentSession.workspace) }}</span>
+                </div>
+                <div class="env-row">
+                  <span class="env-key">目录</span>
+                  <span class="env-value mono" :title="currentSession.workspace">{{ currentSession.workspace }}</span>
+                </div>
+                <div class="env-row">
+                  <span class="env-key">版本</span>
+                  <span class="env-value">
+                    <template v-if="workspaceInfo?.isGit">
+                      <span class="env-branch">{{ workspaceInfo.branch || 'detached' }}</span>
+                      <span v-if="workspaceInfo.ahead" class="env-ahead">↑{{ workspaceInfo.ahead }}</span>
+                      <span v-if="workspaceInfo.behind" class="env-behind">↓{{ workspaceInfo.behind }}</span>
+                    </template>
+                    <span v-else class="env-muted">{{ workspaceInfoLoading ? '读取中...' : '非 Git 仓库' }}</span>
+                  </span>
+                </div>
+                <div class="env-row">
+                  <span class="env-key">变更</span>
+                  <span class="env-value">
+                    <span v-if="workspaceInfo && workspaceInfo.isGit" class="env-change">
+                      <span :class="['env-change-dot', { clean: !workspaceInfo.changes }]" />
+                      {{ workspaceInfo.changes ? `${workspaceInfo.changes} 个文件` : '无变更' }}
+                    </span>
+                    <span v-else class="env-muted">--</span>
+                  </span>
+                </div>
+                <div v-if="workspaceInfo?.lastCommit" class="env-row">
+                  <span class="env-key">提交</span>
+                  <span class="env-value" :title="workspaceInfo.lastCommit.subject">
+                    {{ workspaceInfo.lastCommit.subject }}
+                  </span>
+                </div>
+                <div v-if="workspaceInfo?.error" class="ctx-alert">{{ workspaceInfo.error }}</div>
+              </div>
+            </section>
+
+            <section class="ctx-section">
+              <div class="ctx-section-head">
+                <span class="ctx-section-title">记忆</span>
+                <button class="ctx-link" @click="openMemoryPage">管理</button>
+              </div>
+              <div v-if="memoryLoading && !memoryOverview" class="ctx-empty-row">读取中...</div>
+              <template v-else>
+                <div class="ctx-memory-grid">
+                  <div class="ctx-memory-stat">
+                    <strong>{{ memoryTotals.global }}</strong>
+                    <span>全局</span>
+                  </div>
+                  <div class="ctx-memory-stat">
+                    <strong>{{ memoryTotals.project }}</strong>
+                    <span>项目</span>
+                  </div>
+                  <div class="ctx-memory-stat">
+                    <strong>{{ memoryTotals.knowledge }}</strong>
+                    <span>知识库</span>
+                  </div>
+                </div>
+                <div v-if="memoryRecent.length" class="ctx-memory-list">
+                  <button
+                    v-for="item in memoryRecent"
+                    :key="item.id"
+                    class="ctx-memory"
+                    :title="item.content"
+                    @click="openMemoryPage"
+                  >
+                    <span class="ctx-memory-scope" :class="item.scopeKey">{{ item.scopeLabel }}</span>
+                    <span class="ctx-memory-text">{{ item.content }}</span>
+                  </button>
+                </div>
+                <div v-else class="ctx-empty-row">AI 会在对话中记住你的偏好与项目约定</div>
+              </template>
+            </section>
+
+            <section class="ctx-section">
+              <div class="ctx-section-head">
+                <span class="ctx-section-title">后台进程</span>
+                <span class="ctx-count">{{ sessionToolRuns.length }}</span>
+              </div>
+              <div v-if="sessionToolRuns.length === 0" class="ctx-empty-row">暂无工具执行记录</div>
+              <div v-else class="ctx-list">
+                <div
+                  v-for="run in visibleItems(sessionToolRuns, 'runs', 4)"
+                  :key="run.key"
+                  class="ctx-run"
+                  :class="run.status"
+                >
+                  <span class="ctx-run-dot" />
+                  <div class="ctx-run-main">
+                    <span class="ctx-run-name">{{ run.name }}</span>
+                    <span class="ctx-run-meta">
+                      {{ run.statusText }}{{ run.duration ? ` · ${formatDuration(run.duration)}` : '' }}
+                    </span>
+                  </div>
+                </div>
+                <button v-if="sessionToolRuns.length > 4" class="ctx-more" @click="toggleSection('runs')">
+                  {{ expandedSections.runs ? '收起' : `查看更多 (${sessionToolRuns.length - 4})` }}
+                </button>
+              </div>
+            </section>
+
+            <section class="ctx-section">
+              <div class="ctx-section-head">
+                <span class="ctx-section-title">产出</span>
+                <span class="ctx-count">{{ sessionArtifacts.length }}</span>
+              </div>
+              <div v-if="sessionArtifacts.length === 0" class="ctx-empty-row">AI 写入的文件会显示在这里</div>
+              <div v-else class="ctx-list">
+                <button
+                  v-for="item in visibleItems(sessionArtifacts, 'artifacts', 4)"
+                  :key="item.key"
+                  class="ctx-file"
+                  :title="item.target || item.path"
+                  @click="openSource(item)"
+                >
+                  <span class="ctx-file-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  </span>
+                  <span class="ctx-file-copy">
+                    <span class="ctx-file-name">{{ item.label }}</span>
+                    <span class="ctx-file-path">{{ item.detail }}</span>
+                  </span>
+                </button>
+                <button v-if="sessionArtifacts.length > 4" class="ctx-more" @click="toggleSection('artifacts')">
+                  {{ expandedSections.artifacts ? '收起' : `查看更多 (${sessionArtifacts.length - 4})` }}
+                </button>
+              </div>
+            </section>
+
+            <section class="ctx-section">
+              <div class="ctx-section-head">
+                <span class="ctx-section-title">网页查阅</span>
+                <span class="ctx-count">{{ sessionWebPages.length }}</span>
+              </div>
+              <div v-if="sessionWebPages.length === 0" class="ctx-empty-row">AI 阅读的网页会显示在这里</div>
+              <div v-else class="ctx-list">
+                <button
+                  v-for="item in visibleItems(sessionWebPages, 'web', 4)"
+                  :key="item.key"
+                  class="ctx-web"
+                  :title="item.url"
+                  @click="openSource(item)"
+                >
+                  <span class="ctx-web-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="9" />
+                      <path
+                        d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"
+                      />
+                    </svg>
+                  </span>
+                  <span class="ctx-web-copy">
+                    <span class="ctx-web-title">{{ item.label }}</span>
+                    <span class="ctx-web-host">{{ item.detail }}</span>
+                  </span>
+                </button>
+                <button v-if="sessionWebPages.length > 4" class="ctx-more" @click="toggleSection('web')">
+                  {{ expandedSections.web ? '收起' : `查看更多 (${sessionWebPages.length - 4})` }}
+                </button>
+              </div>
+            </section>
+
+            <section class="ctx-section">
+              <div class="ctx-section-head">
+                <span class="ctx-section-title">来源</span>
+                <span class="ctx-count">{{ sessionSources.length }}</span>
+              </div>
+              <div v-if="sessionSources.length === 0" class="ctx-empty-row">暂无引用来源</div>
+              <div v-else class="ctx-list">
+                <button
+                  v-for="item in visibleItems(sessionSources, 'sources', 5)"
+                  :key="item.key"
+                  class="ctx-source"
+                  :class="{ disabled: !item.target }"
+                  :title="item.detail || item.label"
+                  @click="openSource(item)"
+                >
+                  <span class="ctx-source-type">{{ sourceTypeLabel(item.type) }}</span>
+                  <span class="ctx-source-copy">
+                    <span class="ctx-source-name">{{ item.label }}</span>
+                    <span class="ctx-source-detail">{{ item.detail }}</span>
+                  </span>
+                </button>
+                <button v-if="sessionSources.length > 5" class="ctx-more" @click="toggleSection('sources')">
+                  {{ expandedSections.sources ? '收起' : `查看更多 (${sessionSources.length - 5})` }}
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <div class="context-foot">上下文仅保存在本机</div>
+        </aside>
+      </template>
     </div>
+    <Teleport to="body">
+      <div
+        v-if="sessionMenu"
+        class="session-menu"
+        :style="{ left: `${sessionMenu.x}px`, top: `${sessionMenu.y}px` }"
+        @click.stop
+      >
+        <button @click="handleSessionAction('pin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 17v5" />
+            <path d="M9 10.8V4h6v6.8l2 2.7V16H7v-2.5z" />
+          </svg>
+          <span>{{ menuSession?.pinned ? '取消置顶' : '置顶会话' }}</span>
+        </button>
+        <button @click="handleSessionAction('rename')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          <span>重命名</span>
+        </button>
+        <button @click="handleSessionAction('fork')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="6" y1="3" x2="6" y2="15" />
+            <circle cx="18" cy="6" r="3" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="M18 9a9 9 0 0 1-9 9" />
+          </svg>
+          <span>分叉会话</span>
+        </button>
+        <div class="session-menu-divider" />
+        <button @click="handleSessionAction('copyId')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <span>复制 Session ID</span>
+        </button>
+        <button
+          :disabled="!menuSession?.workspace"
+          :title="menuSession?.workspace ? '在文件夹显示' : '当前会话未关联工作区'"
+          @click="handleSessionAction('reveal')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          </svg>
+          <span>在文件夹显示</span>
+        </button>
+        <div class="session-menu-divider" />
+        <button @click="handleSessionAction('archive')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="21 8 21 21 3 21 3 8" />
+            <rect x="1" y="3" width="22" height="5" />
+            <line x1="10" y1="12" x2="14" y2="12" />
+          </svg>
+          <span>{{ menuSession?.archived ? '取消归档' : '归档会话' }}</span>
+        </button>
+        <button class="danger" @click="handleSessionAction('delete')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+          </svg>
+          <span>删除会话</span>
+        </button>
+      </div>
+      <div
+        v-if="workspaceMenu"
+        class="session-menu"
+        :style="{ left: `${workspaceMenu.x}px`, top: `${workspaceMenu.y}px` }"
+        @click.stop
+      >
+        <button @click="handleWorkspaceAction('pin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 17v5" />
+            <path d="M9 10.8V4h6v6.8l2 2.7V16H7v-2.5z" />
+          </svg>
+          <span>{{ workspaceMenuMeta?.pinned ? '取消置顶' : '置顶工作区' }}</span>
+        </button>
+        <button @click="handleWorkspaceAction('edit')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          <span>修改工作区</span>
+        </button>
+        <div class="session-menu-divider" />
+        <button @click="handleWorkspaceAction('archive')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="21 8 21 21 3 21 3 8" />
+            <rect x="1" y="3" width="22" height="5" />
+            <line x1="10" y1="12" x2="14" y2="12" />
+          </svg>
+          <span>{{ workspaceMenuMeta?.archived ? '取消归档' : '归档工作区' }}</span>
+        </button>
+        <button class="danger" @click="handleWorkspaceAction('delete')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+          </svg>
+          <span>删除工作区</span>
+        </button>
+      </div>
+    </Teleport>
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
+    <MessageDialog
+      :visible="Boolean(deleteTarget)"
+      type="confirm"
+      title="删除会话"
+      :message="`确定删除「${deleteTarget?.title || '新会话'}」吗？该操作无法撤销。`"
+      @confirm="confirmDeleteSession"
+      @cancel="deleteTarget = null"
+      @close="deleteTarget = null"
+    />
+    <MessageDialog
+      :visible="Boolean(workspaceDeleteTarget)"
+      type="confirm"
+      title="删除工作区"
+      :message="`确定删除「${workspaceDeleteTarget?.name || '工作区'}」吗？其中的会话会移至「未指定工作区」。`"
+      @confirm="confirmDeleteWorkspace"
+      @cancel="workspaceDeleteTarget = null"
+      @close="workspaceDeleteTarget = null"
+    />
+    <MessageDialog
+      :visible="Boolean(rollbackTarget)"
+      type="confirm"
+      title="撤销本次修改"
+      :message="`将把本次运行的 ${rollbackTarget?.fileChanges?.length || 0} 个文件恢复到修改前的状态，确定继续吗？`"
+      @confirm="confirmRollback"
+      @cancel="rollbackTarget = null"
+      @close="rollbackTarget = null"
+    />
+    <Teleport to="body">
+      <div v-if="workspaceDialogOpen" class="workspace-dialog-overlay" @click.self="closeWorkspaceDialog">
+        <div
+          class="workspace-dialog"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="workspaceEditPath ? '修改工作区' : '添加工作区'"
+        >
+          <div class="workspace-dialog-head">
+            <span class="workspace-dialog-title">{{ workspaceEditPath ? '修改工作区' : '添加工作区' }}</span>
+            <button class="workspace-dialog-close" title="关闭" @click="closeWorkspaceDialog">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="workspace-dialog-body">
+            <div class="workspace-field">
+              <span class="workspace-field-label">项目目录 <span class="workspace-required">*</span></span>
+              <div class="workspace-dir-row">
+                <input
+                  class="input-field workspace-dir-input"
+                  :value="workspaceForm.path"
+                  readonly
+                  placeholder="选择工作区对应的项目目录"
+                />
+                <button
+                  v-if="!workspaceEditPath"
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  @click="chooseWorkspaceDirectory"
+                >
+                  选择目录
+                </button>
+              </div>
+            </div>
+            <div class="workspace-field">
+              <span class="workspace-field-label">工作区名称 <span class="workspace-required">*</span></span>
+              <input
+                v-model="workspaceForm.name"
+                class="input-field"
+                maxlength="40"
+                placeholder="例如：订单服务"
+                spellcheck="false"
+              />
+            </div>
+            <div class="workspace-field">
+              <span class="workspace-field-label">工作区描述</span>
+              <textarea
+                v-model="workspaceForm.description"
+                class="input-field workspace-desc"
+                rows="2"
+                maxlength="120"
+                placeholder="一句话说明这个工作区的用途（可选）"
+              ></textarea>
+            </div>
+            <div class="workspace-field">
+              <span class="workspace-field-label">图标</span>
+              <div class="workspace-icon-grid">
+                <button
+                  v-for="icon in WORKSPACE_ICONS"
+                  :key="icon.id"
+                  type="button"
+                  class="workspace-icon-option"
+                  :class="{ active: workspaceForm.icon === icon.id }"
+                  :title="icon.id"
+                  @click="workspaceForm.icon = icon.id"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path :d="icon.d" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="workspace-field">
+              <span class="workspace-field-label">图标颜色</span>
+              <div class="workspace-color-row">
+                <button
+                  v-for="color in WORKSPACE_COLORS"
+                  :key="color"
+                  type="button"
+                  class="workspace-color-option"
+                  :class="{ active: workspaceForm.color === color }"
+                  :style="{ '--swatch-color': color }"
+                  :title="color"
+                  @click="workspaceForm.color = color"
+                />
+              </div>
+            </div>
+            <p v-if="workspaceFormError" class="workspace-form-error">{{ workspaceFormError }}</p>
+          </div>
+          <div class="workspace-dialog-actions">
+            <button type="button" class="btn btn-secondary" @click="closeWorkspaceDialog">取消</button>
+            <button type="button" class="btn btn-primary" @click="submitWorkspace">
+              {{ workspaceEditPath ? '保存' : '创建' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </PageLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+defineOptions({ name: 'Chat' })
 import {
-  chatStream,
-  cancelChatStream,
-  isChatStreamActive,
-  compressChatContext,
+  selectDirectory,
+  workspaceInfo as fetchWorkspaceInfo,
+  workspaceOpen as openWorkspacePath,
+  memoryOverview as fetchMemoryOverview,
+  openExternal,
   openSettings,
-  getAiProviders,
-  onChatStreamChunk,
-  onChatStreamEnd
+  getAiProviders
 } from '@/api'
-import { useConfig, usePaneResize, useToast } from '@/composables'
+import { useChatSessions, useChatStream, useChatUsage, useConfig, usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
-import { renderMarkdown, splitThinkingTags, trimPartialThinkingTag } from '@/utils/markdown'
+import { joinPath } from '@/utils/path'
+import { WORKSPACE_ICONS } from '@/utils/workspaceIcons'
+import {
+  normalizeAiCompressKeepRecent,
+  normalizeAiCompressThreshold,
+  normalizeAiMaxAttachments,
+  normalizeAiMaxImageMb,
+  normalizeAiMaxTextKb,
+  normalizeToolPolicy
+} from '@shared/aiBehavior'
 import Toast from '@/components/Toast.vue'
+import MessageDialog from '@/components/MessageDialog.vue'
+import ChatApprovalCard from '@/components/ChatApprovalCard.vue'
+import RunTracePanel from '@/components/RunTracePanel.vue'
+import SessionRail from './chat/SessionRail.vue'
+import MessageList from './chat/MessageList.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 
 const THINKING_PREFS_KEY = 'chat_thinking_prefs'
-const VIEW_STATE_KEY = 'chat_view_state'
-const PENDING_STREAM_KEY = 'chat_pending_stream'
-const DRAFT_SAVE_DELAY = 300
-const SCROLL_SAVE_DELAY = 250
-const MAX_ATTACHMENTS = 6
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024
-const MAX_TEXT_FILE_BYTES = 256 * 1024
-const DEFAULT_CONTEXT_WINDOW = 131072
-const CONTEXT_COMPRESS_THRESHOLD = 0.7
-const CONTEXT_KEEP_RECENT = 6
+const ARTIFACT_ACTIONS = new Set(['write', 'append', 'mkdir', 'copy', 'move'])
+const WORKSPACE_META_KEY = 'chat_workspace_meta'
+const DEFAULT_WORKSPACE_ICON = 'folder'
+const WORKSPACE_COLORS = [
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#f43f5e',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+  '#64748b',
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#84cc16',
+  '#14b8a6',
+  '#0ea5e9',
+  '#6366f1',
+  '#a855f7'
+]
 
 const { config } = useConfig()
+const compressThreshold = computed(() => normalizeAiCompressThreshold(config.value?.ai_compress_threshold) / 100)
+const compressKeepRecent = computed(() => normalizeAiCompressKeepRecent(config.value?.ai_compress_keep_recent))
+const maxAttachments = computed(() => normalizeAiMaxAttachments(config.value?.ai_max_attachments))
+const maxImageBytes = computed(() => normalizeAiMaxImageMb(config.value?.ai_max_image_mb) * 1024 * 1024)
+const maxTextFileBytes = computed(() => normalizeAiMaxTextKb(config.value?.ai_max_text_kb) * 1024)
+const route = useRoute()
+const router = useRouter()
 const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
 
-const sessions = ref([])
-const currentSessionId = ref('')
+const workspaceMeta = ref({})
+const workspaceMenu = ref(null)
+const workspaceDeleteTarget = ref(null)
+const workspaceEditPath = ref('')
+const workspaceDialogOpen = ref(false)
+const workspaceForm = ref({
+  path: '',
+  name: '',
+  description: '',
+  icon: DEFAULT_WORKSPACE_ICON,
+  color: WORKSPACE_COLORS[0]
+})
+const workspaceFormError = ref('')
 const inputText = ref('')
-const loading = ref(false)
-const messagesContainer = ref(null)
+const messageListRef = ref(null)
+const messagesContainer = computed(() => messageListRef.value?.messagesContainer || null)
 const questionRail = ref(null)
 const questionList = ref(null)
 const atBottom = ref(true)
@@ -746,23 +1194,57 @@ const {
 } = usePaneResize({
   key: 'chatSidebarWidth',
   initial: 240,
-  min: 180,
+  min: 224,
   max: () => Math.min(460, Math.max(240, window.innerWidth - 520))
 })
+let groupsInitialized = false
 const providers = ref([])
 const selectedProvider = ref('')
 const selectedModel = ref('')
-const editingSessionId = ref('')
-const editingTitle = ref('')
 const models = ref([])
-const expandedThinking = ref({})
-const expandedSteps = ref({})
-const collapsedChains = ref({})
+const expandedSections = ref({})
+const storedContextWidth = Number(localStorage.getItem('chatContextWidth'))
+const contextPanelWidth = ref(
+  Number.isFinite(storedContextWidth) && storedContextWidth >= 240 ? storedContextWidth : 300
+)
+const isResizingContext = ref(false)
+const workspaceInfo = ref(null)
+const workspaceInfoLoading = ref(false)
+let workspaceRequest = 0
+const memoryOverview = ref(null)
+const memoryLoading = ref(false)
+let memoryRequest = 0
+const starterPrompts = [
+  {
+    title: '梳理工作区',
+    hint: '查看目录结构与关键文件',
+    icon: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+    prompt: '请先查看当前工作区的目录结构和关键文件，概括项目用途、技术栈与主要模块。'
+  },
+  {
+    title: '解释代码',
+    hint: '逐段说明实现逻辑',
+    icon: 'M8 6l-5 6 5 6M16 6l5 6-5 6',
+    prompt: '请解释我接下来粘贴的代码，讲清整体流程、关键函数和潜在问题。'
+  },
+  {
+    title: '生成文件',
+    hint: '直接写入工作区',
+    icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6',
+    prompt: '请在工作区创建 examples/demo.md，写入一份结构清晰的示例文档。'
+  },
+  {
+    title: '查阅网页',
+    hint: '读取链接并整理要点',
+    icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9S14.5 18.5 12 21',
+    prompt: '请查阅一个与我问题相关的最新官方文档链接，并总结关键要点。'
+  }
+]
 const attachments = ref([])
 const plusMenuOpen = ref(false)
 const modelMenuOpen = ref(false)
 const modelMenuView = ref('root')
-const approvalMode = ref('auto')
+const approvalMode = ref('all')
 const thinkingMode = ref('auto')
 const reasoningLevels = [
   { value: 'auto', label: '自动', hint: '由模型决定' },
@@ -772,17 +1254,85 @@ const reasoningLevels = [
 const thinkingPrefs = ref(loadThinkingPrefs())
 const isRecording = ref(false)
 let recognition = null
-let currentRequestId = ''
-let removeChunkListener = null
-let removeEndListener = null
-let viewState = { activeSessionId: '', drafts: {}, scrolls: {} }
-let pendingStream = null
-let suppressAutoScroll = false
-let draftTimer = null
-let scrollTimer = null
 
-const currentSession = computed(() => sessions.value.find((s) => s.id === currentSessionId.value))
+const {
+  sessions,
+  currentSessionId,
+  currentSession,
+  sessionSearch,
+  sessionSearchOpen,
+  workspaceSectionOpen,
+  showArchived,
+  sessionMenu,
+  menuSession,
+  deleteTarget,
+  railMoreOpen,
+  collapsedGroups,
+  chatSidebarCollapsed,
+  contextPanelOpen,
+  editingSessionId,
+  editingTitle,
+  pendingStream,
+  suppressAutoScroll,
+  viewState,
+  loadViewState,
+  persistViewState,
+  loadSessions,
+  saveSessions,
+  persistPendingStream,
+  saveDraft,
+  clearDraft,
+  scheduleDraftSave,
+  applyDraft,
+  saveScroll,
+  scheduleScrollSave,
+  restoreScroll,
+  generateId,
+  collapseChatSidebar,
+  expandChatSidebar,
+  toggleSessionSearch,
+  toggleGroup,
+  openGroupForSession,
+  toggleSessionMenu,
+  handleSessionAction,
+  onRailMore,
+  markStreamInterrupted,
+  finishMessageTiming,
+  recoverStreamState,
+  createNewChat,
+  selectSession,
+  confirmDeleteSession,
+  saveEditTitle,
+  cancelEditTitle
+} = useChatSessions({
+  inputText,
+  messagesContainer,
+  atBottom,
+  selectedProvider,
+  selectedModel,
+  applyProviderModels,
+  resizeInput,
+  openMemoryPage,
+  copyToClipboard,
+  openWorkspacePath,
+  showSuccess,
+  showError
+})
 const currentMessages = computed(() => currentSession?.value?.messages || [])
+const emptyWorkspaceLabel = computed(() => {
+  const workspace = currentSession.value?.workspace
+  return workspace ? workspaceLabel(workspace) : ''
+})
+const pendingApprovals = computed(() => {
+  const list = []
+  for (const message of currentMessages.value) {
+    for (const approval of message.approvals || []) {
+      if (approval.status === 'pending') list.push(approval)
+    }
+  }
+  return list
+})
+
 const questions = computed(() =>
   currentMessages.value.reduce((list, message, index) => {
     if (message.role === 'user') {
@@ -791,7 +1341,170 @@ const questions = computed(() =>
     return list
   }, [])
 )
+const turnCount = computed(() => currentMessages.value.filter((message) => message.role === 'user').length)
+const filteredSessions = computed(() => {
+  const keyword = sessionSearch.value.trim().toLowerCase()
+  const list = showArchived.value
+    ? sessions.value
+    : sessions.value.filter((session) => {
+        if (session.archived) return false
+        return !(session.workspace && workspaceMeta.value[session.workspace]?.archived)
+      })
+  if (!keyword) return list
+  return list.filter((session) => {
+    const title = String(session.title || '').toLowerCase()
+    const workspace = String(session.workspace || '').toLowerCase()
+    return title.includes(keyword) || workspace.includes(keyword)
+  })
+})
+const workspaceGroups = computed(() => {
+  const groups = new Map()
+  for (const session of filteredSessions.value) {
+    const workspace = typeof session.workspace === 'string' ? session.workspace : ''
+    const key = workspace || '__none__'
+    if (!groups.has(key)) {
+      groups.set(key, { key, path: workspace, sessions: [] })
+    }
+    groups.get(key).sessions.push(session)
+  }
+  const keyword = sessionSearch.value.trim().toLowerCase()
+  if (!keyword) {
+    for (const path of Object.keys(workspaceMeta.value)) {
+      if (!path || groups.has(path)) continue
+      if (!showArchived.value && workspaceMeta.value[path]?.archived) continue
+      groups.set(path, { key: path, path, sessions: [] })
+    }
+  }
+  for (const group of groups.values()) {
+    const meta = group.path ? workspaceMeta.value[group.path] : null
+    group.label = meta?.name || (group.path ? workspaceName(group.path) : '未指定工作区')
+    group.description = meta?.description || ''
+    group.icon = meta?.icon || ''
+    group.color = meta?.color || ''
+    group.hasMeta = Boolean(meta)
+    group.pinned = meta?.pinned === true
+    group.archived = meta?.archived === true
+    const sessionTimes = group.sessions.map((session) => Number(session.createdAt) || 0).filter(Boolean)
+    group.createdAt = Number(meta?.createdAt) || (sessionTimes.length ? Math.min(...sessionTimes) : 0)
+    group.sessions.sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true))
+  }
+  return [...groups.values()].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+    if (!a.path !== !b.path) return a.path ? 1 : -1
+    return b.createdAt - a.createdAt
+  })
+})
+const workspaceMenuMeta = computed(() =>
+  workspaceMenu.value ? workspaceMeta.value[workspaceMenu.value.path] || null : null
+)
+const sessionToolRuns = computed(() => {
+  const runs = []
+  currentMessages.value.forEach((message, messageIndex) => {
+    for (const [stepIndex, step] of (message.steps || []).entries()) {
+      if (!step || !step.name) continue
+      runs.push({
+        ...step,
+        key: `${messageIndex}-${step.id || stepIndex}`,
+        statusText:
+          step.statusText || (step.status === 'running' ? '执行中' : step.status === 'error' ? '失败' : '完成')
+      })
+    }
+  })
+  return runs.reverse()
+})
+const sessionArtifacts = computed(() => {
+  const workspace = currentSession.value?.workspace || ''
+  const artifacts = new Map()
+  for (const run of sessionToolRuns.value) {
+    const meta = run.metadata && typeof run.metadata === 'object' ? run.metadata : null
+    const action = meta?.action || ''
+    let relative = meta && ARTIFACT_ACTIONS.has(action) ? meta.destination || meta.path : ''
+    if (!relative) {
+      const match = String(run.result || '').match(/(?:已写入|已追加|已创建目录|已复制|已移动)：([^（\n]+)/)
+      if (!match) continue
+      relative = match[1].split('->').pop().trim()
+    }
+    if (!relative || relative === '.') continue
+    const parts = relative.split(/[\\/]+/).filter(Boolean)
+    if (parts.length === 0) continue
+    const key = parts.join('/')
+    if (artifacts.has(key)) continue
+    artifacts.set(key, {
+      key: `file:${key}`,
+      type: 'file',
+      label: parts[parts.length - 1],
+      detail: key,
+      path: relative,
+      target: workspace ? joinPath(workspace, parts) : ''
+    })
+  }
+  return [...artifacts.values()]
+})
+const sessionWebPages = computed(() => {
+  const pages = new Map()
+  for (const run of sessionToolRuns.value) {
+    const meta = run.metadata && typeof run.metadata === 'object' ? run.metadata : null
+    const args = parseToolArgs(run.arguments)
+    const url = meta?.finalUrl || meta?.url || (run.name === 'web-fetch' ? args.url : '')
+    if (!url || typeof url !== 'string') continue
+    if (pages.has(url)) continue
+    const host = hostnameOf(url)
+    pages.set(url, {
+      key: `web:${url}`,
+      type: 'web',
+      label: meta?.title || host || url,
+      detail: host || url,
+      url,
+      target: url
+    })
+  }
+  return [...pages.values()]
+})
+const sessionSources = computed(() => {
+  const sources = [...sessionWebPages.value]
+  const seen = new Set(sources.map((item) => item.key))
+  for (const item of sessionArtifacts.value) {
+    if (seen.has(item.key)) continue
+    seen.add(item.key)
+    sources.push(item)
+  }
+  currentMessages.value.forEach((message, messageIndex) => {
+    for (const [index, attachment] of (message.attachments || []).entries()) {
+      const key = `attachment:${messageIndex}-${index}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      sources.push({
+        key,
+        type: 'attachment',
+        label: attachment.name || '附件',
+        detail: attachment.kind === 'image' ? '图片附件' : '文本附件',
+        target: ''
+      })
+    }
+  })
+  return sources
+})
 const currentProvider = computed(() => providers.value.find((p) => p.type === selectedProvider.value))
+const memoryTotals = computed(() => ({
+  global: memoryOverview.value?.global?.length || 0,
+  project: memoryOverview.value?.project?.length || 0,
+  knowledge: memoryOverview.value?.knowledgeEnabled || 0
+}))
+const memoryRecent = computed(() => {
+  const overview = memoryOverview.value
+  if (!overview) return []
+  const project = (overview.project || []).slice(0, 2).map((entry) => ({
+    ...entry,
+    scopeKey: 'project',
+    scopeLabel: '项目'
+  }))
+  const global = (overview.global || []).slice(0, 2).map((entry) => ({
+    ...entry,
+    scopeKey: 'global',
+    scopeLabel: '全局'
+  }))
+  return [...project, ...global].slice(0, 3)
+})
 const hasCurrentApiKey = computed(() => Boolean(currentProvider.value?.hasApiKey))
 const showKeyWarning = computed(() => providers.value.length > 0 && !hasCurrentApiKey.value)
 const selectableProviders = computed(() =>
@@ -809,24 +1522,81 @@ const modelSupportsThinking = computed(() => Boolean(selectedModelInfo.value?.th
 const canSend = computed(
   () => !loading.value && hasCurrentApiKey.value && (Boolean(inputText.value.trim()) || attachments.value.length > 0)
 )
-const sessionUsage = computed(() => currentSession.value?.usage || null)
-const sessionTokenTotal = computed(() => Number(sessionUsage.value?.total_tokens) || 0)
-const sessionUsageEstimated = computed(() => Boolean(sessionUsage.value?.estimated))
-const contextWindowSize = computed(
-  () =>
-    Number(currentSession.value?.contextUsage?.window) ||
-    Number(selectedModelInfo.value?.contextWindow) ||
-    DEFAULT_CONTEXT_WINDOW
-)
-const contextTokens = computed(() => Number(currentSession.value?.contextUsage?.tokens) || 0)
-const contextPercent = computed(() => {
-  if (!contextTokens.value || !contextWindowSize.value) return 0
-  return Math.min(100, Math.round((contextTokens.value / contextWindowSize.value) * 100))
-})
-const contextState = computed(() => {
-  if (contextPercent.value >= 90) return 'danger'
-  if (contextPercent.value >= 70) return 'warn'
-  return 'ok'
+const {
+  usageDetail,
+  sessionTokenTotal,
+  sessionUsageEstimated,
+  contextWindowSize,
+  contextTokens,
+  contextPercent,
+  contextState,
+  remainingContextTokens,
+  contextRingStyle,
+  sessionPromptTokens,
+  sessionCompletionTokens,
+  sessionCachedTokens,
+  sessionCallCount,
+  unCachedTokens,
+  cacheHitPercent,
+  generationMs,
+  sessionTokenRate,
+  hasUsageData,
+  hasRateData,
+  hasCacheData,
+  rateDisplay,
+  totalDisplay,
+  cacheDisplay,
+  toggleUsageDetail,
+  formatTokens
+} = useChatUsage({ currentSession, selectedModelInfo })
+
+const {
+  loading,
+  chatTab,
+  traceFocusId,
+  tracePanelKey,
+  rollbackTarget,
+  rollbackBusy,
+  currentRequestId,
+  respondApproval,
+  requestRollback,
+  switchChatTab,
+  openRunTrace,
+  confirmRollback,
+  resumePendingStream,
+  sendMessage,
+  stopResponse
+} = useChatStream({
+  sessions,
+  currentSessionId,
+  currentSession,
+  inputText,
+  attachments,
+  hasCurrentApiKey,
+  currentProvider,
+  selectedProvider,
+  selectedModel,
+  modelSupportsThinking,
+  thinkingMode,
+  approvalMode,
+  compressThreshold,
+  compressKeepRecent,
+  contextPanelOpen,
+  contextWindowSize,
+  pendingStream,
+  persistPendingStream,
+  saveSessions,
+  markStreamInterrupted,
+  clearDraft,
+  createNewChat,
+  finishMessageTiming,
+  scrollToBottom,
+  refreshWorkspaceInfo,
+  refreshMemoryOverview,
+  resizeInput,
+  showSuccess,
+  showError,
+  toggleContextPanel
 })
 
 function loadThinkingPrefs() {
@@ -901,283 +1671,6 @@ function chooseReasoningLevel(value) {
   closeModelMenu()
 }
 
-function loadViewState() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(VIEW_STATE_KEY))
-    if (parsed && typeof parsed === 'object') {
-      viewState = {
-        activeSessionId: typeof parsed.activeSessionId === 'string' ? parsed.activeSessionId : '',
-        drafts: parsed.drafts && typeof parsed.drafts === 'object' ? parsed.drafts : {},
-        scrolls: parsed.scrolls && typeof parsed.scrolls === 'object' ? parsed.scrolls : {}
-      }
-    }
-  } catch {
-    viewState = { activeSessionId: '', drafts: {}, scrolls: {} }
-  }
-}
-
-function persistViewState() {
-  try {
-    localStorage.setItem(VIEW_STATE_KEY, JSON.stringify(viewState))
-  } catch {
-    // 本地存储不可用时仅保留当前会话内的状态
-  }
-}
-
-function saveDraft() {
-  const id = currentSessionId.value
-  if (!id) return
-  const text = inputText.value
-  if (text) viewState.drafts[id] = text
-  else delete viewState.drafts[id]
-  persistViewState()
-}
-
-function scheduleDraftSave() {
-  if (draftTimer) clearTimeout(draftTimer)
-  draftTimer = setTimeout(() => {
-    draftTimer = null
-    saveDraft()
-  }, DRAFT_SAVE_DELAY)
-}
-
-function applyDraft(id) {
-  inputText.value = (id && viewState.drafts[id]) || ''
-  nextTick(resizeInput)
-}
-
-function saveScroll() {
-  const container = messagesContainer.value
-  const id = currentSessionId.value
-  if (!container || !id) return
-  if (atBottom.value) delete viewState.scrolls[id]
-  else viewState.scrolls[id] = Math.round(container.scrollTop)
-  persistViewState()
-}
-
-function scheduleScrollSave() {
-  if (scrollTimer) clearTimeout(scrollTimer)
-  scrollTimer = setTimeout(() => {
-    scrollTimer = null
-    saveScroll()
-  }, SCROLL_SAVE_DELAY)
-}
-
-function restoreScroll() {
-  nextTick(() => {
-    const container = messagesContainer.value
-    if (!container) return
-    const saved = viewState.scrolls[currentSessionId.value]
-    if (typeof saved === 'number') {
-      container.scrollTop = Math.min(saved, container.scrollHeight)
-      atBottom.value = container.scrollHeight - container.scrollTop - container.clientHeight < 32
-    } else {
-      container.scrollTop = container.scrollHeight
-      atBottom.value = true
-    }
-  })
-}
-
-function loadPendingStream() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(PENDING_STREAM_KEY))
-    if (parsed && typeof parsed.requestId === 'string' && typeof parsed.sessionId === 'string') {
-      pendingStream = parsed
-    }
-  } catch {
-    pendingStream = null
-  }
-}
-
-function persistPendingStream(value) {
-  pendingStream = value
-  try {
-    if (value) localStorage.setItem(PENDING_STREAM_KEY, JSON.stringify(value))
-    else localStorage.removeItem(PENDING_STREAM_KEY)
-  } catch {
-    // 本地存储不可用时只影响跨页面恢复
-  }
-}
-
-function loadSessions() {
-  try {
-    const saved = localStorage.getItem('chat_sessions')
-    if (saved) {
-      sessions.value = JSON.parse(saved)
-      for (const session of sessions.value) {
-        for (const message of session.messages || []) normalizeLegacyThinking(message)
-      }
-    }
-  } catch {
-    sessions.value = []
-  }
-  const savedId = viewState.activeSessionId
-  const active = sessions.value.find((session) => session.id === savedId) || sessions.value[0]
-  currentSessionId.value = active?.id || ''
-  viewState.activeSessionId = currentSessionId.value
-}
-
-function saveSessions() {
-  try {
-    localStorage.setItem('chat_sessions', JSON.stringify(sessions.value))
-  } catch {
-    showError('会话保存失败：附件体积过大，请删除部分图片后重试')
-  }
-}
-
-function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2)
-}
-
-function markStreamInterrupted(message) {
-  message.isStreaming = false
-  finalizeContent(message)
-  message.stopped = true
-  if (!message.notices) message.notices = []
-  if (!message.notices.includes('生成已中断')) message.notices.push('生成已中断')
-}
-
-function recoverStreamState() {
-  loadPendingStream()
-  let changed = false
-  for (const session of sessions.value) {
-    const streamingMessages = (session.messages || []).filter((message) => message.isStreaming)
-    if (streamingMessages.length === 0) continue
-    const resumable = pendingStream && pendingStream.sessionId === session.id
-    if (resumable) continue
-    for (const message of streamingMessages) markStreamInterrupted(message)
-    changed = true
-  }
-  if (changed) saveSessions()
-}
-
-function createNewChat() {
-  saveDraft()
-  saveScroll()
-  const newSession = {
-    id: generateId(),
-    title: '新会话',
-    messages: [],
-    provider: selectedProvider.value,
-    model: selectedModel.value,
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  }
-  sessions.value.unshift(newSession)
-  delete viewState.scrolls[newSession.id]
-  delete viewState.drafts[newSession.id]
-  viewState.activeSessionId = newSession.id
-  currentSessionId.value = newSession.id
-  applyDraft(newSession.id)
-  saveSessions()
-}
-
-function selectSession(id) {
-  if (id === currentSessionId.value) return
-  saveDraft()
-  saveScroll()
-  viewState.activeSessionId = id
-  persistViewState()
-  suppressAutoScroll = true
-  currentSessionId.value = id
-  applyDraft(id)
-  const session = sessions.value.find((s) => s.id === id)
-  if (session) {
-    const providerType = session.provider || selectedProvider.value
-    if (providerType) {
-      selectedProvider.value = providerType
-    }
-    if (selectedProvider.value) {
-      applyProviderModels(selectedProvider.value, session.model || '')
-    }
-  }
-  nextTick(() => {
-    restoreScroll()
-    suppressAutoScroll = false
-  })
-}
-
-function deleteSession(id) {
-  const index = sessions.value.findIndex((s) => s.id === id)
-  if (index === -1) return
-  saveDraft()
-  saveScroll()
-  sessions.value.splice(index, 1)
-  delete viewState.drafts[id]
-  delete viewState.scrolls[id]
-  if (currentSessionId.value === id) {
-    const nextSession = sessions.value[0]
-    viewState.activeSessionId = nextSession?.id || ''
-    suppressAutoScroll = true
-    currentSessionId.value = nextSession?.id || ''
-    applyDraft(viewState.activeSessionId)
-    nextTick(() => {
-      restoreScroll()
-      suppressAutoScroll = false
-    })
-  } else if (currentSessionId.value) {
-    viewState.activeSessionId = currentSessionId.value
-  }
-  persistViewState()
-  saveSessions()
-}
-
-function startEditTitle(id, title) {
-  editingSessionId.value = id
-  editingTitle.value = title || '新会话'
-  nextTick(() => {
-    const input = document.querySelector('.session-edit-input')
-    if (input) {
-      input.focus()
-      input.select()
-    }
-  })
-}
-
-function saveEditTitle(id, e) {
-  if (e && e.isComposing) return
-  if (editingSessionId.value !== id) return
-  const session = sessions.value.find((s) => s.id === id)
-  if (session && editingTitle.value.trim()) {
-    session.title = editingTitle.value.trim()
-    session.updatedAt = Date.now()
-    saveSessions()
-  }
-  editingSessionId.value = ''
-  editingTitle.value = ''
-}
-
-function cancelEditTitle() {
-  editingSessionId.value = ''
-  editingTitle.value = ''
-}
-
-function formatTokens(value) {
-  const tokens = Number(value) || 0
-  if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(tokens >= 10000000 ? 0 : 1)}M`
-  if (tokens >= 1000) return `${(tokens / 1000).toFixed(tokens >= 10000 ? 0 : 1)}k`
-  return String(tokens)
-}
-
-function mergeUsage(session, usage) {
-  if (!session || !usage) return
-  if (!session.usage) {
-    session.usage = {
-      prompt_tokens: 0,
-      completion_tokens: 0,
-      total_tokens: 0,
-      calls: 0,
-      estimated: false
-    }
-  }
-  const target = session.usage
-  target.prompt_tokens += Number(usage.prompt_tokens) || 0
-  target.completion_tokens += Number(usage.completion_tokens) || 0
-  target.total_tokens += Number(usage.total_tokens) || 0
-  target.calls += Number(usage.calls) || 0
-  if (usage.estimated) target.estimated = true
-}
-
 function formatTime(timestamp) {
   if (!timestamp) return ''
   const date = new Date(timestamp)
@@ -1189,314 +1682,426 @@ function formatTime(timestamp) {
   return date.toLocaleDateString()
 }
 
-function updateSessionTitle(sessionId, firstMessage) {
-  const session = sessions.value.find((s) => s.id === sessionId)
-  if (session && session.title === '新会话' && firstMessage) {
-    session.title = firstMessage.slice(0, 20) + (firstMessage.length > 20 ? '...' : '')
-  }
+function formatDateTime(timestamp) {
+  if (!timestamp) return '--'
+  const date = new Date(timestamp)
+  if (Number.isNaN(date.getTime())) return '--'
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
+    date.getMinutes()
+  )}`
 }
 
-function toApiMessage(message) {
-  if (message.role === 'user' && message.attachments && message.attachments.length > 0) {
-    const parts = []
-    if (message.content) parts.push({ type: 'text', text: message.content })
-    for (const att of message.attachments) {
-      if (att.kind === 'image') {
-        parts.push({ type: 'image_url', image_url: { url: att.dataUrl } })
-      } else {
-        parts.push({ type: 'text', text: `\n\n[附件 ${att.name}]\n${att.content || ''}` })
-      }
-    }
-    return { role: 'user', content: parts }
-  }
-  return { role: message.role, content: message.content || '' }
+function workspaceName(value) {
+  if (!value || typeof value !== 'string') return ''
+  const parts = value.split(/[\\/]+/).filter(Boolean)
+  return parts[parts.length - 1] || value
 }
 
-function applyStreamingContent(message) {
-  const parsed = splitThinkingTags(message.rawContent)
-  message.content = trimPartialThinkingTag(parsed.content)
-  message.thinking = [message.nativeThinking, parsed.thinking].filter(Boolean).join('\n')
+function workspaceMetaOf(value) {
+  if (!value || typeof value !== 'string') return null
+  return workspaceMeta.value[value] || null
 }
 
-function finalizeContent(message) {
-  const parsed = splitThinkingTags(message.rawContent ?? message.content)
-  message.content = trimPartialThinkingTag(parsed.content).trim()
-  message.thinking = [message.nativeThinking, parsed.thinking].filter(Boolean).join('\n')
-  delete message.rawContent
-  delete message.nativeThinking
+function workspaceLabel(value) {
+  return workspaceMetaOf(value)?.name || workspaceName(value)
 }
 
-function normalizeLegacyThinking(message) {
-  if (message.role !== 'assistant' || typeof message.content !== 'string') return
-  if (!message.content.includes('thinking')) return
-  const parsed = splitThinkingTags(message.content)
-  if (parsed.content === message.content) return
-  message.thinking = [message.thinking, parsed.thinking].filter(Boolean).join('\n')
-  message.content = parsed.content
+function workspaceIconPath(value) {
+  const icon = workspaceMetaOf(value)?.icon || DEFAULT_WORKSPACE_ICON
+  return WORKSPACE_ICONS.find((item) => item.id === icon)?.d || ''
 }
 
-function handleStreamChunk(message, payload, sessionId) {
-  if (!payload) return
-  const event = typeof payload === 'string' ? { kind: 'content', text: payload } : payload
-
-  if (event.kind === 'thinking') {
-    message.nativeThinking = (message.nativeThinking || '') + (event.text || '')
-    applyStreamingContent(message)
-  } else if (event.kind === 'content') {
-    message.rawContent = (message.rawContent || '') + (event.text || '')
-    applyStreamingContent(message)
-  } else if (event.kind === 'tool_start') {
-    if (!message.steps) message.steps = []
-    message.steps.push({
-      id: event.id || `${Date.now()}-${message.steps.length}`,
-      name: event.name || '工具',
-      arguments: event.arguments || '',
-      status: 'running',
-      statusText: '执行中'
-    })
-  } else if (event.kind === 'tool_end') {
-    const steps = message.steps || []
-    let step = null
-    for (let i = steps.length - 1; i >= 0; i -= 1) {
-      if (steps[i].status === 'running' && (!event.id || steps[i].id === event.id)) {
-        step = steps[i]
-        break
-      }
-    }
-    if (step) {
-      step.status = event.success ? 'success' : 'error'
-      step.statusText = event.success ? '完成' : '失败'
-      step.duration = event.duration
-      step.result = event.result || ''
-    }
-  } else if (event.kind === 'plan') {
-    message.plan = event.plan || null
-  } else if (event.kind === 'reflection') {
-    if (!message.reflections) message.reflections = []
-    message.reflections.push({
-      name: event.name || '',
-      status: event.status || 'warning',
-      text: event.text || ''
-    })
-  } else if (event.kind === 'summary') {
-    message.summary = event.summary || null
-  } else if (event.kind === 'usage') {
-    message.usage = event.usage || null
-  } else if (event.kind === 'status') {
-    if (!message.notices) message.notices = []
-    message.notices.push(event.text)
-  }
-  if (!sessionId || currentSessionId.value === sessionId) scrollToBottom()
+function workspaceIconColor(value) {
+  return workspaceMetaOf(value)?.color || ''
 }
 
-function attachStreamListeners(session, assistantMessage, requestId) {
-  if (removeChunkListener) removeChunkListener()
-  if (removeEndListener) removeEndListener()
-
-  removeChunkListener = onChatStreamChunk((payload) => {
-    if (!payload || payload.requestId !== requestId) return
-    handleStreamChunk(assistantMessage, payload, session.id)
-  })
-
-  removeEndListener = onChatStreamEnd((result) => {
-    if (!result || result.requestId !== requestId) return
-    currentRequestId = ''
-    loading.value = false
-    assistantMessage.isStreaming = false
-    finalizeContent(assistantMessage)
-
-    if (result.plan && !assistantMessage.plan) assistantMessage.plan = result.plan
-    if (Array.isArray(result.reflections) && result.reflections.length && !assistantMessage.reflections?.length) {
-      assistantMessage.reflections = result.reflections
-    }
-    if (result.summary && !assistantMessage.summary) assistantMessage.summary = result.summary
-
-    if (result.usage && Number(result.usage.calls) > 0) {
-      assistantMessage.usage = result.usage
-      mergeUsage(session, result.usage)
-      const used = Number(result.usage.contextTokens) || Number(result.usage.prompt_tokens) || 0
-      if (used > 0) {
-        session.contextUsage = { tokens: used, window: result.contextWindow || contextWindowSize.value }
-      }
-    }
-
-    if (result.cancelled) {
-      assistantMessage.stopped = true
-      if (!assistantMessage.notices) assistantMessage.notices = []
-      assistantMessage.notices.push('已停止生成')
-    } else if (!result.success) {
-      const prefix = assistantMessage.content ? `${assistantMessage.content}\n\n` : ''
-      assistantMessage.content = `${prefix}错误: ${result.error}`
-    }
-
-    session.updatedAt = Date.now()
-    persistPendingStream(null)
-    saveSessions()
-    if (currentSessionId.value === session.id) scrollToBottom()
-  })
+function workspaceGroupTitle(group) {
+  const path = group.path || '未指定工作区'
+  return group.description ? `${group.description}（${path}）` : path
 }
 
-async function resumePendingStream() {
-  if (!pendingStream) return
-  const { requestId, sessionId } = pendingStream
-  const session = sessions.value.find((s) => s.id === sessionId)
-  const assistantMessage = session?.messages?.[session.messages.length - 1]
-  if (!session || assistantMessage?.role !== 'assistant' || !assistantMessage.isStreaming) {
-    persistPendingStream(null)
-    return
-  }
-
-  if (typeof assistantMessage.rawContent !== 'string') assistantMessage.rawContent = assistantMessage.content || ''
-  if (typeof assistantMessage.nativeThinking !== 'string') {
-    assistantMessage.nativeThinking = assistantMessage.thinking || ''
-  }
-
-  currentRequestId = requestId
-  if (currentSessionId.value === session.id) loading.value = true
-  attachStreamListeners(session, assistantMessage, requestId)
-
-  const active = await isChatStreamActive(requestId)
-  if (active || currentRequestId !== requestId) return
-
-  currentRequestId = ''
-  loading.value = false
-  markStreamInterrupted(assistantMessage)
-  persistPendingStream(null)
-  saveSessions()
-  if (currentSessionId.value === session.id) scrollToBottom()
+function workspaceDescription(value) {
+  return workspaceMetaOf(value)?.description || ''
 }
 
-async function maybeCompressContext(session, assistantMessage, requestId) {
-  const window = contextWindowSize.value
-  const used = Number(session.contextUsage?.tokens) || 0
-  if (!used || used < window * CONTEXT_COMPRESS_THRESHOLD) return
+function workspaceTooltip(value) {
+  const description = workspaceDescription(value)
+  return description ? `${description}（${value}）` : value
+}
 
-  const history = session.messages.slice(0, -1)
-  const upToIndex = Number(session.context?.upToIndex) || 0
-  if (history.length - upToIndex <= CONTEXT_KEEP_RECENT + 2) return
-
-  assistantMessage.contextNote = '上下文较长，正在压缩历史…'
-  if (currentSessionId.value === session.id) scrollToBottom()
-
+function hostnameOf(url) {
   try {
-    const result = await compressChatContext(history.slice(upToIndex).map(toApiMessage), {
-      provider: session.provider || selectedProvider.value,
-      model: session.model || selectedModel.value,
-      contextSummary: session.context?.summary || '',
-      keepRecent: CONTEXT_KEEP_RECENT
-    })
-
-    if (currentRequestId !== requestId) return
-
-    if (result?.success) {
-      session.context = {
-        summary: result.summary,
-        upToIndex: history.length - result.keptCount,
-        beforeTokens: result.beforeTokens,
-        afterTokens: result.afterTokens,
-        compressedAt: Date.now()
-      }
-      session.contextUsage = { tokens: result.afterTokens, window }
-      if (result.usage) mergeUsage(session, { ...result.usage, calls: 1 })
-      assistantMessage.contextNote = `上下文已压缩：${formatTokens(result.beforeTokens)} → ${formatTokens(
-        result.afterTokens
-      )} tokens（保留最近 ${result.keptCount} 条消息）`
-      saveSessions()
-    } else {
-      assistantMessage.contextNote = `上下文压缩失败：${result?.error || '未知错误'}，本轮继续使用完整历史`
-    }
-  } catch (error) {
-    if (currentRequestId === requestId) {
-      assistantMessage.contextNote = `上下文压缩失败：${error.message}，本轮继续使用完整历史`
-    }
+    return new URL(url).hostname
+  } catch {
+    return ''
   }
-  if (currentSessionId.value === session.id) scrollToBottom()
 }
 
-async function sendMessage(e) {
-  if (e && (e.shiftKey || e.isComposing)) return
-  const text = inputText.value.trim()
-  const files = attachments.value.slice()
-  if ((!text && files.length === 0) || loading.value) return
-  if (!hasCurrentApiKey.value) {
-    showError(`请先在设置中配置 ${currentProvider.value?.name || '当前平台'} API Key`)
-    return
+function parseToolArgs(value) {
+  if (!value) return {}
+  if (typeof value === 'object') return value
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
   }
-  if (!currentSessionId.value) createNewChat()
+}
 
-  const session = sessions.value.find((s) => s.id === currentSessionId.value)
-  if (!session) return
+function sourceTypeLabel(type) {
+  if (type === 'web') return '网页'
+  if (type === 'file') return '文件'
+  if (type === 'attachment') return '附件'
+  return '来源'
+}
 
-  inputText.value = ''
-  attachments.value = []
-  delete viewState.drafts[session.id]
+function visibleItems(list, key, limit) {
+  return expandedSections.value[key] ? list : list.slice(0, limit)
+}
+
+function toggleSection(key) {
+  expandedSections.value = { ...expandedSections.value, [key]: !expandedSections.value[key] }
+}
+
+function toggleContextPanel() {
+  contextPanelOpen.value = !contextPanelOpen.value
   persistViewState()
-  await nextTick()
-  resizeInput()
+}
 
-  session.provider = selectedProvider.value
-  session.model = selectedModel.value
-  session.messages.push({ role: 'user', content: text, attachments: files })
-  session.updatedAt = Date.now()
-  updateSessionTitle(currentSessionId.value, text || files[0]?.name || '附件消息')
-  saveSessions()
+async function refreshWorkspaceInfo() {
+  const workspace = currentSession.value?.workspace || ''
+  const token = ++workspaceRequest
+  if (!workspace) {
+    workspaceInfo.value = null
+    workspaceInfoLoading.value = false
+    return
+  }
+  workspaceInfoLoading.value = true
+  const info = await fetchWorkspaceInfo(workspace)
+  if (token !== workspaceRequest) return
+  workspaceInfoLoading.value = false
+  workspaceInfo.value = info?.success
+    ? info
+    : {
+        success: false,
+        path: workspace,
+        name: workspaceName(workspace),
+        error: info?.error || '无法读取工作区信息'
+      }
+}
 
-  const requestId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  currentRequestId = requestId
-  loading.value = true
-  scrollToBottom()
-
-  session.messages.push({ role: 'assistant', content: '', thinking: '', steps: [], notices: [] })
-  const assistantMessage = session.messages[session.messages.length - 1]
-  assistantMessage.isStreaming = true
-
-  persistPendingStream({ requestId, sessionId: session.id })
-  attachStreamListeners(session, assistantMessage, requestId)
-
+async function refreshMemoryOverview() {
+  const workspace = currentSession.value?.workspace || ''
+  const token = ++memoryRequest
+  memoryLoading.value = true
   try {
-    await maybeCompressContext(session, assistantMessage, requestId)
-    if (currentRequestId !== requestId) {
-      assistantMessage.isStreaming = false
-      assistantMessage.stopped = true
-      delete assistantMessage.contextNote
-      finalizeContent(assistantMessage)
-      persistPendingStream(null)
-      saveSessions()
-      return
-    }
-
-    const history = session.messages.slice(0, -1)
-    const startIndex = Math.min(Number(session.context?.upToIndex) || 0, history.length)
-    const chatMessages = history.slice(startIndex).map(toApiMessage)
-    const thinking =
-      modelSupportsThinking.value && thinkingMode.value !== 'auto' ? thinkingMode.value === 'on' : undefined
-    await chatStream(chatMessages, {
-      provider: selectedProvider.value,
-      model: selectedModel.value,
-      requestId,
-      toolsEnabled: approvalMode.value === 'auto',
-      thinking,
-      contextSummary: session.context?.summary || ''
-    })
-  } catch (error) {
-    currentRequestId = ''
-    loading.value = false
-    assistantMessage.isStreaming = false
-    assistantMessage.content = `请求失败: ${error.message}`
-    persistPendingStream(null)
-    saveSessions()
-    scrollToBottom()
+    const data = await fetchMemoryOverview(workspace)
+    if (token !== memoryRequest) return
+    memoryOverview.value = data?.success ? data : null
+  } catch {
+    if (token === memoryRequest) memoryOverview.value = null
+  } finally {
+    if (token === memoryRequest) memoryLoading.value = false
   }
 }
 
-async function stopResponse() {
-  if (!currentRequestId) return
-  const stopped = await cancelChatStream(currentRequestId)
-  if (!stopped) {
-    loading.value = false
-    currentRequestId = ''
-    persistPendingStream(null)
+function openMemoryPage() {
+  const workspace = currentSession.value?.workspace || ''
+  router.push({ path: '/memory', query: workspace ? { workspace } : {} })
+}
+
+async function pickWorkspace() {
+  if (currentSession.value?.workspace) return
+  if (!currentSessionId.value) createNewChat()
+  const directory = await selectDirectory()
+  if (!directory) return
+  const session = currentSession.value
+  if (!session || session.workspace) return
+  session.workspace = directory
+  session.updatedAt = Date.now()
+  saveSessions()
+  persistViewState()
+  await refreshWorkspaceInfo()
+  showSuccess(`已绑定工作区 ${workspaceLabel(directory)}`)
+}
+
+function loadWorkspaceMeta() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(WORKSPACE_META_KEY))
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return
+    const next = {}
+    for (const [path, meta] of Object.entries(parsed)) {
+      if (typeof path !== 'string' || !path || !meta || typeof meta !== 'object') continue
+      next[path] = {
+        name: typeof meta.name === 'string' && meta.name.trim() ? meta.name.trim() : workspaceName(path),
+        description: typeof meta.description === 'string' ? meta.description : '',
+        icon: WORKSPACE_ICONS.some((item) => item.id === meta.icon) ? meta.icon : DEFAULT_WORKSPACE_ICON,
+        color:
+          typeof meta.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(meta.color) ? meta.color : WORKSPACE_COLORS[0],
+        createdAt: Number(meta.createdAt) || 0,
+        pinned: meta.pinned === true,
+        archived: meta.archived === true
+      }
+    }
+    workspaceMeta.value = next
+  } catch {
+    workspaceMeta.value = {}
   }
+}
+
+function persistWorkspaceMeta() {
+  try {
+    localStorage.setItem(WORKSPACE_META_KEY, JSON.stringify(workspaceMeta.value))
+  } catch {
+    showError('工作区信息保存失败')
+  }
+}
+
+function openWorkspaceDialog() {
+  workspaceEditPath.value = ''
+  workspaceForm.value = {
+    path: '',
+    name: '',
+    description: '',
+    icon: DEFAULT_WORKSPACE_ICON,
+    color: WORKSPACE_COLORS[0]
+  }
+  workspaceFormError.value = ''
+  workspaceDialogOpen.value = true
+}
+
+function closeWorkspaceDialog() {
+  workspaceEditPath.value = ''
+  workspaceDialogOpen.value = false
+}
+
+function closeRailMenus() {
+  sessionMenu.value = null
+  workspaceMenu.value = null
+}
+
+function toggleWorkspaceMenu(path, event) {
+  event.stopPropagation()
+  if (workspaceMenu.value?.path === path) {
+    workspaceMenu.value = null
+    return
+  }
+  const rect = event.currentTarget.getBoundingClientRect()
+  const menuWidth = 190
+  const menuHeight = 190
+  const x = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8))
+  const y =
+    rect.bottom + menuHeight + 8 <= window.innerHeight ? rect.bottom + 4 : Math.max(8, rect.top - menuHeight - 4)
+  workspaceMenu.value = { path, x, y }
+}
+
+function updateWorkspaceMeta(path, patch) {
+  const meta = workspaceMeta.value[path]
+  if (!meta) return
+  workspaceMeta.value = { ...workspaceMeta.value, [path]: { ...meta, ...patch } }
+  persistWorkspaceMeta()
+}
+
+function toggleWorkspacePin(path) {
+  const meta = workspaceMeta.value[path]
+  if (!meta) return
+  updateWorkspaceMeta(path, { pinned: !meta.pinned })
+  showSuccess(meta.pinned ? '已取消置顶' : '工作区已置顶')
+}
+
+function toggleWorkspaceArchive(path) {
+  const meta = workspaceMeta.value[path]
+  if (!meta) return
+  const archiving = !meta.archived
+  updateWorkspaceMeta(path, { archived: archiving })
+  if (archiving && !showArchived.value && (currentSession.value?.workspace || '') === path) {
+    const next = filteredSessions.value[0]
+    if (next) selectSession(next.id)
+    else {
+      viewState.value.activeSessionId = ''
+      currentSessionId.value = ''
+      applyDraft('')
+      persistViewState()
+    }
+  }
+  showSuccess(archiving ? '工作区已归档' : '已取消归档')
+}
+
+function editWorkspace(path) {
+  const meta = workspaceMeta.value[path]
+  if (!meta) return
+  workspaceEditPath.value = path
+  workspaceForm.value = {
+    path,
+    name: meta.name,
+    description: meta.description,
+    icon: meta.icon,
+    color: meta.color
+  }
+  workspaceFormError.value = ''
+  workspaceDialogOpen.value = true
+}
+
+function requestDeleteWorkspace(path) {
+  const meta = workspaceMeta.value[path]
+  if (!meta) return
+  workspaceDeleteTarget.value = { path, name: meta.name }
+}
+
+function confirmDeleteWorkspace() {
+  const target = workspaceDeleteTarget.value
+  workspaceDeleteTarget.value = null
+  if (!target) return
+  const nextMeta = { ...workspaceMeta.value }
+  delete nextMeta[target.path]
+  workspaceMeta.value = nextMeta
+  persistWorkspaceMeta()
+  let changed = false
+  for (const session of sessions.value) {
+    if (session.workspace === target.path) {
+      session.workspace = ''
+      changed = true
+    }
+  }
+  if (changed) saveSessions()
+  showSuccess(`已删除工作区 ${target.name}`)
+}
+
+function handleWorkspaceAction(action) {
+  const path = workspaceMenu.value?.path
+  if (!path) return
+  workspaceMenu.value = null
+  if (action === 'pin') toggleWorkspacePin(path)
+  else if (action === 'edit') editWorkspace(path)
+  else if (action === 'archive') toggleWorkspaceArchive(path)
+  else if (action === 'delete') requestDeleteWorkspace(path)
+}
+
+function createWorkspaceChat(path) {
+  createNewChat(path)
+  if (collapsedGroups.value[path]) {
+    collapsedGroups.value = { ...collapsedGroups.value, [path]: false }
+  }
+}
+
+async function chooseWorkspaceDirectory() {
+  const directory = await selectDirectory()
+  if (!directory) return
+  workspaceForm.value.path = directory
+  if (!workspaceForm.value.name.trim()) workspaceForm.value.name = workspaceName(directory)
+  workspaceFormError.value = ''
+}
+
+function submitWorkspace() {
+  const path = workspaceForm.value.path.trim()
+  const name = workspaceForm.value.name.trim()
+  if (!path) {
+    workspaceFormError.value = '请选择项目目录'
+    return
+  }
+  if (!name) {
+    workspaceFormError.value = '请填写工作区名称'
+    return
+  }
+  const editing = Boolean(workspaceEditPath.value)
+  const existing = editing ? workspaceMeta.value[path] : null
+  if (!editing && workspaceMeta.value[path]) {
+    workspaceFormError.value = '该目录已添加为工作区'
+    return
+  }
+  workspaceMeta.value = {
+    ...workspaceMeta.value,
+    [path]: {
+      name,
+      description: workspaceForm.value.description.trim(),
+      icon: workspaceForm.value.icon,
+      color: workspaceForm.value.color,
+      createdAt: existing?.createdAt || Date.now(),
+      pinned: existing?.pinned === true,
+      archived: existing?.archived === true
+    }
+  }
+  persistWorkspaceMeta()
+  workspaceDialogOpen.value = false
+  workspaceEditPath.value = ''
+  if (editing) {
+    showSuccess(`工作区 ${name} 已更新`)
+    return
+  }
+  createNewChat(path)
+  if (collapsedGroups.value[path]) {
+    collapsedGroups.value = { ...collapsedGroups.value, [path]: false }
+  }
+  showSuccess(`已添加工作区 ${name}，并创建了新会话`)
+}
+
+function onWorkspaceDialogKey(event) {
+  if (event.key === 'Escape') closeWorkspaceDialog()
+}
+
+watch(workspaceDialogOpen, (open) => {
+  if (open) window.addEventListener('keydown', onWorkspaceDialogKey)
+  else window.removeEventListener('keydown', onWorkspaceDialogKey)
+})
+
+async function openWorkspaceRoot() {
+  const workspace = currentSession.value?.workspace || ''
+  if (!workspace) {
+    await pickWorkspace()
+    return
+  }
+  const result = await openWorkspacePath(workspace, workspace)
+  if (result && result.success === false) showError(result.error || '无法打开工作区')
+}
+
+async function openSource(item) {
+  if (!item?.target) return
+  if (item.type === 'web') {
+    const opened = await openExternal(item.target)
+    if (!opened) showError('无法打开链接')
+    return
+  }
+  const workspace = currentSession.value?.workspace || ''
+  if (!workspace || item.type !== 'file') return
+  const result = await openWorkspacePath(workspace, item.target)
+  if (result && result.success === false) showError(result.error || '无法打开文件')
+}
+
+function useStarter(prompt) {
+  inputText.value = prompt
+  nextTick(() => {
+    resizeInput()
+    inputRef.value?.focus()
+  })
+}
+
+function startContextResize(event) {
+  if (event.button !== 0) return
+  event.preventDefault()
+  isResizingContext.value = true
+  document.body.style.cursor = 'ew-resize'
+  document.body.style.userSelect = 'none'
+
+  const layout = document.querySelector('.chat-layout')
+  const handleMove = (moveEvent) => {
+    if (!layout) return
+    const rect = layout.getBoundingClientRect()
+    const maxWidth = Math.min(480, Math.max(260, rect.width - 560))
+    const next = Math.min(Math.max(rect.right - moveEvent.clientX, 260), maxWidth)
+    contextPanelWidth.value = Math.round(next)
+  }
+  const handleEnd = () => {
+    isResizingContext.value = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    localStorage.setItem('chatContextWidth', String(contextPanelWidth.value))
+    document.removeEventListener('mousemove', handleMove)
+    document.removeEventListener('mouseup', handleEnd)
+  }
+
+  document.addEventListener('mousemove', handleMove)
+  document.addEventListener('mouseup', handleEnd)
 }
 
 function scrollToBottom() {
@@ -1553,71 +2158,9 @@ function hideQuestionTip() {
   hoveredQuestion.value = null
 }
 
-function toggleThinking(index) {
-  expandedThinking.value[index] = !expandedThinking.value[index]
-}
-
-function toggleChain(index) {
-  collapsedChains.value = { ...collapsedChains.value, [index]: !collapsedChains.value[index] }
-}
-
-function isChainCollapsed(index) {
-  return Boolean(collapsedChains.value[index])
-}
-
-function chainSummary(steps) {
-  const total = steps.length
-  const running = steps.filter((step) => step.status === 'running').length
-  const failed = steps.filter((step) => step.status === 'error').length
-  if (running > 0) return `${total} 步 · ${running} 个执行中`
-  if (failed > 0) return `${total} 步 · ${failed} 个失败`
-  return `${total} 步 · 全部完成`
-}
-
 function formatDuration(ms) {
   if (!ms) return ''
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`
-}
-
-function stepKey(index, step) {
-  return `${index}:${step.id || step.name}`
-}
-
-function toggleStep(index, step) {
-  const key = stepKey(index, step)
-  expandedSteps.value = { ...expandedSteps.value, [key]: !expandedSteps.value[key] }
-}
-
-function isStepExpanded(index, step) {
-  return Boolean(expandedSteps.value[stepKey(index, step)])
-}
-
-function pretty(value) {
-  if (value === undefined || value === null || value === '') return ''
-  if (typeof value !== 'string') {
-    try {
-      return JSON.stringify(value, null, 2)
-    } catch {
-      return String(value)
-    }
-  }
-  const text = value.trim()
-  if (!text) return ''
-  try {
-    return JSON.stringify(JSON.parse(text), null, 2)
-  } catch {
-    return value
-  }
-}
-
-const formatMessage = renderMarkdown
-
-const STREAM_CARET = '<span class="stream-caret" aria-hidden="true"></span>'
-
-function messageHtml(msg) {
-  const html = formatMessage(msg.content)
-  if (!msg.isStreaming || msg.role !== 'assistant' || !html) return html
-  return html.endsWith('<br>') ? `${html.slice(0, -4)}${STREAM_CARET}<br>` : `${html}${STREAM_CARET}`
 }
 
 async function copyMessage(content) {
@@ -1698,9 +2241,12 @@ async function prepareImage(file) {
 }
 
 async function addFiles(files, kindHint) {
+  const attachmentLimit = maxAttachments.value
+  const imageLimit = maxImageBytes.value
+  const textLimit = maxTextFileBytes.value
   for (const file of files) {
-    if (attachments.value.length >= MAX_ATTACHMENTS) {
-      showError(`最多添加 ${MAX_ATTACHMENTS} 个附件`)
+    if (attachments.value.length >= attachmentLimit) {
+      showError(`最多添加 ${attachmentLimit} 个附件`)
       break
     }
 
@@ -1710,8 +2256,8 @@ async function addFiles(files, kindHint) {
         showError(`${selectedModelInfo.value?.name || '当前模型'} 未启用图片输入，可在设置 > 模型中开启`)
         continue
       }
-      if (file.size > MAX_IMAGE_BYTES) {
-        showError(`${file.name} 超过 10MB，已跳过`)
+      if (file.size > imageLimit) {
+        showError(`${file.name} 超过 ${Math.round(imageLimit / 1024 / 1024)}MB，已跳过`)
         continue
       }
       try {
@@ -1721,8 +2267,8 @@ async function addFiles(files, kindHint) {
         showError(`无法读取图片 ${file.name}`)
       }
     } else {
-      if (file.size > MAX_TEXT_FILE_BYTES) {
-        showError(`${file.name} 超过 256KB，已跳过`)
+      if (file.size > textLimit) {
+        showError(`${file.name} 超过 ${Math.round(textLimit / 1024)}KB，已跳过`)
         continue
       }
       try {
@@ -1788,22 +2334,73 @@ function closePlusMenu() {
 function handleOutsideClick() {
   closePlusMenu()
   closeModelMenu()
+  railMoreOpen.value = false
+  sessionMenu.value = null
+  workspaceMenu.value = null
+  usageDetail.value = ''
+}
+
+function handleGlobalKeydown(event) {
+  if (event.key !== 'Escape') return
+  if (deleteTarget.value) {
+    deleteTarget.value = null
+    return
+  }
+  if (workspaceDeleteTarget.value) {
+    workspaceDeleteTarget.value = null
+    return
+  }
+  if (editingSessionId.value) return
+  if (
+    !plusMenuOpen.value &&
+    !modelMenuOpen.value &&
+    !railMoreOpen.value &&
+    !sessionMenu.value &&
+    !workspaceMenu.value &&
+    !usageDetail.value
+  ) {
+    return
+  }
+  handleOutsideClick()
+}
+
+function consumeRoutePrompt() {
+  const prompt = typeof route.query.prompt === 'string' ? route.query.prompt : ''
+  if (!prompt) return
+  inputText.value = prompt
+  router.replace({ path: route.path })
+  nextTick(() => {
+    inputRef.value?.focus()
+    resizeInput()
+  })
 }
 
 onMounted(async () => {
   loadViewState()
   loadSessions()
+  loadWorkspaceMeta()
   recoverStreamState()
+  refreshWorkspaceInfo()
+  refreshMemoryOverview()
   applyDraft(currentSessionId.value)
-  suppressAutoScroll = true
+  consumeRoutePrompt()
+  suppressAutoScroll.value = true
   loadProviders()
   document.addEventListener('click', handleOutsideClick)
+  document.addEventListener('keydown', handleGlobalKeydown)
   await nextTick()
   restoreScroll()
-  suppressAutoScroll = false
+  suppressAutoScroll.value = false
   resizeInput()
   resumePendingStream()
 })
+
+watch(
+  () => route.query.prompt,
+  (prompt) => {
+    if (typeof prompt === 'string' && prompt) consumeRoutePrompt()
+  }
+)
 
 watch(
   () => [config.value?.ai_provider, config.value?.ai_api_keys, config.value?.ai_models],
@@ -1825,15 +2422,34 @@ watch(thinkingMode, (mode) => {
   }
 })
 
+watch(
+  () => config.value?.ai_tool_policy,
+  (value) => {
+    if (value !== undefined) approvalMode.value = normalizeToolPolicy(value)
+  },
+  { immediate: true }
+)
+
+onActivated(() => {
+  refreshWorkspaceInfo()
+  refreshMemoryOverview()
+})
+
+onDeactivated(() => {
+  handleOutsideClick()
+  if (recognition) {
+    recognition.stop()
+    recognition = null
+  }
+})
+
 onUnmounted(() => {
-  if (draftTimer) clearTimeout(draftTimer)
-  if (scrollTimer) clearTimeout(scrollTimer)
   saveDraft()
   saveScroll()
-  if (currentRequestId) saveSessions()
-  if (removeChunkListener) removeChunkListener()
-  if (removeEndListener) removeEndListener()
+  if (currentRequestId.value) saveSessions()
   document.removeEventListener('click', handleOutsideClick)
+  document.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('keydown', onWorkspaceDialogKey)
   recognition?.stop()
   recognition = null
 })
@@ -1841,7 +2457,7 @@ onUnmounted(() => {
 watch(
   currentMessages,
   () => {
-    if (suppressAutoScroll) return
+    if (suppressAutoScroll.value) return
     scrollToBottom()
   },
   { deep: true }
@@ -1851,14 +2467,48 @@ watch(inputText, () => {
   scheduleDraftSave()
 })
 
+watch(showArchived, () => {
+  persistViewState()
+})
+
+watch(
+  collapsedGroups,
+  () => {
+    persistViewState()
+  },
+  { deep: true }
+)
+
 watch(currentSessionId, (id) => {
   hoveredQuestion.value = null
   atBottom.value = true
+  if (!groupsInitialized) {
+    groupsInitialized = true
+    const session = sessions.value.find((item) => item.id === id)
+    const activeKey = session?.workspace || '__none__'
+    const saved = viewState.value.collapsedGroups || {}
+    const next = {}
+    for (const item of sessions.value) {
+      const key = item.workspace || '__none__'
+      if (!(key in next)) next[key] = key in saved ? saved[key] === true : key !== activeKey
+    }
+    collapsedGroups.value = next
+  } else {
+    openGroupForSession(id)
+  }
   if (id) {
-    viewState.activeSessionId = id
+    viewState.value.activeSessionId = id
     persistViewState()
   }
 })
+
+watch(
+  () => currentSession.value?.workspace,
+  () => {
+    refreshWorkspaceInfo()
+    refreshMemoryOverview()
+  }
+)
 
 watch(
   () => questions.value.length,
@@ -1870,1824 +2520,4 @@ watch(
 )
 </script>
 
-<style scoped>
-.api-key-banner {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 7px 16px;
-  border-bottom: 1px solid rgba(var(--warning-rgb), 0.35);
-  background: rgba(var(--warning-rgb), 0.1);
-  color: var(--warning-darker);
-  font-size: var(--font-size-sm);
-}
-
-.chat-layout {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-.sidebar {
-  width: 240px;
-  min-width: 180px;
-  max-width: 55vw;
-  background: var(--surface-muted);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.sidebar-header {
-  padding: 10px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.new-chat-btn {
-  width: 100%;
-  justify-content: center;
-}
-
-.new-chat-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: color-mix(in srgb, currentColor 16%, transparent);
-  flex-shrink: 0;
-}
-
-.session-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px;
-}
-
-.session-item {
-  padding: 8px 10px;
-  margin-bottom: 2px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.15s;
-  position: relative;
-}
-
-.session-item:hover {
-  background: var(--surface-hover);
-}
-
-.session-item.active {
-  background: var(--surface);
-  border-color: var(--border-color);
-}
-
-.session-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.session-title {
-  font-size: var(--font-size-dense);
-  color: var(--text-primary);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.session-edit-input {
-  font-size: var(--font-size-dense);
-  color: var(--text-primary);
-  font-weight: 500;
-  width: 100%;
-  padding: 3px 6px;
-  border: 1px solid var(--accent-color);
-  border-radius: 4px;
-  background: var(--surface);
-  outline: none;
-}
-
-.session-time {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-.session-actions {
-  display: flex;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.session-item:hover .session-actions,
-.session-item.active .session-actions {
-  opacity: 1;
-}
-
-.session-edit,
-.session-delete {
-  padding: 4px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-tertiary);
-  display: inline-flex;
-  transition: background 0.15s;
-}
-
-.session-edit:hover {
-  background: var(--surface-muted);
-  color: var(--text-primary);
-}
-
-.session-delete:hover {
-  background: rgba(var(--error-rgb), 0.1);
-  color: var(--error-dark);
-}
-
-.session-empty {
-  padding: 32px 12px;
-  text-align: center;
-  color: var(--text-tertiary);
-}
-
-.session-empty p {
-  font-size: var(--font-size-sm);
-  margin-bottom: 4px;
-}
-
-.session-empty .hint {
-  font-size: var(--font-size-xs);
-  opacity: 0.8;
-}
-
-.chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--surface);
-}
-
-.chat-header {
-  padding: 7px 16px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--surface-muted);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 12px;
-  min-height: 46px;
-}
-
-.chat-header h2 {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-
-.provider-select {
-  width: 120px;
-}
-
-.messages-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
-
-.messages-container {
-  flex: 1;
-  min-width: 0;
-  overflow-y: auto;
-  padding: 18px 54px 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.question-rail {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  z-index: 10;
-}
-
-.question-list {
-  max-height: min(60vh, 420px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 4px;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.question-list::-webkit-scrollbar {
-  display: none;
-}
-
-.question-mark {
-  width: 22px;
-  height: 12px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-.question-mark::before {
-  content: '';
-  width: 14px;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--text-tertiary);
-  transition: var(--transition-fast);
-}
-
-.question-mark:hover::before,
-.question-mark:focus-visible::before {
-  width: 20px;
-  background: var(--accent-color);
-}
-
-.question-mark:focus-visible {
-  outline: none;
-}
-
-.question-tip {
-  position: absolute;
-  right: calc(100% + 10px);
-  transform: translateY(-50%);
-  width: max-content;
-  max-width: 260px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  padding: 8px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-md);
-  font-size: calc(12px * var(--font-scale));
-  line-height: 1.5;
-  text-align: left;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 30;
-}
-
-.scroll-latest {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.scroll-latest:hover:not(:disabled) {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.scroll-latest.active {
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-}
-
-.scroll-latest:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.messages-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  text-align: center;
-  padding: 40px;
-}
-
-.messages-empty svg {
-  opacity: 0.3;
-  margin-bottom: 12px;
-}
-
-.messages-empty p {
-  font-size: var(--font-size-dense);
-  margin-bottom: 4px;
-}
-
-.messages-empty .hint {
-  font-size: var(--font-size-sm);
-  opacity: 0.8;
-}
-
-.message {
-  display: flex;
-  gap: 10px;
-  max-width: min(820px, 88%);
-  min-width: 0;
-  animation: message-in var(--motion-base) var(--motion-ease);
-}
-
-@keyframes message-in {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.message.user {
-  --bubble-bg: var(--accent-gradient);
-  --bubble-fg: var(--btn-primary-text);
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.message.assistant {
-  align-self: flex-start;
-  width: min(760px, 88%);
-}
-
-.message-avatar {
-  width: 30px;
-  height: 30px;
-  margin-top: 2px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.message.user .message-avatar {
-  background: var(--bubble-bg);
-  color: var(--bubble-fg);
-}
-
-.message.assistant .message-avatar {
-  background: var(--surface-muted);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-}
-
-.message-content {
-  flex: 1;
-  position: relative;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-.message-bubble {
-  position: relative;
-  max-width: 100%;
-  padding: 10px 14px;
-  border: 1px solid transparent;
-  font-size: var(--font-size-base);
-  line-height: 1.72;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  box-shadow: var(--shadow-sm);
-}
-
-.message.user .message-bubble {
-  align-self: flex-end;
-  background: var(--bubble-bg);
-  border-radius: 16px 16px 6px 16px;
-  color: var(--bubble-fg);
-}
-
-.message.assistant .message-bubble {
-  background: var(--surface-muted);
-  border-color: var(--border-color);
-  border-radius: 16px 16px 16px 6px;
-  color: var(--text-primary);
-}
-
-:root[data-theme='dark'] .message.user {
-  --bubble-bg: var(--accent-gradient);
-  --bubble-fg: var(--btn-primary-text);
-}
-
-.thinking-block {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.thinking-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 11px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s;
-}
-
-.thinking-header:hover {
-  background: var(--surface-hover);
-}
-
-.thinking-icon {
-  color: var(--accent-color);
-  transition: transform 0.2s;
-}
-
-.thinking-icon.expanded {
-  transform: rotate(90deg);
-}
-
-.thinking-pulse {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--accent-color);
-  animation: thinking-breathe 1.6s ease-in-out infinite;
-}
-
-@keyframes thinking-breathe {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.75);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.thinking-title {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.thinking-duration {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  margin-left: auto;
-}
-
-.thinking-content {
-  padding: 10px 12px;
-  font-size: calc(12.5px * var(--font-scale));
-  line-height: 1.72;
-  color: var(--text-secondary);
-  background: var(--surface);
-  border-top: 1px solid var(--border-color);
-  white-space: pre-wrap;
-  font-family: 'Consolas', 'Monaco', monospace;
-}
-
-.agent-steps {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.agent-steps-header {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 11px;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.agent-steps-header:hover {
-  background: var(--surface-hover);
-}
-
-.agent-steps-icon {
-  width: 20px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--accent-color);
-  flex-shrink: 0;
-}
-
-.agent-steps-title {
-  font-size: var(--font-size-sm);
-}
-
-.agent-steps-summary {
-  margin-left: auto;
-  font-size: var(--font-size-xs);
-  font-weight: 400;
-  color: var(--text-tertiary);
-}
-
-.agent-steps-chevron {
-  color: var(--text-tertiary);
-  transition: transform 0.2s;
-}
-
-.agent-steps-chevron:not(.expanded) {
-  transform: rotate(-90deg);
-}
-
-.agent-steps-list {
-  padding: 4px 0;
-  border-top: 1px solid var(--border-color);
-}
-
-.agent-step {
-  display: flex;
-  padding: 0 11px;
-  animation: step-in var(--motion-fast) var(--motion-ease);
-}
-
-@keyframes step-in {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.agent-step-rail {
-  position: relative;
-  width: 24px;
-  padding-top: 11px;
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.agent-step:not(:last-child) .agent-step-rail::after {
-  content: '';
-  position: absolute;
-  top: 28px;
-  bottom: -6px;
-  left: 50%;
-  width: 1px;
-  background: var(--border-strong);
-  transform: translateX(-50%);
-}
-
-.agent-step-dot {
-  position: relative;
-  z-index: 1;
-  width: 18px;
-  height: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--surface-muted);
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.agent-step.running .agent-step-dot {
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--accent-color);
-}
-
-.agent-step.success .agent-step-dot {
-  background: rgba(var(--success-rgb), 0.12);
-  color: var(--success-dark);
-}
-
-.agent-step.error .agent-step-dot {
-  background: rgba(var(--error-rgb), 0.12);
-  color: var(--error-dark);
-}
-
-.mini-spinner {
-  width: var(--spinner-xs);
-  height: var(--spinner-xs);
-  border: 2px solid rgba(var(--accent-rgb), 0.25);
-  border-top-color: var(--accent-color);
-  border-radius: 50%;
-  animation: spin var(--spinner-duration) linear infinite;
-}
-
-.agent-step-main {
-  flex: 1;
-  min-width: 0;
-  padding: 3px 0 5px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.agent-step:last-child .agent-step-main {
-  border-bottom: none;
-}
-
-.agent-step-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 0;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  text-align: left;
-  cursor: pointer;
-}
-
-.agent-step-head:hover .agent-step-name {
-  color: var(--accent-color);
-}
-
-.agent-step-name {
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: calc(12.5px * var(--font-scale));
-  font-weight: 500;
-  color: var(--text-primary);
-  transition: color 0.15s;
-}
-
-.agent-step-status {
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--surface-muted);
-  color: var(--text-tertiary);
-  font-size: calc(11px * var(--font-scale));
-  white-space: nowrap;
-}
-
-.agent-step.running .agent-step-status {
-  background: rgba(var(--accent-rgb), 0.1);
-  color: var(--accent-color);
-}
-
-.agent-step.success .agent-step-status {
-  background: rgba(var(--success-rgb), 0.1);
-  color: var(--success-dark);
-}
-
-.agent-step.error .agent-step-status {
-  background: rgba(var(--error-rgb), 0.1);
-  color: var(--error-dark);
-}
-
-.agent-step-duration {
-  margin-left: auto;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.agent-step-chevron {
-  transition: transform 0.2s;
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-
-.agent-step-chevron.expanded {
-  transform: rotate(180deg);
-}
-
-.agent-step-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 2px 0 6px;
-}
-
-.step-label {
-  font-size: calc(11px * var(--font-scale));
-  color: var(--text-tertiary);
-  margin-bottom: 3px;
-}
-
-.agent-step-body pre {
-  margin: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--surface-muted);
-  color: var(--text-secondary);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: calc(11.5px * var(--font-scale));
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 200px;
-  overflow: auto;
-}
-
-.agent-notices {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 10px;
-  border: 1px solid rgba(var(--warning-rgb), 0.3);
-  border-radius: 10px;
-  background: rgba(var(--warning-rgb), 0.1);
-  color: var(--warning-darker);
-  font-size: var(--font-size-sm);
-  line-height: 1.6;
-}
-
-.agent-context-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid rgba(var(--accent-rgb), 0.24);
-  border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.08);
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-  line-height: 1.5;
-}
-
-.agent-context-note svg {
-  flex-shrink: 0;
-  color: var(--accent-color);
-}
-
-.agent-plan {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--surface);
-  overflow: hidden;
-  animation: step-in var(--motion-fast) var(--motion-ease);
-}
-
-.agent-plan-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 11px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.agent-plan-badge {
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--accent-color);
-  font-size: calc(11px * var(--font-scale));
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.agent-plan-goal {
-  min-width: 0;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-plan-list {
-  margin: 0;
-  padding: 6px 11px 8px;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.agent-plan-step {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  line-height: 1.55;
-}
-
-.agent-plan-index {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--surface-muted);
-  color: var(--text-tertiary);
-  font-size: calc(10px * var(--font-scale));
-  font-variant-numeric: tabular-nums;
-  transform: translateY(2px);
-}
-
-.agent-plan-text {
-  min-width: 0;
-  word-break: break-word;
-}
-
-.agent-reflections {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.agent-reflection {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: 1.55;
-  animation: step-in var(--motion-fast) var(--motion-ease);
-}
-
-.agent-reflection.error {
-  border-color: rgba(var(--error-rgb), 0.3);
-  background: rgba(var(--error-rgb), 0.06);
-  color: var(--error-dark);
-}
-
-.agent-reflection.warning {
-  border-color: rgba(var(--warning-rgb), 0.3);
-  background: rgba(var(--warning-rgb), 0.08);
-  color: var(--warning-darker);
-}
-
-.agent-reflection-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 1px;
-}
-
-.agent-reflection-text {
-  min-width: 0;
-  word-break: break-word;
-}
-
-.agent-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--surface-muted);
-  animation: step-in var(--motion-fast) var(--motion-ease);
-}
-
-.agent-summary-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.agent-summary-title {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.agent-summary-badge {
-  margin-left: auto;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: rgba(var(--success-rgb), 0.12);
-  color: var(--success-dark);
-  font-size: calc(11px * var(--font-scale));
-  font-weight: 500;
-}
-
-.agent-summary-badge.cancelled,
-.agent-summary-badge.timeout,
-.agent-summary-badge.max_steps {
-  background: rgba(var(--warning-rgb), 0.14);
-  color: var(--warning-darker);
-}
-
-.agent-summary-badge.error {
-  background: rgba(var(--error-rgb), 0.12);
-  color: var(--error-dark);
-}
-
-.agent-summary-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.agent-summary-tools {
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  word-break: break-word;
-}
-
-.agent-summary-limitations {
-  margin: 0;
-  padding-left: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: var(--font-size-xs);
-  line-height: 1.55;
-  color: var(--warning-darker);
-}
-
-.message-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.message.user .message-attachments {
-  justify-content: flex-end;
-}
-
-.message-image {
-  max-width: 220px;
-  max-height: 160px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  object-fit: cover;
-}
-
-.message-file {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background: var(--surface-muted);
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-}
-
-.message-text {
-  font-size: var(--font-size-base);
-  line-height: 1.72;
-  word-wrap: break-word;
-}
-
-.message-text :deep(.stream-caret) {
-  display: inline-block;
-  width: 2px;
-  height: 1.02em;
-  margin-left: 2px;
-  vertical-align: -0.16em;
-  border-radius: 1px;
-  background: var(--accent-color);
-  animation: stream-caret 1.1s steps(1, end) infinite;
-}
-
-@keyframes stream-caret {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0;
-  }
-}
-
-.message-text :deep(h1),
-.message-text :deep(h2),
-.message-text :deep(h3),
-.message-text :deep(h4),
-.message-text :deep(h5),
-.message-text :deep(h6) {
-  margin: 14px 0 6px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: inherit;
-}
-
-.message-text :deep(h1:first-child),
-.message-text :deep(h2:first-child),
-.message-text :deep(h3:first-child),
-.message-text :deep(h4:first-child),
-.message-text :deep(h5:first-child),
-.message-text :deep(h6:first-child) {
-  margin-top: 0;
-}
-
-.message-text :deep(h1) {
-  font-size: calc(18px * var(--font-scale));
-}
-
-.message-text :deep(h2) {
-  font-size: calc(17px * var(--font-scale));
-}
-
-.message-text :deep(h3) {
-  font-size: calc(15px * var(--font-scale));
-}
-
-.message-text :deep(h4),
-.message-text :deep(h5),
-.message-text :deep(h6) {
-  font-size: calc(14px * var(--font-scale));
-}
-
-.message-text :deep(ul),
-.message-text :deep(ol) {
-  margin: 6px 0;
-  padding-left: 20px;
-}
-
-.message-text :deep(li) {
-  margin: 3px 0;
-}
-
-.message-text :deep(blockquote) {
-  margin: 10px 0;
-  padding: 6px 12px;
-  border-left: 3px solid var(--accent-color);
-  border-radius: 0 8px 8px 0;
-  background: rgba(var(--accent-rgb), 0.07);
-  color: var(--text-secondary);
-}
-
-.message.user .message-text :deep(blockquote) {
-  color: inherit;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.message-text :deep(hr) {
-  margin: 12px 0;
-  border: none;
-  border-top: 1px solid var(--border-color);
-}
-
-.message-text :deep(a) {
-  color: var(--accent-color);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.message.user .message-text :deep(a) {
-  color: inherit;
-}
-
-.message-stopped {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-}
-
-.message-usage {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.message-usage span:not(:first-child)::before {
-  content: '·';
-  margin: 0 8px;
-  color: var(--border-color);
-}
-
-.message-usage-estimated {
-  color: var(--warning-dark);
-}
-
-.copy-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 5px;
-  border: 1px solid var(--border-color);
-  background: var(--surface);
-  border-radius: 6px;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  opacity: 0;
-  display: inline-flex;
-  box-shadow: var(--shadow-sm);
-  transition:
-    opacity 0.15s,
-    background 0.15s,
-    color 0.15s;
-}
-
-.message-content:hover .copy-btn {
-  opacity: 1;
-}
-
-.copy-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-:deep(.code-block) {
-  display: block;
-  background: var(--code-bg);
-  border: 1px solid var(--border-color);
-  color: var(--code-text);
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: calc(12.5px * var(--font-scale));
-  line-height: 1.65;
-  overflow-x: auto;
-  margin: 10px 0;
-  white-space: pre-wrap;
-}
-
-:deep(.inline-code) {
-  background: var(--surface-muted);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 1px 5px;
-  border-radius: 5px;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: calc(12.5px * var(--font-scale));
-}
-
-.loading-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 2px 4px;
-}
-
-.loading-indicator span {
-  width: 6px;
-  height: 6px;
-  background: var(--text-tertiary);
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.loading-indicator span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-.loading-indicator span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.composer-area {
-  flex-shrink: 0;
-  padding: 10px 16px 8px;
-  border-top: 1px solid var(--border-color);
-  background: var(--surface);
-}
-
-.chat-usage {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 6px 8px;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.usage-context {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.usage-label {
-  flex-shrink: 0;
-  color: var(--text-secondary);
-}
-
-.usage-track {
-  position: relative;
-  flex: 1;
-  min-width: 60px;
-  max-width: 200px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--surface-muted);
-  overflow: hidden;
-}
-
-.usage-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent-color);
-  transition:
-    width var(--motion-base) var(--motion-ease),
-    background-color var(--motion-fast) var(--motion-ease);
-}
-
-.usage-fill.warn {
-  background: var(--warning-color);
-}
-
-.usage-fill.danger {
-  background: var(--error-color);
-}
-
-.usage-value {
-  white-space: nowrap;
-  color: var(--text-secondary);
-}
-
-.usage-percent {
-  min-width: 34px;
-  text-align: right;
-}
-
-.usage-percent.warn {
-  color: var(--warning-dark);
-}
-
-.usage-percent.danger {
-  color: var(--error-dark);
-}
-
-.usage-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.usage-chip {
-  padding: 1px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--surface-muted);
-  white-space: nowrap;
-}
-
-.usage-chip.muted {
-  color: var(--text-tertiary);
-}
-
-.composer {
-  padding: 10px 10px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-
-.composer:focus-within {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
-}
-
-.composer-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 6px 8px;
-}
-
-.attachment-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 220px;
-  padding: 4px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--surface-muted);
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-}
-
-.attachment-chip img {
-  width: 28px;
-  height: 28px;
-  border-radius: 5px;
-  object-fit: cover;
-}
-
-.attachment-name {
-  max-width: 140px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.attachment-remove {
-  padding: 0 2px;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: calc(14px * var(--font-scale));
-  line-height: 1;
-  cursor: pointer;
-}
-
-.attachment-remove:hover {
-  color: var(--error-dark);
-}
-
-.composer-input {
-  width: 100%;
-  min-height: 40px;
-  max-height: 180px;
-  padding: 4px 8px 8px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: var(--font-size-dense);
-  line-height: 1.6;
-  resize: none;
-}
-
-.composer-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.composer-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.composer-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--border-color);
-}
-
-.toolbar-left,
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.composer-icon-btn {
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.composer-icon-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.plus-btn {
-  border: 1px solid var(--border-color);
-  background: var(--surface);
-}
-
-.composer-icon-btn.recording {
-  background: rgba(var(--error-rgb), 0.12);
-  color: var(--error-dark);
-}
-
-.plus-wrap {
-  position: relative;
-}
-
-.plus-menu {
-  position: absolute;
-  left: 0;
-  bottom: 38px;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  min-width: 132px;
-  padding: 4px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-}
-
-.plus-menu button {
-  padding: 7px 10px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
-  text-align: left;
-  cursor: pointer;
-}
-
-.plus-menu button:hover {
-  background: var(--surface-hover);
-}
-
-.plus-menu button:disabled {
-  color: var(--text-tertiary);
-  cursor: not-allowed;
-}
-
-.plus-menu button:disabled:hover {
-  background: transparent;
-}
-
-.composer-select {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.composer-select:hover {
-  background: var(--surface-hover);
-}
-
-.model-picker-wrap {
-  position: relative;
-}
-
-.model-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 260px;
-  height: 30px;
-  padding: 0 8px;
-  border: none;
-  border-radius: 8px;
-  background: var(--surface-muted);
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.model-chip:hover,
-.model-chip.open {
-  background: var(--surface-hover);
-}
-
-.model-chip-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-primary);
-}
-
-.model-chip-level {
-  flex-shrink: 0;
-  color: var(--text-tertiary);
-}
-
-.model-chip .chevron {
-  flex-shrink: 0;
-  opacity: 0.6;
-  transition: transform 0.15s;
-}
-
-.model-chip .chevron.open {
-  transform: rotate(180deg);
-}
-
-.model-chip.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.model-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  z-index: 40;
-  width: 272px;
-  padding: 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
-}
-
-.model-menu-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 10px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.model-menu-row:hover {
-  background: var(--surface-hover);
-}
-
-.model-menu-key {
-  flex-shrink: 0;
-}
-
-.model-menu-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  color: var(--text-secondary);
-}
-
-.model-menu-value-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.model-menu-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 4px 6px;
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
-}
-
-.model-menu-back {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.model-menu-back:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.model-menu-list {
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.model-menu-group-title {
-  padding: 6px 10px 2px;
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
-}
-
-.model-menu-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  text-align: left;
-  cursor: pointer;
-}
-
-.model-menu-option:hover {
-  background: var(--surface-hover);
-}
-
-.model-menu-option.active {
-  color: var(--accent-color);
-}
-
-.model-menu-option-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.model-menu-option-hint {
-  margin-left: 6px;
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
-}
-
-.model-menu-check {
-  flex-shrink: 0;
-  color: var(--accent-color);
-}
-
-.composer-select select {
-  padding-right: 2px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  appearance: none;
-}
-
-.composer-select .chevron {
-  opacity: 0.6;
-}
-
-.send-circle {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-text);
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    opacity 0.15s;
-}
-
-.send-circle:hover:not(:disabled) {
-  background: var(--btn-primary-bg-hover);
-}
-
-.send-circle:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.send-circle.stop {
-  background: var(--error-dark);
-  color: #fff;
-}
-
-.send-circle.stop:hover {
-  background: var(--error-darker, var(--error-dark));
-}
-
-.composer-hint {
-  margin-top: 6px;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.hidden-file {
-  display: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .message-text :deep(.stream-caret),
-  .thinking-pulse {
-    animation: none;
-  }
-
-  .thinking-pulse {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@media (max-width: 760px) {
-  .chat-header {
-    padding: 6px 12px;
-  }
-
-  .messages-container {
-    padding: 12px;
-  }
-
-  .composer-area {
-    padding: 8px 12px 6px;
-  }
-
-  .chat-usage {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .usage-meta {
-    width: 100%;
-    justify-content: flex-end;
-  }
-}
-</style>
+<style src="../styles/chat.css"></style>

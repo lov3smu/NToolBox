@@ -95,7 +95,7 @@ const resolvedMaxWidth = computed(() => {
   flex-shrink: 0;
   border-radius: 8px;
   background: var(--primary-gradient);
-  color: white;
+  color: var(--text-inverse);
 }
 
 .header-icon :deep(svg) {
@@ -132,22 +132,11 @@ const resolvedMaxWidth = computed(() => {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   padding: 6px 20px;
   background: var(--app-toolbar-bg);
   border-bottom: 1px solid var(--border-color);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-}
-
-.page-toolbar::-webkit-scrollbar {
-  height: 4px;
-}
-
-.page-toolbar::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 2px;
 }
 
 .page-content {

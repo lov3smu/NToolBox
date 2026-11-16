@@ -19,7 +19,7 @@
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2.2"
+            stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
           >
@@ -40,7 +40,7 @@
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2.2"
+            stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
           >
@@ -60,7 +60,7 @@
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2.2"
+            stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
           >
@@ -69,62 +69,7 @@
           </svg>
         </button>
       </div>
-      <div v-if="!isMac" class="settings-window-controls">
-        <button
-          type="button"
-          class="settings-window-control"
-          title="最小化"
-          aria-label="最小化"
-          @click="minimizeWindow"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <path d="M6 12h12" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="settings-window-control"
-          :title="isMaximized ? '还原窗口' : '最大化'"
-          :aria-label="isMaximized ? '还原窗口' : '最大化'"
-          @click="toggleMaximizeWindow"
-        >
-          <svg
-            v-if="isMaximized"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="5" y="8" width="11" height="11" rx="1.5" />
-            <path d="M8 8V6.5A1.5 1.5 0 0 1 9.5 5h9A1.5 1.5 0 0 1 20 6.5v9a1.5 1.5 0 0 1-1.5 1.5H17" />
-          </svg>
-          <svg
-            v-else
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="5" y="5" width="14" height="14" rx="1.5" />
-          </svg>
-        </button>
-        <button type="button" class="settings-window-control close" title="关闭" aria-label="关闭" @click="closeWindow">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m6 6 12 12M18 6 6 18" />
-          </svg>
-        </button>
-      </div>
+      <WindowControls v-if="!isMac" @minimize="minimizeWindow" @maximize="toggleMaximizeWindow" @close="closeWindow" />
     </header>
 
     <div class="settings-body">
@@ -162,7 +107,7 @@
               <path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3" />
             </svg>
             <svg
-              v-else-if="item.id === 'database'"
+              v-else-if="item.id === 'database-client'"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -173,7 +118,7 @@
               <path d="M3 12a9 3 0 0 0 18 0" />
             </svg>
             <svg
-              v-else-if="item.id === 'scripttype'"
+              v-else-if="item.id === 'sql-generator'"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -181,6 +126,17 @@
             >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+            </svg>
+            <svg
+              v-else-if="item.id === 'image-hosting'"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="m21 15-5-5L5 21" />
             </svg>
             <svg
               v-else-if="item.id === 'shortcuts'"
@@ -191,6 +147,26 @@
             >
               <rect x="2" y="6" width="20" height="12" rx="2" />
               <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" />
+            </svg>
+            <svg
+              v-else-if="item.id === 'assistant'"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="4" y="8" width="16" height="12" rx="3" />
+              <path d="M12 4v4M8 14h.01M16 14h.01M9 17h6" />
+            </svg>
+            <svg
+              v-else-if="item.id === 'network'"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" />
             </svg>
             <svg
               v-else-if="item.id === 'extensions'"
@@ -234,7 +210,7 @@
       />
 
       <div class="settings-main">
-        <div ref="settingsContentRef" class="settings-content">
+        <div ref="settingsContentRef" class="settings-content" @focusout="onSettingsFocusOut">
           <div v-if="activeTab !== 'extensions'" class="settings-page-head">
             <div class="settings-page-title">
               <h2>{{ activeMeta.title }}</h2>
@@ -243,133 +219,247 @@
           </div>
 
           <div v-show="activeTab === 'general'" class="settings-tab">
-            <div class="form-group">
-              <label>脚本位置</label>
-              <div class="path-input-group">
-                <input v-model="basePath" type="text" class="input-field" placeholder="脚本存储根目录" />
-                <button class="btn btn-secondary" @click="selectDir">浏览</button>
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">启动与窗口</h3>
+                <span class="setting-section-desc">应用启动、更新检查，以及点击关闭按钮时的默认行为</span>
               </div>
-            </div>
-            <div class="form-group">
-              <label>开发者中文名</label>
-              <input v-model="developerChName" type="text" class="input-field" placeholder="用于脚本作者署名" />
-            </div>
-            <div class="form-group">
-              <label>开发者英文名</label>
-              <input v-model="developerEnName" type="text" class="input-field" placeholder="用于脚本历史记录标识" />
-            </div>
-            <div class="form-group">
-              <label>文本编辑器</label>
-              <select v-model="textEditApp" class="select-field">
-                <option value="">自定义路径</option>
-                <option v-for="editor in editorPresets" :key="editor.path" :value="editor.path">
-                  {{ editor.name }}
-                </option>
-              </select>
-              <div
-                v-if="!editorPresets.some((e) => e.path === textEditApp)"
-                class="path-input-group"
-                style="margin-top: 8px"
-              >
-                <input v-model="textEditApp" type="text" class="input-field" placeholder="编辑器可执行文件路径" />
-                <button class="btn btn-secondary" @click="selectEditor">浏览</button>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">有更新时自动更新</span>
+                    <span class="setting-row-desc">开启后，应用会自动下载并安装新版本</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="autoUpdate" type="checkbox" class="switch" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">检查更新间隔</span>
+                    <span class="setting-row-desc">应用运行期间按此间隔自动检查新版本</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="updateCheckInterval"
+                      :options="updateCheckIntervalOptions"
+                      :disabled="!autoUpdate"
+                      placeholder="选择间隔"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">开机自动启动</span>
+                    <span class="setting-row-desc">开启后，系统启动时会自动运行本应用</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="autoStart" type="checkbox" class="switch" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">关闭行为</span>
+                    <span class="setting-row-desc">点击关闭按钮时默认执行的窗口操作</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="closeAction" :options="closeActionOptions" placeholder="选择关闭行为" />
+                  </div>
+                </div>
               </div>
-              <div class="setting-hint">选择编辑脚本文件使用的文本编辑器</div>
-            </div>
-            <div class="form-group">
-              <label> <input v-model="autoUpdate" type="checkbox" /> 有更新时自动更新 </label>
-              <div class="setting-hint">开启后，应用会自动下载并安装新版本</div>
-            </div>
-            <div class="form-group">
-              <label> <input v-model="autoStart" type="checkbox" /> 开机自动启动 </label>
-              <div class="setting-hint">开启后，系统启动时会自动运行本应用</div>
-            </div>
-            <div class="form-group">
-              <label>关闭行为</label>
-              <select v-model="closeAction" class="select-field">
-                <option value="ask">每次询问</option>
-                <option value="hide">隐藏到托盘</option>
-                <option value="quit">直接退出</option>
-              </select>
-              <div class="setting-hint">选择点击关闭按钮时的默认行为</div>
-            </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">系统通知</h3>
+              </div>
+              <div class="setting-section-body">
+                <div v-for="item in notificationItems" :key="item.key" class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ item.label }}</span>
+                    <span class="setting-row-desc">{{ item.hint }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="notifications[item.key]" type="checkbox" class="switch" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">数据与隐私</h3>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">剪贴板历史持久化</span>
+                    <span class="setting-row-desc">
+                      开启后历史会保存到本地，重启应用后仍可查看；关闭后仅保留本次运行的记录
+                    </span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="clipboardPersist" type="checkbox" class="switch" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">保留条数</span>
+                    <span class="setting-row-desc">超出后自动清理最早的记录，置顶记录不受影响</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="clipboardMaxEntriesModel"
+                      :options="clipboardLimitOptions"
+                      :disabled="!clipboardPersist"
+                      placeholder="选择条数"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
 
           <div v-show="activeTab === 'appearance'" class="settings-tab">
-            <div class="form-group">
-              <label>主题模式</label>
-              <div class="theme-options">
-                <button
-                  v-for="option in themeOptions"
-                  :key="option.value"
-                  type="button"
-                  class="theme-option"
-                  :class="{ active: theme === option.value }"
-                  @click="selectTheme(option.value)"
-                >
-                  <span class="theme-preview" :class="`theme-preview-${option.value}`">
-                    <span class="preview-sidebar" />
-                    <span class="preview-body">
-                      <span class="preview-bar" />
-                      <span class="preview-line" />
-                      <span class="preview-line preview-line-short" />
-                    </span>
-                  </span>
-                  <span class="theme-label">{{ option.label }}</span>
-                </button>
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">主题</h3>
               </div>
-              <div class="setting-hint">选择“跟随系统”时，会随操作系统的深色/浅色设置自动切换</div>
-            </div>
-
-            <div class="form-group">
-              <label>主题配色</label>
-              <div class="palette-options">
-                <button
-                  v-for="option in themeStyleOptions"
-                  :key="option.value"
-                  type="button"
-                  class="theme-option palette-option"
-                  :class="{ active: themeStyle === option.value }"
-                  @click="selectThemeStyle(option.value)"
-                >
-                  <span class="palette-preview" :style="swatchStyle(option.swatch)">
-                    <span class="palette-sidebar" />
-                    <span class="palette-body">
-                      <span class="palette-bar" />
-                      <span class="palette-accent" />
-                    </span>
-                  </span>
-                  <span class="theme-label">{{ option.label }}</span>
-                </button>
+              <div class="setting-section-body">
+                <div class="setting-row is-block">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">主题模式</span>
+                    <span class="setting-row-desc">选择“跟随系统”时，会随操作系统的深色/浅色设置自动切换</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <div class="theme-options">
+                      <button
+                        v-for="option in themeOptions"
+                        :key="option.value"
+                        type="button"
+                        class="theme-option"
+                        :class="{ active: theme === option.value }"
+                        @click="selectTheme(option.value)"
+                      >
+                        <span class="theme-preview" :class="`theme-preview-${option.value}`">
+                          <span class="preview-sidebar" />
+                          <span class="preview-body">
+                            <span class="preview-bar" />
+                            <span class="preview-line" />
+                            <span class="preview-line preview-line-short" />
+                          </span>
+                        </span>
+                        <span class="theme-label">{{ option.label }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting-row is-block">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">主题配色</span>
+                    <span class="setting-row-desc">配色会同时作用于按钮、文字和背景，并自动适配明暗模式</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <div class="palette-options">
+                      <button
+                        v-for="option in themeStyleOptions"
+                        :key="option.value"
+                        type="button"
+                        class="theme-option palette-option"
+                        :class="{ active: themeStyle === option.value }"
+                        @click="selectThemeStyle(option.value)"
+                      >
+                        <span class="palette-preview" :style="swatchStyle(option.swatch)">
+                          <span class="palette-sidebar" />
+                          <span class="palette-body">
+                            <span class="palette-bar" />
+                            <span class="palette-accent" />
+                          </span>
+                        </span>
+                        <span class="theme-label">{{ option.label }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="setting-hint">配色会同时作用于按钮、文字和背景，并自动适配明暗模式</div>
-            </div>
+            </section>
 
-            <div class="form-group">
-              <label>字体大小</label>
-              <select class="select-field" :value="fontSize" @change="selectFontSize($event.target.value)">
-                <option v-for="option in fontSizeOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <div class="setting-hint">调整界面与内容区文字大小，图标和控件尺寸保持不变</div>
-            </div>
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">显示</h3>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">字体大小</span>
+                    <span class="setting-row-desc">调整界面与内容区文字大小，图标和控件尺寸保持不变</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      :model-value="fontSize"
+                      :options="fontSizeOptions"
+                      placeholder="选择字号"
+                      @update:model-value="selectFontSize"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">最近使用工具数</span>
+                    <span class="setting-row-desc">首页「最近使用」区域展示的工具数量</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="recentToolsLimit"
+                      :options="recentToolsLimitOptions"
+                      placeholder="选择数量"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
 
           <div v-show="activeTab === 'api'" class="settings-tab api-settings">
-            <div class="form-group">
-              <label>默认 AI 平台</label>
-              <select v-model="aiProvider" class="select-field" @change="onProviderChange">
-                <option v-for="provider in aiProviders" :key="provider.type" :value="provider.type">
-                  {{ provider.name }} - {{ provider.description }}
-                </option>
-              </select>
-              <div class="setting-hint">AI 助手默认使用该平台；各平台 API Key 独立保存，可在聊天页随时切换平台</div>
-            </div>
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">对话设置</h3>
+                <span class="setting-section-desc"
+                  >聊天页新会话默认使用的模型，以及单次请求的等待时间；选择后自动保存</span
+                >
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">默认对话模型</span>
+                    <span class="setting-row-desc">仅在已配置密钥的服务商中选择；不可用时回退到其他已配置服务商</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="aiProviderModel"
+                      :options="chatModelOptions"
+                      placeholder="跟随已配置的服务商"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">请求超时</span>
+                    <span class="setting-row-desc">单次对话或工具调用等待响应的最长时间，超时会中断并提示错误</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="aiTimeout" :options="aiTimeoutOptions" placeholder="选择超时时间" />
+                  </div>
+                </div>
+              </div>
+            </section>
 
             <div class="provider-cards">
+              <div v-if="visibleProviders.length === 0" class="provider-empty">
+                尚未添加模型服务商，可通过下方按钮添加
+              </div>
               <div
-                v-for="provider in aiProviders"
+                v-for="provider in visibleProviders"
                 :key="provider.type"
                 class="provider-card"
                 :class="{ expanded: isProviderExpanded(provider.type) }"
@@ -387,449 +477,1285 @@
                     <span class="provider-tag" :class="{ configured: hasProviderKey(provider.type) }">
                       {{ hasProviderKey(provider.type) ? '已配置' : '未配置' }}
                     </span>
+                    <span v-if="provider.type === aiProvider" class="provider-tag default-chat">默认对话</span>
                     <span v-if="aiBaseUrls[provider.type]" class="provider-tag custom">自定义地址</span>
-                    <span v-if="provider.type === aiProvider" class="provider-tag default">默认</span>
                   </div>
                   <div class="provider-header-actions">
-                    <button
-                      v-if="provider.type !== aiProvider"
-                      type="button"
-                      class="link-btn"
-                      @click.stop="setDefaultProvider(provider.type)"
-                    >
-                      设为默认
-                    </button>
                     <button
                       v-if="provider.docsUrl"
                       type="button"
                       class="link-btn"
                       @click.stop="openProviderDocs(provider)"
                     >
-                      平台文档
+                      服务商文档
                     </button>
-                    <svg
-                      class="provider-chevron"
-                      :class="{ rotated: isProviderExpanded(provider.type) }"
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      aria-hidden="true"
+                    <button
+                      type="button"
+                      class="provider-edit-btn"
+                      :aria-expanded="isProviderExpanded(provider.type)"
+                      @click.stop="toggleProviderExpanded(provider.type)"
                     >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div v-if="isProviderExpanded(provider.type)" class="provider-card-body">
-                  <div class="provider-field">
-                    <div class="field-label-row">
-                      <label>API 密钥</label>
-                      <span
-                        class="field-help"
-                        :title="
-                          provider.envKey ? `留空时会读取 ${provider.envKey} 环境变量` : '填写平台控制台生成的 API 密钥'
-                        "
-                      >
-                        ?
-                      </span>
-                    </div>
-                    <div class="api-key-input-group">
-                      <input
-                        v-model="aiApiKeys[provider.type]"
-                        :type="showApiKey[provider.type] ? 'text' : 'password'"
-                        class="input-field"
-                        :placeholder="
-                          provider.hasEnvKey ? `已通过 ${provider.envKey} 提供` : `输入 ${provider.name} API Key`
-                        "
-                      />
-                      <button class="btn btn-secondary" @click="toggleShowApiKey(provider.type)">
-                        {{ showApiKey[provider.type] ? '隐藏' : '显示' }}
-                      </button>
-                      <button
-                        class="btn btn-primary"
-                        :disabled="
-                          (!hasStoredApiKey(provider.type) && !provider.hasEnvKey) || testingApiKey[provider.type]
-                        "
-                        @click="testApiKey(provider)"
-                      >
-                        {{ testingApiKey[provider.type] ? '验证中...' : '验证' }}
-                      </button>
-                    </div>
-                    <div
-                      v-if="apiKeyTestResult[provider.type]"
-                      class="api-test-result"
-                      :class="apiKeyTestResult[provider.type].success ? 'success' : 'error'"
-                    >
-                      {{ apiKeyTestResult[provider.type].message }}
-                    </div>
-                    <div
-                      v-if="provider.envKey && !hasStoredApiKey(provider.type)"
-                      class="env-status"
-                      :class="provider.hasEnvKey ? 'detected' : 'missing'"
-                    >
-                      {{
-                        provider.hasEnvKey
-                          ? `已检测到环境变量 ${provider.envKey}，无需填写密钥`
-                          : `未检测到环境变量 ${provider.envKey}，请填写密钥或先设置环境变量`
-                      }}
-                    </div>
-                  </div>
-
-                  <div class="custom-settings">
-                    <button type="button" class="custom-settings-toggle" @click="toggleCustomSettings(provider.type)">
+                      {{ isProviderExpanded(provider.type) ? '收起' : '编辑' }}
                       <svg
-                        class="provider-chevron small"
-                        :class="{ rotated: isCustomSettingsOpen(provider.type) }"
+                        class="provider-chevron"
+                        :class="{ rotated: isProviderExpanded(provider.type) }"
                         viewBox="0 0 24 24"
-                        width="12"
-                        height="12"
+                        width="13"
+                        height="13"
                         fill="none"
                         stroke="currentColor"
                         stroke-width="2"
                         aria-hidden="true"
                       >
-                        <polyline points="9 6 15 12 9 18" />
+                        <polyline points="6 9 12 15 18 9" />
                       </svg>
-                      <span>自定义设置</span>
                     </button>
-                    <div v-if="isCustomSettingsOpen(provider.type)" class="custom-settings-body">
-                      <label>API 地址</label>
-                      <input
-                        v-model="aiBaseUrls[provider.type]"
-                        class="input-field"
-                        :placeholder="provider.defaultBaseUrl"
-                      />
-                      <div class="setting-hint">使用 OpenAI 兼容协议，留空则使用平台默认地址</div>
-                    </div>
                   </div>
+                </div>
 
-                  <div class="model-section">
-                    <div class="model-section-header">
-                      <div class="field-label-row">
-                        <label>模型目录</label>
-                        <span class="field-help" title="模型列表用于聊天时选择；可手动增删并配置高级参数"> ? </span>
-                      </div>
-                      <div class="model-config-actions">
-                        <button
-                          class="btn btn-secondary btn-sm"
-                          :disabled="modelFetching[provider.type]"
-                          @click="refreshModels(provider)"
-                        >
-                          {{ modelFetching[provider.type] ? '获取中...' : '获取最新模型' }}
-                        </button>
-                        <button
-                          class="btn btn-default btn-sm"
-                          :disabled="modelFetching[provider.type]"
-                          @click="resetModels(provider)"
-                        >
-                          恢复内置模型
-                        </button>
-                      </div>
-                    </div>
-                    <div class="setting-hint">{{ modelSourceHint(provider.type) }}</div>
-
-                    <div
-                      v-if="modelFetchMessage[provider.type]"
-                      class="api-test-result"
-                      :class="modelFetchSuccess[provider.type] ? 'success' : 'error'"
-                    >
-                      {{ modelFetchMessage[provider.type] }}
-                    </div>
-
-                    <div class="model-default-row">
-                      <label>默认模型</label>
-                      <select v-model="modelConfigs[provider.type].default" class="select-field">
-                        <option value="" disabled>请选择默认模型</option>
-                        <option
-                          v-for="model in modelConfigs[provider.type].models.filter((item) => item.id)"
-                          :key="model.id"
-                          :value="model.id"
-                        >
-                          {{ model.name || model.id }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <div class="model-list">
-                      <div
-                        v-for="(model, index) in modelConfigs[provider.type].models"
-                        :key="provider.type + '-model-' + index"
-                        class="model-item"
-                        :class="{
-                          dragging: isModelDragging(provider.type, index),
-                          'drag-over': isModelDragOver(provider.type, index)
-                        }"
-                        :draggable="isModelDragEnabled(provider.type)"
-                        @dragstart="startModelDrag(provider.type, index, $event)"
-                        @dragover.prevent="overModelDrag(provider.type, index)"
-                        @drop.stop.prevent="dropModelDrag(provider.type)"
-                        @dragend="endModelDrag(provider.type)"
-                      >
-                        <div class="model-row">
-                          <span
-                            class="model-drag-handle"
-                            title="拖动排序"
-                            @mousedown="enableModelDrag(provider.type)"
-                            @click="endModelDrag(provider.type)"
-                          >
-                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                              <circle cx="9" cy="6" r="1.4" />
-                              <circle cx="15" cy="6" r="1.4" />
-                              <circle cx="9" cy="12" r="1.4" />
-                              <circle cx="15" cy="12" r="1.4" />
-                              <circle cx="9" cy="18" r="1.4" />
-                              <circle cx="15" cy="18" r="1.4" />
-                            </svg>
-                          </span>
-                          <input v-model="model.id" class="input-field model-id" placeholder="模型 ID" />
-                          <input v-model="model.name" class="input-field model-name" placeholder="显示名称" />
-                          <button
-                            type="button"
-                            class="model-icon-btn"
-                            :title="isModelExpanded(provider.type, index) ? '收起高级参数' : '展开高级参数'"
-                            @click="toggleModelExpanded(provider.type, index)"
-                          >
-                            <svg
-                              class="provider-chevron small"
-                              :class="{ rotated: isModelExpanded(provider.type, index) }"
-                              viewBox="0 0 24 24"
-                              width="12"
-                              height="12"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            >
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            class="model-icon-btn danger"
-                            title="删除模型"
-                            @click="removeModel(provider.type, index)"
-                          >
-                            <svg
-                              viewBox="0 0 24 24"
-                              width="14"
-                              height="14"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            >
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                            </svg>
-                          </button>
+                <div
+                  class="provider-collapse"
+                  :class="{ open: isProviderExpanded(provider.type) }"
+                  :inert="isProviderExpanded(provider.type) ? null : ''"
+                  :aria-hidden="isProviderExpanded(provider.type) ? 'false' : 'true'"
+                >
+                  <div class="provider-collapse-inner">
+                    <div class="provider-card-body">
+                      <div class="provider-field">
+                        <div class="setting-row">
+                          <div class="setting-row-text">
+                            <span class="setting-row-label">API 密钥</span>
+                            <span class="setting-row-desc">
+                              {{
+                                provider.envKey
+                                  ? `留空时会读取 ${provider.envKey} 环境变量`
+                                  : '填写服务商控制台生成的 API 密钥'
+                              }}
+                            </span>
+                          </div>
+                          <div class="setting-row-control">
+                            <div class="api-key-input-group">
+                              <input
+                                v-model="aiApiKeys[provider.type]"
+                                :type="showApiKey[provider.type] ? 'text' : 'password'"
+                                class="input-field"
+                                :placeholder="
+                                  provider.hasEnvKey
+                                    ? `已通过 ${provider.envKey} 提供`
+                                    : `输入 ${provider.name} API Key`
+                                "
+                              />
+                              <button class="btn btn-secondary" @click="toggleShowApiKey(provider.type)">
+                                {{ showApiKey[provider.type] ? '隐藏' : '显示' }}
+                              </button>
+                              <button
+                                class="btn btn-primary"
+                                :disabled="
+                                  (!hasStoredApiKey(provider.type) && !provider.hasEnvKey) ||
+                                  testingApiKey[provider.type]
+                                "
+                                @click="testApiKey(provider)"
+                              >
+                                {{ testingApiKey[provider.type] ? '验证中...' : '验证' }}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div v-if="isModelExpanded(provider.type, index)" class="model-advanced">
-                          <div class="advanced-field">
-                            <label>上下文窗口</label>
-                            <input
-                              v-model.number="model.contextWindow"
-                              type="number"
-                              min="1"
-                              class="input-field"
-                              :placeholder="`默认 ${defaultContextWindow(provider)}`"
-                            />
-                          </div>
-                          <div class="advanced-field">
-                            <label>最大输出 token 数</label>
-                            <input
-                              v-model.number="model.maxOutput"
-                              type="number"
-                              min="1"
-                              class="input-field"
-                              placeholder="留空使用平台默认"
-                            />
-                          </div>
-                          <div class="advanced-field">
-                            <label>输入类型</label>
-                            <div class="input-type-options">
-                              <label class="checkbox-field">
-                                <input
-                                  type="checkbox"
-                                  :checked="hasInputType(model, 'text')"
-                                  @change="toggleInputType(model, 'text')"
-                                />
-                                文本
-                              </label>
-                              <label class="checkbox-field">
-                                <input
-                                  type="checkbox"
-                                  :checked="hasInputType(model, 'image')"
-                                  @change="toggleInputType(model, 'image')"
-                                />
-                                图片
-                              </label>
+                        <div
+                          v-if="apiKeyTestResult[provider.type]"
+                          class="api-test-result"
+                          :class="apiKeyTestResult[provider.type].success ? 'success' : 'error'"
+                        >
+                          {{ apiKeyTestResult[provider.type].message }}
+                        </div>
+                        <div
+                          v-if="provider.envKey && !hasStoredApiKey(provider.type)"
+                          class="env-status"
+                          :class="provider.hasEnvKey ? 'detected' : 'missing'"
+                        >
+                          {{
+                            provider.hasEnvKey
+                              ? `已检测到环境变量 ${provider.envKey}，无需填写密钥`
+                              : `未检测到环境变量 ${provider.envKey}，请填写密钥或先设置环境变量`
+                          }}
+                        </div>
+                      </div>
+
+                      <div class="custom-settings">
+                        <button
+                          type="button"
+                          class="custom-settings-toggle"
+                          @click="toggleCustomSettings(provider.type)"
+                        >
+                          <svg
+                            class="provider-chevron small"
+                            :class="{ rotated: isCustomSettingsOpen(provider.type) }"
+                            viewBox="0 0 24 24"
+                            width="12"
+                            height="12"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 6 15 12 9 18" />
+                          </svg>
+                          <span>自定义设置</span>
+                        </button>
+                        <div v-if="isCustomSettingsOpen(provider.type)" class="custom-settings-body">
+                          <div class="setting-row">
+                            <div class="setting-row-text">
+                              <span class="setting-row-label">API 地址</span>
+                              <span class="setting-row-desc">使用 OpenAI 兼容协议，留空则使用服务商默认地址</span>
+                            </div>
+                            <div class="setting-row-control">
+                              <input
+                                v-model="aiBaseUrls[provider.type]"
+                                class="input-field"
+                                :placeholder="provider.defaultBaseUrl"
+                              />
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div v-if="modelConfigs[provider.type].models.length === 0" class="model-empty">
-                        暂无模型，请获取最新模型或手动添加
+
+                      <div class="model-section">
+                        <div class="model-section-header">
+                          <div class="field-label-col">
+                            <label>模型目录</label>
+                            <span class="setting-row-desc">模型列表用于聊天时选择；可手动增删并配置高级参数</span>
+                          </div>
+                          <div class="model-config-actions">
+                            <button
+                              class="btn btn-secondary"
+                              :disabled="modelFetching[provider.type]"
+                              @click="refreshModels(provider)"
+                            >
+                              {{ modelFetching[provider.type] ? '获取中...' : '获取最新模型' }}
+                            </button>
+                            <button
+                              class="btn btn-secondary"
+                              :disabled="modelFetching[provider.type]"
+                              @click="resetModels(provider)"
+                            >
+                              恢复内置模型
+                            </button>
+                          </div>
+                        </div>
+                        <div class="setting-hint">{{ modelSourceHint(provider.type) }}</div>
+
+                        <div
+                          v-if="modelFetchMessage[provider.type]"
+                          class="api-test-result"
+                          :class="modelFetchSuccess[provider.type] ? 'success' : 'error'"
+                        >
+                          {{ modelFetchMessage[provider.type] }}
+                        </div>
+
+                        <div class="model-default-row">
+                          <label>默认模型</label>
+                          <SettingSelect
+                            v-model="modelConfigs[provider.type].default"
+                            :options="modelDefaultOptions(provider.type)"
+                            placeholder="跟随列表第一个模型"
+                          />
+                        </div>
+
+                        <div class="model-list">
+                          <div
+                            v-for="(model, index) in modelConfigs[provider.type].models"
+                            :key="provider.type + '-model-' + index"
+                            class="model-item"
+                            :class="{
+                              dragging: isModelDragging(provider.type, index),
+                              'drag-over': isModelDragOver(provider.type, index)
+                            }"
+                            :draggable="isModelDragEnabled(provider.type)"
+                            @dragstart="startModelDrag(provider.type, index, $event)"
+                            @dragover.prevent="overModelDrag(provider.type, index)"
+                            @drop.stop.prevent="dropModelDrag(provider.type)"
+                            @dragend="endModelDrag(provider.type)"
+                          >
+                            <div class="model-row">
+                              <span
+                                class="model-drag-handle"
+                                title="拖动排序"
+                                @mousedown="enableModelDrag(provider.type)"
+                                @click="endModelDrag(provider.type)"
+                              >
+                                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                  <circle cx="9" cy="6" r="1.4" />
+                                  <circle cx="15" cy="6" r="1.4" />
+                                  <circle cx="9" cy="12" r="1.4" />
+                                  <circle cx="15" cy="12" r="1.4" />
+                                  <circle cx="9" cy="18" r="1.4" />
+                                  <circle cx="15" cy="18" r="1.4" />
+                                </svg>
+                              </span>
+                              <input v-model="model.id" class="input-field model-id" placeholder="模型 ID" />
+                              <input v-model="model.name" class="input-field model-name" placeholder="显示名称" />
+                              <button
+                                type="button"
+                                class="model-icon-btn"
+                                :title="isModelExpanded(provider.type, index) ? '收起高级参数' : '展开高级参数'"
+                                @click="toggleModelExpanded(provider.type, index)"
+                              >
+                                <svg
+                                  class="provider-chevron small"
+                                  :class="{ rotated: isModelExpanded(provider.type, index) }"
+                                  viewBox="0 0 24 24"
+                                  width="12"
+                                  height="12"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                class="model-icon-btn danger"
+                                title="删除模型"
+                                @click="removeModel(provider.type, index)"
+                              >
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  width="14"
+                                  height="14"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                </svg>
+                              </button>
+                            </div>
+                            <div v-if="isModelExpanded(provider.type, index)" class="model-advanced">
+                              <div class="setting-row">
+                                <div class="setting-row-text">
+                                  <span class="setting-row-label">上下文窗口</span>
+                                  <span class="setting-row-desc"
+                                    >单次请求可处理的最大 token 数，留空使用服务商默认</span
+                                  >
+                                </div>
+                                <div class="setting-row-control">
+                                  <input
+                                    v-model.number="model.contextWindow"
+                                    type="number"
+                                    min="1"
+                                    class="input-field"
+                                    :placeholder="`默认 ${defaultContextWindow(provider)}`"
+                                  />
+                                </div>
+                              </div>
+                              <div class="setting-row">
+                                <div class="setting-row-text">
+                                  <span class="setting-row-label">最大输出 token 数</span>
+                                  <span class="setting-row-desc">单次回复生成的最大 token 数，留空使用服务商默认</span>
+                                </div>
+                                <div class="setting-row-control">
+                                  <input
+                                    v-model.number="model.maxOutput"
+                                    type="number"
+                                    min="1"
+                                    class="input-field"
+                                    placeholder="留空使用服务商默认"
+                                  />
+                                </div>
+                              </div>
+                              <div class="setting-row">
+                                <div class="setting-row-text">
+                                  <span class="setting-row-label">输入类型</span>
+                                  <span class="setting-row-desc">该模型支持的消息输入类型</span>
+                                </div>
+                                <div class="setting-row-control">
+                                  <div class="input-type-options">
+                                    <label class="checkbox-field">
+                                      <input
+                                        type="checkbox"
+                                        class="switch"
+                                        :checked="hasInputType(model, 'text')"
+                                        @change="toggleInputType(model, 'text')"
+                                      />
+                                      文本
+                                    </label>
+                                    <label class="checkbox-field">
+                                      <input
+                                        type="checkbox"
+                                        class="switch"
+                                        :checked="hasInputType(model, 'image')"
+                                        @change="toggleInputType(model, 'image')"
+                                      />
+                                      图片
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div v-if="modelConfigs[provider.type].models.length === 0" class="model-empty">
+                            暂无模型，请获取最新模型或手动添加
+                          </div>
+                        </div>
+
+                        <button type="button" class="add-model-btn" @click="addModel(provider.type)">+ 添加模型</button>
+                      </div>
+
+                      <div class="provider-card-footer">
+                        <button
+                          type="button"
+                          class="btn btn-danger provider-remove-btn"
+                          :disabled="providerSaving[provider.type]"
+                          @click="requestRemoveProvider(provider)"
+                        >
+                          移除服务商
+                        </button>
+                        <button class="btn btn-secondary" @click="cancelProviderCard(provider)">
+                          {{ pendingProviders[provider.type] ? '取消添加' : '还原' }}
+                        </button>
+                        <button
+                          class="btn btn-primary"
+                          :disabled="providerSaving[provider.type]"
+                          @click="saveProviderCard(provider)"
+                        >
+                          {{ providerSaving[provider.type] ? '保存中...' : '保存' }}
+                        </button>
                       </div>
                     </div>
-
-                    <button type="button" class="add-model-btn" @click="addModel(provider.type)">+ 添加模型</button>
                   </div>
+                </div>
+              </div>
 
-                  <div class="provider-card-footer">
-                    <button class="btn btn-secondary" @click="cancelProviderCard(provider)">取消</button>
+              <button
+                type="button"
+                class="provider-add-toggle"
+                :class="{ open: addProviderOpen }"
+                :disabled="addableProviders.length === 0 && !addProviderOpen"
+                :aria-expanded="addProviderOpen"
+                @click="addProviderOpen = !addProviderOpen"
+              >
+                <span>{{
+                  addableProviders.length === 0 && !addProviderOpen ? '全部模型服务商已添加' : '+ 添加模型服务商'
+                }}</span>
+                <svg
+                  v-if="addableProviders.length > 0 || addProviderOpen"
+                  class="provider-chevron"
+                  :class="{ rotated: addProviderOpen }"
+                  viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              <div v-if="addProviderOpen" class="provider-add-panel">
+                <button
+                  v-for="provider in addableProviders"
+                  :key="provider.type"
+                  type="button"
+                  class="provider-add-option"
+                  @click="addProvider(provider)"
+                >
+                  <span class="provider-add-option-name">{{ provider.name }}</span>
+                  <span class="provider-add-option-desc">{{ provider.description }}</span>
+                  <span class="provider-add-option-action">添加</span>
+                </button>
+              </div>
+            </div>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">故障转移</h3>
+                <span class="setting-section-desc"
+                  >主模型重试后仍失败时，按顺序切换备用模型；留空则自动选择其他已配置密钥的服务商</span
+                >
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">自动切换</span>
+                    <span class="setting-row-desc">主模型调用失败并重试后，自动尝试备用模型</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="fallbackEnabled" type="checkbox" class="switch" />
+                  </div>
+                </div>
+                <div class="setting-row is-block">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">备用模型</span>
+                    <span class="setting-row-desc">按从上到下的顺序尝试，最多 5 个；格式为 provider:model</span>
+                  </div>
+                  <div class="setting-row-control fallback-model-list">
+                    <div v-for="(_, index) in fallbackModels" :key="index" class="fallback-model-row">
+                      <SettingModelPicker
+                        v-model="fallbackModels[index]"
+                        :options="fallbackModelOptions"
+                        placeholder="如 deepseek:deepseek-chat"
+                      />
+                      <button
+                        type="button"
+                        class="model-icon-btn danger"
+                        title="移除备用模型"
+                        @click="removeFallbackModel(index)"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div v-if="fallbackModels.length === 0" class="fallback-model-empty">
+                      未配置备用模型，主模型失败时将尝试其他已配置服务商
+                    </div>
                     <button
-                      class="btn btn-primary"
-                      :disabled="providerSaving[provider.type]"
-                      @click="saveProviderCard(provider)"
+                      type="button"
+                      class="add-model-btn"
+                      :disabled="fallbackModels.length >= 5"
+                      @click="addFallbackModel"
                     >
-                      {{ providerSaving[provider.type] ? '保存中...' : '保存' }}
+                      + 添加备用模型
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
 
-          <div v-show="activeTab === 'database'" class="settings-tab">
-            <div class="form-group">
-              <label>数据库</label>
-              <div
-                ref="databaseListRef"
-                class="config-list"
-                @dragover.prevent
-                @drop.prevent="dropConfigDrag('database')"
-              >
-                <div
-                  v-for="(db, index) in databases"
-                  :key="index"
-                  class="config-item"
-                  :class="{
-                    dragging: isDragging('database', index),
-                    'drag-over': isDragOver('database', index)
-                  }"
-                  :draggable="isDragEnabled('database')"
-                  @dragstart="startConfigDrag('database', index, $event)"
-                  @dragover.prevent="overConfigDrag('database', index)"
-                  @drop.stop.prevent="dropConfigDrag('database')"
-                  @dragend="endConfigDrag('database')"
-                >
-                  <span
-                    class="config-drag-handle"
-                    title="拖动排序"
-                    aria-label="拖动排序"
-                    @mousedown="enableConfigDrag('database')"
-                    @click="endConfigDrag('database')"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                      <circle cx="9" cy="6" r="1.4" />
-                      <circle cx="15" cy="6" r="1.4" />
-                      <circle cx="9" cy="12" r="1.4" />
-                      <circle cx="15" cy="12" r="1.4" />
-                      <circle cx="9" cy="18" r="1.4" />
-                      <circle cx="15" cy="18" r="1.4" />
-                    </svg>
-                  </span>
-                  <div class="config-item-info">
-                    <input
-                      v-model="db.name"
-                      type="text"
-                      class="input-field"
-                      placeholder="数据库名"
-                      :class="{ error: db.error }"
-                    />
+          <div v-show="activeTab === 'assistant'" class="settings-tab">
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">场景预设</h3>
+                <span class="setting-section-desc">一键套用一组参数，应用后仍可逐项微调，更改会自动保存</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row is-block">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">模式</span>
+                    <span class="setting-row-desc">
+                      预设会覆盖温度、压缩、Agent 运行与工具预算；严格审批模式同时切回“写操作前询问”
+                    </span>
                   </div>
-                  <div class="config-item-actions">
-                    <button class="btn btn-danger" @click="removeDatabase(index)">删除</button>
+                  <div class="setting-row-control preset-actions">
+                    <button
+                      v-for="preset in aiPresets"
+                      :key="preset.id"
+                      type="button"
+                      class="btn"
+                      :class="appliedPresetId === preset.id ? 'btn-primary' : 'btn-secondary'"
+                      :title="preset.description"
+                      @click="applyAiPreset(preset)"
+                    >
+                      {{ preset.name }}
+                    </button>
                   </div>
                 </div>
               </div>
-              <button class="btn btn-secondary" @click="addDatabase">+ 添加数据库</button>
-            </div>
-          </div>
+            </section>
 
-          <div v-show="activeTab === 'scripttype'" class="settings-tab">
-            <div class="form-group">
-              <label>脚本类型</label>
-              <div
-                ref="scriptTypeListRef"
-                class="config-list"
-                @dragover.prevent
-                @drop.prevent="dropConfigDrag('scriptType')"
-              >
-                <div
-                  v-for="(st, index) in scriptTypes"
-                  :key="index"
-                  class="config-item"
-                  :class="{
-                    dragging: isDragging('scriptType', index),
-                    'drag-over': isDragOver('scriptType', index)
-                  }"
-                  :draggable="isDragEnabled('scriptType')"
-                  @dragstart="startConfigDrag('scriptType', index, $event)"
-                  @dragover.prevent="overConfigDrag('scriptType', index)"
-                  @drop.stop.prevent="dropConfigDrag('scriptType')"
-                  @dragend="endConfigDrag('scriptType')"
-                >
-                  <span
-                    class="config-drag-handle"
-                    title="拖动排序"
-                    aria-label="拖动排序"
-                    @mousedown="enableConfigDrag('scriptType')"
-                    @click="endConfigDrag('scriptType')"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                      <circle cx="9" cy="6" r="1.4" />
-                      <circle cx="15" cy="6" r="1.4" />
-                      <circle cx="9" cy="12" r="1.4" />
-                      <circle cx="15" cy="12" r="1.4" />
-                      <circle cx="9" cy="18" r="1.4" />
-                      <circle cx="15" cy="18" r="1.4" />
-                    </svg>
-                  </span>
-                  <div class="config-item-info">
-                    <input
-                      v-model="st.name"
-                      type="text"
-                      class="input-field"
-                      placeholder="名称"
-                      style="width: 120px; margin-right: 10px"
-                      :class="{ error: st.error }"
-                    />
-                    <input
-                      v-model="st.description"
-                      type="text"
-                      class="input-field"
-                      placeholder="描述"
-                      style="flex: 1"
-                    />
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">人设与风格</h3>
+                <span class="setting-section-desc">
+                  追加到系统提示词，让助手以指定身份与风格回答；不会改变工具执行与安全规则
+                </span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row is-block">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">自定义人设</span>
+                    <span class="setting-row-desc">
+                      例如：你是一位资深后端工程师，回答先给结论，再给关键步骤与风险提示
+                    </span>
                   </div>
-                  <div class="config-item-actions">
-                    <button class="btn btn-danger" @click="removeScriptType(index)">删除</button>
+                  <div class="setting-row-control">
+                    <textarea
+                      v-model="aiPersona"
+                      class="input-field persona-input"
+                      rows="6"
+                      maxlength="4000"
+                      spellcheck="false"
+                      placeholder="描述希望助手扮演的角色、语气与回答偏好，留空使用默认设定"
+                    ></textarea>
                   </div>
                 </div>
               </div>
-              <button class="btn btn-secondary" @click="addScriptType">+ 添加脚本类型</button>
-            </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">生成参数</h3>
+                <span class="setting-section-desc"
+                  >仅影响对话请求；任务规划、上下文压缩等辅助请求使用各自的固定参数</span
+                >
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">温度</span>
+                    <span class="setting-row-desc">
+                      0 最稳定，0.7 较平衡，1 以上更发散；留空使用供应商默认值，部分推理模型固定温度
+                    </span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input
+                      v-model="aiTemperature"
+                      type="number"
+                      class="input-field temperature-input"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      placeholder="默认"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">分场景模型</h3>
+                <span class="setting-section-desc">
+                  规划与压缩等辅助任务可指定更便宜的模型；留空跟随当前对话模型，格式为 provider:model
+                </span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">任务规划</span>
+                    <span class="setting-row-desc">生成执行计划时使用；计划仅为内部参考</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingModelPicker
+                      v-model="scenarioPlanner"
+                      :options="scenarioModelOptions"
+                      placeholder="如 bailian:qwen3.8-flash"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">上下文压缩</span>
+                    <span class="setting-row-desc">对话历史达到窗口阈值时压缩摘要使用</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingModelPicker
+                      v-model="scenarioCompression"
+                      :options="scenarioModelOptions"
+                      placeholder="如 bailian:qwen3.8-flash"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">上下文压缩</h3>
+                <span class="setting-section-desc"
+                  >对话历史占用达到阈值时，较早的消息会被摘要压缩，避免超出模型上下文窗口</span
+                >
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">触发阈值</span>
+                    <span class="setting-row-desc">历史占用达到上下文窗口的该比例时开始压缩</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="aiCompressThreshold"
+                      :options="aiCompressThresholdOptions"
+                      placeholder="选择阈值"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">压缩后保留消息数</span>
+                    <span class="setting-row-desc">最近若干条消息保留原文，更早的内容才会被摘要</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="aiCompressKeepRecent"
+                      :options="aiCompressKeepRecentOptions"
+                      placeholder="选择条数"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">附件限制</h3>
+                <span class="setting-section-desc">限制单条消息可携带的附件数量与单个文件大小</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">附件数量</span>
+                    <span class="setting-row-desc">单条消息最多可添加的附件个数</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="aiMaxAttachments"
+                      :options="aiMaxAttachmentOptions"
+                      placeholder="选择数量"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">图片大小上限</span>
+                    <span class="setting-row-desc">单张图片超过该大小时拒绝添加</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="aiMaxImageMb" :options="aiMaxImageMbOptions" placeholder="选择大小" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">文本文件上限</span>
+                    <span class="setting-row-desc">单个文本附件超过该大小时拒绝添加</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="aiMaxTextKb" :options="aiMaxTextKbOptions" placeholder="选择大小" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">Agent 运行</h3>
+                <span class="setting-section-desc">控制单次任务的循环深度与时长上限，修改后对新对话生效</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">最大执行轮次</span>
+                    <span class="setting-row-desc">模型与工具循环的上限，达到后停止自动执行并给出提示</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="agentMaxIterations"
+                      :options="agentMaxIterationsOptions"
+                      placeholder="选择轮次"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">单任务超时</span>
+                    <span class="setting-row-desc">单次任务从开始到结束的时长上限，超时后停止并提示</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="agentTimeoutMin" :options="agentTimeoutMinOptions" placeholder="选择时长" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">计划步骤上限</span>
+                    <span class="setting-row-desc">规划器最多拆分的步骤数，复杂任务可适当调高</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="agentPlanSteps" :options="agentPlanStepsOptions" placeholder="选择步骤数" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">并行工具数</span>
+                    <span class="setting-row-desc">同一轮内多个工具调用的并发上限，调低更稳、调高更快</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="agentParallelTools"
+                      :options="agentParallelToolsOptions"
+                      placeholder="选择并发数"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">工具结果预算</h3>
+                <span class="setting-section-desc">超大工具输出会被截断并落盘，可用 result-read 分页读取</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">单结果上限</span>
+                    <span class="setting-row-desc">单个工具输出超过该大小时截断，完整内容落盘保留</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="toolResultMaxKb" :options="toolResultMaxKbOptions" placeholder="选择大小" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">单次运行上限</span>
+                    <span class="setting-row-desc">一次任务累计工具输出的上限，超出后后续结果也会被截断</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="toolResultRunKb" :options="toolResultRunKbOptions" placeholder="选择大小" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">溢出结果保留</span>
+                    <span class="setting-row-desc">落盘的完整工具结果保留天数，过期自动清理</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="toolResultRetentionDays"
+                      :options="toolResultRetentionOptions"
+                      placeholder="选择天数"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">工具审批</h3>
+                <span class="setting-section-desc">AI 调用写操作工具前的确认策略；对话页可临时切换本次会话的策略</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">审批策略</span>
+                    <span class="setting-row-desc">{{ toolPolicyHint }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="toolPolicy" :options="toolPolicyOptions" placeholder="选择审批策略" />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div v-show="activeTab === 'database-client'" class="settings-tab">
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">查询与分页</h3>
+                <span class="setting-section-desc">打开表数据与保留查询历史时的默认行为</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">默认分页大小</span>
+                    <span class="setting-row-desc">打开表数据时每页加载的行数，可在标签页内临时调整</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="databasePageSize"
+                      :options="databasePageSizeOptions"
+                      placeholder="选择行数"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">查询历史条数</span>
+                    <span class="setting-row-desc">本地保留的查询历史条数，超出后自动清理最早的记录</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="databaseHistoryLimit"
+                      :options="databaseHistoryLimitOptions"
+                      placeholder="选择条数"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">刷新与传输</h3>
+                <span class="setting-section-desc">实例状态轮询与数据传输的默认参数</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">自动刷新间隔</span>
+                    <span class="setting-row-desc">实例状态与会话面板的轮询间隔，选择「关闭」仅手动刷新</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="databaseRefreshInterval"
+                      :options="databaseRefreshIntervalOptions"
+                      placeholder="选择间隔"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">默认批量大小</span>
+                    <span class="setting-row-desc">数据传输时每批读取与写入的行数，可在传输对话框中临时调整</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="databaseTransferBatchSize"
+                      :options="databaseTransferBatchSizeOptions"
+                      placeholder="选择批量"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">安全与审计</h3>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.databaseClient.safeMode') }}</span>
+                    <span class="setting-row-desc">{{ t('settings.databaseClient.safeModeHint') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="databaseSafeMode" type="checkbox" class="switch" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.databaseClient.audit') }}</span>
+                    <span class="setting-row-desc">{{ t('settings.databaseClient.auditHint') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="databaseAuditEnabled" type="checkbox" class="switch" />
+                  </div>
+                </div>
+                <div v-if="databaseAuditEnabled" class="audit-rule-list">
+                  <label v-for="rule in sqlAuditRules" :key="rule.id" class="audit-rule-item">
+                    <span class="audit-rule-text">
+                      <span class="audit-rule-head">
+                        <span class="audit-rule-name">{{ rule.label }}</span>
+                        <span class="audit-rule-level" :class="rule.level">
+                          {{ rule.level === 'error' ? '拦截级' : '提示级' }}
+                        </span>
+                      </span>
+                      <span class="audit-rule-desc">{{ rule.description }}</span>
+                    </span>
+                    <input v-model="databaseAuditRules[rule.id]" type="checkbox" class="switch" />
+                  </label>
+                  <label class="audit-rule-item audit-rule-strict">
+                    <span class="audit-rule-text">
+                      <span class="audit-rule-head">
+                        <span class="audit-rule-name">严格模式</span>
+                      </span>
+                      <span class="audit-rule-desc">出现拦截级问题时禁止执行，只能返回修改</span>
+                    </span>
+                    <input v-model="databaseAuditStrict" type="checkbox" class="switch" />
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.databaseClient.operationLog') }}</span>
+                    <span class="setting-row-desc">{{ t('settings.databaseClient.operationLogHint') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="databaseOperationLogEnabled" type="checkbox" class="switch" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">编辑器</h3>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.databaseClient.editorTheme') }}</span>
+                    <span class="setting-row-desc">{{ t('settings.databaseClient.editorThemeHint') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect
+                      v-model="databaseEditor.theme"
+                      :options="databaseEditorThemes"
+                      placeholder="选择编辑器主题"
+                    />
+                  </div>
+                </div>
+                <div v-for="option in databaseEditorOptions" :key="option.key" class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ option.label }}</span>
+                    <span class="setting-row-desc">{{ option.description }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="databaseEditor[option.key]" type="checkbox" class="switch" />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div v-show="activeTab === 'sql-generator'" class="settings-tab">
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">脚本生成</h3>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.sqlGenerator.scriptPath') }}</span>
+                    <span class="setting-row-desc">{{ t('settings.sqlGenerator.scriptPathHint') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <div class="path-input-group">
+                      <input v-model="basePath" type="text" class="input-field" placeholder="脚本存储根目录" />
+                      <button class="btn btn-secondary" @click="selectDir">浏览</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.sqlGenerator.developerCh') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input v-model="developerChName" type="text" class="input-field" placeholder="用于脚本作者署名" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.sqlGenerator.developerEn') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input
+                      v-model="developerEnName"
+                      type="text"
+                      class="input-field"
+                      placeholder="用于脚本历史记录标识"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row is-top">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t('settings.sqlGenerator.textEditor') }}</span>
+                    <span class="setting-row-desc">{{ t('settings.sqlGenerator.textEditorHint') }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="textEditApp" :options="textEditorOptions" placeholder="自定义路径" />
+                    <div v-if="!editorPresets.some((e) => e.path === textEditApp)" class="path-input-group">
+                      <input v-model="textEditApp" type="text" class="input-field" placeholder="编辑器可执行文件路径" />
+                      <button class="btn btn-secondary" @click="selectEditor">浏览</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">{{ t('settings.sqlGenerator.databases') }}</h3>
+                <span class="setting-section-desc">{{ t('settings.sqlGenerator.databasesHint') }}</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-list-block">
+                  <div
+                    ref="databaseListRef"
+                    class="config-list"
+                    @dragover.prevent
+                    @drop.prevent="dropConfigDrag('database')"
+                  >
+                    <div
+                      v-for="(db, index) in databases"
+                      :key="index"
+                      class="config-item"
+                      :class="{
+                        dragging: isDragging('database', index),
+                        'drag-over': isDragOver('database', index)
+                      }"
+                      :draggable="isDragEnabled('database')"
+                      @dragstart="startConfigDrag('database', index, $event)"
+                      @dragover.prevent="overConfigDrag('database', index)"
+                      @drop.stop.prevent="dropConfigDrag('database')"
+                      @dragend="endConfigDrag('database')"
+                    >
+                      <span
+                        class="config-drag-handle"
+                        title="拖动排序"
+                        aria-label="拖动排序"
+                        @mousedown="enableConfigDrag('database')"
+                        @click="endConfigDrag('database')"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                          <circle cx="9" cy="6" r="1.4" />
+                          <circle cx="15" cy="6" r="1.4" />
+                          <circle cx="9" cy="12" r="1.4" />
+                          <circle cx="15" cy="12" r="1.4" />
+                          <circle cx="9" cy="18" r="1.4" />
+                          <circle cx="15" cy="18" r="1.4" />
+                        </svg>
+                      </span>
+                      <div class="config-item-info">
+                        <input
+                          v-model="db.name"
+                          type="text"
+                          class="input-field"
+                          placeholder="数据库名"
+                          :class="{ error: db.error }"
+                        />
+                      </div>
+                      <div class="config-item-actions">
+                        <button class="btn btn-danger" @click="removeDatabase(index)">删除</button>
+                      </div>
+                    </div>
+                  </div>
+                  <button class="btn btn-secondary" @click="addDatabase">+ 添加数据库</button>
+                </div>
+              </div>
+            </section>
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">{{ t('settings.sqlGenerator.scriptTypes') }}</h3>
+                <span class="setting-section-desc">{{ t('settings.sqlGenerator.scriptTypesHint') }}</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-list-block">
+                  <div
+                    ref="scriptTypeListRef"
+                    class="config-list"
+                    @dragover.prevent
+                    @drop.prevent="dropConfigDrag('scriptType')"
+                  >
+                    <div
+                      v-for="(st, index) in scriptTypes"
+                      :key="index"
+                      class="config-item"
+                      :class="{
+                        dragging: isDragging('scriptType', index),
+                        'drag-over': isDragOver('scriptType', index)
+                      }"
+                      :draggable="isDragEnabled('scriptType')"
+                      @dragstart="startConfigDrag('scriptType', index, $event)"
+                      @dragover.prevent="overConfigDrag('scriptType', index)"
+                      @drop.stop.prevent="dropConfigDrag('scriptType')"
+                      @dragend="endConfigDrag('scriptType')"
+                    >
+                      <span
+                        class="config-drag-handle"
+                        title="拖动排序"
+                        aria-label="拖动排序"
+                        @mousedown="enableConfigDrag('scriptType')"
+                        @click="endConfigDrag('scriptType')"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                          <circle cx="9" cy="6" r="1.4" />
+                          <circle cx="15" cy="6" r="1.4" />
+                          <circle cx="9" cy="12" r="1.4" />
+                          <circle cx="15" cy="12" r="1.4" />
+                          <circle cx="9" cy="18" r="1.4" />
+                          <circle cx="15" cy="18" r="1.4" />
+                        </svg>
+                      </span>
+                      <div class="config-item-info">
+                        <input
+                          v-model="st.name"
+                          type="text"
+                          class="input-field"
+                          placeholder="名称"
+                          style="width: 120px; margin-right: 10px"
+                          :class="{ error: st.error }"
+                        />
+                        <input
+                          v-model="st.description"
+                          type="text"
+                          class="input-field"
+                          placeholder="描述"
+                          style="flex: 1"
+                        />
+                      </div>
+                      <div class="config-item-actions">
+                        <button class="btn btn-danger" @click="removeScriptType(index)">删除</button>
+                      </div>
+                    </div>
+                  </div>
+                  <button class="btn btn-secondary" @click="addScriptType">+ 添加脚本类型</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div v-show="activeTab === 'image-hosting'" class="settings-tab">
+            <ImageHostSettingsPanel />
+          </div>
+
+          <div v-show="activeTab === 'network'" class="settings-tab">
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">代理</h3>
+                <span class="setting-section-desc">
+                  所有联网功能（模型对话、扩展市场、类型注册表、更新检查、图床）统一走以下设置
+                </span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">连接方式</span>
+                    <span class="setting-row-desc">{{ proxyModeHint }}</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <SettingSelect v-model="proxyMode" :options="proxyModeOptions" placeholder="选择连接方式" />
+                  </div>
+                </div>
+                <template v-if="proxyMode === 'manual'">
+                  <div class="setting-row">
+                    <div class="setting-row-text">
+                      <span class="setting-row-label">代理地址</span>
+                      <span class="setting-row-desc">
+                        支持 http:// 、https:// 与 socks5://；代理凭据会以明文保存在本地 config.json
+                      </span>
+                    </div>
+                    <div class="setting-row-control">
+                      <input
+                        v-model="proxyUrl"
+                        type="text"
+                        class="input-field"
+                        placeholder="http://127.0.0.1:7890"
+                        spellcheck="false"
+                      />
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-row-text">
+                      <span class="setting-row-label">忽略代理的地址</span>
+                      <span class="setting-row-desc">
+                        &lt;local&gt; 表示本机地址；多条规则用逗号或空格分隔，例如 &lt;local&gt; 10.0.0.0/8,*.corp
+                      </span>
+                    </div>
+                    <div class="setting-row-control">
+                      <input v-model="proxyBypass" type="text" class="input-field" spellcheck="false" />
+                    </div>
+                  </div>
+                </template>
+                <div class="setting-row is-top">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">连通性测试</span>
+                    <span class="setting-row-desc">按当前设置发起一次请求，验证代理是否生效</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <div class="path-input-group">
+                      <input
+                        v-model="networkTestUrl"
+                        type="text"
+                        class="input-field"
+                        placeholder="https://example.com"
+                        spellcheck="false"
+                      />
+                      <button class="btn btn-secondary" :disabled="networkTesting" @click="runNetworkTest">
+                        {{ networkTesting ? '测试中...' : '测试' }}
+                      </button>
+                    </div>
+                    <div
+                      v-if="networkTestResult"
+                      class="api-test-result"
+                      :class="networkTestResult.ok ? 'success' : 'error'"
+                    >
+                      {{ networkTestResult.message }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">自定义源</h3>
+                <span class="setting-section-desc">留空使用官方默认地址；适合需要镜像或内网代理的场景</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">ClawHub 地址</span>
+                    <span class="setting-row-desc">扩展市场技能来源，默认 https://clawhub.ai</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input
+                      v-model="marketSources.clawhub"
+                      type="text"
+                      class="input-field"
+                      placeholder="https://clawhub.ai"
+                      spellcheck="false"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">MCP 类型注册表</span>
+                    <span class="setting-row-desc">默认 https://registry.modelcontextprotocol.io/v0</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input
+                      v-model="marketSources.mcp_registry"
+                      type="text"
+                      class="input-field"
+                      placeholder="https://registry.modelcontextprotocol.io/v0"
+                      spellcheck="false"
+                    />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">更新源</span>
+                    <span class="setting-row-desc">历史版本列表的 GitHub Releases API 地址</span>
+                  </div>
+                  <div class="setting-row-control">
+                    <input
+                      v-model="marketSources.update_feed"
+                      type="text"
+                      class="input-field"
+                      :placeholder="defaultUpdateFeed"
+                      spellcheck="false"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
 
           <div v-show="activeTab === 'shortcuts'" class="settings-tab">
-            <div class="form-group">
-              <label>快捷键配置</label>
-              <div class="shortcut-list">
-                <div v-for="tool in shortcutTools" :key="tool.path" class="shortcut-item">
-                  <span class="shortcut-name">{{ tool.name }}</span>
-                  <input
-                    v-model="shortcuts[tool.shortcutKey]"
-                    type="text"
-                    class="input-field shortcut-input"
-                    placeholder="快捷键"
-                  />
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">快捷键配置</h3>
+                <span class="setting-section-desc">格式示例：CmdOrCtrl+,（留空则不设置快捷键）</span>
+              </div>
+              <div class="setting-section-body">
+                <div class="shortcut-list">
+                  <div v-for="tool in shortcutTools" :key="tool.path" class="shortcut-item">
+                    <span class="shortcut-name">{{ tool.name }}</span>
+                    <input
+                      v-model="shortcuts[tool.shortcutKey]"
+                      type="text"
+                      class="input-field shortcut-input"
+                      placeholder="快捷键"
+                    />
+                  </div>
                 </div>
               </div>
-              <div class="setting-hint">格式示例: CmdOrCtrl+,（留空则不设置快捷键）</div>
-            </div>
+            </section>
           </div>
 
           <div v-if="activeTab === 'extensions'" class="settings-tab extensions-tab">
@@ -849,19 +1775,23 @@
               <div class="about-author">作者: {{ author }}</div>
               <div class="about-copyright">{{ year }} {{ author }}. All rights reserved.</div>
               <div class="about-buttons">
-                <button class="btn btn-secondary btn-sm" @click="checkUpdate">检查更新</button>
+                <button class="btn btn-secondary" @click="checkUpdate">检查更新</button>
               </div>
             </div>
           </div>
         </div>
-
-        <div v-if="activeTab !== 'extensions'" class="settings-footer">
-          <button class="btn btn-primary" @click="save">保存</button>
-          <button class="btn btn-default" @click="closeWindow">取消</button>
-        </div>
       </div>
     </div>
 
+    <MessageDialog
+      :visible="Boolean(removeProviderTarget)"
+      type="confirm"
+      title="移除模型服务商"
+      :message="removeProviderMessage"
+      @confirm="confirmRemoveProvider"
+      @cancel="removeProviderTarget = ''"
+      @close="removeProviderTarget = ''"
+    />
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
@@ -869,24 +1799,27 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { openUpdateCenter, usePaneResize, useToast } from '@/composables'
+import { openUpdateCenter, useAutoSaveConfig, usePaneResize, useToast } from '@/composables'
 import Toast from '@/components/Toast.vue'
+import MessageDialog from '@/components/MessageDialog.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import ExtensionsManager from '@/components/ExtensionsManager.vue'
+import ImageHostSettingsPanel from '@/components/settings/ImageHostSettingsPanel.vue'
+import SettingSelect from '@/components/settings/SettingSelect.vue'
+import SettingModelPicker from '@/components/settings/SettingModelPicker.vue'
+import WindowControls from '@/components/WindowControls.vue'
 import {
   getConfig,
-  saveConfig,
+  patchConfig,
   selectDirectory,
   selectFile,
   getPackageInfo,
   getAiProviders,
   getProviderModels,
   validateApiKey,
-  closeSettingsWindow,
   returnToApp,
   windowMinimize,
   windowToggleMaximize,
-  windowIsMaximized,
   windowClose,
   platform as hostPlatform,
   setAutoStart,
@@ -894,10 +1827,66 @@ import {
   reloadMenu,
   openExternal,
   onSettingsTab,
-  onWindowMaximized
+  networkTest
 } from '@/api'
 import iconUrl from '@assets/icon.png'
-import { tools } from '@shared/tools'
+import { tools, RECENT_TOOLS_LIMIT_OPTIONS, normalizeRecentToolsLimit } from '@shared/tools'
+import { normalizeDatabaseEditorConfig, DATABASE_EDITOR_THEME_OPTIONS } from '@shared/databaseEditor'
+import {
+  DATABASE_HISTORY_LIMIT_OPTIONS,
+  DATABASE_PAGE_SIZE_OPTIONS,
+  DATABASE_REFRESH_INTERVAL_OPTIONS,
+  DATABASE_TRANSFER_BATCH_SIZE_OPTIONS,
+  normalizeDatabaseHistoryLimit,
+  normalizeDatabasePageSize,
+  normalizeDatabaseRefreshInterval,
+  normalizeDatabaseTransferBatchSize
+} from '@shared/databaseClient'
+import { UPDATE_CHECK_INTERVAL_OPTIONS, normalizeUpdateCheckInterval } from '@shared/updater'
+import { SQL_AUDIT_RULES, DEFAULT_SQL_AUDIT_RULES } from '@shared/sqlAudit'
+import {
+  PROXY_MODE_OPTIONS,
+  DEFAULT_PROXY_BYPASS,
+  DEFAULT_MARKET_SOURCES,
+  UPDATE_FEED_DEFAULT_URL,
+  isHttpUrl,
+  isProxyUrl
+} from '@shared/network'
+import {
+  TOOL_POLICY_OPTIONS,
+  AI_TIMEOUT_OPTIONS,
+  AI_COMPRESS_THRESHOLD_OPTIONS,
+  AI_COMPRESS_KEEP_RECENT_OPTIONS,
+  AI_MAX_ATTACHMENT_OPTIONS,
+  AI_MAX_IMAGE_MB_OPTIONS,
+  AI_MAX_TEXT_KB_OPTIONS,
+  AI_AGENT_MAX_ITERATIONS_OPTIONS,
+  AI_AGENT_TIMEOUT_MIN_OPTIONS,
+  AI_AGENT_PLAN_STEPS_OPTIONS,
+  AI_AGENT_PARALLEL_TOOLS_OPTIONS,
+  AI_TOOL_RESULT_MAX_KB_OPTIONS,
+  AI_TOOL_RESULT_RUN_KB_OPTIONS,
+  AI_TOOL_RESULT_RETENTION_OPTIONS,
+  AI_PRESETS,
+  normalizeToolPolicy,
+  normalizeAiTimeout,
+  normalizeAiCompressThreshold,
+  normalizeAiCompressKeepRecent,
+  normalizeAiMaxAttachments,
+  normalizeAiMaxImageMb,
+  normalizeAiMaxTextKb,
+  normalizeAiAgentMaxIterations,
+  normalizeAiAgentTimeoutMin,
+  normalizeAiAgentPlanSteps,
+  normalizeAiAgentParallelTools,
+  normalizeAiToolResultMaxKb,
+  normalizeAiToolResultRunKb,
+  normalizeAiToolResultRetentionDays,
+  parseScenarioModel
+} from '@shared/aiBehavior'
+import { NOTIFICATION_ITEMS, normalizeNotificationConfig } from '@shared/notifications'
+import { CLIPBOARD_HISTORY_LIMITS, normalizeClipboardHistoryConfig } from '@shared/clipboardSettings'
+import { t } from '@/i18n'
 import {
   applyFontSize,
   applyTheme,
@@ -913,31 +1902,85 @@ const route = useRoute()
 const { toastVisible, toastMessage, toastType, showError, showSuccess } = useToast()
 const isMac = hostPlatform === 'darwin'
 let removeSettingsTabListener = null
-let removeWindowMaximizedListener = null
 
 const shortcutTools = tools.filter((tool) => tool.shortcutKey)
 
+function toSelectOptions(options) {
+  return options.map((option) => ({ ...option, value: String(option.value) }))
+}
+
+function applyAiPreset(preset) {
+  if (!preset?.values) return
+  const values = preset.values
+  aiTemperature.value =
+    values.ai_temperature === null || values.ai_temperature === undefined ? '' : String(values.ai_temperature)
+  aiCompressThreshold.value = String(normalizeAiCompressThreshold(values.ai_compress_threshold))
+  aiCompressKeepRecent.value = String(normalizeAiCompressKeepRecent(values.ai_compress_keep_recent))
+  agentMaxIterations.value = String(normalizeAiAgentMaxIterations(values.ai_agent_max_iterations))
+  agentTimeoutMin.value = String(normalizeAiAgentTimeoutMin(values.ai_agent_timeout_min))
+  agentPlanSteps.value = String(normalizeAiAgentPlanSteps(values.ai_agent_plan_steps))
+  agentParallelTools.value = String(normalizeAiAgentParallelTools(values.ai_agent_parallel_tools))
+  toolResultMaxKb.value = String(normalizeAiToolResultMaxKb(values.ai_tool_result_max_kb))
+  toolResultRunKb.value = String(normalizeAiToolResultRunKb(values.ai_tool_result_run_kb))
+  toolResultRetentionDays.value = String(normalizeAiToolResultRetentionDays(values.ai_tool_result_retention_days))
+  if (values.ai_tool_policy) toolPolicy.value = normalizeToolPolicy(values.ai_tool_policy)
+  appliedPresetId.value = preset.id
+}
+
 const menuItems = [
-  { id: 'general', text: '通用' },
-  { id: 'appearance', text: '外观' },
-  { id: 'api', text: '模型' },
-  { id: 'database', text: '数据库' },
-  { id: 'scripttype', text: '脚本类型' },
-  { id: 'shortcuts', text: '快捷键' },
-  { id: 'extensions', text: '扩展管理' },
-  { id: 'about', text: '关于软件' }
+  { id: 'general', text: t('settings.menu.general') },
+  { id: 'appearance', text: t('settings.menu.appearance') },
+  { id: 'shortcuts', text: t('settings.menu.shortcuts') },
+  { id: 'api', text: t('settings.menu.api') },
+  { id: 'assistant', text: 'AI 助手' },
+  { id: 'network', text: '网络' },
+  { id: 'database-client', text: t('settings.menu.databaseClient') },
+  { id: 'sql-generator', text: t('settings.menu.sqlGenerator') },
+  { id: 'image-hosting', text: t('settings.menu.imageHosting') },
+  { id: 'extensions', text: t('settings.menu.extensions') },
+  { id: 'about', text: t('settings.menu.about') }
 ]
 
+// Old deep links (settings windows opened before the rename) keep working.
+const TAB_ALIASES = {
+  'database-editor': 'database-client',
+  database: 'sql-generator',
+  scripttype: 'sql-generator',
+  mcp: 'extensions'
+}
+
+function resolveTabId(tab) {
+  return TAB_ALIASES[tab] || tab
+}
+
 const tabMeta = {
-  general: { title: '通用设置', description: '配置脚本目录、开发者署名、文本编辑器以及启动与关闭行为。' },
+  general: { title: t('settings.tab.general.title'), description: t('settings.tab.general.desc') },
   appearance: { title: '外观', description: '选择主题模式、配色方案与字体大小，界面会随系统明暗设置自动适配。' },
   api: {
-    title: 'AI 平台',
-    description: '管理各平台的 API 密钥、自定义地址与模型目录，可在线获取模型并配置上下文等高级参数。'
+    title: '模型',
+    description: '管理已添加的模型服务商，可编辑密钥、自定义地址与模型目录；未配置的服务商可通过下方按钮添加。'
   },
-  database: { title: '数据库', description: '维护常用数据库名称，供数据库工具快速选择。' },
-  scripttype: { title: '脚本类型', description: '定义脚本类型与说明，用于脚本生成与归档。' },
-  shortcuts: { title: '快捷键', description: '为常用工具设置全局快捷键，留空则不启用。' },
+  assistant: {
+    title: 'AI 助手',
+    description: '定义助手的人设与回答风格，设置采样参数、分场景模型、上下文压缩、Agent 运行与工具审批策略。'
+  },
+  network: {
+    title: '网络',
+    description: '配置代理、类型镜像源与更新检查地址；更改会自动保存并对后续联网请求生效。'
+  },
+  'database-client': {
+    title: t('settings.tab.databaseClient.title'),
+    description: t('settings.tab.databaseClient.desc')
+  },
+  'sql-generator': {
+    title: t('settings.tab.sqlGenerator.title'),
+    description: t('settings.tab.sqlGenerator.desc')
+  },
+  'image-hosting': {
+    title: t('settings.tab.imageHosting.title'),
+    description: t('settings.tab.imageHosting.desc')
+  },
+  shortcuts: { title: '快捷键', description: '设置打开设置窗口的全局快捷键，留空则不启用。' },
   about: { title: '关于软件', description: '查看版本信息、项目动态与更新入口。' }
 }
 
@@ -982,6 +2025,19 @@ const fontSizeOptions = [
   { value: 'xlarge', label: '特大' }
 ]
 
+const databaseEditorOptions = [
+  { key: 'line_numbers', label: '显示行号', description: '在编辑区左侧展示行号' },
+  { key: 'run_button', label: '显示左侧执行按钮', description: '每条语句左侧显示 ▶ 按钮，可直接执行该语句' },
+  { key: 'statement_outline', label: '显示当前语句外框线', description: '用外框线标出光标所在的 SQL 语句' },
+  { key: 'active_line', label: '高亮当前行', description: '突出显示光标所在行' },
+  { key: 'word_wrap', label: '自动换行', description: '较长的 SQL 在编辑区内折行显示' },
+  { key: 'autocomplete', label: '自动补全', description: '输入时提示表名、字段、函数与代码片段' },
+  { key: 'diagnostics', label: 'SQL 语义诊断', description: '检测未知表、未知字段与歧义字段并给出警告' },
+  { key: 'hover_ddl', label: '悬浮表名展示 DDL', description: '鼠标悬停表名时显示建表语句' }
+]
+
+const databaseEditorThemes = DATABASE_EDITOR_THEME_OPTIONS
+
 function swatchStyle(swatch) {
   return {
     '--swatch-accent': swatch.accent,
@@ -1005,7 +2061,6 @@ const {
   min: 150,
   max: () => Math.min(360, Math.max(180, window.innerWidth - 620))
 })
-const isMaximized = ref(false)
 const activeMeta = computed(() => tabMeta[activeTab.value] || { title: '', description: '' })
 const tabHistory = ref([])
 const tabForwardHistory = ref([])
@@ -1028,6 +2083,7 @@ watch(activeTab, async () => {
 
 function selectTab(tab) {
   if (tab === activeTab.value) return
+  void flushAutoSave(false, autoSaveKind())
   tabHistory.value.push(activeTab.value)
   tabForwardHistory.value = []
   activeTab.value = tab
@@ -1035,21 +2091,20 @@ function selectTab(tab) {
 
 function goBackTab() {
   if (!tabHistory.value.length) return
+  void flushAutoSave(false, autoSaveKind())
   tabForwardHistory.value.push(activeTab.value)
   activeTab.value = tabHistory.value.pop()
 }
 
 function goForwardTab() {
   if (!tabForwardHistory.value.length) return
+  void flushAutoSave(false, autoSaveKind())
   tabHistory.value.push(activeTab.value)
   activeTab.value = tabForwardHistory.value.pop()
 }
 const theme = ref('system')
-const savedTheme = ref('system')
 const themeStyle = ref('sapphire')
-const savedThemeStyle = ref('sapphire')
 const fontSize = ref('medium')
-const savedFontSize = ref('medium')
 const basePath = ref('')
 const developerChName = ref('')
 const developerEnName = ref('')
@@ -1057,9 +2112,37 @@ const textEditApp = ref('')
 const autoUpdate = ref(true)
 const autoStart = ref(false)
 const closeAction = ref('ask')
+const closeActionOptions = [
+  { value: 'ask', label: '每次询问', hint: '关闭时弹窗选择隐藏到托盘或退出' },
+  { value: 'hide', label: '隐藏到托盘', hint: '关闭后窗口隐藏，应用在托盘继续运行' },
+  { value: 'quit', label: '直接退出', hint: '关闭窗口即完全退出应用' }
+]
+const updateCheckInterval = ref('1')
+const updateCheckIntervalOptions = toSelectOptions(UPDATE_CHECK_INTERVAL_OPTIONS)
+const recentToolsLimit = ref('4')
+const recentToolsLimitOptions = toSelectOptions(RECENT_TOOLS_LIMIT_OPTIONS)
+const notificationItems = NOTIFICATION_ITEMS
+const notifications = ref(normalizeNotificationConfig())
+const clipboardLimitOptions = CLIPBOARD_HISTORY_LIMITS.map((limit) => ({
+  value: String(limit),
+  label: `${limit} 条`
+}))
+const clipboardSettings = normalizeClipboardHistoryConfig()
+const clipboardPersist = ref(clipboardSettings.persist)
+const clipboardMaxEntries = ref(clipboardSettings.max_entries)
+const clipboardMaxEntriesModel = computed({
+  get: () => String(clipboardMaxEntries.value),
+  set: (value) => {
+    clipboardMaxEntries.value = Number(value)
+  }
+})
 
 const platform = ref('')
 const editorPresets = ref([])
+const textEditorOptions = computed(() => [
+  { value: '', label: '自定义路径' },
+  ...editorPresets.value.map((editor) => ({ value: editor.path, label: editor.name }))
+])
 const aiProvider = ref('bailian')
 const aiApiKeys = ref({
   bailian: '',
@@ -1069,13 +2152,21 @@ const aiApiKeys = ref({
   minimax_group_id: '',
   volcengine: '',
   volcengine_endpoint_id: '',
-  deepseek: ''
+  deepseek: '',
+  mimo: '',
+  opencode: '',
+  opencode_go: '',
+  openai: '',
+  google: '',
+  anthropic: ''
 })
 const aiProviders = ref([])
 const aiBaseUrls = ref({})
 const savedApiKeys = ref({})
 const savedBaseUrls = ref({})
 const aiModels = ref({})
+const fallbackEnabled = ref(true)
+const fallbackModels = ref([])
 const modelConfigs = ref({})
 const initialModelConfigs = ref({})
 const modelConfigSources = ref({})
@@ -1084,14 +2175,87 @@ const modelFetchMessage = ref({})
 const modelFetchSuccess = ref({})
 const providerSaving = ref({})
 const expandedProviders = ref({})
+const pendingProviders = ref({})
+const addProviderOpen = ref(false)
+const removeProviderTarget = ref('')
 const openCustomSettings = ref({})
 const expandedModels = ref({})
 const modelDrag = ref({ type: '', enabled: false, from: -1, over: -1 })
 const databases = ref([])
+const databaseEditor = ref(normalizeDatabaseEditorConfig())
+const databaseSafeMode = ref(true)
+const databaseAuditEnabled = ref(false)
+const databaseAuditStrict = ref(false)
+const databaseOperationLogEnabled = ref(true)
+const databaseAuditRules = ref({ ...DEFAULT_SQL_AUDIT_RULES })
+const sqlAuditRules = SQL_AUDIT_RULES
 const scriptTypes = ref([])
 const shortcuts = ref({
   settings: 'CmdOrCtrl+,'
 })
+const proxyMode = ref('system')
+const proxyUrl = ref('')
+const proxyBypass = ref(DEFAULT_PROXY_BYPASS)
+const marketSources = ref({ ...DEFAULT_MARKET_SOURCES })
+const networkTestUrl = ref('https://clawhub.ai')
+const networkTesting = ref(false)
+const networkTestResult = ref(null)
+const proxyModeOptions = PROXY_MODE_OPTIONS
+const defaultUpdateFeed = UPDATE_FEED_DEFAULT_URL
+const proxyModeHint = computed(() => PROXY_MODE_OPTIONS.find((option) => option.value === proxyMode.value)?.hint || '')
+const aiPersona = ref('')
+const aiTemperature = ref('')
+const scenarioPlanner = ref('')
+const scenarioCompression = ref('')
+const aiTimeout = ref('60')
+const aiTimeoutOptions = toSelectOptions(AI_TIMEOUT_OPTIONS)
+const aiCompressThreshold = ref('70')
+const aiCompressThresholdOptions = toSelectOptions(AI_COMPRESS_THRESHOLD_OPTIONS)
+const aiCompressKeepRecent = ref('6')
+const aiCompressKeepRecentOptions = toSelectOptions(AI_COMPRESS_KEEP_RECENT_OPTIONS)
+const aiMaxAttachments = ref('6')
+const aiMaxAttachmentOptions = toSelectOptions(AI_MAX_ATTACHMENT_OPTIONS)
+const aiMaxImageMb = ref('10')
+const aiMaxImageMbOptions = toSelectOptions(AI_MAX_IMAGE_MB_OPTIONS)
+const aiMaxTextKb = ref('256')
+const aiMaxTextKbOptions = toSelectOptions(AI_MAX_TEXT_KB_OPTIONS)
+const agentMaxIterations = ref('10')
+const agentMaxIterationsOptions = toSelectOptions(AI_AGENT_MAX_ITERATIONS_OPTIONS)
+const agentTimeoutMin = ref('5')
+const agentTimeoutMinOptions = toSelectOptions(AI_AGENT_TIMEOUT_MIN_OPTIONS)
+const agentPlanSteps = ref('8')
+const agentPlanStepsOptions = toSelectOptions(AI_AGENT_PLAN_STEPS_OPTIONS)
+const agentParallelTools = ref('4')
+const agentParallelToolsOptions = toSelectOptions(AI_AGENT_PARALLEL_TOOLS_OPTIONS)
+const toolResultMaxKb = ref('24')
+const toolResultMaxKbOptions = toSelectOptions(AI_TOOL_RESULT_MAX_KB_OPTIONS)
+const toolResultRunKb = ref('160')
+const toolResultRunKbOptions = toSelectOptions(AI_TOOL_RESULT_RUN_KB_OPTIONS)
+const toolResultRetentionDays = ref('7')
+const toolResultRetentionOptions = toSelectOptions(AI_TOOL_RESULT_RETENTION_OPTIONS)
+const aiPresets = AI_PRESETS
+const appliedPresetId = ref('')
+const databasePageSize = ref('100')
+const databasePageSizeOptions = toSelectOptions(DATABASE_PAGE_SIZE_OPTIONS)
+const databaseRefreshInterval = ref('5')
+const databaseRefreshIntervalOptions = toSelectOptions(DATABASE_REFRESH_INTERVAL_OPTIONS)
+const databaseTransferBatchSize = ref('1000')
+const databaseTransferBatchSizeOptions = toSelectOptions(DATABASE_TRANSFER_BATCH_SIZE_OPTIONS)
+const databaseHistoryLimit = ref('200')
+const databaseHistoryLimitOptions = toSelectOptions(DATABASE_HISTORY_LIMIT_OPTIONS)
+const toolPolicy = ref('all')
+const toolPolicyOptions = TOOL_POLICY_OPTIONS
+const toolPolicyHint = computed(
+  () => TOOL_POLICY_OPTIONS.find((option) => option.value === toolPolicy.value)?.hint || ''
+)
+const scenarioModelOptions = computed(() =>
+  aiProviders.value.flatMap((provider) =>
+    (modelConfigs.value[provider.type]?.models || []).map((model) => ({
+      value: `${provider.type}:${model.id}`,
+      label: `${provider.name} · ${model.name || model.id}`
+    }))
+  )
+)
 const version = ref('1.0.0')
 const author = ref('lov3smu')
 const databaseListRef = ref(null)
@@ -1102,6 +2266,65 @@ const testingApiKey = ref({})
 const apiKeyTestResult = ref({})
 
 const year = computed(() => new Date().getFullYear())
+const visibleProviders = computed(() =>
+  aiProviders.value.filter((provider) => hasProviderKey(provider.type) || pendingProviders.value[provider.type])
+)
+const addableProviders = computed(() =>
+  aiProviders.value.filter((provider) => !hasProviderKey(provider.type) && !pendingProviders.value[provider.type])
+)
+const chatModelOptions = computed(() =>
+  visibleProviders.value.flatMap((provider) =>
+    (modelConfigs.value[provider.type]?.models || [])
+      .filter((model) => model.id)
+      .map((model) => ({
+        value: `${provider.type}:${model.id}`,
+        label: `${provider.name} · ${model.name || model.id}`
+      }))
+  )
+)
+const fallbackModelOptions = computed(() => {
+  const options = [...chatModelOptions.value]
+  const seen = new Set(options.map((option) => option.value))
+  for (const entry of fallbackModels.value) {
+    const value = String(entry || '').trim()
+    if (!value || seen.has(value)) continue
+    seen.add(value)
+    options.push({ value, label: value })
+  }
+  return options
+})
+const aiProviderModel = computed({
+  get() {
+    const config = modelConfigs.value[aiProvider.value]
+    if (!config) return ''
+    const model = config.default || config.models?.[0]?.id || ''
+    return model ? `${aiProvider.value}:${model}` : ''
+  },
+  set(value) {
+    const parsed = parseScenarioModel(value)
+    if (!parsed) return
+    const config = modelConfigs.value[parsed.provider]
+    if (!config || !config.models.some((model) => model.id === parsed.model)) return
+    aiProvider.value = parsed.provider
+    config.default = parsed.model
+  }
+})
+const removeProviderMessage = computed(() => {
+  const type = removeProviderTarget.value
+  if (!type) return ''
+  const provider = aiProviders.value.find((item) => item.type === type)
+  const name = providerName(type)
+  if (pendingProviders.value[type] && !hasProviderKey(type)) {
+    return `「${name}」尚未保存，移除后不会写入配置。`
+  }
+  if (provider?.hasEnvKey && !(savedApiKeys.value[type] || '').trim()) {
+    return `「${name}」的密钥来自环境变量 ${provider.envKey}，无法移除；确认后将丢弃未保存的修改，服务商仍会显示在列表中。`
+  }
+  if (provider?.hasEnvKey) {
+    return `将删除「${name}」已保存的 API 密钥、自定义地址与模型目录，并移除引用它的备用模型；检测到环境变量 ${provider.envKey}，之后仍会使用环境变量中的密钥。`
+  }
+  return `将立即删除「${name}」的 API 密钥、自定义地址与模型目录，并移除引用它的备用模型。`
+})
 
 function normalizeModelList(models) {
   return (Array.isArray(models) ? models : [])
@@ -1190,15 +2413,6 @@ function serializeProviderModels(type) {
   }
 }
 
-function serializeAiModels() {
-  const result = {}
-  for (const provider of aiProviders.value) {
-    const entry = serializeProviderModels(provider.type)
-    if (entry) result[provider.type] = entry
-  }
-  return result
-}
-
 function hasStoredApiKey(type) {
   return Boolean((aiApiKeys.value[type] || '').trim())
 }
@@ -1219,8 +2433,100 @@ function providerName(type) {
 }
 
 function hasProviderKey(type) {
-  if (hasStoredApiKey(type)) return true
-  return Boolean(aiProviders.value.find((provider) => provider.type === type)?.hasEnvKey)
+  if ((savedApiKeys.value[type] || '').trim()) return true
+  const provider = aiProviders.value.find((item) => item.type === type)
+  return Boolean(provider?.hasApiKey || provider?.hasEnvKey)
+}
+
+function addProvider(provider) {
+  pendingProviders.value = { ...pendingProviders.value, [provider.type]: true }
+  expandedProviders.value = { ...expandedProviders.value, [provider.type]: true }
+  if (!aiProvider.value || !hasProviderKey(aiProvider.value)) aiProvider.value = provider.type
+  addProviderOpen.value = false
+}
+
+function requestRemoveProvider(provider) {
+  removeProviderTarget.value = provider.type
+}
+
+function clearProviderState(type) {
+  // 只丢弃待添加与展开状态；模型配置保留，避免服务商以环境变量密钥重新出现时卡片因缺少配置而报错
+  const nextPending = { ...pendingProviders.value }
+  delete nextPending[type]
+  pendingProviders.value = nextPending
+  const nextExpanded = { ...expandedProviders.value }
+  delete nextExpanded[type]
+  expandedProviders.value = nextExpanded
+}
+
+async function confirmRemoveProvider() {
+  const type = removeProviderTarget.value
+  removeProviderTarget.value = ''
+  if (!type) return
+  const provider = aiProviders.value.find((item) => item.type === type)
+  if (!provider) return
+
+  const hasStoredKey = Boolean((savedApiKeys.value[type] || '').trim())
+  if (!hasStoredKey) {
+    // 未保存的草稿或仅靠环境变量提供密钥：不删除持久化配置，仅还原卡片状态
+    cancelProviderCard(provider)
+    return
+  }
+
+  const nextApiKeys = { ...savedApiKeys.value }
+  delete nextApiKeys[type]
+  const nextBaseUrls = { ...savedBaseUrls.value }
+  delete nextBaseUrls[type]
+  const nextModels = { ...aiModels.value }
+  delete nextModels[type]
+  const nextFallbackModels = fallbackModels.value
+    .map((entry) => String(entry || '').trim())
+    .filter((entry) => entry && parseScenarioModel(entry)?.provider !== type)
+
+  let nextAiProvider = aiProvider.value
+  if (nextAiProvider === type) {
+    nextAiProvider =
+      aiProviders.value.find(
+        (item) => item.type !== type && (nextApiKeys[item.type] || item.hasApiKey || item.hasEnvKey)
+      )?.type || ''
+  }
+
+  providerSaving.value = { ...providerSaving.value, [type]: true }
+  try {
+    const success = await patchConfig({
+      ai_provider: nextAiProvider,
+      ai_api_keys: nextApiKeys,
+      ai_base_urls: nextBaseUrls,
+      ai_models: nextModels,
+      ai_fallback_models: nextFallbackModels
+    })
+    if (!success) {
+      showError('移除失败，请检查配置')
+      return
+    }
+
+    const nextDraftKeys = { ...aiApiKeys.value }
+    delete nextDraftKeys[type]
+    aiApiKeys.value = nextDraftKeys
+    const nextDraftBaseUrls = { ...aiBaseUrls.value }
+    delete nextDraftBaseUrls[type]
+    aiBaseUrls.value = nextDraftBaseUrls
+    savedApiKeys.value = nextApiKeys
+    savedBaseUrls.value = nextBaseUrls
+    aiModels.value = nextModels
+    aiProvider.value = nextAiProvider
+    fallbackModels.value = nextFallbackModels
+    clearProviderState(type)
+    await reloadConfig()
+
+    const providers = await getAiProviders()
+    if (Array.isArray(providers) && providers.length > 0) aiProviders.value = providers
+    showSuccess(`${provider.name} 已移除`)
+  } catch (e) {
+    showError('移除失败: ' + e.message)
+  } finally {
+    providerSaving.value = { ...providerSaving.value, [type]: false }
+  }
 }
 
 function isProviderExpanded(type) {
@@ -1229,11 +2535,6 @@ function isProviderExpanded(type) {
 
 function toggleProviderExpanded(type) {
   expandedProviders.value = { ...expandedProviders.value, [type]: !expandedProviders.value[type] }
-}
-
-function setDefaultProvider(type) {
-  aiProvider.value = type
-  expandedProviders.value = { ...expandedProviders.value, [type]: true }
 }
 
 function isCustomSettingsOpen(type) {
@@ -1248,11 +2549,26 @@ function defaultContextWindow(provider) {
   return Number(provider?.models?.[0]?.contextWindow) || 131072
 }
 
+function modelDefaultOptions(type) {
+  const config = modelConfigs.value[type]
+  if (!config) return []
+  return config.models.filter((model) => model.id).map((model) => ({ value: model.id, label: model.name || model.id }))
+}
+
+function addFallbackModel() {
+  if (fallbackModels.value.length >= 5) return
+  fallbackModels.value = [...fallbackModels.value, '']
+}
+
+function removeFallbackModel(index) {
+  fallbackModels.value = fallbackModels.value.filter((_, itemIndex) => itemIndex !== index)
+}
+
 function modelSourceHint(type) {
   const source = modelConfigSources.value[type]
   if (source === 'config') return '正在使用已保存的模型目录'
   if (source === 'custom') return '正在使用在线获取的模型目录'
-  return '未自定义模型，正在使用平台内置模型目录'
+  return '未自定义模型，正在使用服务商内置模型目录'
 }
 
 function modelExpandedKey(type, index) {
@@ -1368,15 +2684,12 @@ function toggleShowApiKey(type) {
 
 onMounted(async () => {
   removeSettingsTabListener = onSettingsTab((tab) => {
-    if (!menuItems.some((item) => item.id === tab)) return
+    const resolved = resolveTabId(tab)
+    if (!menuItems.some((item) => item.id === resolved)) return
+    void flushAutoSave(false, autoSaveKind())
     tabHistory.value = []
     tabForwardHistory.value = []
-    activeTab.value = tab
-  })
-
-  isMaximized.value = Boolean(await windowIsMaximized())
-  removeWindowMaximizedListener = onWindowMaximized((value) => {
-    isMaximized.value = Boolean(value)
+    activeTab.value = resolved
   })
 
   platform.value = navigator.platform.toLowerCase()
@@ -1398,6 +2711,7 @@ onMounted(async () => {
   } else {
     editorPresets.value = [
       { name: 'VS Code', path: '/usr/bin/code' },
+      { name: 'Sublime Text', path: '/usr/bin/subl' },
       { name: 'Vim', path: '/usr/bin/vim' },
       { name: 'Nano', path: '/usr/bin/nano' },
       { name: 'Gedit', path: '/usr/bin/gedit' }
@@ -1405,8 +2719,9 @@ onMounted(async () => {
   }
 
   const tabParam = route.query.tab
-  if (tabParam && menuItems.some((item) => item.id === tabParam)) {
-    activeTab.value = tabParam
+  const initialTab = resolveTabId(typeof tabParam === 'string' ? tabParam : '')
+  if (initialTab && menuItems.some((item) => item.id === initialTab)) {
+    activeTab.value = initialTab
   }
 
   const config = await getConfig()
@@ -1416,24 +2731,34 @@ onMounted(async () => {
   textEditApp.value = config.text_edit_app || ''
   autoUpdate.value = config.auto_update !== false
   autoStart.value = config.auto_start === true
+  databaseSafeMode.value = config.database_safe_mode !== false
+  databaseAuditEnabled.value = config.database_audit_enabled === true
+  databaseAuditStrict.value = config.database_audit_strict === true
+  databaseOperationLogEnabled.value = config.database_operation_log_enabled !== false
+  databaseAuditRules.value = { ...DEFAULT_SQL_AUDIT_RULES, ...(config.database_audit_rules || {}) }
   closeAction.value = config.close_action || 'ask'
+  updateCheckInterval.value = String(normalizeUpdateCheckInterval(config.update_check_interval))
+  recentToolsLimit.value = String(normalizeRecentToolsLimit(config.recent_tools_limit))
+  notifications.value = normalizeNotificationConfig(config.notifications)
+  const clipboardConfig = normalizeClipboardHistoryConfig(config.clipboard_history)
+  clipboardPersist.value = clipboardConfig.persist
+  clipboardMaxEntries.value = clipboardConfig.max_entries
   theme.value = config.theme || getThemePreference()
-  savedTheme.value = theme.value
   applyTheme(theme.value)
   themeStyle.value = normalizeThemeStyle(config.theme_style || getThemeStylePreference())
-  savedThemeStyle.value = themeStyle.value
   applyThemeStyle(themeStyle.value)
   fontSize.value = normalizeFontSizePreference(config.font_size || getFontSizePreference())
-  savedFontSize.value = fontSize.value
   applyFontSize(fontSize.value)
-  window.addEventListener('beforeunload', revertUnsavedTheme)
   aiProvider.value = config.ai_provider || 'bailian'
   aiApiKeys.value = { ...aiApiKeys.value, ...(config.ai_api_keys || {}) }
   aiBaseUrls.value = { ...(config.ai_base_urls || {}) }
   savedApiKeys.value = { ...aiApiKeys.value }
   savedBaseUrls.value = { ...aiBaseUrls.value }
   aiModels.value = config.ai_models && typeof config.ai_models === 'object' ? config.ai_models : {}
+  fallbackEnabled.value = config.ai_fallback_enabled !== false
+  fallbackModels.value = Array.isArray(config.ai_fallback_models) ? [...config.ai_fallback_models] : []
   databases.value = (config.databases || []).map((name) => ({ name, error: false }))
+  databaseEditor.value = normalizeDatabaseEditorConfig(config.database_editor)
   scriptTypes.value = (config.script_types || []).map((st) => ({
     name: st.name,
     description: st.description || '',
@@ -1444,6 +2769,36 @@ onMounted(async () => {
     shortcuts.value = { ...shortcuts.value, ...config.shortcuts }
   }
 
+  const proxy = config.network?.proxy || {}
+  proxyMode.value = proxy.mode || 'system'
+  proxyUrl.value = proxy.url || ''
+  proxyBypass.value = proxy.bypass || DEFAULT_PROXY_BYPASS
+  marketSources.value = { ...DEFAULT_MARKET_SOURCES, ...(config.market_sources || {}) }
+  aiPersona.value = typeof config.ai_persona === 'string' ? config.ai_persona : ''
+  aiTemperature.value =
+    config.ai_temperature === null || config.ai_temperature === undefined ? '' : String(config.ai_temperature)
+  const scenarioModels = config.ai_scenario_models || {}
+  scenarioPlanner.value = typeof scenarioModels.planner === 'string' ? scenarioModels.planner : ''
+  scenarioCompression.value = typeof scenarioModels.compression === 'string' ? scenarioModels.compression : ''
+  toolPolicy.value = normalizeToolPolicy(config.ai_tool_policy)
+  aiTimeout.value = String(normalizeAiTimeout(config.ai_timeout))
+  aiCompressThreshold.value = String(normalizeAiCompressThreshold(config.ai_compress_threshold))
+  aiCompressKeepRecent.value = String(normalizeAiCompressKeepRecent(config.ai_compress_keep_recent))
+  aiMaxAttachments.value = String(normalizeAiMaxAttachments(config.ai_max_attachments))
+  aiMaxImageMb.value = String(normalizeAiMaxImageMb(config.ai_max_image_mb))
+  aiMaxTextKb.value = String(normalizeAiMaxTextKb(config.ai_max_text_kb))
+  agentMaxIterations.value = String(normalizeAiAgentMaxIterations(config.ai_agent_max_iterations))
+  agentTimeoutMin.value = String(normalizeAiAgentTimeoutMin(config.ai_agent_timeout_min))
+  agentPlanSteps.value = String(normalizeAiAgentPlanSteps(config.ai_agent_plan_steps))
+  agentParallelTools.value = String(normalizeAiAgentParallelTools(config.ai_agent_parallel_tools))
+  toolResultMaxKb.value = String(normalizeAiToolResultMaxKb(config.ai_tool_result_max_kb))
+  toolResultRunKb.value = String(normalizeAiToolResultRunKb(config.ai_tool_result_run_kb))
+  toolResultRetentionDays.value = String(normalizeAiToolResultRetentionDays(config.ai_tool_result_retention_days))
+  databasePageSize.value = String(normalizeDatabasePageSize(config.database_page_size))
+  databaseRefreshInterval.value = String(normalizeDatabaseRefreshInterval(config.database_refresh_interval))
+  databaseTransferBatchSize.value = String(normalizeDatabaseTransferBatchSize(config.database_transfer_batch_size))
+  databaseHistoryLimit.value = String(normalizeDatabaseHistoryLimit(config.database_history_limit))
+
   if (config.bailian_api_key && !aiApiKeys.value.bailian) {
     aiApiKeys.value.bailian = config.bailian_api_key
   }
@@ -1451,7 +2806,10 @@ onMounted(async () => {
   const providers = await getAiProviders()
   aiProviders.value = providers || []
   initModelConfigs(aiProviders.value)
-  expandedProviders.value = { [aiProvider.value]: true }
+  if (!visibleProviders.value.some((provider) => provider.type === aiProvider.value)) {
+    aiProvider.value = visibleProviders.value[0]?.type || ''
+  }
+  expandedProviders.value = {}
   openCustomSettings.value = Object.fromEntries(
     aiProviders.value.map((provider) => [provider.type, Boolean((aiBaseUrls.value[provider.type] || '').trim())])
   )
@@ -1463,13 +2821,15 @@ onMounted(async () => {
     a = a.replace(/<[^>]*>/g, '').trim()
     author.value = a
   }
+
+  lastAutoStart = autoStart.value
+  seedAutoSaveStates(AUTO_SAVE_KINDS)
+  markAutoSaveReady()
 })
 
 onUnmounted(() => {
   removeSettingsTabListener?.()
-  removeWindowMaximizedListener?.()
-  revertUnsavedTheme()
-  window.removeEventListener('beforeunload', revertUnsavedTheme)
+  void flushAutoSave(false, autoSaveKind())
 })
 
 function selectTheme(value) {
@@ -1485,12 +2845,6 @@ function selectThemeStyle(value) {
 function selectFontSize(value) {
   fontSize.value = normalizeFontSizePreference(value)
   applyFontSize(fontSize.value)
-}
-
-function revertUnsavedTheme() {
-  if (theme.value !== savedTheme.value) applyTheme(savedTheme.value)
-  if (themeStyle.value !== savedThemeStyle.value) applyThemeStyle(savedThemeStyle.value)
-  if (fontSize.value !== savedFontSize.value) applyFontSize(savedFontSize.value)
 }
 
 function isDragEnabled(list) {
@@ -1591,10 +2945,7 @@ async function selectEditor() {
   if (path) textEditApp.value = path
 }
 
-function validate() {
-  let isValid = true
-  let errorMessage = ''
-
+function getSqlGroupError() {
   databases.value.forEach((db) => (db.error = false))
   scriptTypes.value.forEach((st) => (st.error = false))
 
@@ -1603,22 +2954,13 @@ function validate() {
     const name = db.name.trim()
     if (!name) {
       db.error = true
-      isValid = false
-      errorMessage = '数据库名称不能为空'
-      break
+      return '数据库名称不能为空'
     }
     if (dbNames.includes(name)) {
       db.error = true
-      isValid = false
-      errorMessage = `数据库名称 "${name}" 重复`
-      break
+      return `数据库名称 "${name}" 重复`
     }
     dbNames.push(name)
-  }
-
-  if (!isValid) {
-    showError(errorMessage)
-    return false
   }
 
   const typeNames = []
@@ -1626,94 +2968,351 @@ function validate() {
     const name = st.name.trim()
     if (!name) {
       st.error = true
-      isValid = false
-      errorMessage = '脚本类型名称不能为空'
-      break
+      return '脚本类型名称不能为空'
     }
     if (typeNames.includes(name)) {
       st.error = true
-      isValid = false
-      errorMessage = `脚本类型名称 "${name}" 重复`
-      break
+      return `脚本类型名称 "${name}" 重复`
     }
     typeNames.push(name)
   }
 
-  if (!isValid) {
-    showError(errorMessage)
-    return false
-  }
-
-  return true
+  return ''
 }
 
-async function save() {
-  if (!validate()) return
+function normalizedFallbackModels() {
+  return fallbackModels.value.map((entry) => String(entry || '').trim()).filter(Boolean)
+}
 
-  const invalidBaseUrl = Object.entries(aiBaseUrls.value).find(([, value]) => !isValidBaseUrl(value))
-  if (invalidBaseUrl) {
-    showError(`${providerName(invalidBaseUrl[0])} 的 API 地址必须是有效的 http(s) URL`)
+function getModelGroupError() {
+  const entries = normalizedFallbackModels()
+  if (entries.length > 5) return '备用模型最多配置 5 个'
+  const seen = new Set()
+  for (const entry of entries) {
+    const parsed = parseScenarioModel(entry)
+    if (!parsed) return `备用模型格式无效：${entry}（应为 provider:model）`
+    if (!aiProviders.value.some((provider) => provider.type === parsed.provider)) {
+      return `备用模型包含未知服务商：${parsed.provider}`
+    }
+    if (seen.has(entry)) return `备用模型重复：${entry}`
+    seen.add(entry)
+  }
+  return ''
+}
+
+function getAssistantGroupError() {
+  if (scenarioPlanner.value.trim() && !parseScenarioModel(scenarioPlanner.value.trim())) {
+    return '任务规划模型格式无效（应为 provider:model）'
+  }
+  if (scenarioCompression.value.trim() && !parseScenarioModel(scenarioCompression.value.trim())) {
+    return '上下文压缩模型格式无效（应为 provider:model）'
+  }
+  if (aiTemperature.value !== '') {
+    const temperature = Number(aiTemperature.value)
+    if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
+      return '温度必须在 0 到 2 之间，或留空使用默认值'
+    }
+  }
+  return ''
+}
+
+function getNetworkGroupError() {
+  if (proxyMode.value === 'manual') {
+    if (!proxyUrl.value.trim()) return '手动代理模式需要填写代理地址'
+    if (!isProxyUrl(proxyUrl.value.trim())) {
+      return '代理地址必须是有效的 http:// 、https:// 或 socks5:// 地址'
+    }
+  }
+  for (const [key, label] of [
+    ['clawhub', 'ClawHub 地址'],
+    ['mcp_registry', 'MCP 类型注册表'],
+    ['update_feed', '更新源']
+  ]) {
+    const value = String(marketSources.value[key] || '').trim()
+    if (value && !isHttpUrl(value)) return `${label} 必须是有效的 http(s) 地址`
+  }
+  return ''
+}
+
+function getAutoSaveError(kind) {
+  if (kind === 'sql') return getSqlGroupError()
+  if (kind === 'model') return getModelGroupError()
+  if (kind === 'assistant') return getAssistantGroupError()
+  if (kind === 'network') return getNetworkGroupError()
+  return ''
+}
+
+function buildAutoSavePayload(kind) {
+  if (kind === 'general') {
+    return {
+      auto_update: autoUpdate.value,
+      auto_start: autoStart.value,
+      close_action: closeAction.value,
+      update_check_interval: normalizeUpdateCheckInterval(updateCheckInterval.value),
+      recent_tools_limit: normalizeRecentToolsLimit(recentToolsLimit.value),
+      notifications: { ...notifications.value },
+      clipboard_history: {
+        persist: clipboardPersist.value,
+        max_entries: Number(clipboardMaxEntries.value)
+      },
+      theme: theme.value,
+      theme_style: themeStyle.value,
+      font_size: fontSize.value
+    }
+  }
+  if (kind === 'model') {
+    return {
+      ai_provider: aiProvider.value,
+      ai_timeout: normalizeAiTimeout(aiTimeout.value),
+      ai_fallback_enabled: fallbackEnabled.value,
+      ai_fallback_models: normalizedFallbackModels()
+    }
+  }
+  if (kind === 'assistant') {
+    return {
+      ai_persona: aiPersona.value.trim(),
+      ai_temperature: aiTemperature.value === '' ? null : Number(aiTemperature.value),
+      ai_compress_threshold: normalizeAiCompressThreshold(aiCompressThreshold.value),
+      ai_compress_keep_recent: normalizeAiCompressKeepRecent(aiCompressKeepRecent.value),
+      ai_max_attachments: normalizeAiMaxAttachments(aiMaxAttachments.value),
+      ai_max_image_mb: normalizeAiMaxImageMb(aiMaxImageMb.value),
+      ai_max_text_kb: normalizeAiMaxTextKb(aiMaxTextKb.value),
+      ai_agent_max_iterations: normalizeAiAgentMaxIterations(agentMaxIterations.value),
+      ai_agent_timeout_min: normalizeAiAgentTimeoutMin(agentTimeoutMin.value),
+      ai_agent_plan_steps: normalizeAiAgentPlanSteps(agentPlanSteps.value),
+      ai_agent_parallel_tools: normalizeAiAgentParallelTools(agentParallelTools.value),
+      ai_tool_result_max_kb: normalizeAiToolResultMaxKb(toolResultMaxKb.value),
+      ai_tool_result_run_kb: normalizeAiToolResultRunKb(toolResultRunKb.value),
+      ai_tool_result_retention_days: normalizeAiToolResultRetentionDays(toolResultRetentionDays.value),
+      ai_scenario_models: {
+        planner: scenarioPlanner.value.trim(),
+        compression: scenarioCompression.value.trim()
+      },
+      ai_tool_policy: normalizeToolPolicy(toolPolicy.value)
+    }
+  }
+  if (kind === 'database') {
+    return {
+      database_safe_mode: databaseSafeMode.value,
+      database_audit_enabled: databaseAuditEnabled.value,
+      database_audit_strict: databaseAuditStrict.value,
+      database_audit_rules: { ...databaseAuditRules.value },
+      database_operation_log_enabled: databaseOperationLogEnabled.value,
+      database_page_size: normalizeDatabasePageSize(databasePageSize.value),
+      database_refresh_interval: normalizeDatabaseRefreshInterval(databaseRefreshInterval.value),
+      database_transfer_batch_size: normalizeDatabaseTransferBatchSize(databaseTransferBatchSize.value),
+      database_history_limit: normalizeDatabaseHistoryLimit(databaseHistoryLimit.value),
+      database_editor: { ...databaseEditor.value }
+    }
+  }
+  if (kind === 'sql') {
+    return {
+      base_path: basePath.value,
+      developer_ch_name: developerChName.value,
+      developer_en_name: developerEnName.value,
+      text_edit_app: textEditApp.value,
+      databases: databases.value.map((db) => db.name.trim()).filter(Boolean),
+      script_types: scriptTypes.value
+        .map((st) => ({
+          name: st.name.trim(),
+          description: st.description.trim()
+        }))
+        .filter((st) => st.name)
+    }
+  }
+  if (kind === 'network') {
+    return {
+      network: {
+        proxy: {
+          mode: proxyMode.value,
+          url: proxyUrl.value.trim(),
+          bypass: proxyBypass.value.trim() || DEFAULT_PROXY_BYPASS
+        }
+      },
+      market_sources: {
+        clawhub: marketSources.value.clawhub.trim(),
+        mcp_registry: marketSources.value.mcp_registry.trim(),
+        update_feed: marketSources.value.update_feed.trim()
+      }
+    }
+  }
+  if (kind === 'shortcuts') {
+    return { shortcuts: { ...shortcuts.value } }
+  }
+  return null
+}
+
+let lastAutoStart = null
+let lastChatModelState = ''
+
+const AUTO_SAVE_KINDS = ['general', 'model', 'assistant', 'database', 'sql', 'network', 'shortcuts']
+const AUTO_SAVE_KIND_BY_TAB = {
+  general: 'general',
+  appearance: 'general',
+  api: 'model',
+  assistant: 'assistant',
+  network: 'network',
+  'database-client': 'database',
+  'sql-generator': 'sql',
+  shortcuts: 'shortcuts'
+}
+
+function autoSaveKind() {
+  return AUTO_SAVE_KIND_BY_TAB[activeTab.value] || ''
+}
+
+const {
+  schedule: scheduleAutoSave,
+  flush: flushAutoSave,
+  onFocusOut: onSettingsFocusOut,
+  enqueue: enqueueAutoSave,
+  markReady: markAutoSaveReady,
+  isReady: isAutoSaveReady,
+  seedSavedStates: seedAutoSaveStates,
+  rememberSaved: rememberAutoSaveState
+} = useAutoSaveConfig({
+  getKind: autoSaveKind,
+  buildPayload: buildAutoSavePayload,
+  getError: getAutoSaveError,
+  save: patchConfig,
+  showError,
+  onSaved: async (kind, payload) => {
+    if (kind === 'general' && payload.auto_start !== lastAutoStart) {
+      lastAutoStart = payload.auto_start
+      await setAutoStart(payload.auto_start)
+    }
+    if (kind === 'shortcuts') await reloadMenu()
+  }
+})
+
+async function persistChatModelSelection() {
+  if (!isAutoSaveReady()) return
+  await enqueueAutoSave(async () => {
+    const value = aiProviderModel.value
+    const parsed = parseScenarioModel(value)
+    if (!parsed) return
+    const config = modelConfigs.value[parsed.provider]
+    if (!config) return
+    const models = normalizeModelList(config.models)
+    if (!models.some((model) => model.id === parsed.model)) return
+    const stateKey = JSON.stringify([parsed.provider, parsed.model, models.map((model) => model.id)])
+    if (lastChatModelState === stateKey) return
+
+    const nextConfig = { default: parsed.model, models }
+    const nextModels = { ...aiModels.value, [parsed.provider]: nextConfig }
+    try {
+      const success = await patchConfig({ ai_provider: parsed.provider, ai_models: nextModels })
+      if (!success) return
+      aiModels.value = nextModels
+      initialModelConfigs.value = {
+        ...initialModelConfigs.value,
+        [parsed.provider]: cloneModelConfig(nextConfig)
+      }
+      modelConfigSources.value = { ...modelConfigSources.value, [parsed.provider]: 'config' }
+      lastChatModelState = stateKey
+      rememberAutoSaveState('model')
+    } catch (e) {
+      showError('保存失败: ' + e.message)
+    }
+  })
+}
+
+const autoSaveSignature = computed(() =>
+  JSON.stringify([
+    autoUpdate.value,
+    autoStart.value,
+    closeAction.value,
+    updateCheckInterval.value,
+    recentToolsLimit.value,
+    notifications.value,
+    clipboardPersist.value,
+    clipboardMaxEntries.value,
+    theme.value,
+    themeStyle.value,
+    fontSize.value,
+    aiTimeout.value,
+    fallbackEnabled.value,
+    fallbackModels.value,
+    aiPersona.value,
+    aiTemperature.value,
+    scenarioPlanner.value,
+    scenarioCompression.value,
+    aiCompressThreshold.value,
+    aiCompressKeepRecent.value,
+    aiMaxAttachments.value,
+    aiMaxImageMb.value,
+    aiMaxTextKb.value,
+    agentMaxIterations.value,
+    agentTimeoutMin.value,
+    agentPlanSteps.value,
+    agentParallelTools.value,
+    toolResultMaxKb.value,
+    toolResultRunKb.value,
+    toolResultRetentionDays.value,
+    toolPolicy.value,
+    databasePageSize.value,
+    databaseRefreshInterval.value,
+    databaseTransferBatchSize.value,
+    databaseHistoryLimit.value,
+    databaseSafeMode.value,
+    databaseAuditEnabled.value,
+    databaseAuditStrict.value,
+    databaseOperationLogEnabled.value,
+    databaseAuditRules.value,
+    databaseEditor.value,
+    basePath.value,
+    developerChName.value,
+    developerEnName.value,
+    textEditApp.value,
+    databases.value,
+    scriptTypes.value,
+    proxyMode.value,
+    proxyUrl.value,
+    proxyBypass.value,
+    marketSources.value,
+    shortcuts.value
+  ])
+)
+
+watch(autoSaveSignature, () => scheduleAutoSave())
+watch(aiProviderModel, () => {
+  void persistChatModelSelection()
+})
+
+async function runNetworkTest() {
+  const saved = await flushAutoSave(true, 'network')
+  if (!saved) return
+  const url = networkTestUrl.value.trim()
+  if (!isHttpUrl(url)) {
+    showError('请输入有效的 http(s) 地址')
     return
   }
-
-  const config = {
-    base_path: basePath.value,
-    developer_ch_name: developerChName.value,
-    developer_en_name: developerEnName.value,
-    text_edit_app: textEditApp.value,
-    auto_update: autoUpdate.value,
-    auto_start: autoStart.value,
-    close_action: closeAction.value,
-    theme: theme.value,
-    theme_style: themeStyle.value,
-    font_size: fontSize.value,
-    ai_provider: aiProvider.value,
-    ai_api_keys: { ...aiApiKeys.value },
-    ai_base_urls: { ...aiBaseUrls.value },
-    ai_models: serializeAiModels(),
-    databases: databases.value.map((db) => db.name.trim()).filter(Boolean),
-    script_types: scriptTypes.value
-      .map((st) => ({
-        name: st.name.trim(),
-        description: st.description.trim()
-      }))
-      .filter((st) => st.name),
-    shortcuts: { ...shortcuts.value }
-  }
-
+  networkTesting.value = true
+  networkTestResult.value = null
   try {
-    const success = await saveConfig(config)
-    if (success) {
-      savedTheme.value = theme.value
-      savedThemeStyle.value = themeStyle.value
-      savedFontSize.value = fontSize.value
-      await setAutoStart(autoStart.value)
-      await reloadConfig()
-      await reloadMenu()
-      closeSettingsWindow()
-    } else {
-      showError('保存失败，请检查配置')
-    }
-  } catch (e) {
-    showError('保存失败: ' + e.message)
+    const result = await networkTest(url)
+    networkTestResult.value = result.ok
+      ? { ok: true, message: `连接成功（HTTP ${result.status}，${result.elapsedMs}ms）` }
+      : { ok: false, message: result.error || `请求失败（HTTP ${result.status}）` }
+  } finally {
+    networkTesting.value = false
   }
 }
 
 function minimizeWindow() {
   windowMinimize()
 }
-
-async function toggleMaximizeWindow() {
-  isMaximized.value = Boolean(await windowToggleMaximize())
+function toggleMaximizeWindow() {
+  windowToggleMaximize()
 }
 
-function closeWindow() {
-  revertUnsavedTheme()
+async function closeWindow() {
+  await flushAutoSave(true)
   windowClose()
 }
 
-function leaveSettings() {
-  revertUnsavedTheme()
+async function leaveSettings() {
+  await flushAutoSave(true)
   returnToApp()
 }
 
@@ -1730,14 +3329,22 @@ async function testApiKey(provider) {
   apiKeyTestResult.value = { ...apiKeyTestResult.value, [type]: null }
 
   try {
-    const isValid = await validateApiKey(type, apiKey, {
+    const result = await validateApiKey(type, apiKey, {
       baseUrl: (aiBaseUrls.value[type] || '').trim()
     })
+    const isValid = typeof result === 'object' && result !== null ? result.valid === true : Boolean(result)
+    const detail = typeof result === 'object' && result !== null ? String(result.error || '').trim() : ''
+    const status = typeof result === 'object' && result !== null && result.status ? `（HTTP ${result.status}）` : ''
     apiKeyTestResult.value = {
       ...apiKeyTestResult.value,
       [type]: isValid
         ? { success: true, message: `${provider.name} 验证成功` }
-        : { success: false, message: `${provider.name} 验证失败，请检查密钥是否正确` }
+        : {
+            success: false,
+            message: detail
+              ? `${provider.name} 验证失败${status}：${detail}`
+              : `${provider.name} 验证失败，请检查密钥是否正确`
+          }
     }
   } catch (e) {
     apiKeyTestResult.value = {
@@ -1805,7 +3412,7 @@ async function refreshModels(provider) {
       setModelFetchState(type, {
         fetching: false,
         success: false,
-        message: result?.error || `${provider.name} 模型获取失败，请检查 API Key、网络或平台接口状态`
+        message: result?.error || `${provider.name} 模型获取失败，请检查 API Key、网络或服务商接口状态`
       })
       return
     }
@@ -1908,6 +3515,11 @@ async function saveProviderCard(provider) {
   const config = modelConfigs.value[type]
   if (!config) return
 
+  if (pendingProviders.value[type] && !hasStoredApiKey(type) && !provider.hasEnvKey) {
+    showError('请先填写 API Key')
+    return
+  }
+
   const baseUrl = (aiBaseUrls.value[type] || '').trim()
   if (!isValidBaseUrl(baseUrl)) {
     showError(`${provider.name} 的 API 地址必须是有效的 http(s) URL`)
@@ -1942,7 +3554,12 @@ async function saveProviderCard(provider) {
 
   providerSaving.value = { ...providerSaving.value, [type]: true }
   try {
-    const success = await saveConfig({
+    const nextAiProvider = visibleProviders.value.some((item) => item.type === aiProvider.value)
+      ? aiProvider.value
+      : type
+    aiProvider.value = nextAiProvider
+    const success = await patchConfig({
+      ai_provider: nextAiProvider,
       ai_api_keys: nextApiKeys,
       ai_base_urls: nextBaseUrls,
       ai_models: nextModels
@@ -1955,6 +3572,11 @@ async function saveProviderCard(provider) {
     savedApiKeys.value = nextApiKeys
     savedBaseUrls.value = nextBaseUrls
     aiModels.value = nextModels
+    if (pendingProviders.value[type]) {
+      const nextPending = { ...pendingProviders.value }
+      delete nextPending[type]
+      pendingProviders.value = nextPending
+    }
     await reloadConfig()
 
     const providers = await getAiProviders()
@@ -2000,10 +3622,16 @@ function cancelProviderCard(provider) {
   setModelFetchState(type, { fetching: false, message: '' })
   apiKeyTestResult.value = { ...apiKeyTestResult.value, [type]: null }
   clearExpandedModels(type)
-}
 
-function onProviderChange() {
-  expandedProviders.value = { ...expandedProviders.value, [aiProvider.value]: true }
+  if (pendingProviders.value[type] && !hasProviderKey(type)) {
+    const nextPending = { ...pendingProviders.value }
+    delete nextPending[type]
+    pendingProviders.value = nextPending
+    expandedProviders.value = { ...expandedProviders.value, [type]: false }
+    if (aiProvider.value === type) {
+      aiProvider.value = aiProviders.value.find((item) => hasProviderKey(item.type))?.type || ''
+    }
+  }
 }
 
 function openProviderDocs(provider) {
@@ -2013,1115 +3641,4 @@ function openProviderDocs(provider) {
 }
 </script>
 
-<style scoped>
-.settings-layout {
-  --settings-sidebar-width: 176px;
-
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100vh;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.settings-layout.menu-collapsed {
-  --settings-sidebar-width: 84px;
-}
-
-.settings-topbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  flex-shrink: 0;
-  padding: 0 0 0 12px;
-  background: var(--shell-titlebar-bg);
-  border-bottom: 1px solid var(--shell-border);
-  color: var(--shell-text);
-  user-select: none;
-  -webkit-app-region: drag;
-}
-
-.settings-topbar.platform-darwin {
-  padding-left: 84px;
-}
-
-.settings-window-controls {
-  display: flex;
-  align-items: center;
-  align-self: stretch;
-  margin-left: auto;
-  -webkit-app-region: no-drag;
-}
-
-.settings-window-control {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 100%;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--shell-text-muted);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.settings-window-control:hover {
-  background: var(--shell-hover-bg);
-  color: var(--shell-text-strong);
-}
-
-.settings-window-control:focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: -2px;
-}
-
-.settings-window-control.close:hover {
-  background: #e81123;
-  color: #fff;
-}
-
-.settings-window-control svg {
-  width: 14px;
-  height: 14px;
-}
-
-.settings-body {
-  flex: 1;
-  display: flex;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.settings-sidebar {
-  width: var(--settings-sidebar-width);
-  background: var(--shell-sidebar-bg);
-  border-right: 1px solid var(--shell-border);
-  padding: 10px 8px;
-  flex-shrink: 0;
-  overflow: hidden;
-  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.settings-layout.is-resizing .settings-sidebar {
-  transition: none;
-}
-
-.settings-nav {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
-  -webkit-app-region: no-drag;
-}
-
-.settings-nav-tool {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--shell-text-muted);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.settings-nav-tool:hover:not(:disabled) {
-  background: var(--shell-hover-bg);
-  color: var(--shell-text-strong);
-}
-
-.settings-nav-tool:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.settings-nav-tool:focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: -2px;
-}
-
-.settings-nav-tool svg {
-  width: 16px;
-  height: 16px;
-}
-
-.settings-nav-collapse-icon {
-  transition: transform 0.22s;
-}
-
-.settings-nav-collapse-icon.collapsed {
-  transform: rotate(180deg);
-}
-
-.settings-layout.menu-collapsed .settings-sidebar {
-  padding: 10px 4px;
-}
-
-.settings-layout.menu-collapsed .menu-text {
-  display: none;
-}
-
-.settings-layout.menu-collapsed .settings-menu-item {
-  justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.settings-menu-item {
-  padding: 7px 10px;
-  margin-bottom: 2px;
-  cursor: pointer;
-  font-size: var(--font-size-dense);
-  color: var(--shell-text);
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  border-radius: var(--radius-sm);
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.menu-icon {
-  width: var(--icon-size-xs);
-  height: var(--icon-size-xs);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.menu-icon svg {
-  width: var(--icon-size-xs);
-  height: var(--icon-size-xs);
-}
-
-.menu-text {
-  flex: 1;
-  font-weight: 500;
-}
-
-.settings-menu-item:hover {
-  background: var(--shell-hover-bg);
-  color: var(--shell-text-strong);
-}
-
-.settings-menu-item.active {
-  background: var(--shell-active-bg);
-  color: var(--shell-active-text);
-}
-
-.settings-menu-divider {
-  height: 1px;
-  margin: 6px 2px 8px;
-  background: var(--shell-divider);
-}
-
-.settings-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--surface);
-}
-
-.settings-content {
-  flex: 1;
-  padding: 18px 20px 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-gutter: stable;
-}
-
-.settings-page-head {
-  max-width: 1120px;
-  margin: 0 auto 14px;
-}
-
-.settings-page-title h2 {
-  margin: 0 0 4px;
-  font-size: var(--font-size-md);
-  font-weight: 650;
-  color: var(--text-primary);
-}
-
-.settings-page-title p {
-  margin: 0;
-  max-width: 560px;
-  font-size: var(--font-size-sm);
-  line-height: 1.55;
-  color: var(--text-secondary);
-}
-
-.settings-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.settings-tab.extensions-tab {
-  display: block;
-  max-width: 1120px;
-}
-
-.form-group {
-  padding: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  transition: var(--transition-fast);
-}
-
-.form-group:hover {
-  border-color: var(--border-strong);
-}
-
-.form-group > label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 650;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-  font-size: var(--font-size-dense);
-}
-
-.form-group > label input[type='checkbox'] {
-  margin-right: 6px;
-  accent-color: var(--accent-color);
-}
-
-.input-field {
-  width: 100%;
-}
-
-.input-field.error {
-  border-color: var(--error-dark);
-}
-
-.path-input-group {
-  display: flex;
-  gap: 8px;
-}
-
-.path-input-group .input-field {
-  flex: 1;
-}
-
-.select-field {
-  width: 100%;
-  max-width: 320px;
-}
-
-.setting-hint {
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
-  margin-top: 6px;
-}
-
-.setting-hint a {
-  color: var(--accent-color);
-  text-decoration: none;
-}
-
-.setting-hint a:hover {
-  text-decoration: underline;
-}
-
-.config-list {
-  margin-bottom: 10px;
-  max-height: none;
-  overflow-y: visible;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 8px;
-  background: var(--surface-muted);
-}
-
-.config-drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 18px;
-  height: 24px;
-  color: var(--text-tertiary);
-  cursor: grab;
-  user-select: none;
-}
-
-.config-drag-handle svg {
-  width: 14px;
-  height: 14px;
-}
-
-.config-drag-handle:hover {
-  color: var(--text-secondary);
-}
-
-.config-drag-handle:active {
-  cursor: grabbing;
-}
-
-.config-item.dragging {
-  opacity: 0.45;
-}
-
-.config-item.drag-over {
-  border-color: var(--accent-color);
-  box-shadow: inset 2px 0 0 var(--accent-color);
-}
-
-.config-item {
-  background: var(--surface);
-  padding: 8px;
-  margin-bottom: 6px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid var(--border-color);
-  gap: 8px;
-}
-
-.config-item:hover {
-  border-color: var(--border-strong);
-}
-
-.config-item:last-child {
-  margin-bottom: 0;
-}
-
-.config-item-info {
-  flex: 1;
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-  align-items: center;
-  min-width: 0;
-}
-
-.config-item-actions {
-  flex-shrink: 0;
-}
-
-.settings-footer {
-  padding: 10px max(20px, calc((100% - 1120px) / 2));
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  border-top: 1px solid var(--border-color);
-  background: var(--surface-muted);
-  flex-shrink: 0;
-}
-
-.settings-footer .btn {
-  min-width: 84px;
-}
-
-.theme-options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 148px));
-  gap: 10px;
-}
-
-.palette-options {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.palette-option {
-  padding: 8px;
-}
-
-.palette-preview {
-  display: flex;
-  width: 100%;
-  height: 52px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--swatch-app);
-}
-
-.palette-sidebar {
-  width: 24%;
-  flex-shrink: 0;
-  background: var(--swatch-sidebar);
-}
-
-.palette-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px;
-  background: var(--swatch-surface);
-}
-
-.palette-bar {
-  width: 70%;
-  height: 5px;
-  border-radius: 2px;
-  background: rgba(120, 120, 120, 0.32);
-}
-
-.palette-accent {
-  width: 48%;
-  height: 10px;
-  border-radius: 5px;
-  background: var(--swatch-accent);
-}
-
-.theme-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--surface-muted);
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.theme-option:hover {
-  border-color: rgba(var(--accent-rgb), 0.35);
-  color: var(--text-primary);
-}
-
-.theme-option.active {
-  border-color: var(--accent-color);
-  color: var(--text-primary);
-  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.14);
-}
-
-.theme-preview {
-  display: flex;
-  width: 100%;
-  height: 56px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: #f4f5f7;
-}
-
-.theme-preview-light {
-  background: #f4f5f7;
-}
-
-.theme-preview-dark {
-  background: #141519;
-}
-
-.theme-preview-system {
-  background: linear-gradient(90deg, #f4f5f7 0 50%, #141519 50% 100%);
-}
-
-.preview-sidebar {
-  width: 22%;
-  flex-shrink: 0;
-  background: #1b1b1f;
-}
-
-.preview-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-}
-
-.preview-bar {
-  height: 8px;
-  border-radius: 2px;
-  background: rgba(128, 128, 128, 0.45);
-}
-
-.preview-line {
-  width: 82%;
-  height: 5px;
-  border-radius: 2px;
-  background: rgba(128, 128, 128, 0.3);
-}
-
-.preview-line-short {
-  width: 56%;
-}
-
-.theme-label {
-  font-weight: 500;
-}
-
-.about-section {
-  text-align: center;
-  padding: 32px 20px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.about-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.about-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: white;
-}
-
-.about-name {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.about-version {
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
-.about-description {
-  font-size: var(--font-size-dense);
-  color: var(--text-secondary);
-  margin-bottom: 16px;
-  line-height: 1.7;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.about-author {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.about-copyright {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  margin-bottom: 20px;
-}
-
-.about-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.shortcut-list {
-  margin-bottom: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 4px 12px;
-  background: var(--surface-muted);
-}
-
-.shortcut-item {
-  display: flex;
-  align-items: center;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.shortcut-item:last-child {
-  border-bottom: none;
-}
-
-.shortcut-name {
-  flex: 1;
-  font-size: var(--font-size-dense);
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.shortcut-input {
-  width: 190px;
-  font-size: var(--font-size-sm);
-  text-align: center;
-}
-
-.api-key-input-group {
-  display: flex;
-  gap: 8px;
-}
-
-.api-key-input-group .input-field {
-  flex: 1;
-}
-
-.api-test-result {
-  margin-top: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-}
-
-.api-test-result.success {
-  background: rgba(var(--success-rgb), 0.1);
-  color: var(--success-dark);
-  border: 1px solid rgba(var(--success-rgb), 0.3);
-}
-
-.api-test-result.error {
-  background: rgba(var(--error-rgb), 0.1);
-  color: var(--error-dark);
-  border: 1px solid rgba(var(--error-rgb), 0.3);
-}
-
-.provider-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.provider-card {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  overflow: hidden;
-  transition: var(--transition-fast);
-}
-
-.provider-card:hover {
-  border-color: rgba(var(--accent-rgb), 0.35);
-}
-
-.provider-card.expanded {
-  border-color: rgba(var(--accent-rgb), 0.35);
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.08));
-}
-
-.provider-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 16px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.provider-card-header:hover {
-  background: var(--surface-hover);
-}
-
-.provider-card.expanded .provider-card-header {
-  border-bottom: 1px solid var(--border-color);
-}
-
-.provider-title {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-}
-
-.provider-name {
-  font-size: var(--font-size-dense);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.provider-id {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-}
-
-.provider-header-actions {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 10px;
-}
-
-.provider-chevron {
-  color: var(--text-tertiary);
-  transition: transform 0.18s ease;
-}
-
-.provider-chevron.rotated {
-  transform: rotate(180deg);
-}
-
-.provider-chevron.small.rotated {
-  transform: rotate(90deg);
-}
-
-.provider-tag {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-tertiary);
-  font-size: var(--font-size-xs);
-}
-
-.provider-tag.configured {
-  color: var(--success-dark);
-  border-color: rgba(var(--success-rgb), 0.35);
-  background: rgba(var(--success-rgb), 0.1);
-}
-
-.provider-tag.custom {
-  color: var(--warning-darker);
-  border-color: rgba(var(--warning-rgb), 0.35);
-  background: rgba(var(--warning-rgb), 0.1);
-}
-
-.provider-tag.default {
-  color: var(--accent-color);
-  border-color: rgba(var(--accent-rgb), 0.35);
-  background: rgba(var(--accent-rgb), 0.1);
-}
-
-.link-btn {
-  flex-shrink: 0;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--accent-color);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.link-btn:hover {
-  text-decoration: underline;
-}
-
-.provider-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.provider-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field-label-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.field-label-row > label {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.field-help {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--border-color);
-  border-radius: 50%;
-  color: var(--text-tertiary);
-  font-size: 10px;
-  line-height: 1;
-  cursor: help;
-}
-
-.provider-card .api-key-input-group .input-field {
-  min-width: 0;
-}
-
-.env-status {
-  padding: 8px 10px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-}
-
-.env-status.detected {
-  background: rgba(var(--success-rgb), 0.08);
-  border-color: rgba(var(--success-rgb), 0.3);
-  color: var(--success-dark);
-}
-
-.env-status.missing {
-  background: rgba(var(--warning-rgb), 0.1);
-  border-color: rgba(var(--warning-rgb), 0.35);
-  color: var(--warning-darker);
-}
-
-.custom-settings {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.custom-settings-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  text-align: left;
-  cursor: pointer;
-}
-
-.custom-settings-toggle:hover {
-  color: var(--text-primary);
-  background: var(--surface-hover);
-}
-
-.custom-settings-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px 12px;
-  border-top: 1px solid var(--border-color);
-}
-
-.custom-settings-body > label {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.model-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.model-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.model-config-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 8px;
-}
-
-.model-default-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.model-default-row > label {
-  flex-shrink: 0;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.model-default-row .select-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.model-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.model-item {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  transition: var(--transition-fast);
-}
-
-.model-item.dragging {
-  opacity: 0.5;
-}
-
-.model-item.drag-over {
-  border-color: var(--accent-color);
-}
-
-.model-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-}
-
-.model-drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 16px;
-  color: var(--text-tertiary);
-  cursor: grab;
-}
-
-.model-drag-handle svg {
-  width: 14px;
-  height: 14px;
-}
-
-.model-row .model-id {
-  flex: 3;
-  min-width: 0;
-}
-
-.model-row .model-name {
-  flex: 2;
-  min-width: 0;
-}
-
-.model-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.model-icon-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.model-icon-btn.danger:hover {
-  background: rgba(var(--error-rgb), 0.1);
-  color: var(--error-dark);
-}
-
-.model-advanced {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 10px 12px 12px 34px;
-  border-top: 1px dashed var(--border-color);
-}
-
-.advanced-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.advanced-field > label {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-}
-
-.input-type-options {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 32px;
-}
-
-.checkbox-field {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.checkbox-field input {
-  accent-color: var(--accent-color);
-}
-
-.add-model-btn {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px dashed var(--border-color);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.add-model-btn:hover {
-  border-color: var(--accent-color);
-  background: rgba(var(--accent-rgb), 0.05);
-  color: var(--accent-color);
-}
-
-.model-empty {
-  padding: 12px;
-  border: 1px dashed var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-tertiary);
-  font-size: var(--font-size-sm);
-  text-align: center;
-}
-
-.provider-card-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-@media (max-width: 900px) {
-  .model-advanced {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
+<style scoped src="../styles/settings.css"></style>

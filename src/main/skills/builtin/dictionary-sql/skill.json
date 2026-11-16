@@ -1,7 +1,7 @@
 {
   "name": "dictionary-sql",
   "version": "2.0.0",
-  "description": "生成字典配置SQL脚本，自动将中文翻译成英文编码（全大写）。支持单字典或多字典批量生成，自动分析语境决定文件合并策略",
+  "description": "生成字典配置SQL脚本，自动将中文翻译成英文编码（全大写）。必须提供 dict_list（批量）或 dict_name + dict_values（单字典）之一；多字典时自动分析语境决定文件合并策略",
   "author": "system",
   "type": "builtin",
   "category": "database",
@@ -53,11 +53,13 @@
       },
       "database": {
         "type": "string",
+        "default": "main_db",
         "description": "数据库名称，默认main_db"
       },
       "operate_type": {
         "type": "string",
         "enum": ["FIX", "PUBLISH"],
+        "default": "PUBLISH",
         "description": "操作类型，默认PUBLISH"
       },
       "dir_name": {
@@ -71,10 +73,11 @@
       "merge_strategy": {
         "type": "string",
         "enum": ["auto", "separate", "merge"],
+        "default": "auto",
         "description": "文件合并策略：auto自动分析（默认）、separate分开文件、merge合并到一个文件"
       }
     },
-    "oneOf": [{ "required": ["dict_list"] }, { "required": ["dict_name", "dict_values"] }]
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [

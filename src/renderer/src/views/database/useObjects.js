@@ -1,5 +1,5 @@
 import { dbExecuteQuery, dbGetTableStructure, dbGetObjectDefinition } from '@/api'
-export function createObjects(state) {
+export function createObjects(state, api) {
   const {
     activeTabId,
     databaseInfo,
@@ -223,6 +223,29 @@ export function createObjects(state) {
     }
   }
 
+  async function previewProcedureInQuery(target) {
+    if (!target?.connection || !target?.database || !target?.procedure) return
+
+    api.selectConnection(target.connection)
+    selectedDatabase.value = target.database
+
+    if (!target.connection.active) {
+      await api.connectToDatabase()
+    }
+
+    const result = await dbGetObjectDefinition(target.connection.name, target.database, 'procedure', target.procedure)
+    if (!result.success) {
+      api.showMessage(result.error || '读取存储过程定义失败', 'error')
+      return
+    }
+
+    api.createQueryTab(target.connection.name, target.database, {
+      name: `${target.procedure}（存储过程）`,
+      sqlQuery: result.ddl || '',
+      previewKey: `procedure:${target.connection.name}:${target.database}:${target.procedure}`
+    })
+  }
+
   function selectTriggerObject(triggerName) {
     selectedObject.value = {
       type: 'trigger',
@@ -310,6 +333,7 @@ export function createObjects(state) {
     selectProcedureObject,
     selectTriggerObject,
     selectEventObject,
+    previewProcedureInQuery,
     clearObjectInfo
   }
 }

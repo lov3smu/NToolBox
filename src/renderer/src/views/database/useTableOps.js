@@ -1,15 +1,79 @@
-import { dbApplyTableChanges, dbExportTable, dbGetTableData, dbGetTableMeta, saveSqlFile, writeFile } from '@/api'
+import {
+  dbApplyTableChanges,
+  dbExportTable,
+  dbGetTableCellValue,
+  dbGetTableData,
+  dbGetTableMeta,
+  saveSqlFile,
+  writeFile
+} from '@/api'
+import { copyToClipboard } from '@/utils/clipboard'
+import { buildPendingSql, coerceValue, isSameValue, quoteIdentifier, escapeSqlValue } from './rowEditing'
 
 export function createTableOps(state, api) {
-  const { selectedDatabase, sqlPreviewDialog } = state
+  const { defaultPageSize, lastExecutedSql, lastExecutedTime, selectedDatabase, sqlPreviewDialog, cellFilterMenu } =
+    state
+
+  const TABLE_VIEW_KEY = 'ntoolbox-db-table-views'
+  const rowKeyCache = new WeakMap()
+
+  function tableViewKey(tab) {
+    return [tab.connectionName, tab.database, tab.tableName].join('|')
+  }
+
+  function readTableViewConfigs() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(TABLE_VIEW_KEY) || '{}')
+      return parsed && typeof parsed === 'object' ? parsed : {}
+    } catch {
+      return {}
+    }
+  }
+
+  function loadTableViewConfig(tab) {
+    if (tab.viewConfigLoaded) return
+    tab.viewConfigLoaded = true
+    const config = readTableViewConfigs()[tableViewKey(tab)] || {}
+    if (Array.isArray(config.hiddenFields)) tab.hiddenFields = config.hiddenFields
+    if (config.fieldWidths && typeof config.fieldWidths === 'object') tab.fieldWidths = config.fieldWidths
+    if (Number.isFinite(config.frozenCount)) tab.frozenCount = config.frozenCount
+  }
+
+  function saveTableViewConfig(tab) {
+    try {
+      const configs = readTableViewConfigs()
+      configs[tableViewKey(tab)] = {
+        hiddenFields: tab.hiddenFields || [],
+        fieldWidths: tab.fieldWidths || {},
+        frozenCount: tab.frozenCount || 0
+      }
+      localStorage.setItem(TABLE_VIEW_KEY, JSON.stringify(configs))
+    } catch {
+      // 本地存储不可用时忽略列视图记忆
+    }
+  }
+
+  function syncSortState(tab) {
+    const current = Array.isArray(tab.sorts) ? tab.sorts : []
+    const valid = current.filter((item) => item && item.field)
+    if (valid.length !== current.length) tab.sorts = valid
+    const firstField = valid[0]?.field || null
+    const firstOrder = valid[0]?.order || null
+    if (tab.sortField !== firstField) tab.sortField = firstField
+    if (tab.sortDirection !== firstOrder) tab.sortDirection = firstOrder
+  }
 
   function ensureTableState(tab) {
     if (!tab.filters) tab.filters = []
-    if (!tab.filterLogic) tab.filterLogic = 'AND'
+    for (const filter of tab.filters) {
+      if (!filter.connector) filter.connector = 'AND'
+    }
     if (tab.searchKeyword === undefined) tab.searchKeyword = ''
-    if (!tab.pageSize) tab.pageSize = 100
-    if (tab.sortField === undefined) tab.sortField = null
-    if (tab.sortDirection === undefined) tab.sortDirection = null
+    if (!tab.pageSize) tab.pageSize = defaultPageSize.value
+    if (!Array.isArray(tab.sorts)) {
+      tab.sorts = tab.sortField ? [{ field: tab.sortField, order: tab.sortDirection || 'ASC' }] : []
+    }
+    syncSortState(tab)
     if (!tab.rowEdits) tab.rowEdits = {}
     if (!tab.rowDeletes) tab.rowDeletes = {}
     if (!tab.rowInserts) tab.rowInserts = []
@@ -17,7 +81,11 @@ export function createTableOps(state, api) {
     if (!tab.columns) tab.columns = []
     if (!tab.primaryKeys) tab.primaryKeys = []
     if (!tab.fieldOrder) tab.fieldOrder = []
+    if (!Array.isArray(tab.hiddenFields)) tab.hiddenFields = []
+    if (!tab.fieldWidths || typeof tab.fieldWidths !== 'object') tab.fieldWidths = {}
+    if (!Number.isFinite(tab.frozenCount)) tab.frozenCount = 0
     if (tab.isView === undefined) tab.isView = false
+    loadTableViewConfig(tab)
   }
 
   async function openTable(target) {
@@ -30,7 +98,7 @@ export function createTableOps(state, api) {
       await api.connectToDatabase()
     }
 
-    const tab = api.createTableTab(target.connection.name, target.database, target.table)
+    const tab = api.createTableTab(target.connection.name, target.database, target.table, Boolean(target.isView))
     if (tab) {
       await executeTableQuery(tab, 1)
     }
@@ -54,20 +122,29 @@ export function createTableOps(state, api) {
           }
           return { ...filter }
         })
+      const countSignature = JSON.stringify({ filters, search: tab.searchKeyword })
+      const previousResult = tab.queryResult?.success ? tab.queryResult : null
+      const reuseTotal =
+        requestedPage > 1 &&
+        previousResult?.countSignature === countSignature &&
+        Number.isFinite(previousResult.totalRows)
 
       const result = await dbGetTableData(tab.connectionName, tab.database, tab.tableName, {
         page: requestedPage,
         pageSize: tab.pageSize,
         filters,
-        logic: tab.filterLogic,
         search: tab.searchKeyword,
-        sort: tab.sortField ? { field: tab.sortField, order: tab.sortDirection || 'ASC' } : null
+        sort: tab.sorts.length ? tab.sorts.map((item) => ({ field: item.field, order: item.order })) : null,
+        total: reuseTotal ? previousResult.totalRows : undefined
       })
 
       if (!result.success) {
         tab.queryResult = { success: false, error: result.error }
         return
       }
+
+      lastExecutedSql.value = result.sql || ''
+      lastExecutedTime.value = Date.now() - startedAt
 
       const fieldNames = (result.fields || []).map((field) => field.name)
       const keepOrder =
@@ -84,6 +161,9 @@ export function createTableOps(state, api) {
         success: true,
         rows: result.rows || [],
         fields: result.fields || [],
+        lazyColumns: result.lazyColumns || [],
+        countApproximate: Boolean(result.countApproximate),
+        countSignature,
         totalRows: result.total,
         currentPage: result.page,
         totalPages: result.pageCount,
@@ -131,8 +211,11 @@ export function createTableOps(state, api) {
 
   function rowKey(tab, row) {
     const primaryKeys = tab.primaryKeys || []
-    if (!primaryKeys.length) return null
-    return JSON.stringify(primaryKeys.map((key) => (row[key] === undefined ? null : row[key])))
+    if (!primaryKeys.length || !row || typeof row !== 'object') return null
+    if (rowKeyCache.has(row)) return rowKeyCache.get(row)
+    const key = JSON.stringify(primaryKeys.map((key) => (row[key] === undefined ? null : row[key])))
+    rowKeyCache.set(row, key)
+    return key
   }
 
   function keysForRow(tab, row) {
@@ -167,35 +250,28 @@ export function createTableOps(state, api) {
     return row[field]
   }
 
-  function coerceValue(column, raw) {
-    if (raw === null || raw === undefined || raw === '') return null
-    const type = String(column?.dataType || '').toLowerCase()
-    if (
-      [
-        'tinyint',
-        'smallint',
-        'mediumint',
-        'int',
-        'integer',
-        'bigint',
-        'decimal',
-        'numeric',
-        'float',
-        'double',
-        'real',
-        'year'
-      ].includes(type)
-    ) {
-      const number = Number(raw)
-      return Number.isNaN(number) ? raw : number
-    }
-    return raw
+  function fetchTableCellValue(tab, row, field) {
+    return dbGetTableCellValue(tab.connectionName, tab.database, tab.tableName, field, keysForRow(tab, row))
   }
 
-  function isSameValue(left, right) {
-    if (left === null || left === undefined) return right === null || right === undefined
-    if (right === null || right === undefined) return false
-    return String(left) === String(right)
+  function isLazyCell(tab, field) {
+    return (tab.queryResult?.lazyColumns || []).includes(field)
+  }
+
+  async function resolveLazyRowValues(tab, rows) {
+    const lazyColumns = tab.queryResult?.lazyColumns || []
+    if (!lazyColumns.length) return rows
+    const resolved = []
+    for (const row of rows) {
+      const copy = { ...row }
+      for (const field of lazyColumns) {
+        if (copy[field] === null || copy[field] === undefined) continue
+        const result = await fetchTableCellValue(tab, row, field)
+        if (result?.success) copy[field] = result.value
+      }
+      resolved.push(copy)
+    }
+    return resolved
   }
 
   function updateCell(tab, row, field, raw) {
@@ -278,6 +354,16 @@ export function createTableOps(state, api) {
     if (key) delete tab.rowDeletes[key]
   }
 
+  async function discardTableChanges(tab) {
+    ensureTableState(tab)
+    if (!hasPendingChanges(tab)) return
+    if (!(await api.showConfirm('确定撤销所有未提交的修改吗？'))) return
+    tab.rowEdits = {}
+    tab.rowDeletes = {}
+    tab.rowInserts = []
+    tab.selectedRows = {}
+  }
+
   function addRow(tab) {
     ensureTableState(tab)
     if (!canEditTable(tab)) {
@@ -302,56 +388,19 @@ export function createTableOps(state, api) {
     tab.rowInserts.splice(index, 1)
   }
 
-  function escapeSqlValue(value) {
-    if (value === null || value === undefined) return 'NULL'
-    if (typeof value === 'number' || typeof value === 'bigint') return String(value)
-    return `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`
-  }
-
-  function quoteIdentifier(name) {
-    return `\`${String(name).replace(/`/g, '``')}\``
-  }
-
-  function buildPendingSql(tab) {
+  function buildPendingSqlForTab(tab) {
     ensureTableState(tab)
-    const tableRef = `${quoteIdentifier(tab.database)}.${quoteIdentifier(tab.tableName)}`
-    const lines = []
-
-    for (const entry of Object.values(tab.rowEdits)) {
-      const fields = Object.entries(entry.values)
-      if (!fields.length) continue
-      const setSql = fields.map(([field, value]) => `${quoteIdentifier(field)} = ${escapeSqlValue(value)}`).join(', ')
-      const whereSql = Object.entries(entry.keys)
-        .map(([field, value]) => `${quoteIdentifier(field)} <=> ${escapeSqlValue(value)}`)
-        .join(' AND ')
-      lines.push(`UPDATE ${tableRef} SET ${setSql} WHERE ${whereSql};`)
-    }
-
-    for (const keys of Object.values(tab.rowDeletes)) {
-      const whereSql = Object.entries(keys)
-        .map(([field, value]) => `${quoteIdentifier(field)} <=> ${escapeSqlValue(value)}`)
-        .join(' AND ')
-      lines.push(`DELETE FROM ${tableRef} WHERE ${whereSql};`)
-    }
-
-    for (const draft of tab.rowInserts) {
-      const fields = Object.entries(draft.values || {}).filter(([, value]) => value !== '' && value !== undefined)
-      if (!fields.length) {
-        lines.push(`INSERT INTO ${tableRef} () VALUES ();`)
-        continue
-      }
-      lines.push(
-        `INSERT INTO ${tableRef} (${fields.map(([field]) => quoteIdentifier(field)).join(', ')}) VALUES (${fields
-          .map(([, value]) => escapeSqlValue(value))
-          .join(', ')});`
-      )
-    }
-
-    return lines.join('\n')
+    return buildPendingSql({
+      database: tab.database,
+      tableName: tab.tableName,
+      rowEdits: tab.rowEdits,
+      rowDeletes: tab.rowDeletes,
+      rowInserts: tab.rowInserts
+    })
   }
 
   function previewChanges(tab) {
-    const sql = buildPendingSql(tab)
+    const sql = buildPendingSqlForTab(tab)
     if (!sql) {
       api.showMessage('没有待保存的修改', 'info')
       return
@@ -372,8 +421,11 @@ export function createTableOps(state, api) {
 
     tab.executing = true
     try {
-      const updates = Object.values(tab.rowEdits).filter((entry) => Object.keys(entry.values || {}).length > 0)
-      const deletes = Object.values(tab.rowDeletes)
+      // 传纯对象，响应式代理无法通过 Electron IPC 的结构化克隆
+      const updates = Object.values(tab.rowEdits)
+        .filter((entry) => Object.keys(entry.values || {}).length > 0)
+        .map((entry) => ({ keys: { ...entry.keys }, values: { ...entry.values } }))
+      const deletes = Object.values(tab.rowDeletes).map((keys) => ({ ...keys }))
       const inserts = tab.rowInserts.map((draft) => {
         const values = {}
         for (const [field, raw] of Object.entries(draft.values || {})) {
@@ -400,7 +452,7 @@ export function createTableOps(state, api) {
         'success'
       )
       await executeTableQuery(tab, tab.queryResult?.currentPage || 1)
-      await api.loadDatabaseObjects(tab.connectionName, tab.database)
+      await api.loadDatabaseObjects(tab.connectionName, tab.database, { force: true })
     } catch (error) {
       console.error('保存表数据失败:', error)
       await api.showMessage('保存表数据失败: ' + error.message, 'error')
@@ -409,12 +461,23 @@ export function createTableOps(state, api) {
     }
   }
 
+  function isComparisonColumn(column) {
+    const type = String(column?.dataType || column?.columnType || '').toLowerCase()
+    return /int|decimal|numeric|float|double|real|year|bit|date|time/.test(type)
+  }
+
+  function defaultFilterOperator(column) {
+    return isComparisonColumn(column) ? '=' : 'LIKE'
+  }
+
   function addTableFilter(tab) {
     ensureTableState(tab)
+    const column = tab.columns[0]
     tab.filters.push({
-      field: tab.columns[0]?.name || '',
-      operator: 'LIKE',
-      value: ''
+      field: column?.name || '',
+      operator: defaultFilterOperator(column),
+      value: '',
+      connector: 'AND'
     })
   }
 
@@ -449,31 +512,174 @@ export function createTableOps(state, api) {
     if (!(await confirmDiscardPending(tab))) return
     tab.filters = []
     tab.searchKeyword = ''
-    tab.filterLogic = 'AND'
-    tab.sortField = null
-    tab.sortDirection = null
+    tab.sorts = []
+    syncSortState(tab)
     await executeTableQuery(tab, 1)
   }
 
-  async function setTableSort(tab, field) {
+  async function applyTableSort(tab, field, direction) {
     ensureTableState(tab)
     if (!(await confirmDiscardPending(tab))) return
-    if (tab.sortField !== field) {
-      tab.sortField = field
-      tab.sortDirection = 'ASC'
-    } else if (tab.sortDirection === 'ASC') {
-      tab.sortDirection = 'DESC'
+    tab.sorts = field ? [{ field, order: direction || 'ASC' }] : []
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function setTableSort(tab, field, append = false) {
+    ensureTableState(tab)
+    if (!(await confirmDiscardPending(tab))) return
+    const existing = tab.sorts.find((item) => item.field === field)
+    if (append) {
+      if (!existing) {
+        tab.sorts.push({ field, order: 'ASC' })
+      } else if (existing.order === 'ASC') {
+        existing.order = 'DESC'
+      } else {
+        tab.sorts = tab.sorts.filter((item) => item !== existing)
+      }
+    } else if (tab.sorts.length && tab.sorts[0].field === field) {
+      if (tab.sorts[0].order === 'ASC') {
+        tab.sorts[0].order = 'DESC'
+      } else {
+        tab.sorts = []
+      }
     } else {
-      tab.sortField = null
-      tab.sortDirection = null
+      tab.sorts = [{ field, order: 'ASC' }]
     }
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function addTableSort(tab, field) {
+    ensureTableState(tab)
+    if (!field || tab.sorts.some((item) => item.field === field)) return
+    if (!(await confirmDiscardPending(tab))) return
+    tab.sorts.push({ field, order: 'ASC' })
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function appendTableSort(tab, field, order = 'ASC') {
+    ensureTableState(tab)
+    if (!field) return
+    if (!(await confirmDiscardPending(tab))) return
+    const existing = tab.sorts.find((item) => item.field === field)
+    if (existing) {
+      existing.order = order === 'DESC' ? 'DESC' : 'ASC'
+    } else {
+      tab.sorts.push({ field, order: order === 'DESC' ? 'DESC' : 'ASC' })
+    }
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function clearTableSort(tab) {
+    ensureTableState(tab)
+    if (!(await confirmDiscardPending(tab))) return
+    tab.sorts = []
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function changeTableSortOrder(tab, field, order) {
+    ensureTableState(tab)
+    const entry = tab.sorts.find((item) => item.field === field)
+    if (!entry) return
+    if (!(await confirmDiscardPending(tab))) return
+    entry.order = order === 'DESC' ? 'DESC' : 'ASC'
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function changeTableSortField(tab, index, field) {
+    ensureTableState(tab)
+    const entry = tab.sorts[index]
+    if (!entry || !field || entry.field === field) return
+    if (tab.sorts.some((item, itemIndex) => itemIndex !== index && item.field === field)) return
+    if (!(await confirmDiscardPending(tab))) return
+    entry.field = field
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  async function removeTableSort(tab, field) {
+    ensureTableState(tab)
+    if (!(await confirmDiscardPending(tab))) return
+    tab.sorts = tab.sorts.filter((item) => item.field !== field)
+    syncSortState(tab)
+    await executeTableQuery(tab, 1)
+  }
+
+  function toggleColumnVisibility(tab, field) {
+    ensureTableState(tab)
+    const hidden = new Set(tab.hiddenFields)
+    if (hidden.has(field)) hidden.delete(field)
+    else hidden.add(field)
+    tab.hiddenFields = [...hidden]
+    const visibleCount = (tab.fieldOrder || []).filter((name) => !hidden.has(name)).length
+    if (tab.frozenCount > visibleCount) tab.frozenCount = visibleCount
+    saveTableViewConfig(tab)
+  }
+
+  function setColumnWidth(tab, field, width) {
+    ensureTableState(tab)
+    const value = Math.min(720, Math.max(60, Math.round(Number(width) || 0)))
+    tab.fieldWidths = { ...tab.fieldWidths, [field]: value }
+    saveTableViewConfig(tab)
+  }
+
+  function resetColumnWidths(tab) {
+    ensureTableState(tab)
+    tab.fieldWidths = {}
+    saveTableViewConfig(tab)
+  }
+
+  function showAllColumns(tab) {
+    ensureTableState(tab)
+    tab.hiddenFields = []
+    saveTableViewConfig(tab)
+  }
+
+  function setFrozenColumnCount(tab, count) {
+    ensureTableState(tab)
+    tab.frozenCount = Math.min(20, Math.max(0, Number(count) || 0))
+    saveTableViewConfig(tab)
+  }
+
+  function openCellFilterMenu(event, tab, fieldName, value) {
+    cellFilterMenu.value = {
+      show: true,
+      x: event.clientX,
+      y: event.clientY,
+      tab,
+      fieldName,
+      value
+    }
+  }
+
+  function hideCellFilterMenu() {
+    cellFilterMenu.value.show = false
+  }
+
+  async function applyCellFilter(operator) {
+    const { tab, fieldName, value } = cellFilterMenu.value
+    hideCellFilterMenu()
+    if (!tab || !fieldName) return
+    ensureTableState(tab)
+    if (!(await confirmDiscardPending(tab))) return
+    const raw = value === null || value === undefined ? '' : String(value)
+    const filterValue = operator === 'LIKE' ? `%${raw}%` : raw
+    tab.filters = [
+      ...tab.filters.filter((filter) => filter.field !== fieldName),
+      { connector: 'AND', field: fieldName, operator, value: filterValue }
+    ]
     await executeTableQuery(tab, 1)
   }
 
   async function setTablePageSize(tab, size) {
     ensureTableState(tab)
     if (!(await confirmDiscardPending(tab))) return
-    const value = Math.max(1, Number(size) || 100)
+    const value = Math.min(500, Math.max(1, Number(size) || 100))
     tab.pageSize = value
     await executeTableQuery(tab, 1)
   }
@@ -520,7 +726,7 @@ export function createTableOps(state, api) {
     )
 
     if (result.success) {
-      await api.loadDatabaseObjects(target.connection.name, target.database)
+      await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
       await api.showMessage(`表 "${target.table}" 已删除`, 'success')
     } else {
       await api.showMessage('删除表失败: ' + result.error, 'error')
@@ -583,7 +789,7 @@ export function createTableOps(state, api) {
       )
 
       if (result.success) {
-        await api.loadDatabaseObjects(target.connection.name, target.database)
+        await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
         await api.showMessage(`表结构已复制到 "${newTableName}"`, 'success')
       } else {
         await api.showMessage('复制表结构失败: ' + result.error, 'error')
@@ -605,7 +811,7 @@ export function createTableOps(state, api) {
       )
 
       if (insertResult.success) {
-        await api.loadDatabaseObjects(target.connection.name, target.database)
+        await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
         await api.showMessage(`表已复制到 "${newTableName}"（包含数据）`, 'success')
       } else {
         await api.showMessage('复制表数据失败: ' + insertResult.error, 'error')
@@ -690,7 +896,7 @@ export function createTableOps(state, api) {
     )
 
     if (result.success) {
-      await api.loadDatabaseObjects(target.connection.name, target.database)
+      await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
       await api.showMessage(`表已重命名为 "${newTableName}"`, 'success')
     } else {
       await api.showMessage('重命名表失败: ' + result.error, 'error')
@@ -701,8 +907,61 @@ export function createTableOps(state, api) {
     if (!target.connection || !target.database) return
 
     api.selectConnection(target.connection)
-    await api.loadDatabaseObjects(target.connection.name, target.database)
+    await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
     await api.showMessage('表列表已刷新', 'success')
+  }
+
+  async function duplicateRow(tab, row) {
+    ensureTableState(tab)
+    if (!canEditTable(tab)) {
+      api.showMessage('视图或没有主键的表不支持直接编辑', 'warning')
+      return
+    }
+    const [source] = await resolveLazyRowValues(tab, [row])
+    const values = {}
+    for (const column of tab.columns) {
+      if (column.autoIncrement) continue
+      values[column.name] = source[column.name] ?? ''
+    }
+    tab.rowInserts.push({ values })
+    api.showMessage('已复制为新行，请修改后提交', 'success')
+  }
+
+  function buildInsertSqlForRows(tab, rows) {
+    if (!rows?.length) return ''
+    const tableRef = `${quoteIdentifier(tab.database)}.${quoteIdentifier(tab.tableName)}`
+    const fields = tab.fieldOrder?.length ? tab.fieldOrder : (tab.queryResult?.fields || []).map((field) => field.name)
+    if (!fields.length) return ''
+
+    return rows
+      .map((row) => {
+        const values = fields.map((field) => escapeSqlValue(getCellValue(tab, row, field)))
+        return `INSERT INTO ${tableRef} (${fields.map((field) => quoteIdentifier(field)).join(', ')}) VALUES (${values.join(
+          ', '
+        )});`
+      })
+      .join('\n')
+  }
+
+  async function copyRowsAsInsert(tab) {
+    ensureTableState(tab)
+    const rows = (tab.queryResult?.rows || []).filter((row) => isRowSelected(tab, row) && !isRowDeleted(tab, row))
+    if (!rows.length) {
+      await api.showMessage('请先勾选要复制的行', 'warning')
+      return
+    }
+    const sql = buildInsertSqlForRows(tab, await resolveLazyRowValues(tab, rows))
+    if (!sql) return
+    const copied = await copyToClipboard(sql)
+    await api.showMessage(copied ? `已复制 ${rows.length} 行 INSERT 语句` : '复制失败', copied ? 'success' : 'error')
+  }
+
+  async function copyRowAsInsert(tab, row) {
+    const [resolved] = await resolveLazyRowValues(tab, [row])
+    const sql = buildInsertSqlForRows(tab, [resolved])
+    if (!sql) return
+    const copied = await copyToClipboard(sql)
+    await api.showMessage(copied ? '已复制该行 INSERT 语句' : '复制失败', copied ? 'success' : 'error')
   }
 
   return {
@@ -718,6 +977,8 @@ export function createTableOps(state, api) {
     isRowUpdated,
     isRowSelected,
     getCellValue,
+    fetchTableCellValue,
+    isLazyCell,
     updateCell,
     toggleRowSelection,
     toggleAllRows,
@@ -725,10 +986,15 @@ export function createTableOps(state, api) {
     deleteSelectedRows,
     deleteRow,
     restoreDeletedRow,
+    discardTableChanges,
     addRow,
     setNewRowValue,
     removeNewRow,
-    buildPendingSql,
+    duplicateRow,
+    buildInsertSqlForRows,
+    copyRowsAsInsert,
+    copyRowAsInsert,
+    buildPendingSql: buildPendingSqlForTab,
     previewChanges,
     saveTableChanges,
     addTableFilter,
@@ -736,7 +1002,24 @@ export function createTableOps(state, api) {
     applyTableFilters,
     searchTableData,
     resetTableFilters,
+    defaultFilterOperator,
+    isComparisonColumn,
     setTableSort,
+    applyTableSort,
+    addTableSort,
+    appendTableSort,
+    clearTableSort,
+    changeTableSortOrder,
+    changeTableSortField,
+    removeTableSort,
+    toggleColumnVisibility,
+    setColumnWidth,
+    resetColumnWidths,
+    showAllColumns,
+    setFrozenColumnCount,
+    openCellFilterMenu,
+    hideCellFilterMenu,
+    applyCellFilter,
     setTablePageSize,
     onFieldDragStart,
     onFieldDragOver,

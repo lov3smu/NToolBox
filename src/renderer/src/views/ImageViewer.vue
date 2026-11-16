@@ -139,16 +139,18 @@
           </template>
 
           <div v-if="!imageUrl" class="empty-state">
-            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="m21 15-5-5L5 21" />
-            </svg>
-            <p class="empty-title">{{ errorText || '打开图片开始浏览' }}</p>
-            <p class="empty-hint">
+            <span class="empty-state-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+            </span>
+            <p class="empty-state-title">{{ errorText || '打开图片开始浏览' }}</p>
+            <p class="empty-state-hint">
               支持 PNG / JPEG / GIF / WebP / BMP / SVG / ICO / AVIF，也可以直接把图片或文件夹拖入窗口
             </p>
-            <div class="empty-actions">
+            <div class="empty-state-actions">
               <button class="btn btn-primary btn-sm" @click="pickFile">打开图片</button>
               <button class="btn btn-secondary btn-sm" @click="pickFolder">打开文件夹</button>
             </div>
@@ -787,39 +789,8 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px;
-  text-align: center;
-}
-
-.empty-icon {
-  width: 46px;
-  height: 46px;
-  color: var(--text-tertiary);
-  opacity: 0.8;
-}
-
-.empty-title {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.empty-hint {
+.empty-state-hint {
   max-width: 440px;
-  font-size: var(--font-size-xs);
-  line-height: 1.7;
-  color: var(--text-tertiary);
-}
-
-.empty-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
 }
 
 .drop-overlay {

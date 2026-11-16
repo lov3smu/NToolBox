@@ -21,14 +21,17 @@
       "style": {
         "type": "string",
         "description": "代码风格，可选：简洁、详细、企业级",
-        "enum": ["简洁", "详细", "企业级"]
+        "enum": ["简洁", "详细", "企业级"],
+        "default": "简洁"
       },
       "context": {
         "type": "string",
-        "description": "上下文信息，如现有代码、框架等（可选）"
+        "description": "上下文信息，如现有代码、框架等（可选）",
+        "default": "无"
       }
     },
-    "required": ["requirement", "language"]
+    "required": ["requirement", "language"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

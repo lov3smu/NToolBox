@@ -15,18 +15,21 @@
       },
       "language": {
         "type": "string",
-        "description": "编程语言，例如 javascript、python、java"
+        "description": "编程语言，例如 javascript、python、java",
+        "default": "自动识别"
       },
       "framework": {
         "type": "string",
-        "description": "测试框架，例如 vitest、jest、pytest、junit"
+        "description": "测试框架，例如 vitest、jest、pytest、junit",
+        "default": "跟随项目技术栈"
       },
       "focus": {
         "type": "string",
         "description": "重点关注的行为或边界条件"
       }
     },
-    "required": ["code"]
+    "required": ["code"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

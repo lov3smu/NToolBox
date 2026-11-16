@@ -315,7 +315,7 @@
       </div>
 
       <div v-else-if="selectedInfoType === 'table' && tableInfoMode === 'ddl'" class="info-content info-ddl-content">
-        <pre class="info-ddl" v-html="highlightSql(tableDDL || '加载中...')" />
+        <SqlHighlight class="info-ddl" :code="tableDDL" placeholder="加载中..." />
       </div>
     </div>
   </div>
@@ -323,6 +323,7 @@
 
 <script setup>
 import { inject } from 'vue'
+import SqlHighlight from '@/components/SqlHighlight.vue'
 
 const databaseStore = inject('database')
 const {
@@ -334,7 +335,6 @@ const {
   getInfoHeaderDesc,
   getInfoHeaderName,
   handleCategoryItemClick,
-  highlightSql,
   infoPanelWidth,
   layoutMode,
   objectTableDetails,

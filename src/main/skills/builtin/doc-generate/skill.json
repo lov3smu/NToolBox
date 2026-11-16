@@ -21,10 +21,12 @@
       },
       "language": {
         "type": "string",
-        "description": "代码语言（可选）"
+        "description": "代码语言（可选）",
+        "default": "自动识别"
       }
     },
-    "required": ["code", "format"]
+    "required": ["code", "format"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

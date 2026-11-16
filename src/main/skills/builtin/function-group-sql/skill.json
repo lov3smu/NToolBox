@@ -46,11 +46,13 @@
       },
       "database": {
         "type": "string",
+        "default": "user_db",
         "description": "数据库名称，默认user_db"
       },
       "operate_type": {
         "type": "string",
         "enum": ["FIX", "PUBLISH"],
+        "default": "PUBLISH",
         "description": "操作类型，默认PUBLISH"
       },
       "dir_name": {
@@ -62,7 +64,8 @@
         "description": "脚本用途说明，可选"
       }
     },
-    "required": ["app_group", "function_groups"]
+    "required": ["app_group", "function_groups"],
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [

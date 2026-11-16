@@ -191,7 +191,7 @@ function close() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -333,7 +333,7 @@ function close() {
 .tool-icon :deep(svg) {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);
-  color: white;
+  color: var(--text-inverse);
 }
 
 .tool-info {

@@ -26,13 +26,26 @@ export const tools = [
   },
   {
     name: 'AI助手',
-    description: '多模态对话与 Agent 工具调用',
+    description: '多模型 Agent 对话与工具调用',
     path: '/chat',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>`,
     menuGroup: 'primary',
     trayGroup: 'top'
+  },
+  {
+    name: '记忆与知识库',
+    description: '管理全局/项目记忆与外挂知识库',
+    path: '/memory',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5a3 3 0 0 0-6 0 3 3 0 0 0-1 5.8A3.5 3.5 0 0 0 8 16.5V18a3 3 0 0 0 4 2.8"/>
+      <path d="M12 5a3 3 0 0 1 6 0 3 3 0 0 1 1 5.8 3.5 3.5 0 0 1-3 5.7V18a3 3 0 0 1-4 2.8"/>
+      <path d="M12 5v16"/>
+      <path d="M9 9h.01M15 9h.01M9.5 13h.01M14.5 13h.01"/>
+    </svg>`,
+    menuGroup: 'primary',
+    hidden: true
   },
   {
     name: '密码生成器',
@@ -104,6 +117,18 @@ export const tools = [
     menuGroup: 'file'
   },
   {
+    name: '图床',
+    description: '图片上传到 GitHub、七牛云等图床',
+    path: '/image-hosting',
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 16V4"/>
+      <path d="m7 9 5-5 5 5"/>
+      <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+    </svg>`,
+    menuGroup: 'utilities',
+    trayGroup: 'tools'
+  },
+  {
     name: 'Markdown编辑器',
     description: 'Markdown 实时预览与主题定制',
     path: '/markdown-editor',
@@ -128,7 +153,7 @@ export const tools = [
     trayGroup: 'tools'
   },
   {
-    name: '剪切板管理',
+    name: '剪贴板管理',
     description: '记录并管理剪贴板文本与图片',
     path: '/clipboard',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -163,8 +188,8 @@ export const tools = [
     trayGroup: 'tools'
   },
   {
-    name: '数据库管理',
-    description: 'MySQL数据库连接与管理',
+    name: '数据库客户端',
+    description: 'MySQL 连接、查询、ER 图与数据传输',
     path: '/database',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <ellipse cx="12" cy="5" rx="9" ry="3"/>
@@ -176,7 +201,7 @@ export const tools = [
   },
   {
     name: '扩展',
-    description: '发现并安装技能扩展',
+    description: '插件、技能与连接器市场',
     path: MARKET_PATH,
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M3 9h18l-1.5 11.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/>
@@ -199,10 +224,40 @@ export const tools = [
   }
 ]
 
-export const dashboardTools = tools.filter((tool) => tool.path !== '/' && tool.menuGroup !== 'extensions')
+export const visibleTools = tools.filter((tool) => !tool.hidden)
+
+export const dashboardTools = visibleTools.filter((tool) => tool.path !== '/' && tool.menuGroup !== 'extensions')
 
 export const RECENT_TOOLS_KEY = 'recent_tools'
 export const MAX_RECENT = 4
+
+export const RECENT_TOOLS_LIMIT_OPTIONS = Object.freeze(
+  [2, 3, 4, 5, 6, 8].map((value) => ({
+    value,
+    label: `${value} 个${value === MAX_RECENT ? '（默认）' : ''}`,
+    hint: `首页「最近使用」最多保留 ${value} 个工具`
+  }))
+)
+
+export const RECENT_TOOLS_LIMIT_MIN = 2
+export const RECENT_TOOLS_LIMIT_MAX = 8
+
+export function normalizeRecentToolsLimit(value) {
+  if (value === null || value === undefined || value === '') return MAX_RECENT
+  const num = Number(value)
+  if (!Number.isFinite(num)) return MAX_RECENT
+  return Math.min(RECENT_TOOLS_LIMIT_MAX, Math.max(RECENT_TOOLS_LIMIT_MIN, Math.round(num)))
+}
+
+let activeRecentLimit = MAX_RECENT
+
+export function setRecentToolsLimit(limit) {
+  activeRecentLimit = normalizeRecentToolsLimit(limit)
+}
+
+export function getRecentToolsLimit() {
+  return activeRecentLimit
+}
 
 export function getRecentTools() {
   try {
@@ -210,22 +265,22 @@ export function getRecentTools() {
     if (!Array.isArray(recent)) return []
     return recent
       .filter((path) => path !== '/')
-      .slice(0, MAX_RECENT)
+      .slice(0, activeRecentLimit)
       .map((path) => tools.find((tool) => tool.path === path))
-      .filter((tool) => Boolean(tool) && tool.menuGroup !== 'extensions')
+      .filter((tool) => Boolean(tool) && tool.menuGroup !== 'extensions' && !tool.hidden)
   } catch {
     return []
   }
 }
 
 export function addToRecent(tool) {
-  if (!tool || tool.path === '/' || tool.menuGroup === 'extensions') return
+  if (!tool || tool.path === '/' || tool.menuGroup === 'extensions' || tool.hidden) return
   try {
     let recent = JSON.parse(localStorage.getItem(RECENT_TOOLS_KEY) || '[]')
     if (!Array.isArray(recent)) recent = []
     recent = recent.filter((path) => path !== tool.path)
     recent.unshift(tool.path)
-    localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)))
+    localStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(recent.slice(0, activeRecentLimit)))
   } catch {
     // ignore storage failures
   }
@@ -236,7 +291,7 @@ export function getToolByPath(path) {
 }
 
 export function getToolsByMenuGroup(group) {
-  return tools.filter((tool) => tool.menuGroup === group)
+  return visibleTools.filter((tool) => tool.menuGroup === group)
 }
 
 export function getTrayTopTools() {
@@ -255,9 +310,9 @@ export function getToolAccelerator(tool, shortcuts = {}) {
 }
 
 export function searchTools(query) {
-  if (!query.trim()) return tools
+  if (!query.trim()) return visibleTools
   const lowerQuery = query.toLowerCase()
-  return tools.filter(
+  return visibleTools.filter(
     (tool) => tool.name.toLowerCase().includes(lowerQuery) || tool.description.toLowerCase().includes(lowerQuery)
   )
 }

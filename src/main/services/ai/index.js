@@ -1,80 +1,15 @@
-import BailianProvider from './providers/BailianProvider.js'
-import MoonshotProvider from './providers/MoonshotProvider.js'
-import ZhipuProvider from './providers/ZhipuProvider.js'
-import MinimaxProvider from './providers/MinimaxProvider.js'
-import VolcengineProvider from './providers/VolcengineProvider.js'
-import DeepSeekProvider from './providers/DeepSeekProvider.js'
-import { supportsThinking, getContextWindow } from './capabilities.js'
+import {
+  PROVIDER_REGISTRY,
+  PROVIDER_TYPES,
+  PROVIDER_INFO,
+  AUTO_PRIORITY,
+  getProviderEntry,
+  getContextWindow
+} from './registry.js'
+import { supportsThinking } from './thinking.js'
 import { log } from '../../utils'
 
-export const PROVIDER_TYPES = {
-  BAILIAN: 'bailian',
-  MOONSHOT: 'moonshot',
-  ZHIPU: 'zhipu',
-  MINIMAX: 'minimax',
-  VOLCENGINE: 'volcengine',
-  DEEPSEEK: 'deepseek'
-}
-
-export const PROVIDER_INFO = {
-  [PROVIDER_TYPES.BAILIAN]: {
-    name: '百炼',
-    description: '阿里云百炼通义千问',
-    requiresGroupId: false,
-    requiresEndpointId: false,
-    docsUrl: 'https://bailian.console.aliyun.com/',
-    envKey: 'DASHSCOPE_API_KEY',
-    defaultBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-  },
-  [PROVIDER_TYPES.MOONSHOT]: {
-    name: 'Kimi',
-    description: '月之暗面 Kimi 大模型',
-    requiresGroupId: false,
-    requiresEndpointId: false,
-    docsUrl: 'https://platform.kimi.com/',
-    envKey: 'MOONSHOT_API_KEY',
-    defaultBaseUrl: 'https://api.moonshot.cn/v1'
-  },
-  [PROVIDER_TYPES.ZHIPU]: {
-    name: '智谱AI',
-    description: '智谱 GLM 大模型',
-    requiresGroupId: false,
-    requiresEndpointId: false,
-    docsUrl: 'https://docs.bigmodel.cn/',
-    envKey: 'ZHIPUAI_API_KEY',
-    defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4'
-  },
-  [PROVIDER_TYPES.MINIMAX]: {
-    name: 'MiniMax',
-    description: 'MiniMax 大模型',
-    requiresGroupId: false,
-    requiresEndpointId: false,
-    docsUrl: 'https://platform.minimaxi.com/',
-    envKey: 'MINIMAX_API_KEY',
-    defaultBaseUrl: 'https://api.minimax.cn/v1'
-  },
-  [PROVIDER_TYPES.VOLCENGINE]: {
-    name: '火山方舟',
-    description: '火山引擎 Doubao 大模型',
-    requiresGroupId: false,
-    requiresEndpointId: false,
-    docsUrl: 'https://console.volcengine.com/ark',
-    envKey: 'ARK_API_KEY',
-    defaultBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3'
-  },
-  [PROVIDER_TYPES.DEEPSEEK]: {
-    name: 'DeepSeek',
-    description: 'DeepSeek 大模型',
-    requiresGroupId: false,
-    requiresEndpointId: false,
-    docsUrl: 'https://platform.deepseek.com/api_keys',
-    envKey: 'DEEPSEEK_API_KEY',
-    defaultBaseUrl: 'https://api.deepseek.com/v1'
-  }
-}
-
-let currentProvider = null
-let currentProviderType = null
+export { PROVIDER_TYPES, PROVIDER_INFO, AUTO_PRIORITY, getContextWindow }
 
 function applyModelOverrides(provider, config) {
   if (!provider) return provider
@@ -88,52 +23,21 @@ function applyModelOverrides(provider, config) {
 }
 
 export function createProvider(type, config = {}) {
+  const entry = getProviderEntry(type)
+  if (!entry) {
+    log.error(`未知的 Provider 类型: ${type}`)
+    return null
+  }
   log.info(`创建 AI Provider: ${type}`)
 
-  let provider
-  switch (type) {
-    case PROVIDER_TYPES.BAILIAN:
-      provider = new BailianProvider(config.apiKey, config.timeout, config.connectionTimeout)
-      break
-    case PROVIDER_TYPES.MOONSHOT:
-      provider = new MoonshotProvider(config.apiKey, config.timeout, config.connectionTimeout)
-      break
-    case PROVIDER_TYPES.ZHIPU:
-      provider = new ZhipuProvider(config.apiKey, config.timeout, config.connectionTimeout)
-      break
-    case PROVIDER_TYPES.MINIMAX:
-      provider = new MinimaxProvider(config.apiKey, config.groupId, config.timeout, config.connectionTimeout)
-      break
-    case PROVIDER_TYPES.VOLCENGINE:
-      provider = new VolcengineProvider(config.apiKey, config.endpointId, config.timeout, config.connectionTimeout)
-      break
-    case PROVIDER_TYPES.DEEPSEEK:
-      provider = new DeepSeekProvider(config.apiKey, config.timeout, config.connectionTimeout)
-      break
-    default:
-      log.error(`未知的 Provider 类型: ${type}`)
-      return null
-  }
-
-  if (!provider) return null
+  const provider = new entry.Provider(config)
   if (config.baseUrl) provider.setBaseUrl(config.baseUrl)
   return applyModelOverrides(provider, config)
 }
 
+// 每次调用返回独立实例，避免并发会话共享可变配置（apiKey/baseUrl/models）
 export function getProvider(type, config = {}) {
-  if (currentProvider && currentProviderType === type) {
-    currentProvider.apiKey = config.apiKey
-    if (config.groupId !== undefined) currentProvider.groupId = config.groupId
-    if (config.endpointId !== undefined) currentProvider.endpointId = config.endpointId
-    currentProvider.setBaseUrl(config.baseUrl)
-    applyModelOverrides(currentProvider, config)
-    return currentProvider
-  }
-
-  currentProvider = createProvider(type, config)
-  currentProviderType = type
-
-  return currentProvider
+  return createProvider(type, config)
 }
 
 export function getProviderEnvApiKey(type) {
@@ -212,10 +116,6 @@ export async function fetchProviderModels(type, config = {}) {
   return provider.listRemoteModels(config.apiKey)
 }
 
-export function getCurrentProvider() {
-  return currentProvider
-}
-
 export function getAvailableProviders(config = null) {
   const apiKeys = config?.ai_api_keys || {}
   const baseUrls = config?.ai_base_urls || {}
@@ -247,4 +147,4 @@ export function getAvailableProviders(config = null) {
 }
 
 export { default as BaseProvider } from './providers/BaseProvider.js'
-export { getContextWindow } from './capabilities.js'
+export { PROVIDER_REGISTRY }
