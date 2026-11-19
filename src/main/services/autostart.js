@@ -1,6 +1,7 @@
 import { app, dialog } from 'electron'
 import { log } from '../utils'
 import { getConfig, saveConfig } from './config'
+import { t } from './i18n'
 
 export async function setAutoStart(enable) {
   try {
@@ -37,10 +38,10 @@ export async function getAutoStart() {
 export async function promptAutoStartOnFirstLaunch(mainWindow) {
   const config = getConfig()
 
-  if (config.first_launch_done) {
+  if (config.app.first_launch_done) {
     log.info('首次启动询问已完成')
     if (app.isPackaged) {
-      await setAutoStart(config.auto_start)
+      await setAutoStart(config.app.auto_start)
     }
     return
   }
@@ -56,18 +57,18 @@ export async function promptAutoStartOnFirstLaunch(mainWindow) {
     try {
       const result = await dialog.showMessageBox(mainWindow, {
         type: 'question',
-        title: '开机启动',
-        message: '是否设置开机自动启动？',
-        detail: '开启后，系统启动时会自动运行本应用。\n\n您也可以在【设置】页面随时更改此选项。',
-        buttons: ['开启', '不开启'],
+        title: t('开机启动'),
+        message: t('是否设置开机自动启动？'),
+        detail: t('开启后，系统启动时会自动运行本应用。\n\n您也可以在【设置】页面随时更改此选项。'),
+        buttons: [t('开启'), t('不开启')],
         defaultId: 0,
         cancelId: 1
       })
 
       const enableAutoStart = result.response === 0
       await setAutoStart(enableAutoStart)
-      config.auto_start = enableAutoStart
-      config.first_launch_done = true
+      config.app.auto_start = enableAutoStart
+      config.app.first_launch_done = true
       await saveConfig(config)
 
       log.info(`首次启动询问结果: ${enableAutoStart ? '开启' : '关闭'}开机启动`)

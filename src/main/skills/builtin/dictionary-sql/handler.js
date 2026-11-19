@@ -1,14 +1,14 @@
 export default async function handler(params, context) {
   const { log, executeDictionarySql } = context
 
-  log.info('执行 dictionary-sql Skill', params)
+  log.debug('执行 dictionary-sql Skill')
 
   if (!executeDictionarySql) {
     return { success: false, error: 'executeDictionarySql 函数未提供' }
   }
 
   if (params.dict_list && params.dict_list.length > 0) {
-    log.info('批量模式：生成多个字典', params.dict_list.length)
+    log.debug(`批量模式：生成 ${params.dict_list.length} 个字典`)
     const result = await executeDictionarySql(params)
 
     if (result.success) {
@@ -31,7 +31,7 @@ export default async function handler(params, context) {
   }
 
   if (params.dict_name && params.dict_values) {
-    log.info('单字典模式')
+    log.debug('单字典模式')
     const result = await executeDictionarySql(params)
 
     if (result.success) {

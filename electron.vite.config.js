@@ -120,7 +120,8 @@ export default defineConfig({
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
         '@assets': resolve(__dirname, 'assets'),
-        '@shared': resolve(__dirname, 'src/shared')
+        '@shared': resolve(__dirname, 'src/shared'),
+        'node-sql-parser': resolve(__dirname, 'node_modules/node-sql-parser/build/mysql.js')
       }
     },
     base: '/',
@@ -141,7 +142,8 @@ export default defineConfig({
               '@codemirror/autocomplete',
               '@codemirror/theme-one-dark',
               'codemirror'
-            ]
+            ],
+            sqlparser: ['node-sql-parser']
           }
         }
       }

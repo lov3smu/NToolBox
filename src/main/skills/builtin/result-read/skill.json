@@ -1,0 +1,46 @@
+{
+  "name": "result-read",
+  "version": "1.0.0",
+  "description": "分页读取被上下文预算截断的工具结果全文：按 result_id 与 offset/limit 读取，用于查看大查询、大文件的完整内容。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["工具结果", "分页读取", "上下文预算"],
+  "icon": "search",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "result_id": {
+        "type": "string",
+        "description": "工具结果被截断时返回的 resultId"
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000000,
+        "default": 0,
+        "description": "起始字符位置，默认从开头读取"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 8000,
+        "default": 4000,
+        "description": "本次读取的最大字符数"
+      }
+    },
+    "required": ["result_id"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "result_id: chat-xxx__call-abc__1",
+      "output": "返回该结果开头 4000 字符，并给出 total_chars 与 next_offset"
+    },
+    {
+      "input": "result_id: chat-xxx__call-abc__1, offset: 4000, limit: 4000",
+      "output": "继续读取后续内容，has_more 表示是否还有剩余"
+    }
+  ]
+}

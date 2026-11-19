@@ -10,11 +10,21 @@ import { generateDictionarySql, generateDictionarySqlBatch, generateFunctionGrou
 import * as database from './database.js'
 import { generateSQLFile } from './generator.js'
 import { fetchClawHubMarket, fetchClawHubSkillDetail, normalizeSkillName, searchClawHubSkills } from './clawhub.js'
+import { normalizeSkillParams, renderPromptTemplate } from './skillSchema.js'
+import { callMcpTool, getMcpSkill, getMcpToolDefinitions, isMcpToolName } from './mcp.js'
+import { normalizeDisabledSkills, normalizeSkillOverrides } from '../../shared/skillOverrides.js'
+import { getClawhubBase } from '../../shared/network.js'
+import { getBuiltinHandler } from '../skills/builtin/registry.js'
 
 const BUILTIN_SKILLS_PATH = path.join(__dirname, '../skills/builtin')
 const MARKET_SKILLS_PATH = path.join(__dirname, '../skills/market')
 const REMOTE_MARKET_TTL = 5 * 60 * 1000
 const REMOTE_MARKET_LIMIT = 60
+const SKILL_EXECUTION_TIMEOUT = 2 * 60 * 1000
+
+function resolveBuiltinHandler(skill) {
+  return skill?.type === 'builtin' ? getBuiltinHandler(skill.path) : null
+}
 
 function getUserSkillsPath() {
   return path.join(app.getPath('userData'), 'skills')
@@ -34,6 +44,15 @@ function compareVersions(a, b) {
   return 0
 }
 
+function withTimeout(promise, timeout, message) {
+  let timer
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeout)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer))
+}
+
 class SkillsManager {
   constructor() {
     this.skills = new Map()
@@ -47,11 +66,7 @@ class SkillsManager {
   async loadSkills() {
     if (this.loaded) return
 
-    log.info('开始加载 Skills...')
-    log.info('__dirname:', __dirname)
-    log.info('BUILTIN_SKILLS_PATH:', BUILTIN_SKILLS_PATH)
-    log.info('USER_SKILLS_PATH:', getUserSkillsPath())
-
+    log.debug('开始加载 Skills')
     await this._loadBuiltinSkills()
     await this._loadUserSkills()
 
@@ -61,15 +76,12 @@ class SkillsManager {
 
   async _loadBuiltinSkills() {
     try {
-      log.info('检查内置 Skills 目录是否存在:', BUILTIN_SKILLS_PATH)
       if (!fs.existsSync(BUILTIN_SKILLS_PATH)) {
         log.warn('内置 Skills 目录不存在')
         return
       }
 
-      log.info('内置 Skills 目录存在，开始读取...')
       const dirs = await fs.promises.readdir(BUILTIN_SKILLS_PATH)
-      log.info('找到 Skills 目录:', dirs.length, '个')
 
       for (const dir of dirs) {
         const skillPath = path.join(BUILTIN_SKILLS_PATH, dir)
@@ -120,6 +132,23 @@ class SkillsManager {
         return
       }
 
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(skillDef.name)) {
+        log.warn(`Skill ${skillPath} 的 name 无效：仅允许小写字母、数字和连字符`)
+        return
+      }
+
+      const existing = this.skills.get(skillDef.name)
+      if (existing) {
+        if (existing.type === 'builtin') {
+          log.warn(`跳过 ${type} Skill ${skillDef.name}：内置技能不可被覆盖`)
+          return
+        }
+        if (type === 'user') {
+          log.warn(`跳过重复的用户 Skill：${skillDef.name}`)
+          return
+        }
+      }
+
       skillDef.type = type
       skillDef.path = skillPath
 
@@ -145,75 +174,108 @@ class SkillsManager {
   }
 
   getSkills() {
-    return Array.from(this.skills.values()).map((skill) => ({
-      name: skill.name,
-      version: skill.version,
-      description: skill.description,
-      author: skill.author,
-      type: skill.type,
-      builtin: skill.type === 'builtin',
-      canUninstall: skill.type !== 'builtin',
-      category: skill.category,
-      tags: skill.tags || [],
-      icon: skill.icon,
-      parameters: skill.parameters,
-      examples: skill.examples || [],
-      path: skill.path,
-      source: skill.source?.type || 'local',
-      sourceUrl: skill.source?.url || '',
-      hasHandler: Boolean(skill.handlerPath),
-      hasPrompt: Boolean(skill.promptContent)
-    }))
+    const config = getConfig()
+    const disabled = new Set(normalizeDisabledSkills(config.extensions?.disabled_skills))
+    const overrides = normalizeSkillOverrides(config.extensions?.skill_overrides)
+
+    return Array.from(this.skills.values()).map((skill) => {
+      const override = overrides[skill.name]
+      return {
+        name: skill.name,
+        version: skill.version,
+        description: override?.description || skill.description,
+        baseDescription: skill.description,
+        author: skill.author,
+        type: skill.type,
+        builtin: skill.type === 'builtin',
+        canUninstall: skill.type !== 'builtin',
+        enabled: !disabled.has(skill.name),
+        category: skill.category,
+        tags: skill.tags || [],
+        icon: skill.icon,
+        parameters: skill.parameters,
+        examples: skill.examples || [],
+        path: skill.path,
+        source: skill.source?.type || 'local',
+        sourceUrl: skill.source?.url || '',
+        hasHandler: Boolean(skill.handlerPath) || Boolean(resolveBuiltinHandler(skill)),
+        hasPrompt: Boolean(skill.promptContent)
+      }
+    })
   }
 
   getSkill(name) {
-    return this.skills.get(name)
+    return this.skills.get(name) || (isMcpToolName(name) ? getMcpSkill(name) : undefined)
   }
 
   getToolDefinitions() {
-    return Array.from(this.skills.values()).map((skill) => ({
-      type: 'function',
-      function: {
-        name: skill.name,
-        description: skill.description,
-        parameters: skill.parameters
-      }
-    }))
+    const disabled = new Set(normalizeDisabledSkills(getConfig().extensions.disabled_skills))
+    const definitions = Array.from(this.skills.values())
+      .filter((skill) => !disabled.has(skill.name))
+      .map((skill) => ({
+        type: 'function',
+        function: {
+          name: skill.name,
+          description: skill.description,
+          parameters: skill.parameters
+        }
+      }))
+    return [...definitions, ...getMcpToolDefinitions()]
   }
 
-  async executeSkill(name, params) {
+  async executeSkill(name, params, runtime = {}) {
+    if (isMcpToolName(name)) {
+      const args = params && typeof params === 'object' ? params : {}
+      return await callMcpTool(name, args)
+    }
+
     const skill = this.skills.get(name)
 
     if (!skill) {
       return { success: false, error: `Skill ${name} 不存在` }
     }
 
-    log.info(`执行 Skill: ${name}`, params)
+    if (normalizeDisabledSkills(getConfig().extensions.disabled_skills).includes(name)) {
+      return { success: false, error: `Skill ${name} 已停用，请先在扩展管理中启用` }
+    }
+
+    const validation = normalizeSkillParams(skill.parameters, params)
+    if (validation.error) {
+      log.warn(`Skill ${name} 参数校验失败: ${validation.error}`)
+      return { success: false, error: validation.error }
+    }
+
+    const normalizedParams = validation.params
+    log.debug(`执行 Skill: ${name}`)
 
     try {
-      if (skill.handlerPath) {
-        return await this._executeHandler(skill, params)
+      let execution
+      if (skill.handlerPath || resolveBuiltinHandler(skill)) {
+        execution = this._executeHandler(skill, normalizedParams, runtime)
       } else if (skill.promptContent) {
-        return await this._executePrompt(skill, params)
+        execution = this._executePrompt(skill, normalizedParams, runtime)
       } else {
         return { success: false, error: `Skill ${name} 没有有效的执行方式` }
       }
+
+      return await withTimeout(
+        execution,
+        SKILL_EXECUTION_TIMEOUT,
+        `Skill ${name} 执行超时（${SKILL_EXECUTION_TIMEOUT / 1000} 秒）`
+      )
     } catch (error) {
       log.error(`执行 Skill ${name} 失败:`, error)
       return { success: false, error: error.message }
     }
   }
 
-  async _executeHandler(skill, params) {
+  async _executeHandler(skill, params, runtime = {}) {
     try {
-      log.info(`Handler 执行开始: ${skill.name}`)
-      log.info(`Handler 路径: ${skill.handlerPath}`)
-
-      const handlerPath = pathToFileURL(skill.handlerPath).href
-      log.info(`Handler URL: ${handlerPath}`)
-
-      const handlerModule = await import(handlerPath)
-      const handler = handlerModule.default || handlerModule.handler
+      let handler = resolveBuiltinHandler(skill)
+      if (!handler && skill.handlerPath) {
+        const handlerModule = await import(pathToFileURL(skill.handlerPath).href)
+        handler = handlerModule.default || handlerModule.handler
+      }
 
       if (!handler || typeof handler !== 'function') {
         return { success: false, error: 'Handler 不是有效的函数' }
@@ -226,6 +288,14 @@ class SkillsManager {
         skill,
         database,
         getConfig,
+        isPathWithinBase,
+        workspacePath: typeof runtime.workspacePath === 'string' ? runtime.workspacePath : '',
+        providerType: typeof runtime.providerType === 'string' ? runtime.providerType : '',
+        model: typeof runtime.model === 'string' ? runtime.model : '',
+        listToolDefinitions: () => this.getToolDefinitions(),
+        runChat: typeof runtime.runChat === 'function' ? runtime.runChat : undefined,
+        dryRun: runtime.dryRun === true,
+        snapshots: runtime.snapshots && typeof runtime.snapshots.record === 'function' ? runtime.snapshots : null,
         generateSQLFile,
         executeDictionarySql: (params) => {
           if (params.dict_list) return generateDictionarySqlBatch(params)
@@ -234,9 +304,7 @@ class SkillsManager {
         executeFunctionGroupSql: generateFunctionGroupSql
       }
 
-      log.info(`开始调用 handler 函数`)
       const result = await handler(params, context)
-      log.info(`Handler 执行完成: ${JSON.stringify(result)}`)
 
       if (result && typeof result === 'object') {
         return result
@@ -245,26 +313,28 @@ class SkillsManager {
       return { success: true, content: String(result) }
     } catch (error) {
       log.error(`Handler 执行失败:`, error)
-      log.error(`错误堆栈:`, error.stack)
       return { success: false, error: error.message }
     }
   }
 
-  async _executePrompt(skill, params) {
-    let prompt = skill.promptContent
-
-    for (const [key, value] of Object.entries(params)) {
-      prompt = prompt.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '')
+  async _executePrompt(skill, params, runtime = {}) {
+    const rendered = renderPromptTemplate(skill.promptContent, params)
+    if (rendered.error) {
+      return { success: false, error: rendered.error }
     }
 
-    const config = getConfig()
-    const providerType = config.ai_provider || 'bailian'
-    const providerConfig = resolveProviderRuntimeConfig(providerType, config)
-
-    const provider = getProvider(providerType, providerConfig)
+    let provider = runtime.provider
+    let model = runtime.model
 
     if (!provider) {
-      return { success: false, error: `未知的 AI Provider: ${providerType}` }
+      const config = getConfig()
+      const providerType = config.ai?.provider || 'bailian'
+      const providerConfig = resolveProviderRuntimeConfig(providerType, config)
+      provider = getProvider(providerType, providerConfig)
+
+      if (!provider) {
+        return { success: false, error: `未知的 AI Provider: ${providerType}` }
+      }
     }
 
     const validation = provider.validateConfig()
@@ -272,9 +342,10 @@ class SkillsManager {
       return { success: false, error: `${provider.name} ${validation.error}` }
     }
 
-    const messages = [{ role: 'user', content: prompt }]
+    model = model || provider.getDefaultModel()
+    const messages = [{ role: 'user', content: rendered.content }]
 
-    const result = await provider.chat(messages, [], { model: provider.getDefaultModel() })
+    const result = await provider.chat(messages, [], { model })
 
     if (!result.success) {
       return { success: false, error: result.error || 'AI 调用失败' }
@@ -283,7 +354,7 @@ class SkillsManager {
     return {
       success: true,
       content: result.content,
-      metadata: { provider: provider.name }
+      metadata: { provider: provider.name, model }
     }
   }
 
@@ -358,6 +429,138 @@ class SkillsManager {
       return { success: true }
     } catch (error) {
       log.error('卸载 Skill 失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  exportSkillBundle(name) {
+    const skill = this.skills.get(name)
+    if (!skill) return { success: false, error: `Skill ${name} 不存在` }
+
+    let handler = ''
+    if (skill.handlerPath && isPathWithinBase(skill.handlerPath, skill.path) && fs.existsSync(skill.handlerPath)) {
+      handler = fs.readFileSync(skill.handlerPath, 'utf8')
+    }
+
+    const definition = {}
+    for (const key of [
+      'name',
+      'version',
+      'description',
+      'author',
+      'category',
+      'tags',
+      'icon',
+      'parameters',
+      'examples',
+      'promptTemplate',
+      'handler',
+      'changelog'
+    ]) {
+      if (skill[key] !== undefined) definition[key] = skill[key]
+    }
+
+    const bundle = {
+      format: 'ntoolbox-skill',
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      skill: definition,
+      prompt: skill.promptContent || '',
+      handler
+    }
+
+    return {
+      success: true,
+      name: skill.name,
+      content: JSON.stringify(bundle, null, 2),
+      fileName: `${skill.name}-${skill.version || '1.0.0'}.skill.json`
+    }
+  }
+
+  async importSkillBundle(payload) {
+    try {
+      const bundle = typeof payload === 'string' ? JSON.parse(payload) : payload
+      if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle)) {
+        return { success: false, error: '技能包内容不是有效对象' }
+      }
+      if (bundle.format !== 'ntoolbox-skill') {
+        return { success: false, error: '不是有效的 NToolBox 技能包' }
+      }
+
+      const rawDefinition = bundle.skill
+      if (!rawDefinition || typeof rawDefinition !== 'object' || Array.isArray(rawDefinition)) {
+        return { success: false, error: '技能包缺少 skill 定义' }
+      }
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(rawDefinition.name || '')) {
+        return { success: false, error: '技能包中的 name 无效（仅允许小写字母、数字和连字符）' }
+      }
+      if (typeof rawDefinition.description !== 'string' || !rawDefinition.description.trim()) {
+        return { success: false, error: '技能包缺少 description' }
+      }
+
+      const name = rawDefinition.name
+      const existing = this.skills.get(name)
+      if (existing?.type === 'builtin') {
+        return { success: false, error: `内置技能 ${name} 不能被技能包覆盖` }
+      }
+
+      const version =
+        typeof rawDefinition.version === 'string' && rawDefinition.version.trim()
+          ? rawDefinition.version.trim()
+          : '1.0.0'
+      const definition = { ...rawDefinition, name, version, description: rawDefinition.description.trim() }
+      const prompt = typeof bundle.prompt === 'string' ? bundle.prompt.trim() : ''
+      const handler = typeof bundle.handler === 'string' ? bundle.handler : ''
+      const promptFile = path.basename(
+        typeof definition.promptTemplate === 'string' && definition.promptTemplate
+          ? definition.promptTemplate
+          : 'prompt.txt'
+      )
+      const handlerFile = path.basename(
+        typeof definition.handler === 'string' && definition.handler ? definition.handler : 'handler.js'
+      )
+      if (!prompt && !handler) {
+        return { success: false, error: '技能包既没有 Prompt 也没有 handler 脚本' }
+      }
+
+      const userSkillsPath = getUserSkillsPath()
+      const targetPath = path.join(userSkillsPath, name)
+      if (!isPathWithinBase(targetPath, userSkillsPath)) {
+        return { success: false, error: '扩展目录无效，已拒绝导入' }
+      }
+      if (existing && !isPathWithinBase(existing.path, userSkillsPath)) {
+        return { success: false, error: '已安装扩展目录异常，已拒绝覆盖' }
+      }
+
+      await fs.promises.mkdir(userSkillsPath, { recursive: true })
+      const tempPath = path.join(userSkillsPath, `.import-${name}-${Date.now()}`)
+
+      try {
+        await fs.promises.mkdir(tempPath, { recursive: true })
+        if (handler) definition.handler = handlerFile
+        if (prompt) definition.promptTemplate = promptFile
+        await fs.promises.writeFile(path.join(tempPath, 'skill.json'), JSON.stringify(definition, null, 2), 'utf8')
+        if (prompt) await fs.promises.writeFile(path.join(tempPath, promptFile), prompt, 'utf8')
+        if (handler) await fs.promises.writeFile(path.join(tempPath, handlerFile), handler, 'utf8')
+
+        if (existing) {
+          await this._removeDir(existing.path)
+          this.skills.delete(name)
+        } else if (fs.existsSync(targetPath)) {
+          await this._removeDir(targetPath)
+        }
+
+        await fs.promises.rename(tempPath, targetPath)
+        await this._loadSkill(targetPath, 'user')
+      } catch (error) {
+        if (fs.existsSync(tempPath)) await this._removeDir(tempPath).catch(() => {})
+        throw error
+      }
+
+      log.info(`导入 Skill: ${name}@${version}`)
+      return { success: true, name, version, updated: Boolean(existing) }
+    } catch (error) {
+      log.error('导入 Skill 失败:', error)
       return { success: false, error: error.message }
     }
   }
@@ -443,6 +646,7 @@ class SkillsManager {
       installed: Boolean(installed),
       installedVersion: installed?.version || '',
       installedType: installed?.type || '',
+      installPath: installed?.path || path.join(getUserSkillsPath(), skill.name),
       status
     }
   }
@@ -463,7 +667,10 @@ class SkillsManager {
 
     this.remoteMarketLoading = (async () => {
       try {
-        const items = await fetchClawHubMarket({ limit: REMOTE_MARKET_LIMIT })
+        const items = await fetchClawHubMarket({
+          limit: REMOTE_MARKET_LIMIT,
+          base: getClawhubBase(getConfig().network?.market_sources)
+        })
         this.remoteMarket = items
         this.remoteMarketFetchedAt = Date.now()
         this.remoteMarketError = ''
@@ -585,7 +792,10 @@ class SkillsManager {
     if (cached) return cached
 
     try {
-      const results = await searchClawHubSkills(normalized, { limit: 10 })
+      const results = await searchClawHubSkills(normalized, {
+        limit: 10,
+        base: getClawhubBase(getConfig().network?.market_sources)
+      })
       const found = results.find((skill) => skill.name === normalized) || results.find((skill) => skill.slug === name)
       if (!found) return null
 
@@ -603,7 +813,11 @@ class SkillsManager {
     const name = normalizeSkillName(entry.name || entry.slug)
     if (!name) return { success: false, error: '在线扩展名称无效' }
 
-    const detail = await fetchClawHubSkillDetail({ ownerHandle: entry.ownerHandle, slug: entry.slug })
+    const detail = await fetchClawHubSkillDetail({
+      ownerHandle: entry.ownerHandle,
+      slug: entry.slug,
+      base: getClawhubBase(getConfig().network?.market_sources)
+    })
     const version = detail.version || entry.version || '1.0.0'
     const check = this._checkMarketInstall(name, detail.version || entry.version)
     if (check.error) return { success: false, error: check.error }
@@ -761,8 +975,8 @@ export function getSkill(name) {
   return skillsManager.getSkill(name)
 }
 
-export async function executeSkill(name, params) {
-  return await skillsManager.executeSkill(name, params)
+export async function executeSkill(name, params, runtime) {
+  return await skillsManager.executeSkill(name, params, runtime)
 }
 
 export function getSkillToolDefinitions() {
@@ -771,6 +985,14 @@ export function getSkillToolDefinitions() {
 
 export async function installSkill(skillPath, options) {
   return await skillsManager.installSkill(skillPath, options)
+}
+
+export function exportSkillBundle(name) {
+  return skillsManager.exportSkillBundle(name)
+}
+
+export async function importSkillBundle(payload) {
+  return await skillsManager.importSkillBundle(payload)
 }
 
 export async function uninstallSkill(name) {

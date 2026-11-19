@@ -42,7 +42,7 @@ export function mergeHistoryEntry(entries, entry, maxEntries = MAX_CLIPBOARD_ENT
   return trimHistory(next, maxEntries)
 }
 
-export function normalizeStoredHistory(raw) {
+export function normalizeStoredHistory(raw, maxEntries = MAX_CLIPBOARD_ENTRIES) {
   const source = Array.isArray(raw) ? { entries: raw, paused: false } : raw || {}
   const seen = new Set()
   const entries = []
@@ -65,7 +65,7 @@ export function normalizeStoredHistory(raw) {
   return {
     entries: trimHistory(
       entries.sort((a, b) => b.updatedAt - a.updatedAt),
-      MAX_CLIPBOARD_ENTRIES
+      maxEntries
     ),
     paused: source.paused === true
   }

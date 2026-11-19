@@ -27,6 +27,7 @@
 <script setup>
 import { computed } from 'vue'
 import { getToolByPath } from '@shared/tools'
+import { t } from '@/i18n'
 
 const props = defineProps({
   toolPath: { type: String, default: '' },
@@ -37,8 +38,8 @@ const props = defineProps({
 })
 
 const tool = computed(() => (props.toolPath ? getToolByPath(props.toolPath) : null))
-const resolvedTitle = computed(() => props.title || tool.value?.name || '')
-const resolvedSubtitle = computed(() => props.subtitle || tool.value?.description || '')
+const resolvedTitle = computed(() => props.title || (tool.value ? t(tool.value.name) : ''))
+const resolvedSubtitle = computed(() => props.subtitle || (tool.value ? t(tool.value.description) : ''))
 const resolvedMaxWidth = computed(() => {
   if (props.maxWidth === 'none' || props.maxWidth === '') return null
   return typeof props.maxWidth === 'number' ? `${props.maxWidth}px` : props.maxWidth
@@ -95,7 +96,7 @@ const resolvedMaxWidth = computed(() => {
   flex-shrink: 0;
   border-radius: 8px;
   background: var(--primary-gradient);
-  color: white;
+  color: var(--text-inverse);
 }
 
 .header-icon :deep(svg) {
@@ -132,22 +133,11 @@ const resolvedMaxWidth = computed(() => {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   padding: 6px 20px;
   background: var(--app-toolbar-bg);
   border-bottom: 1px solid var(--border-color);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-}
-
-.page-toolbar::-webkit-scrollbar {
-  height: 4px;
-}
-
-.page-toolbar::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 2px;
 }
 
 .page-content {

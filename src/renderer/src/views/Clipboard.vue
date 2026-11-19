@@ -8,24 +8,24 @@
         <svg v-else viewBox="0 0 24 24" fill="currentColor" stroke="none">
           <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
         </svg>
-        {{ paused ? '恢复记录' : '暂停记录' }}
+        {{ paused ? t('恢复记录') : t('暂停记录') }}
       </button>
-      <button class="btn btn-secondary btn-sm" :disabled="entries.length === 0" @click="clearVisible = true">
+      <button class="btn btn-danger btn-sm" :disabled="entries.length === 0" @click="clearVisible = true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
         </svg>
-        清空历史
+        {{ t('清空历史') }}
       </button>
     </template>
 
-    <div class="clipboard-page">
+    <div class="page-body clipboard-page">
       <div v-if="paused" class="clipboard-banner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="13" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        剪贴板记录已暂停，恢复后才会记录新的复制内容。
+        {{ t('剪贴板记录已暂停，恢复后才会记录新的复制内容。') }}
       </div>
 
       <div class="clipboard-toolbar">
@@ -34,8 +34,8 @@
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
-          <input v-model="query" type="text" placeholder="搜索剪贴板内容" spellcheck="false" />
-          <button v-if="query" type="button" class="clipboard-search-clear" title="清除搜索" @click="query = ''">
+          <input v-model="query" type="text" :placeholder="t('搜索剪贴板内容')" spellcheck="false" />
+          <button v-if="query" type="button" class="clipboard-search-clear" :title="t('清除搜索')" @click="query = ''">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
@@ -51,12 +51,12 @@
             :class="{ active: filter === item.id }"
             @click="filter = item.id"
           >
-            {{ item.label }}
+            {{ t(item.label) }}
             <span class="filter-count">{{ countFor(item.id) }}</span>
           </button>
         </div>
 
-        <span class="clipboard-summary">共 {{ entries.length }} 条</span>
+        <span class="clipboard-summary">{{ t('共 {count} 条', { count: entries.length }) }}</span>
       </div>
 
       <div v-if="visibleEntries.length" class="clipboard-list">
@@ -67,25 +67,25 @@
           :class="{ pinned: entry.pinned }"
           role="button"
           tabindex="0"
-          :title="entry.type === 'text' ? '点击复制此内容' : '点击复制此图片'"
+          :title="entry.type === 'text' ? t('点击复制此内容') : t('点击复制此图片')"
           @click="copyEntry(entry)"
           @keydown.enter.prevent="copyEntry(entry)"
         >
           <div class="clipboard-item-body">
             <div v-if="entry.type === 'image'" class="clipboard-thumb">
-              <img :src="entry.image" alt="剪贴板图片" />
+              <img :src="entry.image" :alt="t('剪贴板图片')" />
             </div>
             <p v-else class="clipboard-text">{{ previewText(entry.text) }}</p>
           </div>
 
           <div class="clipboard-meta">
-            <span class="clipboard-badge">{{ entry.type === 'image' ? '图片' : '文本' }}</span>
-            <span v-if="entry.pinned" class="clipboard-badge is-pinned">已置顶</span>
+            <span class="clipboard-badge">{{ entry.type === 'image' ? t('图片') : t('文本') }}</span>
+            <span v-if="entry.pinned" class="clipboard-badge is-pinned">{{ t('已置顶') }}</span>
             <span class="clipboard-time">{{ relativeTime(entry.updatedAt) }}</span>
           </div>
 
           <div class="clipboard-actions" @click.stop>
-            <button type="button" title="复制" aria-label="复制" @click="copyEntry(entry)">
+            <button type="button" :title="t('复制')" :aria-label="t('复制')" @click="copyEntry(entry)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="12" height="12" rx="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -93,8 +93,8 @@
             </button>
             <button
               type="button"
-              :title="entry.pinned ? '取消置顶' : '置顶'"
-              :aria-label="entry.pinned ? '取消置顶' : '置顶'"
+              :title="entry.pinned ? t('取消置顶') : t('置顶')"
+              :aria-label="entry.pinned ? t('取消置顶') : t('置顶')"
               :class="{ active: entry.pinned }"
               @click="togglePin(entry)"
             >
@@ -102,7 +102,7 @@
                 <path d="M12 17v5M9 3h6l-1 7 3 3v2H7v-2l3-3z" />
               </svg>
             </button>
-            <button type="button" class="danger" title="删除" aria-label="删除" @click="removeEntry(entry)">
+            <button type="button" class="danger" :title="t('删除')" :aria-label="t('删除')" @click="removeEntry(entry)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" />
               </svg>
@@ -111,13 +111,15 @@
         </article>
       </div>
 
-      <div v-else class="clipboard-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="9" y="9" width="12" height="12" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-        <p class="clipboard-empty-title">{{ emptyTitle }}</p>
-        <p class="clipboard-empty-hint">{{ emptyHint }}</p>
+      <div v-else class="empty-state clipboard-empty">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="9" y="9" width="12" height="12" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </span>
+        <p class="empty-state-title">{{ emptyTitle }}</p>
+        <p class="empty-state-hint">{{ emptyHint }}</p>
       </div>
     </div>
 
@@ -126,8 +128,8 @@
     <MessageDialog
       :visible="clearVisible"
       type="confirm"
-      title="清空剪贴板历史"
-      message="将删除全部记录（包括已置顶内容），此操作无法撤销。"
+      :title="t('清空剪贴板历史')"
+      :message="t('将删除全部记录（包括已置顶内容），此操作无法撤销。')"
       @confirm="clearAll"
       @cancel="clearVisible = false"
       @close="clearVisible = false"
@@ -142,6 +144,7 @@ import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import { useToast } from '@/composables'
 import { formatRelativeTime } from '@/utils/format'
+import { t } from '@/i18n'
 import {
   clipboardHistory,
   clipboardCopy,
@@ -162,10 +165,30 @@ const clearVisible = ref(false)
 const now = ref(Date.now())
 
 const filters = [
-  { id: 'all', label: '全部' },
-  { id: 'text', label: '文本' },
-  { id: 'image', label: '图片' },
-  { id: 'pinned', label: '置顶' }
+  {
+    id: 'all',
+    get label() {
+      return t('全部')
+    }
+  },
+  {
+    id: 'text',
+    get label() {
+      return t('文本')
+    }
+  },
+  {
+    id: 'image',
+    get label() {
+      return t('图片')
+    }
+  },
+  {
+    id: 'pinned',
+    get label() {
+      return t('置顶')
+    }
+  }
 ]
 
 const visibleEntries = computed(() => {
@@ -183,15 +206,17 @@ const visibleEntries = computed(() => {
 })
 
 const emptyTitle = computed(() => {
-  if (!entries.value.length) return paused.value ? '剪贴板记录已暂停' : '暂无剪贴板记录'
-  return '没有匹配的记录'
+  if (!entries.value.length) return paused.value ? t('剪贴板记录已暂停') : t('暂无剪贴板记录')
+  return t('没有匹配的记录')
 })
 
 const emptyHint = computed(() => {
   if (!entries.value.length) {
-    return paused.value ? '恢复记录后复制任意文本或图片即可出现在这里。' : '复制文本或图片后，记录会自动出现在这里。'
+    return paused.value
+      ? t('恢复记录后复制任意文本或图片即可出现在这里。')
+      : t('复制文本或图片后，记录会自动出现在这里。')
   }
-  return '试试更换搜索关键词或切换筛选条件。'
+  return t('试试更换搜索关键词或切换筛选条件。')
 })
 
 function applyState(state) {
@@ -219,34 +244,34 @@ function relativeTime(timestamp) {
 
 async function copyEntry(entry) {
   const ok = await clipboardCopy(entry.id)
-  if (ok) showSuccess('已复制到剪贴板')
-  else showError('复制失败')
+  if (ok) showSuccess(t('已复制到剪贴板'))
+  else showError(t('复制失败'))
 }
 
 async function togglePin(entry) {
   const ok = await clipboardTogglePin(entry.id)
-  if (ok) showInfo(entry.pinned ? '已取消置顶' : '已置顶')
-  else showError('操作失败')
+  if (ok) showInfo(entry.pinned ? t('已取消置顶') : t('已置顶'))
+  else showError(t('操作失败'))
 }
 
 async function removeEntry(entry) {
   const ok = await clipboardRemove(entry.id)
-  if (ok) showSuccess('已删除该记录')
-  else showError('删除失败')
+  if (ok) showSuccess(t('已删除该记录'))
+  else showError(t('删除失败'))
 }
 
 async function clearAll() {
   clearVisible.value = false
   const ok = await clipboardClear()
-  if (ok) showSuccess('已清空剪贴板历史')
-  else showError('清空失败')
+  if (ok) showSuccess(t('已清空剪贴板历史'))
+  else showError(t('清空失败'))
 }
 
 async function togglePause() {
   const next = await clipboardSetPaused(!paused.value)
   if (typeof next === 'boolean') {
     paused.value = next
-    showInfo(next ? '已暂停记录剪贴板' : '已恢复记录剪贴板')
+    showInfo(next ? t('已暂停记录剪贴板') : t('已恢复记录剪贴板'))
   }
 }
 
@@ -274,7 +299,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 20px 20px;
 }
 
 .clipboard-banner {
@@ -318,7 +342,7 @@ onUnmounted(() => {
 
 .clipboard-search:focus-within {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+  box-shadow: var(--shadow-glow);
 }
 
 .clipboard-search > svg {
@@ -531,31 +555,6 @@ onUnmounted(() => {
 
 .clipboard-empty {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.clipboard-empty > svg {
-  width: 44px;
-  height: 44px;
-  color: var(--border-strong);
-}
-
-.clipboard-empty-title {
-  margin: 0;
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.clipboard-empty-hint {
-  margin: 0;
-  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 720px) {

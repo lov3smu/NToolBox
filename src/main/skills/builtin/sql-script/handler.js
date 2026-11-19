@@ -1,7 +1,7 @@
 export default async function handler(params, context) {
   const { log, generateSQLFile } = context
 
-  log.info('执行 sql-script Skill', params)
+  log.debug('执行 sql-script Skill')
 
   const scriptInfo = {
     database: params.database,

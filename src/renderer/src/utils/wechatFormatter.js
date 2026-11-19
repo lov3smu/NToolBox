@@ -201,7 +201,7 @@ function expandMath(container, state, theme) {
   applyAll(container.querySelectorAll('[data-wx-math-rendered]'), { color: theme.text })
 }
 
-function expandDiagrams(container, state, dark) {
+function expandDiagrams(container, state, dark, labels) {
   const placeholders = Array.from(container.querySelectorAll('[data-wx-mermaid]'))
   if (placeholders.length === 0) return
   const lookup = new Map(state.diagrams.map((item) => [item.key, item]))
@@ -213,7 +213,7 @@ function expandDiagrams(container, state, dark) {
       continue
     }
     const svg = getCachedDiagramSvg(diagram.code, dark)
-    const html = buildMermaidPlaceholder(diagram, dark ? 'dark' : 'default', svg)
+    const html = buildMermaidPlaceholder(diagram, dark ? 'dark' : 'default', svg, labels)
     replaceFragment(placeholder, html)
   }
   applyAll(container.querySelectorAll('[data-wx-diagram]'), {
@@ -261,12 +261,12 @@ function expandPlantUml(container, state, server) {
   }
 }
 
-function expandToc(container) {
+function expandToc(container, emptyLabel) {
   const placeholders = Array.from(container.querySelectorAll('[data-wx-toc]'))
   if (placeholders.length === 0) return
   const headings = extractHeadings(container)
   for (const placeholder of placeholders) {
-    replaceFragment(placeholder, buildTocHtml(headings))
+    replaceFragment(placeholder, buildTocHtml(headings, emptyLabel))
   }
 }
 
@@ -456,7 +456,9 @@ function applyLegends(container, prefs, theme) {
   }
 }
 
-export function renderWechatArticle(markdown, rawPrefs) {
+// `labels` carries already-translated UI strings (see `t()` in the renderer);
+// the defaults below keep the Chinese copy for any caller that omits them.
+export function renderWechatArticle(markdown, rawPrefs, labels = {}) {
   const prefs = normalizeWechatPrefs(rawPrefs)
   const theme = resolveWechatTheme(prefs)
   const codeTheme = getCodeTheme(prefs.codeTheme)
@@ -475,9 +477,9 @@ export function renderWechatArticle(markdown, rawPrefs) {
 
   expandAlerts(container, theme)
   expandMath(container, state, theme)
-  expandDiagrams(container, state, dark)
+  expandDiagrams(container, state, dark, labels.diagrams)
   expandPlantUml(container, state, prefs.plantUmlServer)
-  expandToc(container)
+  expandToc(container, labels.tocEmpty)
   appendFootnotes(container, state)
 
   const headingBase = {

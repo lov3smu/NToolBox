@@ -1,0 +1,36 @@
+{
+  "name": "subagent",
+  "version": "1.0.0",
+  "description": "把独立的调查类子任务委派给隔离的子代理，子代理只能调用只读工具（网页查阅、知识库、数据库查询等），完成后返回结构化结论。适合需要多步取证、但不想占用主对话上下文的场景。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["子代理", "委派", "调查", "只读"],
+  "icon": "users",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "task": {
+        "type": "string",
+        "description": "交给子代理完成的独立子任务，尽量写清目标、范围和期望输出"
+      },
+      "context": {
+        "type": "string",
+        "description": "可选背景信息：已知线索、相关文件路径、查询条件等"
+      }
+    },
+    "required": ["task"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "task: 查一下 user_db.users 表和权限相关的表结构，总结用户登录校验用到哪些字段",
+      "output": "子代理调用 db-query 取证后返回字段清单与结论"
+    },
+    {
+      "input": "task: 阅读项目文档中关于发布流程的说明并总结关键步骤",
+      "output": "子代理检索知识库后返回步骤摘要"
+    }
+  ]
+}

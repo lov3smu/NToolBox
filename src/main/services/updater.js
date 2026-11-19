@@ -1,9 +1,13 @@
 import { app } from 'electron'
 import { autoUpdater, CancellationToken } from 'electron-updater'
 import { log } from '../utils'
-import { UPDATE_CHECK_INTERVAL } from '../constants'
 import { getConfig } from './config'
+import { normalizeUpdateCheckInterval } from '../../shared/updater.js'
+import { netFetch } from './network.js'
+import { getUpdateFeedUrl } from '../../shared/network.js'
 import { IPC_EVENTS } from '../../shared/ipc'
+import { notify } from './notifications.js'
+import { t } from './i18n.js'
 
 autoUpdater.logger = log
 autoUpdater.logger.transports.file.level = 'info'
@@ -17,6 +21,8 @@ let downloadCancellation = null
 let downloadCancelled = false
 let manualCheck = false
 let initialized = false
+
+const RELEASES_TIMEOUT = 12000
 
 let updateState = {
   phase: 'idle',
@@ -48,8 +54,9 @@ function normalizeReleaseNotes(info) {
       .map((entry) => (typeof entry === 'string' ? entry : entry?.note || ''))
       .filter(Boolean)
       .join('\n\n')
+      .replace(/\r\n/g, '\n')
   }
-  return typeof notes === 'string' ? notes : ''
+  return typeof notes === 'string' ? notes.replace(/\r\n/g, '\n') : ''
 }
 
 function describeInfo(info) {
@@ -57,6 +64,64 @@ function describeInfo(info) {
     latestVersion: info?.version || '',
     releaseNotes: normalizeReleaseNotes(info),
     releaseDate: info?.releaseDate || ''
+  }
+}
+
+function normalizeReleaseVersion(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^v/i, '')
+}
+
+function normalizeReleaseEntry(release) {
+  const version = normalizeReleaseVersion(release?.tag_name || release?.name)
+  if (!version) return null
+  return {
+    version,
+    tag: String(release?.tag_name || ''),
+    name: String(release?.name || release?.tag_name || version),
+    notes: typeof release?.body === 'string' ? release.body.replace(/\r\n/g, '\n').trim() : '',
+    publishedAt: release?.published_at || release?.created_at || '',
+    htmlUrl: String(release?.html_url || ''),
+    prerelease: Boolean(release?.prerelease)
+  }
+}
+
+export async function getUpdateReleases() {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), RELEASES_TIMEOUT)
+
+  try {
+    const response = await netFetch(getUpdateFeedUrl(getConfig().network?.market_sources), {
+      signal: controller.signal,
+      headers: {
+        accept: 'application/vnd.github+json',
+        'user-agent': 'NToolBox'
+      }
+    })
+    if (!response.ok) {
+      return { success: false, releases: [], error: `获取历史版本失败（HTTP ${response.status}）` }
+    }
+
+    const data = await response.json()
+    if (!Array.isArray(data)) {
+      return { success: false, releases: [], error: '历史版本数据格式异常' }
+    }
+
+    const releases = data
+      .filter((release) => !release?.draft && !release?.prerelease)
+      .map(normalizeReleaseEntry)
+      .filter(Boolean)
+
+    return { success: true, releases }
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return { success: false, releases: [], error: '获取历史版本超时，请稍后重试' }
+    }
+    log.warn('获取历史版本失败:', error)
+    return { success: false, releases: [], error: error?.message || '获取历史版本失败' }
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -72,6 +137,12 @@ function initUpdater() {
   autoUpdater.on('update-available', (info) => {
     log.info('发现新版本:', info.version)
     publish({ phase: 'available', ...describeInfo(info), progress: null, error: '' }, { open: true })
+    if (!manualCheck) {
+      void notify('update_found', {
+        title: t('发现新版本'),
+        body: t('NToolBox {version} 已发布，点击查看更新内容', { version: info.version })
+      })
+    }
   })
 
   autoUpdater.on('update-not-available', () => {
@@ -84,7 +155,7 @@ function initUpdater() {
 
   autoUpdater.on('error', (err) => {
     log.error('更新出错:', err)
-    publish({ phase: 'error', error: err?.message || '检查更新失败', progress: null }, { open: manualCheck })
+    publish({ phase: 'error', error: err?.message || t('检查更新失败'), progress: null }, { open: manualCheck })
   })
 
   autoUpdater.on('download-progress', (progressObj) => {
@@ -229,12 +300,16 @@ export function startAutoUpdateCheck(mainWindow) {
   if (updateCheckInterval) clearInterval(updateCheckInterval)
 
   const config = getConfig()
-  if (config.auto_update && app.isPackaged) {
-    updateCheckInterval = setInterval(() => {
-      log.info('定时检查更新')
-      checkForUpdates(false, mainWindow)
-    }, UPDATE_CHECK_INTERVAL)
-    log.info(`已启动定时更新检查，间隔: ${UPDATE_CHECK_INTERVAL / 3600000} 小时`)
+  if (config.update.auto_update && app.isPackaged) {
+    const hours = normalizeUpdateCheckInterval(config.update.check_interval)
+    updateCheckInterval = setInterval(
+      () => {
+        log.info('定时检查更新')
+        checkForUpdates(false, mainWindow)
+      },
+      hours * 60 * 60 * 1000
+    )
+    log.info(`已启动定时更新检查，间隔: ${hours} 小时`)
   } else {
     log.info('定时更新检查未开启')
   }

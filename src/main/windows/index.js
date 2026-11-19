@@ -3,6 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import { log, getWindowIcon, getAssetsDir } from '../utils'
 import { getConfig, saveConfig } from '../services'
+import { t } from '../services/i18n'
 import { IPC_EVENTS } from '../../shared/ipc'
 
 let mainWindow = null
@@ -16,13 +17,9 @@ const isMac = process.platform === 'darwin'
 const preloadPath = import.meta.env.ELECTRON_PRELOAD_PATH || path.join(__dirname, '../preload/index.js')
 
 const WINDOW_BACKGROUND = { light: '#f4f5f7', dark: '#141519' }
-const TITLEBAR_OVERLAY = {
-  light: { color: '#f7f8fa', symbolColor: '#1f2328' },
-  dark: { color: '#1b1b1f', symbolColor: '#e6e6ea' }
-}
 
 function getResolvedTheme() {
-  const theme = getConfig()?.theme || 'system'
+  const theme = getConfig().appearance.theme || 'system'
   if (theme === 'system') return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
   return theme
 }
@@ -33,13 +30,10 @@ function getWindowBackground() {
 
 function getTitleBarOptions() {
   if (isMac) return { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 14 } }
-  return {
-    titleBarStyle: 'hidden',
-    titleBarOverlay: { ...TITLEBAR_OVERLAY[getResolvedTheme()], height: 40 }
-  }
+  return { titleBarStyle: 'hidden' }
 }
 
-// 窗口启用了 titleBarOverlay（WCO），右侧停靠会被忽略并退回独立窗口，bottom 可稳定停靠在窗口内
+// 自绘窗口控制按钮，DevTools 固定底部停靠以保持既有布局
 const DEVTOOLS_MODE = 'bottom'
 
 export function toggleDevTools(win) {
@@ -53,13 +47,9 @@ export function toggleDevTools(win) {
 }
 
 export function refreshWindowTheme() {
-  const overlay = { ...TITLEBAR_OVERLAY[getResolvedTheme()], height: 40 }
   for (const win of [mainWindow, settingsWindow]) {
     if (!win || win.isDestroyed()) continue
     win.setBackgroundColor(getWindowBackground())
-    if (!isMac && win === mainWindow && typeof win.setTitleBarOverlay === 'function') {
-      win.setTitleBarOverlay(overlay)
-    }
   }
 }
 
@@ -174,12 +164,28 @@ function createMainWindow() {
     }, delay)
   })
 
+  const sendFullscreenState = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    mainWindow.webContents.send(IPC_EVENTS.windowFullscreen, mainWindow.isFullScreen())
+  }
+
+  mainWindow.on('enter-full-screen', sendFullscreenState)
+  mainWindow.on('leave-full-screen', sendFullscreenState)
+
+  const sendMaximizedState = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    mainWindow.webContents.send(IPC_EVENTS.windowMaximized, mainWindow.isMaximized())
+  }
+
+  mainWindow.on('maximize', sendMaximizedState)
+  mainWindow.on('unmaximize', sendMaximizedState)
+
   mainWindow.on('close', async (event) => {
     if (app.isQuitting) return
 
     const config = getConfig()
 
-    if (config.close_action === 'quit') {
+    if (config.app.close_action === 'quit') {
       app.isQuitting = true
       log.info('应用已退出')
       // 不拦截本次关闭，避免 preventDefault 与 app.quit() 相互抵消
@@ -189,24 +195,24 @@ function createMainWindow() {
 
     event.preventDefault()
 
-    if (config.close_action === 'hide') {
+    if (config.app.close_action === 'hide') {
       mainWindow.hide()
       log.info('主窗口已隐藏到系统托盘')
     } else {
       const result = await dialog.showMessageBox(mainWindow, {
         type: 'question',
-        title: '关闭确认',
-        message: '是否隐藏到系统托盘？',
-        detail: '选择"隐藏"后，应用将在后台运行。\n选择"退出"将完全关闭应用。',
-        buttons: ['隐藏', '退出'],
+        title: t('关闭确认'),
+        message: t('是否隐藏到系统托盘？'),
+        detail: t('选择"隐藏"后，应用将在后台运行。\n选择"退出"将完全关闭应用。'),
+        buttons: [t('隐藏'), t('退出')],
         defaultId: 0,
         cancelId: 1,
-        checkboxLabel: '记住我的选择',
+        checkboxLabel: t('记住我的选择'),
         checkboxChecked: false
       })
 
       if (result.checkboxChecked) {
-        config.close_action = result.response === 0 ? 'hide' : 'quit'
+        config.app.close_action = result.response === 0 ? 'hide' : 'quit'
         await saveConfig(config)
       }
 

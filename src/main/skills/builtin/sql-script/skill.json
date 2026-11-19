@@ -32,7 +32,8 @@
         "description": "脚本用途说明"
       }
     },
-    "required": ["database", "operate_type", "dir_name", "usage"]
+    "required": ["database", "operate_type", "dir_name", "usage"],
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [

@@ -18,6 +18,7 @@ import { defaultHighlightStyle, syntaxHighlighting, bracketMatching, indentOnInp
 import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { getResolvedTheme } from '@/utils/theme'
+import { t } from '@/i18n'
 
 const props = defineProps({
   modelValue: {
@@ -97,12 +98,12 @@ function getSelection() {
   return editorView.state.sliceDoc(range.from, range.to)
 }
 
-function wrapSelection(before, after, placeholderText = '文本') {
+function wrapSelection(before, after, placeholderKey = t('文本')) {
   const view = editorView
   if (!view) return
   const range = view.state.selection.main
   const selected = view.state.sliceDoc(range.from, range.to)
-  const text = selected || placeholderText
+  const text = selected || t(placeholderKey)
   const start = range.from + before.length
   view.dispatch({
     changes: { from: range.from, to: range.to, insert: `${before}${text}${after}` },
@@ -158,7 +159,7 @@ function insertLink() {
   const view = editorView
   if (!view) return
   const range = view.state.selection.main
-  const selected = view.state.sliceDoc(range.from, range.to) || '链接文字'
+  const selected = view.state.sliceDoc(range.from, range.to) || t('链接文字')
   const before = `[${selected}](`
   const url = 'https://'
   const start = range.from + before.length
@@ -173,8 +174,9 @@ function insertImage() {
   const view = editorView
   if (!view) return
   const url = 'https://'
-  const insert = `![图片描述](${url})`
-  const start = view.state.selection.main.from + '![图片描述]('.length
+  const alt = t('图片描述')
+  const insert = `![${alt}](${url})`
+  const start = view.state.selection.main.from + `![${alt}](`.length
   view.dispatch({
     changes: { from: view.state.selection.main.from, to: view.state.selection.main.to, insert },
     selection: { anchor: start, head: start + url.length }
@@ -187,7 +189,7 @@ function insertCodeBlock() {
   if (!view) return
   const range = view.state.selection.main
   const selected = view.state.sliceDoc(range.from, range.to)
-  const body = selected || '代码'
+  const body = selected || t('代码')
   const line = view.state.doc.lineAt(range.from)
   const prefix = line.from === range.from && line.text.trim() === '' ? '' : '\n'
   const insert = `${prefix}\`\`\`\n${body}\n\`\`\`\n`
@@ -200,7 +202,10 @@ function insertCodeBlock() {
 }
 
 function insertTable() {
-  insertBlock('| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |', '列 1')
+  const cell = t('列 1')
+  const row2 = t('列 2')
+  const body = t('内容')
+  insertBlock(`| ${cell} | ${row2} |\n| --- | --- |\n| ${body} | ${body} |`, cell)
 }
 
 function setContent(content) {
@@ -252,26 +257,26 @@ onMounted(() => {
       markdown(),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       history(),
-      placeholder('在此输入 Markdown，右侧实时预览…'),
+      placeholder(t('在此输入 Markdown，右侧实时预览…')),
       keymap.of([
         {
           key: 'Mod-b',
           run: () => {
-            wrapSelection('**', '**', '粗体')
+            wrapSelection('**', '**', t('粗体'))
             return true
           }
         },
         {
           key: 'Mod-i',
           run: () => {
-            wrapSelection('*', '*', '斜体')
+            wrapSelection('*', '*', t('斜体'))
             return true
           }
         },
         {
           key: 'Mod-e',
           run: () => {
-            wrapSelection('`', '`', '代码')
+            wrapSelection('`', '`', t('代码'))
             return true
           }
         },

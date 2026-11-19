@@ -5,11 +5,11 @@
         <section class="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-dialog-title">
           <header class="about-header">
             <div class="about-header-title">
-              <h2 id="about-dialog-title">关于软件</h2>
+              <h2 id="about-dialog-title">{{ t('关于软件') }}</h2>
               <span v-if="version" class="about-badge">v{{ version }}</span>
             </div>
-            <button type="button" class="about-close" aria-label="关闭" @click="emit('close')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <button type="button" class="about-close" :aria-label="t('关闭')" @click="emit('close')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -21,29 +21,31 @@
               <img :src="iconUrl" alt="NToolBox" class="about-logo" />
             </div>
             <p class="about-name">NToolBox</p>
-            <p class="about-description">{{ description }}</p>
+            <p class="about-description">{{ descriptionText }}</p>
 
             <dl class="about-meta">
               <div class="about-meta-row">
-                <dt>版本</dt>
+                <dt>{{ t('版本') }}</dt>
                 <dd v-if="version">v{{ version }}</dd>
                 <dd v-else>--</dd>
               </div>
               <div class="about-meta-row">
-                <dt>作者</dt>
+                <dt>{{ t('作者') }}</dt>
                 <dd>{{ author }}</dd>
               </div>
               <div class="about-meta-row">
-                <dt>版权</dt>
+                <dt>{{ t('版权') }}</dt>
                 <dd>{{ copyright }}</dd>
               </div>
             </dl>
           </div>
 
           <footer class="about-footer">
-            <button type="button" class="btn btn-default btn-sm" @click="openReleasePage">打开发布页</button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="openReleasePage">
+              {{ t('打开发布页') }}
+            </button>
             <span class="about-footer-spacer" />
-            <button type="button" class="btn btn-primary btn-sm" @click="emit('close')">关闭</button>
+            <button type="button" class="btn btn-primary btn-sm" @click="emit('close')">{{ t('关闭') }}</button>
           </footer>
         </section>
       </div>
@@ -54,6 +56,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getPackageInfo, openExternal } from '@/api'
+import { t, getLocale } from '@/i18n'
 import iconUrl from '@assets/icon.png'
 
 const props = defineProps({
@@ -66,11 +69,19 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const RELEASE_PAGE_URL = 'https://github.com/lov3smu/NToolBox/releases/latest'
-const DEFAULT_DESCRIPTION = '一款面向开发人员的多端工具集合平台，集成丰富工具 + AI 大模型能力，启动快、功能全、更智能。'
+const EN_DESCRIPTION =
+  'A multi-platform toolbox for developers, combining a rich set of tools with large language model capabilities.'
 
 const version = ref('')
 const author = ref('lov3smu')
-const description = ref(DEFAULT_DESCRIPTION)
+const description = ref('')
+
+const descriptionText = computed(() => {
+  if (getLocale() === 'en-US') return EN_DESCRIPTION
+  return (
+    description.value || t('一款面向开发人员的多端工具集合平台，集成丰富工具 + AI 大模型能力，启动快、功能全、更智能。')
+  )
+})
 
 const copyright = computed(() => `© ${new Date().getFullYear()} ${author.value}. All rights reserved.`)
 
@@ -83,7 +94,7 @@ async function loadPackageInfo() {
         .replace(/<[^>]*>/g, '')
         .trim() || author.value
   if (info?.description) {
-    description.value = String(info.description).replace(/^NToolBox\s*-\s*/, '') || DEFAULT_DESCRIPTION
+    description.value = String(info.description).replace(/^NToolBox\s*-\s*/, '')
   }
 }
 
@@ -112,7 +123,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }

@@ -116,4 +116,38 @@ describe('UTF-8 streaming decode', () => {
     expect(result.models).toEqual([{ id: 'qwen3-max', name: '通义千问旗舰模型' }])
     expect(JSON.stringify(result.models)).not.toContain('\uFFFD')
   })
+
+  it('keeps context limits and input modalities from remote model lists', async () => {
+    enqueue(
+      JSON.stringify({
+        data: [
+          {
+            id: 'glm-5.3',
+            name: 'GLM 5.3',
+            limit: { context: 1000000, output: 131072 },
+            modalities: { input: ['text'] }
+          },
+          {
+            id: 'kimi-k3',
+            name: 'Kimi K3',
+            limit: { context: 1048576, output: 1048576 },
+            modalities: { input: ['text', 'image/png'] }
+          }
+        ]
+      })
+    )
+
+    const result = await createProvider().listRemoteModels()
+
+    expect(result.models).toEqual([
+      { id: 'glm-5.3', name: 'GLM 5.3', contextWindow: 1000000, maxOutput: 131072, inputTypes: ['text'] },
+      {
+        id: 'kimi-k3',
+        name: 'Kimi K3',
+        contextWindow: 1048576,
+        maxOutput: 1048576,
+        inputTypes: ['text', 'image']
+      }
+    ])
+  })
 })

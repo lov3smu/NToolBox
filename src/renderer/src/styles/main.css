@@ -15,7 +15,7 @@ body {
 
 .container header {
   background: var(--primary-gradient);
-  color: white;
+  color: var(--text-inverse);
   padding: 30px;
   text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -58,7 +58,7 @@ body {
 }
 
 .back-link {
-  color: white;
+  color: var(--text-inverse);
   text-decoration: none;
   font-size: var(--font-size-base);
   position: relative;
@@ -91,7 +91,7 @@ body {
 .type-btn:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+  box-shadow: var(--shadow-glow);
 }
 
 .type-btn:hover {
@@ -102,7 +102,7 @@ body {
 
 .type-btn.active {
   background: var(--primary-gradient);
-  color: white;
+  color: var(--text-inverse);
   border-color: transparent;
   box-shadow:
     0 4px 15px rgba(var(--primary-rgb), 0.4),

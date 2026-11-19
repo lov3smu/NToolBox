@@ -27,7 +27,8 @@
         "description": "静态站点根目录"
       }
     },
-    "required": ["scenario"]
+    "required": ["scenario"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

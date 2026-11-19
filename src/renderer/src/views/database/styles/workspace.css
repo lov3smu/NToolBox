@@ -2,6 +2,7 @@
 @scope (.database-page) {
   .main-panel {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -10,6 +11,7 @@
 
   .connection-panel {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -32,6 +34,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-height: 48px;
+    max-width: 240px;
     padding: 10px 16px;
     font-size: var(--font-size-dense);
     font-weight: 400;
@@ -58,10 +62,15 @@
   }
 
   .tab-name {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-weight: 500;
   }
 
   .tab-close-btn {
+    flex-shrink: 0;
     width: 18px;
     height: 18px;
     border: none;
@@ -185,7 +194,7 @@
   .search-input:focus {
     outline: none;
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+    box-shadow: var(--shadow-glow);
   }
 
   .object-tables,

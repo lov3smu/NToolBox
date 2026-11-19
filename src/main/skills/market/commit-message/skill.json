@@ -16,14 +16,16 @@
       "style": {
         "type": "string",
         "description": "风格：conventional（默认）或 simple",
-        "enum": ["conventional", "simple"]
+        "enum": ["conventional", "simple"],
+        "default": "conventional"
       },
       "scope": {
         "type": "string",
         "description": "可选的作用域，例如 auth、database、ui"
       }
     },
-    "required": ["diff"]
+    "required": ["diff"],
+    "additionalProperties": false
   },
   "promptTemplate": "prompt.txt",
   "examples": [

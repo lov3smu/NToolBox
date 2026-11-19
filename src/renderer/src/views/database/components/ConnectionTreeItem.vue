@@ -1,5 +1,5 @@
 <template>
-  <div class="connection-container">
+  <div v-if="!filtering || visibleDatabases.length" class="connection-container">
     <div
       :class="[
         'connection-item',
@@ -20,7 +20,7 @@
           class="connection-expand-icon"
           :class="{ expanded: expandedConnections.includes(conn.name) }"
           :style="{
-            visibility: conn.active && connectionDatabases[conn.name]?.length > 0 ? 'visible' : 'hidden'
+            visibility: conn.active ? 'visible' : 'hidden'
           }"
           viewBox="0 0 24 24"
           fill="none"
@@ -38,10 +38,14 @@
         <line x1="6" y1="18" x2="6.01" y2="18" />
       </svg>
       <span class="connection-name">{{ conn.name }}</span>
-      <span :class="['connection-status-dot', { active: conn.active }]" :title="conn.active ? '已连接' : '未连接'" />
+      <span v-if="conn.readOnly" class="connection-readonly-badge" :title="t('只读连接')">{{ t('只读') }}</span>
+      <span
+        :class="['connection-status-dot', { active: conn.active }]"
+        :title="conn.active ? t('已连接') : t('未连接')"
+      />
     </div>
-    <div v-if="conn.active && expandedConnections.includes(conn.name)" class="connection-databases">
-      <div v-for="db in connectionDatabases[conn.name]" :key="db" class="database-wrapper">
+    <div v-if="conn.active && (expandedConnections.includes(conn.name) || filtering)" class="connection-databases">
+      <div v-for="db in visibleDatabases" :key="db" class="database-wrapper">
         <div
           :class="[
             'database-item',
@@ -61,7 +65,7 @@
             <svg
               v-if="openedDatabases.includes(`${conn.name}_${db}`)"
               class="db-expand-icon"
-              :class="{ expanded: expandedDatabases.includes(`${conn.name}_${db}`) }"
+              :class="{ expanded: filtering || expandedDatabases.includes(`${conn.name}_${db}`) }"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -83,9 +87,10 @@
             <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
           </svg>
           <span class="db-name">{{ db }}</span>
+          <span v-if="openedDatabases.includes(`${conn.name}_${db}`)" class="db-status-dot" :title="t('已打开')" />
         </div>
-        <div v-if="expandedDatabases.includes(`${conn.name}_${db}`)" class="database-objects">
-          <div class="object-category">
+        <div v-if="filtering || expandedDatabases.includes(`${conn.name}_${db}`)" class="database-objects">
+          <div v-if="!filtering || tablesFor(db).length" class="object-category">
             <div
               class="category-header"
               @click.stop="selectCategory(conn, db, 'tables')"
@@ -100,13 +105,13 @@
               <svg
                 class="category-icon"
                 :class="{
-                  expanded: expandedObjectCategories.includes(`${conn.name}_${db}_tables`)
+                  expanded: filtering || expandedObjectCategories.includes(`${conn.name}_${db}_tables`)
                 }"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
-                @click.stop="toggleObjectCategory(`${conn.name}_${db}_tables`)"
+                @click.stop="toggleObjectCategory(conn.name, db, 'tables')"
               >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -115,12 +120,16 @@
                 <line x1="3" y1="9" x2="21" y2="9" />
                 <line x1="9" y1="21" x2="9" y2="9" />
               </svg>
-              <span class="category-name">表</span>
-              <span class="category-count">{{ databaseObjectsMap[`${conn.name}_${db}`]?.tables?.length || 0 }}</span>
+              <span class="category-name">{{ t('表') }}</span>
+              <span class="category-count">{{ categoryCount(db, 'tables') }}</span>
             </div>
-            <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_tables`)" class="category-items">
+            <div
+              v-show="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_tables`)"
+              class="category-items"
+            >
+              <div v-if="isCategoryLoading(db, 'tables')" class="category-loading">{{ t('加载中…') }}</div>
               <div
-                v-for="table in databaseObjectsMap[`${conn.name}_${db}`]?.tables"
+                v-for="table in displayItems(db, 'tables')"
                 :key="table"
                 :class="[
                   'object-item',
@@ -151,9 +160,12 @@
                 </svg>
                 <span class="object-name">{{ table }}</span>
               </div>
+              <div v-if="remainingFor(db, 'tables')" class="object-more" @click.stop="loadMore(db, 'tables')">
+                {{ t('还有') }} {{ remainingFor(db, 'tables') }} {{ t('项，点击加载') }}
+              </div>
             </div>
           </div>
-          <div class="object-category">
+          <div v-if="!filtering || viewsFor(db).length" class="object-category">
             <div
               class="category-header"
               @click.stop="selectCategory(conn, db, 'views')"
@@ -168,13 +180,13 @@
               <svg
                 class="category-icon"
                 :class="{
-                  expanded: expandedObjectCategories.includes(`${conn.name}_${db}_views`)
+                  expanded: filtering || expandedObjectCategories.includes(`${conn.name}_${db}_views`)
                 }"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
-                @click.stop="toggleObjectCategory(`${conn.name}_${db}_views`)"
+                @click.stop="toggleObjectCategory(conn.name, db, 'views')"
               >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -182,12 +194,16 @@
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-              <span class="category-name">视图</span>
-              <span class="category-count">{{ databaseObjectsMap[`${conn.name}_${db}`]?.views?.length || 0 }}</span>
+              <span class="category-name">{{ t('视图') }}</span>
+              <span class="category-count">{{ categoryCount(db, 'views') }}</span>
             </div>
-            <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_views`)" class="category-items">
+            <div
+              v-show="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_views`)"
+              class="category-items"
+            >
+              <div v-if="isCategoryLoading(db, 'views')" class="category-loading">{{ t('加载中…') }}</div>
               <div
-                v-for="view in databaseObjectsMap[`${conn.name}_${db}`]?.views"
+                v-for="view in displayItems(db, 'views')"
                 :key="view"
                 :class="[
                   'object-item',
@@ -196,6 +212,7 @@
                   }
                 ]"
                 @click="handleSelectConnectionDatabaseView(conn, db, view)"
+                @dblclick.stop="openTable({ connection: conn, database: db, table: view, isView: true })"
               >
                 <svg
                   class="object-icon view-icon"
@@ -209,9 +226,12 @@
                 </svg>
                 <span class="object-name">{{ view }}</span>
               </div>
+              <div v-if="remainingFor(db, 'views')" class="object-more" @click.stop="loadMore(db, 'views')">
+                {{ t('还有') }} {{ remainingFor(db, 'views') }} {{ t('项，点击加载') }}
+              </div>
             </div>
           </div>
-          <div class="object-category">
+          <div v-if="!filtering" class="object-category">
             <div
               class="category-header"
               @click.stop="selectCategory(conn, db, 'functions')"
@@ -232,7 +252,7 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
-                @click.stop="toggleObjectCategory(`${conn.name}_${db}_functions`)"
+                @click.stop="toggleObjectCategory(conn.name, db, 'functions')"
               >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -240,12 +260,13 @@
                 <text x="0" y="14" font-size="12" font-style="italic" font-weight="600">f</text>
                 <text x="14" y="17" font-size="8">(x)</text>
               </svg>
-              <span class="category-name">函数</span>
-              <span class="category-count">{{ databaseObjectsMap[`${conn.name}_${db}`]?.functions?.length || 0 }}</span>
+              <span class="category-name">{{ t('函数') }}</span>
+              <span class="category-count">{{ categoryCount(db, 'functions') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_functions`)" class="category-items">
+              <div v-if="isCategoryLoading(db, 'functions')" class="category-loading">{{ t('加载中…') }}</div>
               <div
-                v-for="func in databaseObjectsMap[`${conn.name}_${db}`]?.functions"
+                v-for="func in displayItems(db, 'functions')"
                 :key="func"
                 :class="[
                   'object-item',
@@ -261,9 +282,12 @@
                 </svg>
                 <span class="object-name">{{ func }}</span>
               </div>
+              <div v-if="remainingFor(db, 'functions')" class="object-more" @click.stop="loadMore(db, 'functions')">
+                {{ t('还有') }} {{ remainingFor(db, 'functions') }} {{ t('项，点击加载') }}
+              </div>
             </div>
           </div>
-          <div class="object-category">
+          <div v-if="!filtering" class="object-category">
             <div
               class="category-header"
               @click.stop="selectCategory(conn, db, 'procedures')"
@@ -284,7 +308,7 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
-                @click.stop="toggleObjectCategory(`${conn.name}_${db}_procedures`)"
+                @click.stop="toggleObjectCategory(conn.name, db, 'procedures')"
               >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -298,14 +322,13 @@
                 <rect x="3" y="4" width="18" height="16" rx="2" />
                 <polygon points="10 9 15 12 10 15" />
               </svg>
-              <span class="category-name">存储过程</span>
-              <span class="category-count">{{
-                databaseObjectsMap[`${conn.name}_${db}`]?.procedures?.length || 0
-              }}</span>
+              <span class="category-name">{{ t('存储过程') }}</span>
+              <span class="category-count">{{ categoryCount(db, 'procedures') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_procedures`)" class="category-items">
+              <div v-if="isCategoryLoading(db, 'procedures')" class="category-loading">{{ t('加载中…') }}</div>
               <div
-                v-for="proc in databaseObjectsMap[`${conn.name}_${db}`]?.procedures"
+                v-for="proc in displayItems(db, 'procedures')"
                 :key="proc"
                 :class="[
                   'object-item',
@@ -314,6 +337,7 @@
                   }
                 ]"
                 @click="handleSelectConnectionDatabaseProcedure(conn, db, proc)"
+                @dblclick.stop="previewProcedureInQuery({ connection: conn, database: db, procedure: proc })"
               >
                 <svg
                   class="object-icon procedure-icon"
@@ -327,9 +351,12 @@
                 </svg>
                 <span class="object-name">{{ proc }}</span>
               </div>
+              <div v-if="remainingFor(db, 'procedures')" class="object-more" @click.stop="loadMore(db, 'procedures')">
+                {{ t('还有') }} {{ remainingFor(db, 'procedures') }} {{ t('项，点击加载') }}
+              </div>
             </div>
           </div>
-          <div class="object-category">
+          <div v-if="!filtering" class="object-category">
             <div
               class="category-header"
               @click.stop="selectCategory(conn, db, 'triggers')"
@@ -350,7 +377,7 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
-                @click.stop="toggleObjectCategory(`${conn.name}_${db}_triggers`)"
+                @click.stop="toggleObjectCategory(conn.name, db, 'triggers')"
               >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -363,12 +390,13 @@
               >
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <span class="category-name">触发器</span>
-              <span class="category-count">{{ databaseObjectsMap[`${conn.name}_${db}`]?.triggers?.length || 0 }}</span>
+              <span class="category-name">{{ t('触发器') }}</span>
+              <span class="category-count">{{ categoryCount(db, 'triggers') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_triggers`)" class="category-items">
+              <div v-if="isCategoryLoading(db, 'triggers')" class="category-loading">{{ t('加载中…') }}</div>
               <div
-                v-for="trigger in databaseObjectsMap[`${conn.name}_${db}`]?.triggers"
+                v-for="trigger in displayItems(db, 'triggers')"
                 :key="trigger"
                 :class="[
                   'object-item',
@@ -389,9 +417,12 @@
                 </svg>
                 <span class="object-name">{{ trigger }}</span>
               </div>
+              <div v-if="remainingFor(db, 'triggers')" class="object-more" @click.stop="loadMore(db, 'triggers')">
+                {{ t('还有') }} {{ remainingFor(db, 'triggers') }} {{ t('项，点击加载') }}
+              </div>
             </div>
           </div>
-          <div class="object-category">
+          <div v-if="!filtering" class="object-category">
             <div
               class="category-header"
               @click.stop="selectCategory(conn, db, 'events')"
@@ -412,7 +443,7 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
-                @click.stop="toggleObjectCategory(`${conn.name}_${db}_events`)"
+                @click.stop="toggleObjectCategory(conn.name, db, 'events')"
               >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -426,12 +457,13 @@
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              <span class="category-name">事件</span>
-              <span class="category-count">{{ databaseObjectsMap[`${conn.name}_${db}`]?.events?.length || 0 }}</span>
+              <span class="category-name">{{ t('事件') }}</span>
+              <span class="category-count">{{ categoryCount(db, 'events') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_events`)" class="category-items">
+              <div v-if="isCategoryLoading(db, 'events')" class="category-loading">{{ t('加载中…') }}</div>
               <div
-                v-for="event in databaseObjectsMap[`${conn.name}_${db}`]?.events"
+                v-for="event in displayItems(db, 'events')"
                 :key="event"
                 :class="[
                   'object-item',
@@ -440,6 +472,7 @@
                   }
                 ]"
                 @click="handleSelectConnectionDatabaseEvent(conn, db, event)"
+                @dblclick.stop="openEventDialog({ connection: conn, database: db, event })"
               >
                 <svg
                   class="object-icon event-icon"
@@ -453,6 +486,9 @@
                 </svg>
                 <span class="object-name">{{ event }}</span>
               </div>
+              <div v-if="remainingFor(db, 'events')" class="object-more" @click.stop="loadMore(db, 'events')">
+                {{ t('还有') }} {{ remainingFor(db, 'events') }} {{ t('项，点击加载') }}
+              </div>
             </div>
           </div>
         </div>
@@ -462,7 +498,8 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { t } from '@/i18n'
+import { computed, inject, ref } from 'vue'
 
 const databaseStore = inject('database')
 const {
@@ -480,11 +517,14 @@ const {
   handleSelectConnectionDatabaseTable,
   handleSelectConnectionDatabaseTrigger,
   handleSelectConnectionDatabaseView,
+  objectCategoryLoading,
   onDragEndConnection,
   onDragStartConnection,
   openDatabaseFromSidebar,
+  openEventDialog,
   openTable,
   openedDatabases,
+  previewProcedureInQuery,
   selectCategory,
   selectConnection,
   selectedConnection,
@@ -496,7 +536,90 @@ const {
   toggleObjectCategory
 } = databaseStore
 
-defineProps({
-  conn: { type: Object, required: true }
+const props = defineProps({
+  conn: { type: Object, required: true },
+  filterKeyword: { type: String, default: '' }
 })
+
+const filtering = computed(() => props.filterKeyword.length > 0)
+const keyword = computed(() => props.filterKeyword.toLowerCase())
+
+function matches(name) {
+  return String(name || '')
+    .toLowerCase()
+    .includes(keyword.value)
+}
+
+function objectsFor(db) {
+  const objectsKey = `${props.conn.name}_${db}`
+  if (!openedDatabases.value.includes(objectsKey)) return null
+  return databaseObjectsMap.value[objectsKey] || null
+}
+
+const visibleDatabases = computed(() => {
+  const databases = connectionDatabases.value[props.conn.name] || []
+  if (!filtering.value) return databases
+
+  return databases.filter((db) => {
+    if (matches(db)) return true
+    const objects = objectsFor(db)
+    if (!objects) return false
+    return [...(objects.tables || []), ...(objects.views || [])].some(matches)
+  })
+})
+
+function tablesFor(db) {
+  const tables = objectsFor(db)?.tables || []
+  return filtering.value ? tables.filter(matches) : tables
+}
+
+function viewsFor(db) {
+  const views = objectsFor(db)?.views || []
+  return filtering.value ? views.filter(matches) : views
+}
+
+const OBJECT_RENDER_LIMIT = 200
+const OBJECT_RENDER_STEP = 300
+const renderLimits = ref({})
+
+function categoryItems(db, category) {
+  if (category === 'tables') return tablesFor(db)
+  if (category === 'views') return viewsFor(db)
+  const items = objectsFor(db)?.[category] || []
+  return filtering.value ? items.filter(matches) : items
+}
+
+function isCategoryLoading(db, category) {
+  return Boolean(objectCategoryLoading.value[`${props.conn.name}_${db}_${category}`])
+}
+
+function categoryCount(db, category) {
+  if (isCategoryLoading(db, category)) return '…'
+  const objects = objectsFor(db)
+  if (!objects || !Array.isArray(objects[category])) return ''
+  return categoryItems(db, category).length
+}
+
+function renderLimitKey(db, category) {
+  return `${props.conn.name}_${db}_${category}`
+}
+
+function renderLimit(db, category) {
+  return renderLimits.value[renderLimitKey(db, category)] || OBJECT_RENDER_LIMIT
+}
+
+function displayItems(db, category) {
+  return categoryItems(db, category).slice(0, renderLimit(db, category))
+}
+
+function remainingFor(db, category) {
+  return Math.max(0, categoryItems(db, category).length - renderLimit(db, category))
+}
+
+function loadMore(db, category) {
+  renderLimits.value = {
+    ...renderLimits.value,
+    [renderLimitKey(db, category)]: renderLimit(db, category) + OBJECT_RENDER_STEP
+  }
+}
 </script>

@@ -1,39 +1,39 @@
 <template>
   <PageLayout tool-path="/json-parser">
     <template #actions>
-      <button class="btn-icon btn-sm" title="格式化" @click="formatJson">
+      <button class="btn-icon btn-sm" :title="t('格式化')" @click="formatJson">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="折叠全部" @click="collapseAll">
+      <button class="btn-icon btn-sm" :title="t('折叠全部')" @click="collapseAll">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 5L12 9L18 5M6 19L12 15L18 19" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="展开全部" @click="expandAll">
+      <button class="btn-icon btn-sm" :title="t('展开全部')" @click="expandAll">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 9L12 5L18 9M6 15L12 19L18 15" />
         </svg>
       </button>
       <span class="toolbar-sep" />
-      <button class="btn-icon btn-sm" title="压缩 JSON 并复制" @click="copyMinified">
+      <button class="btn-icon btn-sm" :title="t('压缩 JSON 并复制')" @click="copyMinified">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="压缩转义 JSON 并复制" @click="copyEscaped">
+      <button class="btn-icon btn-sm" :title="t('压缩转义 JSON 并复制')" @click="copyEscaped">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="JSON 转 XML" @click="convertToXml">
+      <button class="btn-icon btn-sm" :title="t('JSON 转 XML')" @click="convertToXml">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M8 6l-6 6l6 6M16 6l6 6l-6 6" />
         </svg>
       </button>
       <span class="toolbar-sep" />
-      <button class="btn-icon btn-sm" title="清空" @click="clearInput">
+      <button class="btn-icon btn-sm" :title="t('清空')" @click="clearInput">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
@@ -46,7 +46,7 @@
           <span class="panel-title">JSON</span>
           <div class="status-area">
             <span :class="['status', validationStatus]">{{ validationMessage }}</span>
-            <span class="size-info">{{ inputSize }} 字符 · {{ lineCount }} 行</span>
+            <span class="size-info">{{ t('{chars} 字符 · {lines} 行', { chars: inputSize, lines: lineCount }) }}</span>
           </div>
         </div>
         <div class="editor-wrapper">
@@ -72,19 +72,19 @@
       <SplitHandle
         orientation="horizontal"
         :resizing="splitResizing"
-        label="拖动调整 JSON 编辑区高度"
+        :label="t('拖动调整 JSON 编辑区高度')"
         @pointerdown="startSplitResize"
         @keydown="onSplitKeydown"
       />
 
       <div class="panel jsonpath-panel">
         <div class="panel-header">
-          <span class="panel-title">JSONPath 查询</span>
+          <span class="panel-title">{{ t('JSONPath 查询') }}</span>
           <div class="panel-actions">
             <button v-if="jsonPathResult !== null" class="btn btn-secondary btn-sm" @click="copyJsonPathResult">
-              复制结果
+              {{ t('复制结果') }}
             </button>
-            <button class="btn btn-primary btn-sm" @click="executeJsonPath">查询</button>
+            <button class="btn btn-primary btn-sm" @click="executeJsonPath">{{ t('查询') }}</button>
           </div>
         </div>
         <div class="panel-body">
@@ -93,19 +93,19 @@
               v-model="jsonPathInput"
               type="text"
               class="input-field jsonpath-input"
-              placeholder="输入 JSONPath 表达式，如：$.data.items[0].name"
+              :placeholder="t('输入 JSONPath 表达式，如：$.data.items[0].name')"
               @keydown.enter="executeJsonPath"
             />
           </div>
           <div class="jsonpath-hint">
-            <span>示例：</span>
-            <code @click="setJsonPath('$.')">$. (根对象)</code>
-            <code @click="setJsonPath('$.*')">$.* (所有子元素)</code>
-            <code @click="setJsonPath('$.data')">$.data (指定属性)</code>
-            <code @click="setJsonPath('$.items[*]')">$.items[*] (数组所有元素)</code>
+            <span>{{ t('示例：') }}</span>
+            <code @click="setJsonPath('$.')">$. {{ t('(根对象)') }}</code>
+            <code @click="setJsonPath('$.*')">$.* {{ t('(所有子元素)') }}</code>
+            <code @click="setJsonPath('$.data')">$.data {{ t('(指定属性)') }}</code>
+            <code @click="setJsonPath('$.items[*]')">$.items[*] {{ t('(数组所有元素)') }}</code>
           </div>
           <div v-if="jsonPathResult !== null" class="jsonpath-result">
-            <div class="result-label">查询结果</div>
+            <div class="result-label">{{ t('查询结果') }}</div>
             <pre class="result-content">{{ jsonPathResultDisplay }}</pre>
           </div>
         </div>
@@ -113,46 +113,46 @@
 
       <div class="panel help-panel">
         <div class="panel-header">
-          <span class="panel-title">JSONPath 语法说明</span>
+          <span class="panel-title">{{ t('JSONPath 语法说明') }}</span>
         </div>
         <div class="panel-body">
           <table class="syntax-table">
             <thead>
               <tr>
-                <th>语法</th>
-                <th>说明</th>
-                <th>示例</th>
+                <th>{{ t('语法') }}</th>
+                <th>{{ t('说明') }}</th>
+                <th>{{ t('示例') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><code>$</code></td>
-                <td>根对象</td>
+                <td>{{ t('根对象') }}</td>
                 <td>$.name</td>
               </tr>
               <tr>
                 <td><code>.</code></td>
-                <td>子属性访问</td>
+                <td>{{ t('子属性访问') }}</td>
                 <td>$.data.name</td>
               </tr>
               <tr>
                 <td><code>[]</code></td>
-                <td>数组索引或属性访问</td>
+                <td>{{ t('数组索引或属性访问') }}</td>
                 <td>$[0]、$['name']</td>
               </tr>
               <tr>
                 <td><code>*</code></td>
-                <td>通配符，所有元素</td>
+                <td>{{ t('通配符，所有元素') }}</td>
                 <td>$.*、$.items[*]</td>
               </tr>
               <tr>
                 <td><code>..</code></td>
-                <td>递归下降</td>
+                <td>{{ t('递归下降') }}</td>
                 <td>$..name</td>
               </tr>
               <tr>
                 <td><code>[start:end]</code></td>
-                <td>数组切片</td>
+                <td>{{ t('数组切片') }}</td>
                 <td>$[0:2]</td>
               </tr>
             </tbody>
@@ -163,16 +163,17 @@
 
     <div
       v-if="contextMenu.show"
+      v-clamp-viewport
       class="context-menu"
       :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
     >
       <div v-if="contextMenu.path" class="context-menu-item" @click="copySelectedPath">
-        复制JSONPath: {{ contextMenu.path }}
+        {{ t('复制 JSONPath: {path}', { path: contextMenu.path }) }}
       </div>
-      <div class="context-menu-item" @click="copySelectedText">复制选中内容</div>
+      <div class="context-menu-item" @click="copySelectedText">{{ t('复制选中内容') }}</div>
       <div class="context-menu-separator" />
-      <div class="context-menu-item" @click="formatJson">格式化JSON</div>
-      <div class="context-menu-item" @click="compressJson">压缩JSON</div>
+      <div class="context-menu-item" @click="formatJson">{{ t('格式化 JSON') }}</div>
+      <div class="context-menu-item" @click="compressJson">{{ t('压缩 JSON') }}</div>
     </div>
 
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
@@ -186,6 +187,7 @@ import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { t } from '@/i18n'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
@@ -206,7 +208,7 @@ const {
   container: () => pageBodyRef.value
 })
 const validationStatus = ref('')
-const validationMessage = ref('等待输入')
+const validationMessage = ref(t('等待输入'))
 const jsonPathInput = ref('')
 const jsonPathResult = ref(null)
 const parsedJson = ref(null)
@@ -277,7 +279,7 @@ function autoFormat() {
   const input = jsonInput.value.trim()
   if (!input) {
     validationStatus.value = ''
-    validationMessage.value = '等待输入'
+    validationMessage.value = t('等待输入')
     parsedJson.value = null
     return
   }
@@ -290,11 +292,11 @@ function autoFormat() {
     }
     parsedJson.value = parsed
     validationStatus.value = 'valid'
-    validationMessage.value = 'JSON格式正确'
+    validationMessage.value = t('JSON 格式正确')
   } catch (e) {
     if (!parsedJson.value) {
       validationStatus.value = 'error'
-      validationMessage.value = `格式错误: ${e.message}`
+      validationMessage.value = t('格式错误: {message}', { message: e.message })
     }
     renderHighlight(jsonInput.value)
   }
@@ -409,7 +411,9 @@ function highlightJsonWithFolds(text) {
       const marker = startLineMarkers[lineNum]
       if (marker && !collapsedPaths.value.has(marker.id)) {
         result += `<div class="fold-line" data-fold-id="${marker.id}">`
-        result += `<span class="fold-toggle fold-open visible" data-fold-id="${marker.id}" title="点击折叠"></span>`
+        result += `<span class="fold-toggle fold-open visible" data-fold-id="${marker.id}" title="${escapeHtml(
+          t('点击折叠')
+        )}"></span>`
         result += highlightLine(line)
         result += '</div>'
       } else {
@@ -424,7 +428,9 @@ function highlightJsonWithFolds(text) {
         const marker = foldMarkers.value.find((m) => m.id === state)
         if (marker) {
           result += `<div class="fold-line collapsed" data-fold-id="${marker.id}">`
-          result += `<span class="fold-toggle fold-closed visible" data-fold-id="${marker.id}" title="点击展开"></span>`
+          result += `<span class="fold-toggle fold-closed visible" data-fold-id="${marker.id}" title="${escapeHtml(
+            t('点击展开')
+          )}"></span>`
           result += `<span class="hl-${marker.type === 'object' ? 'brace' : 'bracket'}">${marker.type === 'object' ? '{' : '['}</span>`
           result += '<span class="fold-ellipsis">...</span>'
           result += `<span class="hl-${marker.type === 'object' ? 'brace' : 'bracket'}">${marker.type === 'object' ? '}' : ']'}</span>`
@@ -527,7 +533,7 @@ function bindFoldEvents() {
 function formatJson() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showWarning('请输入JSON数据')
+    showWarning(t('请输入 JSON 数据'))
     return
   }
 
@@ -537,19 +543,19 @@ function formatJson() {
     renderJson(formatted, parsed)
     parsedJson.value = parsed
     validationStatus.value = 'valid'
-    validationMessage.value = 'JSON格式正确'
-    showSuccess('格式化成功')
+    validationMessage.value = t('JSON 格式正确')
+    showSuccess(t('格式化成功'))
   } catch (e) {
     validationStatus.value = 'error'
-    validationMessage.value = `格式错误: ${e.message}`
-    showError('JSON格式错误')
+    validationMessage.value = t('格式错误: {message}', { message: e.message })
+    showError(t('JSON 格式错误'))
   }
 }
 
 function compressJson() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showWarning('请输入JSON数据')
+    showWarning(t('请输入 JSON 数据'))
     return
   }
 
@@ -559,12 +565,12 @@ function compressJson() {
     renderJson(compressed, parsed)
     parsedJson.value = parsed
     validationStatus.value = 'valid'
-    validationMessage.value = 'JSON格式正确'
-    showSuccess('压缩成功')
+    validationMessage.value = t('JSON 格式正确')
+    showSuccess(t('压缩成功'))
   } catch (e) {
     validationStatus.value = 'error'
-    validationMessage.value = `格式错误: ${e.message}`
-    showError('JSON格式错误')
+    validationMessage.value = t('格式错误: {message}', { message: e.message })
+    showError(t('JSON 格式错误'))
   }
 }
 
@@ -574,49 +580,49 @@ function clearInput() {
   if (editorRef.value) editorRef.value.innerHTML = ''
   parsedJson.value = null
   validationStatus.value = ''
-  validationMessage.value = '等待输入'
+  validationMessage.value = t('等待输入')
   jsonPathResult.value = ''
   jsonPathInput.value = ''
   collapsedPaths.value.clear()
   foldMarkers.value = []
   displayLineCount.value = 1
-  showSuccess('已清空')
+  showSuccess(t('已清空'))
 }
 
 function collapseAll() {
   if (!parsedJson.value) {
-    showWarning('请先输入有效的JSON数据')
+    showWarning(t('请先输入有效的 JSON 数据'))
     return
   }
   if (foldMarkers.value.length === 0) {
-    showWarning('没有可折叠的内容')
+    showWarning(t('没有可折叠的内容'))
     return
   }
   foldMarkers.value.forEach((marker) => {
     collapsedPaths.value.add(marker.id)
   })
   renderJson(lastRenderedText, parsedJson.value)
-  showSuccess('已折叠全部')
+  showSuccess(t('已折叠全部'))
 }
 
 function expandAll() {
   if (!parsedJson.value) {
-    showWarning('请先输入有效的JSON数据')
+    showWarning(t('请先输入有效的 JSON 数据'))
     return
   }
   if (collapsedPaths.value.size === 0) {
-    showWarning('没有折叠的内容')
+    showWarning(t('没有折叠的内容'))
     return
   }
   collapsedPaths.value.clear()
   renderJson(lastRenderedText, parsedJson.value)
-  showSuccess('已展开全部')
+  showSuccess(t('已展开全部'))
 }
 
 async function copyMinified() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showWarning('请输入JSON数据')
+    showWarning(t('请输入 JSON 数据'))
     return
   }
 
@@ -625,19 +631,19 @@ async function copyMinified() {
     const minified = JSON.stringify(parsed)
     const success = await copyToClipboard(minified)
     if (success) {
-      showSuccess('已复制压缩JSON')
+      showSuccess(t('已复制压缩 JSON'))
     } else {
-      showError('复制失败')
+      showError(t('复制失败'))
     }
   } catch {
-    showError('JSON格式错误')
+    showError(t('JSON 格式错误'))
   }
 }
 
 async function copyEscaped() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showWarning('请输入JSON数据')
+    showWarning(t('请输入 JSON 数据'))
     return
   }
 
@@ -647,19 +653,19 @@ async function copyEscaped() {
     const escaped = JSON.stringify(minified)
     const success = await copyToClipboard(escaped)
     if (success) {
-      showSuccess('已复制压缩转义JSON')
+      showSuccess(t('已复制压缩转义 JSON'))
     } else {
-      showError('复制失败')
+      showError(t('复制失败'))
     }
   } catch {
-    showError('JSON格式错误')
+    showError(t('JSON 格式错误'))
   }
 }
 
 async function convertToXml() {
   const input = jsonInput.value.trim()
   if (!input) {
-    showWarning('请输入JSON数据')
+    showWarning(t('请输入 JSON 数据'))
     return
   }
 
@@ -668,12 +674,12 @@ async function convertToXml() {
     const xml = jsonToXml(parsed, 'root')
     const success = await copyToClipboard(xml)
     if (success) {
-      showSuccess('已复制XML')
+      showSuccess(t('已复制 XML'))
     } else {
-      showError('复制失败')
+      showError(t('复制失败'))
     }
   } catch {
-    showError('JSON格式错误')
+    showError(t('JSON 格式错误'))
   }
 }
 
@@ -936,28 +942,28 @@ function findPrecedingKeySimple(text, valueEnd, pathStack) {
 
 async function copySelectedPath() {
   if (!contextMenu.value.path) {
-    showError('无法获取路径')
+    showError(t('无法获取路径'))
     return
   }
   const success = await copyToClipboard(contextMenu.value.path)
   if (success) {
-    showSuccess('已复制路径')
+    showSuccess(t('已复制路径'))
   } else {
-    showError('复制失败')
+    showError(t('复制失败'))
   }
   hideContextMenu()
 }
 
 async function copySelectedText() {
   if (!contextMenu.value.selectedText) {
-    showWarning('没有选中内容')
+    showWarning(t('没有选中内容'))
     return
   }
   const success = await copyToClipboard(contextMenu.value.selectedText)
   if (success) {
-    showSuccess('已复制内容')
+    showSuccess(t('已复制内容'))
   } else {
-    showError('复制失败')
+    showError(t('复制失败'))
   }
   hideContextMenu()
 }
@@ -973,29 +979,29 @@ function setJsonPath(path) {
 
 function executeJsonPath() {
   if (!parsedJson.value) {
-    showWarning('请先输入有效的JSON数据')
+    showWarning(t('请先输入有效的 JSON 数据'))
     return
   }
 
   const path = jsonPathInput.value.trim()
   if (!path) {
-    showWarning('请输入JSONPath表达式')
+    showWarning(t('请输入 JSONPath 表达式'))
     return
   }
 
   try {
     const result = evaluateJsonPath(parsedJson.value, path)
     jsonPathResult.value = result
-    showSuccess('查询成功')
+    showSuccess(t('查询成功'))
   } catch (e) {
     jsonPathResult.value = null
-    showError(`查询失败: ${e.message}`)
+    showError(t('查询失败: {message}', { message: e.message }))
   }
 }
 
 function evaluateJsonPath(obj, path) {
   if (!path.startsWith('$')) {
-    throw new Error('JSONPath必须以$开头')
+    throw new Error(t('JSONPath 必须以 $ 开头'))
   }
 
   path = path.substring(1)
@@ -1148,7 +1154,7 @@ function recursiveSearch(obj, propName, results) {
 
 async function copyJsonPathResult() {
   if (jsonPathResult.value === null) {
-    showWarning('没有可复制的结果')
+    showWarning(t('没有可复制的结果'))
     return
   }
   const text =
@@ -1157,9 +1163,9 @@ async function copyJsonPathResult() {
       : String(jsonPathResult.value)
   const success = await copyToClipboard(text)
   if (success) {
-    showSuccess('已复制到剪贴板')
+    showSuccess(t('已复制到剪贴板'))
   } else {
-    showError('复制失败')
+    showError(t('复制失败'))
   }
 }
 
@@ -1181,13 +1187,16 @@ onUnmounted(() => {
 
 <style scoped>
 .page-body {
-  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.page-body > .panel {
+  margin-top: 0;
 }
 
 .editor-panel {
@@ -1382,7 +1391,7 @@ onUnmounted(() => {
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   padding: 4px 0;
   min-width: 180px;
   z-index: 1000;

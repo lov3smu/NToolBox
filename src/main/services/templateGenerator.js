@@ -10,7 +10,7 @@ import { BUILTIN_TEMPLATES, buildDictionaryStatements, buildFunctionGroupStateme
 
 async function translateToEnglish(texts) {
   const config = getConfig()
-  const providerType = config.ai_provider || 'bailian'
+  const providerType = config.ai.provider || 'bailian'
   const providerConfig = resolveProviderRuntimeConfig(providerType, config)
 
   const provider = getProvider(providerType, providerConfig)
@@ -94,19 +94,19 @@ export async function generateDictionarySql(params) {
     let targetPath
     switch (operate_type) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
       default:
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
     }
 
-    if (!isPathWithinBase(targetPath, config.base_path)) {
+    if (!isPathWithinBase(targetPath, config.app.base_path)) {
       return { success: false, error: '目标路径超出允许范围' }
     }
 
@@ -127,14 +127,14 @@ export async function generateDictionarySql(params) {
     const sNumber = `S${String(nextNumber).padStart(padWidth, '0')}`
 
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
-    const safeDevEnName = escapeSql(config.developer_en_name)
+    const safeDevEnName = escapeSql(config.app.developer.en_name)
     const safeFilename = escapeSql(
       `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeUsage}.sql`.replace(/\s/g, '_')
     )
 
     const scriptContent = `-- Please use UTF8 encoding without BOM
 -- Script Usage: ${usage || dict_name} 字典配置初始化
--- Script Author: ${config.developer_ch_name}
+-- Script Author: ${config.app.developer.ch_name}
 -- Creation Time: ${currentDate}
 
 USE \`${escapeSql(finalDatabase)}\`;
@@ -154,7 +154,7 @@ COMMIT;
     const filename = `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeUsage}.sql`.replace(/\s/g, '_')
     const filePath = path.join(targetPath, filename)
 
-    if (!isPathWithinBase(filePath, config.base_path)) {
+    if (!isPathWithinBase(filePath, config.app.base_path)) {
       return { success: false, error: '文件路径超出允许范围' }
     }
 
@@ -214,19 +214,19 @@ async function generateDictionarySqlBatch(params) {
     let targetPath
     switch (operate_type) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
       default:
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
     }
 
-    if (!isPathWithinBase(targetPath, config.base_path)) {
+    if (!isPathWithinBase(targetPath, config.app.base_path)) {
       return { success: false, error: '目标路径超出允许范围' }
     }
 
@@ -244,7 +244,7 @@ async function generateDictionarySqlBatch(params) {
     }
 
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
-    const safeDevEnName = escapeSql(config.developer_en_name)
+    const safeDevEnName = escapeSql(config.app.developer.en_name)
 
     const filesToCreate = []
     let actualMergeStrategy = merge_strategy
@@ -273,14 +273,14 @@ async function generateDictionarySqlBatch(params) {
       const filename = `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeCombinedNames}.sql`.replace(/\s/g, '_')
       const filePath = path.join(targetPath, filename)
 
-      if (!isPathWithinBase(filePath, config.base_path)) {
+      if (!isPathWithinBase(filePath, config.app.base_path)) {
         return { success: false, error: '文件路径超出允许范围' }
       }
 
       const safeFilename = escapeSql(filename)
       const scriptContent = `-- Please use UTF8 encoding without BOM
 -- Script Usage: ${usage || combinedNames} 字典配置初始化
--- Script Author: ${config.developer_ch_name}
+-- Script Author: ${config.app.developer.ch_name}
 -- Creation Time: ${currentDate}
 
 USE \`${escapeSql(finalDatabase)}\`;
@@ -313,14 +313,14 @@ COMMIT;
         const filename = `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeDictNameFile}.sql`.replace(/\s/g, '_')
         const filePath = path.join(targetPath, filename)
 
-        if (!isPathWithinBase(filePath, config.base_path)) {
+        if (!isPathWithinBase(filePath, config.app.base_path)) {
           return { success: false, error: '文件路径超出允许范围' }
         }
 
         const safeFilename = escapeSql(filename)
         const scriptContent = `-- Please use UTF8 encoding without BOM
 -- Script Usage: ${dictResult.dict_name} 字典配置初始化
--- Script Author: ${config.developer_ch_name}
+-- Script Author: ${config.app.developer.ch_name}
 -- Creation Time: ${currentDate}
 
 USE \`${escapeSql(finalDatabase)}\`;
@@ -379,7 +379,7 @@ COMMIT;
 
 async function translateToPascalCase(texts) {
   const config = getConfig()
-  const providerType = config.ai_provider || 'bailian'
+  const providerType = config.ai.provider || 'bailian'
   const providerConfig = resolveProviderRuntimeConfig(providerType, config)
 
   const provider = getProvider(providerType, providerConfig)
@@ -471,19 +471,19 @@ export async function generateFunctionGroupSql(params) {
     let targetPath
     switch (operate_type) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
       default:
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
     }
 
-    if (!isPathWithinBase(targetPath, config.base_path)) {
+    if (!isPathWithinBase(targetPath, config.app.base_path)) {
       return { success: false, error: '目标路径超出允许范围' }
     }
 
@@ -504,14 +504,14 @@ export async function generateFunctionGroupSql(params) {
     const sNumber = `S${String(nextNumber).padStart(padWidth, '0')}`
 
     const dateCompact = now.toISOString().slice(2, 10).replace(/-/g, '')
-    const safeDevEnName = escapeSql(config.developer_en_name)
+    const safeDevEnName = escapeSql(config.app.developer.en_name)
     const safeFilename = escapeSql(
       `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeUsage}.sql`.replace(/\s/g, '_')
     )
 
     const scriptContent = `-- Please use UTF8 encoding without BOM
 -- Script Usage: ${usage || '功能权限配置初始化'}
--- Script Author: ${config.developer_ch_name}
+-- Script Author: ${config.app.developer.ch_name}
 -- Creation Time: ${currentDate}
 
 USE \`${escapeSql(finalDatabase)}\`;
@@ -531,7 +531,7 @@ COMMIT;
     const filename = `${sNumber}-${currentDate}-DML-${finalDatabase}-${safeUsage}.sql`.replace(/\s/g, '_')
     const filePath = path.join(targetPath, filename)
 
-    if (!isPathWithinBase(filePath, config.base_path)) {
+    if (!isPathWithinBase(filePath, config.app.base_path)) {
       return { success: false, error: '文件路径超出允许范围' }
     }
 

@@ -2,7 +2,7 @@
 @scope (.database-page) {
   .status-bar {
     height: 32px;
-    padding: 0 20px;
+    padding: 0 20px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -13,9 +13,29 @@
   }
 
   .status-left {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: var(--db-sidebar-width, 240px) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .status-connection {
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+    padding-left: 20px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .status-sql {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .status-item {

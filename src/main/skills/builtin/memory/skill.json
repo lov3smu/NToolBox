@@ -1,0 +1,56 @@
+{
+  "name": "memory",
+  "version": "1.0.0",
+  "description": "管理长期记忆：查看、保存、修改或删除全局记忆与当前项目记忆。用户要求记住偏好、约定或项目决策，或需要回忆过去约定时使用；自动记忆开启时，发现稳定的偏好或项目决策也应主动保存。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["记忆", "偏好", "项目约定", "长期上下文"],
+  "icon": "brain",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["list", "add", "update", "remove"],
+        "description": "操作类型：list 查看记忆，add 新增，update 修改，remove 删除"
+      },
+      "scope": {
+        "type": "string",
+        "enum": ["global", "project"],
+        "default": "global",
+        "description": "记忆范围：global 为跨项目全局记忆，project 为当前工作区项目记忆"
+      },
+      "content": {
+        "type": "string",
+        "description": "add/update 时的记忆内容，简洁描述事实、偏好或约定"
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "可选标签，最多 8 个，用于分类检索"
+      },
+      "id": {
+        "type": "string",
+        "description": "update/remove 时的记忆 ID，可先用 list 获取"
+      }
+    },
+    "required": ["action"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "action: add, scope: global, content: 用户偏好 pnpm 与单引号、无分号",
+      "output": "保存全局偏好"
+    },
+    {
+      "input": "action: add, scope: project, content: 该项目使用 Vue 3 + Electron",
+      "output": "保存当前项目约定"
+    },
+    {
+      "input": "action: list",
+      "output": "返回全局记忆、项目记忆与知识库概况"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import {
   dbTestConnection,
   dbCreateConnection,
@@ -7,11 +8,12 @@ import {
   dbQueryDatabases,
   dbQueryTables,
   getConfig,
-  saveConfig
+  patchConfig
 } from '@/api'
 export function createConnectionActions(state, api) {
   const {
     connecting,
+    connectionDatabases,
     connectionInfo,
     connections,
     databaseInfo,
@@ -35,7 +37,7 @@ export function createConnectionActions(state, api) {
 
     try {
       const config = await getConfig()
-      const dbConnections = config.dbConnections || []
+      const dbConnections = config.database?.connections || []
 
       let name = newConn.name
       let counter = 1
@@ -46,11 +48,11 @@ export function createConnectionActions(state, api) {
       newConn.name = name
 
       dbConnections.push(newConn)
-      await saveConfig({ ...config, dbConnections })
+      await patchConfig({ database: { connections: dbConnections } })
       await api.loadConnections()
     } catch (error) {
       console.error('复制连接失败:', error)
-      await api.showMessage('复制连接失败: ' + error.message, 'error')
+      await api.showMessage(t('复制连接失败: ') + error.message, 'error')
     }
   }
 
@@ -67,6 +69,9 @@ export function createConnectionActions(state, api) {
     tableInfo.value = null
     if (conn.active) {
       loadConnectionInfo(conn.name)
+      if (!connectionDatabases.value[conn.name]) {
+        api.loadConnectionDatabases(conn.name)
+      }
     }
   }
 
@@ -106,6 +111,13 @@ export function createConnectionActions(state, api) {
     selectConnection(conn)
     if (!conn.active) {
       await connectToDatabase()
+      return
+    }
+    if (!expandedConnections.value.includes(conn.name)) {
+      expandedConnections.value.push(conn.name)
+    }
+    if (!connectionDatabases.value[conn.name]) {
+      await api.loadConnectionDatabases(conn.name)
     }
   }
 
@@ -141,6 +153,13 @@ export function createConnectionActions(state, api) {
         connConfig.writeTimeout = selectedConnection.value.writeTimeout
       }
 
+      if (selectedConnection.value.readOnly) {
+        connConfig.readOnly = true
+      }
+
+      connConfig.ssh = { ...selectedConnection.value.ssh }
+      connConfig.ssl = { ...selectedConnection.value.ssl }
+
       const result = await dbCreateConnection(selectedConnection.value.name, connConfig)
 
       if (result.success) {
@@ -151,11 +170,11 @@ export function createConnectionActions(state, api) {
         }
         await loadDatabases()
       } else {
-        await api.showMessage('连接失败: ' + result.error, 'error')
+        await api.showMessage(t('连接失败: ') + result.error, 'error')
       }
     } catch (error) {
       console.error('连接失败:', error)
-      await api.showMessage('连接失败: ' + error.message, 'error')
+      await api.showMessage(t('连接失败: ') + error.message, 'error')
     } finally {
       connecting.value = false
     }
@@ -173,11 +192,11 @@ export function createConnectionActions(state, api) {
         tables.value = []
         selectedDatabase.value = ''
       } else {
-        await api.showMessage('断开连接失败: ' + result.error, 'error')
+        await api.showMessage(t('断开连接失败: ') + result.error, 'error')
       }
     } catch (error) {
       console.error('断开连接失败:', error)
-      await api.showMessage('断开连接失败: ' + error.message, 'error')
+      await api.showMessage(t('断开连接失败: ') + error.message, 'error')
     }
   }
 
@@ -193,17 +212,17 @@ export function createConnectionActions(state, api) {
         tables.value = []
         selectedDatabase.value = ''
       } else {
-        await api.showMessage('关闭连接失败', 'error')
+        await api.showMessage(t('关闭连接失败'), 'error')
       }
     } catch (error) {
       console.error('关闭所有连接失败:', error)
-      await api.showMessage('关闭所有连接失败: ' + error.message, 'error')
+      await api.showMessage(t('关闭所有连接失败: ') + error.message, 'error')
     }
   }
 
   async function testNewConnection() {
     if (!newConnection.value.host) {
-      await api.showMessage('请输入主机地址', 'warning')
+      await api.showMessage(t('请输入主机地址'), 'warning')
       return
     }
 
@@ -213,7 +232,9 @@ export function createConnectionActions(state, api) {
         host: newConnection.value.host,
         port: newConnection.value.port || 3306,
         user: newConnection.value.user || 'root',
-        password: newConnection.value.password
+        password: newConnection.value.password,
+        ssh: { ...newConnection.value.ssh },
+        ssl: { ...newConnection.value.ssl }
       }
 
       if (newConnection.value.charset) {
@@ -227,13 +248,13 @@ export function createConnectionActions(state, api) {
       const result = await dbTestConnection(connConfig)
 
       if (result.success) {
-        await api.showMessage('连接成功！', 'success')
+        await api.showMessage(t('连接成功！'), 'success')
       } else {
-        await api.showMessage('连接失败: ' + result.error, 'error')
+        await api.showMessage(t('连接失败: ') + result.error, 'error')
       }
     } catch (error) {
       console.error('测试连接失败:', error)
-      await api.showMessage('测试连接失败: ' + error.message, 'error')
+      await api.showMessage(t('测试连接失败: ') + error.message, 'error')
     } finally {
       testingNewConn.value = false
     }
@@ -241,7 +262,7 @@ export function createConnectionActions(state, api) {
 
   async function testEditConnection() {
     if (!editingConnection.value.host) {
-      await api.showMessage('请输入主机地址', 'warning')
+      await api.showMessage(t('请输入主机地址'), 'warning')
       return
     }
 
@@ -251,7 +272,9 @@ export function createConnectionActions(state, api) {
         host: editingConnection.value.host,
         port: editingConnection.value.port || 3306,
         user: editingConnection.value.user || 'root',
-        password: editingConnection.value.password
+        password: editingConnection.value.password,
+        ssh: { ...editingConnection.value.ssh },
+        ssl: { ...editingConnection.value.ssl }
       }
 
       if (editingConnection.value.charset) {
@@ -265,13 +288,13 @@ export function createConnectionActions(state, api) {
       const result = await dbTestConnection(connConfig)
 
       if (result.success) {
-        await api.showMessage('连接成功！', 'success')
+        await api.showMessage(t('连接成功！'), 'success')
       } else {
-        await api.showMessage('连接失败: ' + result.error, 'error')
+        await api.showMessage(t('连接失败: ') + result.error, 'error')
       }
     } catch (error) {
       console.error('测试连接失败:', error)
-      await api.showMessage('测试连接失败: ' + error.message, 'error')
+      await api.showMessage(t('测试连接失败: ') + error.message, 'error')
     } finally {
       testingEditConn.value = false
     }
@@ -280,7 +303,7 @@ export function createConnectionActions(state, api) {
   async function deleteConnection() {
     if (!selectedConnection.value) return
 
-    const confirmed = await api.showConfirm(`确定要删除连接 "${selectedConnection.value.name}" 吗？`)
+    const confirmed = await api.showConfirm(t('确定要删除连接 "{p0}" 吗？', { p0: selectedConnection.value.name }))
     if (!confirmed) return
 
     try {
@@ -289,19 +312,19 @@ export function createConnectionActions(state, api) {
       }
 
       const config = await getConfig()
-      const dbConnections = config.dbConnections || []
+      const dbConnections = config.database?.connections || []
       const index = dbConnections.findIndex((c) => c.name === selectedConnection.value.name)
 
       if (index >= 0) {
         dbConnections.splice(index, 1)
-        await saveConfig({ ...config, dbConnections })
+        await patchConfig({ database: { connections: dbConnections } })
       }
 
       selectedConnection.value = null
       await api.loadConnections()
     } catch (error) {
       console.error('删除连接失败:', error)
-      await api.showMessage('删除连接失败: ' + error.message, 'error')
+      await api.showMessage(t('删除连接失败: ') + error.message, 'error')
     }
   }
 

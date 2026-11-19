@@ -2,7 +2,7 @@
   <PageLayout tool-path="/file-manager">
     <template #header-extra>
       <div v-if="currentPath" class="breadcrumb">
-        <span class="breadcrumb-item" @click="navigateToRoot">根目录</span>
+        <span class="breadcrumb-item" @click="navigateToRoot">{{ t('根目录') }}</span>
         <span v-for="(part, index) in pathParts" :key="index" class="breadcrumb-path">
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-item" @click="navigateToPath(index)">{{ part }}</span>
@@ -15,14 +15,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 19V5M5 12l7-7l7 7" />
         </svg>
-        返回上一级
+        {{ t('返回上一级') }}
       </button>
       <span class="toolbar-sep" />
       <div class="segmented">
         <button
           class="segmented-item"
           :class="{ active: viewMode === 'list' }"
-          title="列表视图"
+          :title="t('列表视图')"
           @click="viewMode = 'list'"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -32,7 +32,7 @@
         <button
           class="segmented-item"
           :class="{ active: viewMode === 'grid' }"
-          title="平铺视图"
+          :title="t('平铺视图')"
           @click="viewMode = 'grid'"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -43,7 +43,7 @@
       <button
         class="btn-icon btn-sm"
         :class="{ active: compactMode }"
-        title="紧凑风格"
+        :title="t('紧凑风格')"
         @click="compactMode = !compactMode"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -54,8 +54,8 @@
       <button
         class="btn-icon btn-sm"
         :class="{ active: sortMenu.show }"
-        :title="`排序：${activeSortLabel}`"
-        aria-label="排序方式"
+        :title="t('排序：{label}', { label: activeSortLabel })"
+        :aria-label="t('排序方式')"
         @click.stop="toggleSortMenu"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -72,12 +72,12 @@
           v-model="searchQuery"
           class="search-input"
           type="text"
-          placeholder="搜索当前目录"
+          :placeholder="t('搜索当前目录')"
           spellcheck="false"
           @input="onSearchInput"
           @keydown.esc="clearSearch"
         />
-        <button v-if="searchQuery" class="search-clear" title="清除搜索" @click="clearSearch">
+        <button v-if="searchQuery" class="search-clear" :title="t('清除搜索')" @click="clearSearch">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
@@ -87,6 +87,7 @@
 
     <div
       v-if="sortMenu.show"
+      v-clamp-viewport
       class="context-menu sort-menu"
       :style="{ top: sortMenu.y + 'px', left: sortMenu.x + 'px' }"
       @click.stop
@@ -98,43 +99,69 @@
         :class="{ active: isActiveSort(option) }"
         @click="selectSort(option)"
       >
-        <span>{{ option.label }}</span>
+        <span>{{ t(option.label) }}</span>
         <svg
           v-if="isActiveSort(option)"
           class="sort-check"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2.5"
+          stroke-width="2"
         >
           <path d="M20 6L9 17l-5-5" />
         </svg>
       </div>
     </div>
     <div class="page-body">
-      <div v-if="loading" class="loading">加载中...</div>
+      <div v-if="loading" class="loading">{{ t('加载中...') }}</div>
 
       <div v-else-if="error && !isDirectoryNotExist" class="error-message">
         {{ error }}
       </div>
 
-      <div v-else-if="!config?.base_path || isDirectoryNotExist" class="empty-message">
-        文件目录未设置，请到设置中设置
+      <div v-else-if="!config?.app.base_path || isDirectoryNotExist" class="empty-state">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+            <path d="M9 13h6" />
+          </svg>
+        </span>
+        <p class="empty-state-title">{{ t('文件目录未设置') }}</p>
+        <p class="empty-state-hint">{{ t('请到设置中设置脚本根目录后再使用文件管理。') }}</p>
+        <div class="empty-state-actions">
+          <button class="btn btn-secondary btn-sm" @click="goToSettings">{{ t('前往设置') }}</button>
+        </div>
       </div>
 
-      <div v-else-if="isSearchMode && searching" class="loading">搜索中...</div>
+      <div v-else-if="isSearchMode && searching" class="loading">{{ t('搜索中...') }}</div>
 
       <div v-else-if="isSearchMode && searchError" class="error-message">{{ searchError }}</div>
 
-      <div v-else-if="isSearchMode && searchResults.length === 0" class="empty-message">未找到匹配的文件或文件夹</div>
+      <div v-else-if="isSearchMode && searchResults.length === 0" class="empty-state">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </span>
+        <p class="empty-state-title">{{ t('没有匹配的文件或文件夹') }}</p>
+        <p class="empty-state-hint">{{ t('试试更换关键词，或切换到其他目录搜索。') }}</p>
+      </div>
 
-      <div v-else-if="!isSearchMode && directories.length === 0 && files.length === 0" class="empty-message">
-        暂时没有文件哦!
+      <div v-else-if="!isSearchMode && directories.length === 0 && files.length === 0" class="empty-state">
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+          </svg>
+        </span>
+        <p class="empty-state-title">{{ t('该目录暂无文件') }}</p>
+        <p class="empty-state-hint">{{ t('把文件放入当前目录后，即可在这里查看和管理。') }}</p>
       </div>
 
       <template v-else>
         <div v-if="isSearchMode" class="search-summary">
-          找到 {{ searchResults.length }} 个匹配项{{ searchTruncated ? '（结果过多，仅显示前 500 项）' : '' }}
+          {{ t('找到 {count} 个匹配项', { count: searchResults.length })
+          }}{{ searchTruncated ? t('（结果过多，仅显示前 500 项）') : '' }}
         </div>
 
         <div :class="['file-list', viewMode, { compact: compactMode }]">
@@ -176,27 +203,33 @@
 
     <div
       v-if="contextMenu.show"
+      v-clamp-viewport
       class="context-menu"
       :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
     >
-      <div class="context-menu-item" @click="openItem">打开</div>
+      <div class="context-menu-item" @click="openItem">{{ t('打开') }}</div>
       <div class="context-menu-separator" />
+      <div v-if="contextMenu.item?.isDirectory" class="context-menu-item" @click="copyDirectoryName">
+        {{ t('复制目录名称') }}
+      </div>
       <div v-if="contextMenu.item?.isDirectory" class="context-menu-item" @click="copyDirectoryFiles">
-        复制所有文件路径
+        {{ t('复制所有文件路径') }}
       </div>
       <div v-if="contextMenu.item?.isDirectory" class="context-menu-item" @click="copyAllFilesPath">
-        复制所有文件路径（含子目录）
+        {{ t('复制所有文件路径（含子目录）') }}
       </div>
-      <div v-if="!contextMenu.item?.isDirectory" class="context-menu-item" @click="copyFilePath">复制文件路径</div>
+      <div v-if="!contextMenu.item?.isDirectory" class="context-menu-item" @click="copyFilePath">
+        {{ t('复制文件路径') }}
+      </div>
       <div class="context-menu-separator" />
-      <div class="context-menu-item" @click="showProperties">属性</div>
+      <div class="context-menu-item" @click="showProperties">{{ t('属性') }}</div>
     </div>
 
     <div v-if="properties.show" class="properties-modal" @click.self="closeProperties">
-      <div class="properties-dialog" :style="{ left: properties.x + 'px', top: properties.y + 'px' }">
+      <div v-clamp-viewport class="properties-dialog" :style="{ left: properties.x + 'px', top: properties.y + 'px' }">
         <div class="properties-header">
           <h3>{{ properties.info?.name }}</h3>
-          <button class="btn-icon btn-sm" title="关闭" @click="closeProperties">
+          <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeProperties">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -204,29 +237,32 @@
         </div>
         <div class="properties-content">
           <div class="properties-row">
-            <span class="properties-label">类型:</span>
+            <span class="properties-label">{{ t('类型:') }}</span>
             <span class="properties-value">{{ properties.info?.type }}</span>
           </div>
           <div class="properties-row">
-            <span class="properties-label">位置:</span>
+            <span class="properties-label">{{ t('位置:') }}</span>
             <span class="properties-value location">{{ properties.info?.location }}</span>
           </div>
           <div class="properties-row">
-            <span class="properties-label">大小:</span>
+            <span class="properties-label">{{ t('大小:') }}</span>
             <span class="properties-value">{{ formatSize(properties.info?.size) }}</span>
           </div>
-          <div v-if="properties.info?.type === '文件夹'" class="properties-row">
-            <span class="properties-label">包含:</span>
-            <span class="properties-value"
-              >{{ properties.info?.directoryCount }} 个文件夹，{{ properties.info?.fileCount }} 个文件</span
-            >
+          <div v-if="isPropertiesDirectory" class="properties-row">
+            <span class="properties-label">{{ t('包含:') }}</span>
+            <span class="properties-value">{{
+              t('{dirs} 个文件夹，{files} 个文件', {
+                dirs: properties.info?.directoryCount,
+                files: properties.info?.fileCount
+              })
+            }}</span>
           </div>
           <div class="properties-row">
-            <span class="properties-label">创建时间:</span>
+            <span class="properties-label">{{ t('创建时间:') }}</span>
             <span class="properties-value">{{ formatTime(properties.info?.created) }}</span>
           </div>
           <div class="properties-row">
-            <span class="properties-label">修改时间:</span>
+            <span class="properties-label">{{ t('修改时间:') }}</span>
             <span class="properties-value">{{ formatTime(properties.info?.modified) }}</span>
           </div>
         </div>
@@ -239,10 +275,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useToast, useConfig } from '@/composables'
-import { readDirectory, searchDirectory, copyToClipboard, openFile, openFolder, getItemInfo } from '@/api'
+import { readDirectory, searchDirectory, copyToClipboard, openFile, openFolder, getItemInfo, openSettings } from '@/api'
 import { joinPath } from '@/utils/path'
+import { copyToClipboard as copyTextToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { t } from '@/i18n'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
 const { config } = useConfig()
@@ -257,17 +295,56 @@ const sortField = ref('time')
 const sortOrder = ref('desc')
 const sortMenu = ref({ show: false, x: 0, y: 0 })
 const SORT_OPTIONS = Object.freeze([
-  { field: 'time', order: 'desc', label: '时间（新→旧）' },
-  { field: 'time', order: 'asc', label: '时间（旧→新）' },
-  { field: 'name', order: 'asc', label: '名称（A→Z）' },
-  { field: 'name', order: 'desc', label: '名称（Z→A）' },
-  { field: 'size', order: 'desc', label: '大小（大→小）' },
-  { field: 'size', order: 'asc', label: '大小（小→大）' }
+  {
+    field: 'time',
+    order: 'desc',
+    get label() {
+      return t('时间（新→旧）')
+    }
+  },
+  {
+    field: 'time',
+    order: 'asc',
+    get label() {
+      return t('时间（旧→新）')
+    }
+  },
+  {
+    field: 'name',
+    order: 'asc',
+    get label() {
+      return t('名称（A→Z）')
+    }
+  },
+  {
+    field: 'name',
+    order: 'desc',
+    get label() {
+      return t('名称（Z→A）')
+    }
+  },
+  {
+    field: 'size',
+    order: 'desc',
+    get label() {
+      return t('大小（大→小）')
+    }
+  },
+  {
+    field: 'size',
+    order: 'asc',
+    get label() {
+      return t('大小（小→大）')
+    }
+  }
 ])
 const activeSortLabel = computed(() => {
   const active = SORT_OPTIONS.find((option) => isActiveSort(option))
-  return active ? active.label : SORT_OPTIONS[0].label
+  return t(active ? active.label : SORT_OPTIONS[0].label)
 })
+const isPropertiesDirectory = computed(
+  () => properties.value.info?.isDirectory === true || properties.value.info?.type === t('文件夹')
+)
 const compactMode = ref(false)
 const searchQuery = ref('')
 const searchResults = ref([])
@@ -292,7 +369,7 @@ const properties = ref({
 
 const pathParts = computed(() => {
   if (!currentPath.value) return []
-  const base = config.value?.base_path || ''
+  const base = config.value?.app.base_path || ''
   const relative = currentPath.value.replace(base, '').replace(/^[\\/]/, '')
   return relative ? relative.split(/[\\/]/).filter(Boolean) : []
 })
@@ -324,15 +401,15 @@ const sourceFiles = computed(() =>
 const displayedItems = computed(() => [...sortItems(sourceDirectories.value), ...sortItems(sourceFiles.value)])
 
 const isAtRoot = computed(() => {
-  if (!currentPath.value || !config.value?.base_path) return true
+  if (!currentPath.value || !config.value?.app.base_path) return true
   const normalizePath = (p) => p.replace(/[\\/]+$/, '').toLowerCase()
-  return normalizePath(currentPath.value) === normalizePath(config.value.base_path)
+  return normalizePath(currentPath.value) === normalizePath(config.value.app.base_path)
 })
 
 const isDirectoryNotExist = computed(() => {
   return (
     error.value &&
-    (error.value.includes('ENOENT') || error.value.includes('no such file') || error.value.includes('目录不存在'))
+    (error.value.includes('ENOENT') || error.value.includes('no such file') || error.value.includes(t('目录不存在')))
   )
 })
 
@@ -353,10 +430,10 @@ async function loadDirectory(dirPath) {
         loadDirectorySizes(dirPath, token)
       }
     } else {
-      error.value = result.error || '读取目录失败'
+      error.value = result.error || t('读取目录失败')
     }
   } catch (e) {
-    error.value = e.message || '读取目录失败'
+    error.value = e.message || t('读取目录失败')
   } finally {
     loading.value = false
   }
@@ -376,15 +453,19 @@ async function loadDirectorySizes(dirPath, token) {
 }
 
 function navigateToRoot() {
-  const base = config.value?.base_path
+  const base = config.value?.app.base_path
   if (base) {
     resetSearch()
     loadDirectory(base)
   }
 }
 
+function goToSettings() {
+  openSettings('sql-generator')
+}
+
 function navigateToPath(index) {
-  const base = config.value?.base_path || ''
+  const base = config.value?.app.base_path || ''
   const parts = pathParts.value.slice(0, index + 1)
   resetSearch()
   loadDirectory(joinPath(base, parts))
@@ -425,7 +506,7 @@ function selectSort(option) {
 function goToParent() {
   if (isAtRoot.value) return
 
-  const base = config.value?.base_path || ''
+  const base = config.value?.app.base_path || ''
   const parts = pathParts.value
   if (parts.length > 0) {
     resetSearch()
@@ -464,7 +545,18 @@ async function copyFilePath() {
 
   const success = await copyToClipboard(item.path)
   if (success) {
-    showSuccess('已复制文件路径')
+    showSuccess(t('已复制文件路径'))
+  }
+  hideContextMenu()
+}
+
+async function copyDirectoryName() {
+  const item = contextMenu.value.item
+  if (!item) return
+
+  const success = await copyTextToClipboard(item.path)
+  if (success) {
+    showSuccess(t('已复制目录路径'))
   }
   hideContextMenu()
 }
@@ -475,7 +567,7 @@ async function copyDirectoryFiles() {
 
   const success = await copyToClipboard(item.path, false)
   if (success) {
-    showSuccess('已复制所有文件路径')
+    showSuccess(t('已复制所有文件路径'))
   }
   hideContextMenu()
 }
@@ -486,7 +578,7 @@ async function copyAllFilesPath() {
 
   const success = await copyToClipboard(item.path, true)
   if (success) {
-    showSuccess('已复制所有文件路径（含子目录）')
+    showSuccess(t('已复制所有文件路径（含子目录）'))
   }
   hideContextMenu()
 }
@@ -590,12 +682,12 @@ async function performSearch(token) {
       searchError.value = ''
     } else {
       searchResults.value = []
-      searchError.value = result.error || '搜索失败'
+      searchError.value = result.error || t('搜索失败')
     }
   } catch (e) {
     if (token !== searchToken) return
     searchResults.value = []
-    searchError.value = e.message || '搜索失败'
+    searchError.value = e.message || t('搜索失败')
   } finally {
     if (token === searchToken) searching.value = false
   }
@@ -617,7 +709,7 @@ async function showProperties() {
       y
     }
   } else {
-    showError(result.error || '获取信息失败')
+    showError(result.error || t('获取信息失败'))
   }
 }
 
@@ -646,7 +738,7 @@ onMounted(() => {
 })
 
 watch(
-  () => config.value?.base_path,
+  () => config.value?.app.base_path,
   (basePath) => {
     if (basePath) {
       resetSearch()
@@ -706,15 +798,13 @@ onUnmounted(() => {
 }
 
 .page-body {
-  padding: 12px 16px 16px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
 .loading,
-.error-message,
-.empty-message {
+.error-message {
   text-align: center;
   padding: 40px 16px;
   color: var(--text-tertiary);
@@ -723,6 +813,10 @@ onUnmounted(() => {
 
 .error-message {
   color: var(--error-dark);
+}
+
+.page-body > .empty-state {
+  min-height: 100%;
 }
 
 .segmented-item {
@@ -991,7 +1085,7 @@ onUnmounted(() => {
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(20, 20, 24, 0.14);
+  box-shadow: var(--shadow-md);
   padding: 4px;
   min-width: 180px;
   z-index: 1000;
@@ -1046,22 +1140,25 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 9999;
 }
 
 .properties-dialog {
   position: fixed;
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 40px rgba(20, 20, 24, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   width: 400px;
   max-width: 90vw;
-  overflow: hidden;
+  max-height: calc(100vh - 32px);
+  overflow: hidden auto;
   z-index: 9999;
 }
 

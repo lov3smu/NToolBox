@@ -1,9 +1,12 @@
+import { t } from '@/i18n'
+
 import { reactive } from 'vue'
 import {
   cancelUpdateDownload,
   checkForUpdates,
   downloadUpdate,
   getPackageInfo,
+  getUpdateReleases,
   installUpdate,
   onUpdateState,
   openExternal
@@ -14,21 +17,29 @@ export const UPDATE_RELEASE_URL = 'https://github.com/lov3smu/NToolBox/releases/
 export const updateCenter = reactive({
   visible: false,
   phase: 'idle',
+  appName: 'NToolBox',
   currentVersion: '',
   latestVersion: '',
   releaseNotes: '',
   releaseDate: '',
   progress: null,
   error: '',
-  manual: false
+  manual: false,
+  history: [],
+  historyLoading: false,
+  historyError: ''
 })
 
 let subscribed = false
 let versionLoaded = false
+let historyRequested = false
 
 function applyState(payload) {
   if (!payload || typeof payload !== 'object') return
-  if (payload.open) updateCenter.visible = true
+  if (payload.open) {
+    updateCenter.visible = true
+    loadUpdateReleases()
+  }
   if (payload.phase !== undefined) updateCenter.phase = payload.phase
   if (payload.currentVersion !== undefined) updateCenter.currentVersion = payload.currentVersion
   if (payload.latestVersion !== undefined) updateCenter.latestVersion = payload.latestVersion
@@ -49,13 +60,33 @@ async function loadCurrentVersion() {
   if (versionLoaded) return
   versionLoaded = true
   const info = await getPackageInfo()
+  if (info?.name) updateCenter.appName = info.name
   if (info?.version && !updateCenter.currentVersion) updateCenter.currentVersion = info.version
+}
+
+export async function loadUpdateReleases(force = false) {
+  if (updateCenter.historyLoading) return
+  if (historyRequested && !force) return
+  historyRequested = true
+  updateCenter.historyLoading = true
+  updateCenter.historyError = ''
+
+  const result = await getUpdateReleases()
+  updateCenter.historyLoading = false
+
+  if (result?.success) {
+    updateCenter.history = Array.isArray(result.releases) ? result.releases : []
+  } else {
+    historyRequested = false
+    updateCenter.historyError = result?.error || t('获取历史版本失败')
+  }
 }
 
 export async function openUpdateCenter() {
   ensureSubscribed()
   loadCurrentVersion()
   updateCenter.visible = true
+  loadUpdateReleases()
 
   if (['downloading', 'downloaded', 'installing'].includes(updateCenter.phase)) return
 
@@ -99,6 +130,7 @@ export function useUpdateCenter() {
     startUpdateDownload,
     cancelUpdateDownloadNow,
     installUpdateNow,
-    openUpdateReleasePage
+    openUpdateReleasePage,
+    loadUpdateReleases
   }
 }

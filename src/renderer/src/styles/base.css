@@ -99,6 +99,7 @@
   --shadow-md: 0 4px 12px rgba(20, 20, 24, 0.08);
   --shadow-lg: 0 12px 32px rgba(20, 20, 24, 0.12);
   --shadow-glow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
+  --overlay-bg: rgba(15, 17, 21, 0.45);
 
   /* 圆角 */
   --radius-sm: 6px;
@@ -278,6 +279,7 @@
   --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.55);
   --shadow-glow: 0 0 0 3px rgba(var(--accent-rgb), 0.25);
+  --overlay-bg: rgba(0, 0, 0, 0.55);
 
   --app-bg: #141519;
   --panel-subtle: rgba(255, 255, 255, 0.02);
@@ -765,6 +767,41 @@
   --code-bg: var(--p-code-bg);
 }
 
+/* ---------- SQL 语法高亮 ---------- */
+.sql-highlight .tok-keyword {
+  color: var(--sql-keyword);
+  font-weight: 600;
+}
+
+.sql-highlight .tok-type {
+  color: var(--sql-function);
+}
+
+.sql-highlight .tok-function {
+  color: var(--sql-function);
+}
+
+.sql-highlight .tok-string {
+  color: var(--sql-string);
+}
+
+.sql-highlight .tok-number {
+  color: var(--sql-number);
+}
+
+.sql-highlight .tok-identifier {
+  color: var(--sql-identifier);
+}
+
+.sql-highlight .tok-comment {
+  color: var(--sql-comment);
+  font-style: italic;
+}
+
+.sql-highlight .tok-operator {
+  color: var(--text-secondary);
+}
+
 /* ---------- 基础重置 ---------- */
 * {
   margin: 0;
@@ -857,15 +894,13 @@ body {
   background: var(--btn-primary-bg-active);
 }
 
-.btn-secondary,
-.btn-default {
+.btn-secondary {
   background: var(--surface);
   color: var(--text-primary);
   border-color: var(--border-color);
 }
 
-.btn-secondary:hover:not(:disabled),
-.btn-default:hover:not(:disabled) {
+.btn-secondary:hover:not(:disabled) {
   background: var(--surface-hover);
   border-color: var(--border-strong);
 }
@@ -891,7 +926,7 @@ body {
 
 .btn-danger {
   background: var(--danger-bg);
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -1098,6 +1133,242 @@ select:focus,
   box-shadow: var(--shadow-glow);
 }
 
+.select-field-sm {
+  height: var(--control-height-sm);
+  padding: 0 26px 0 8px;
+  background-position: right 7px center;
+  background-size: 12px;
+  font-size: var(--font-size-xs);
+}
+
+/* ---------- 开关 ---------- */
+.switch {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.switch:hover {
+  border-color: var(--border-strong);
+}
+
+.switch:checked {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+}
+
+.switch:checked::before {
+  transform: translateX(16px);
+  background: var(--btn-primary-text);
+}
+
+.switch:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+}
+
+.switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- 复选框 ---------- */
+input[type='checkbox']:not(.switch) {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background-color: var(--surface);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: var(--transition-fast);
+}
+
+input[type='checkbox']:not(.switch):hover:not(:disabled) {
+  border-color: var(--accent-color);
+}
+
+input[type='checkbox']:not(.switch):checked,
+input[type='checkbox']:not(.switch):indeterminate {
+  border-color: var(--accent-color);
+  background-color: var(--accent-color);
+}
+
+/* 勾/横线颜色无法引用 CSS 变量，按明暗主题各取一档以保证对比度 */
+input[type='checkbox']:not(.switch):checked {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+}
+
+input[type='checkbox']:not(.switch):indeterminate {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath d='M4 8h8' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round'/%3e%3c/svg%3e");
+}
+
+:root[data-theme='dark'] input[type='checkbox']:not(.switch):checked {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%2310141a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+}
+
+:root[data-theme='dark'] input[type='checkbox']:not(.switch):indeterminate {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath d='M4 8h8' fill='none' stroke='%2310141a' stroke-width='2.2' stroke-linecap='round'/%3e%3c/svg%3e");
+}
+
+input[type='checkbox']:not(.switch):focus-visible {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-glow);
+}
+
+input[type='checkbox']:not(.switch):disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- 单选按钮 ---------- */
+input[type='radio'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background-color: var(--surface);
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: var(--transition-fast);
+}
+
+input[type='radio']:hover:not(:disabled) {
+  border-color: var(--accent-color);
+}
+
+input[type='radio']:checked {
+  border-color: var(--accent-color);
+  background-color: var(--accent-color);
+  background-image: radial-gradient(circle, var(--btn-primary-text) 0 3px, transparent 3.4px);
+}
+
+input[type='radio']:focus-visible {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-glow);
+}
+
+input[type='radio']:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* RadioOption 组件的布局骨架：global 便于各页面复用同一主题 */
+.radio-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.radio-option-body {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.radio-option.is-disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.radio-option.is-disabled input {
+  cursor: not-allowed;
+}
+
+.radio-option-block {
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.radio-option-block input[type='radio'] {
+  margin-top: 2px;
+}
+
+.radio-option-block .radio-option-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+}
+
+.radio-option-pill {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.radio-option-pill input[type='radio'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radio-option-pill .radio-option-body {
+  display: contents;
+}
+
+.radio-option-pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.radio-option-pill.is-checked {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+  color: var(--btn-primary-text);
+}
+
+.radio-option-pill:has(input:focus-visible) {
+  box-shadow: var(--shadow-glow);
+}
+
 /* ---------- 表单组件 ---------- */
 .form-group {
   margin-bottom: 16px;
@@ -1111,13 +1382,6 @@ select:focus,
   margin-bottom: 6px;
   color: var(--text-primary);
   font-size: var(--font-size-sm);
-}
-
-.form-group input[type='checkbox'] {
-  width: var(--icon-size-xs);
-  height: var(--icon-size-xs);
-  cursor: pointer;
-  accent-color: var(--accent-color);
 }
 
 .setting-hint {
@@ -1167,6 +1431,12 @@ select:focus,
   color: var(--text-primary);
 }
 
+.panel-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
 .panel-body {
   padding: 12px;
 }
@@ -1177,6 +1447,82 @@ select:focus,
   align-items: center;
   gap: 4px;
   margin-left: auto;
+}
+
+.panel-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
+/* 页面内容区：各页面统一内边距，仅保留各自的布局属性 */
+.page-body {
+  width: 100%;
+  padding: 16px 20px 20px;
+}
+
+@media (max-width: 900px) {
+  .page-body {
+    padding: 12px 16px 20px;
+  }
+}
+
+/* 空状态：图标 + 标题 + 说明，统一各页面的占位样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  color: var(--text-tertiary);
+}
+
+.empty-state-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state-hint {
+  margin: 0;
+  max-width: 320px;
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 /* 分段控制器 */
@@ -1199,6 +1545,7 @@ select:focus,
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   font-family: inherit;
+  white-space: nowrap;
   cursor: pointer;
   transition: var(--transition-fast);
 }
@@ -1244,8 +1591,10 @@ select:focus,
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
+  max-width: calc(100vw - 48px);
+  box-sizing: border-box;
   background: linear-gradient(135deg, var(--danger-bg) 0%, var(--danger-bg-hover) 100%);
-  color: white;
+  color: var(--text-inverse);
   padding: 14px 28px;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);

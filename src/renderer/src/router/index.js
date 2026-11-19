@@ -22,9 +22,9 @@ const routes = [
     component: () => import('@/views/Settings.vue')
   },
   {
-    path: '/password',
-    name: 'Password',
-    component: () => import('@/views/Password.vue')
+    path: '/password-manager',
+    name: 'PasswordManager',
+    component: () => import('@/views/PasswordManager.vue')
   },
   {
     path: '/cron',
@@ -50,6 +50,11 @@ const routes = [
     path: '/image-viewer',
     name: 'ImageViewer',
     component: () => import('@/views/ImageViewer.vue')
+  },
+  {
+    path: '/image-hosting',
+    name: 'ImageHosting',
+    component: () => import('@/views/ImageHosting.vue')
   },
   {
     path: '/markdown-editor',
@@ -80,6 +85,11 @@ const routes = [
     path: '/chat',
     name: 'Chat',
     component: () => import('@/views/Chat.vue')
+  },
+  {
+    path: '/memory',
+    name: 'Memory',
+    component: () => import('@/views/Memory.vue')
   },
   {
     path: '/database',

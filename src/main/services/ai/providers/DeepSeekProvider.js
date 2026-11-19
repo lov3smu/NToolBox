@@ -1,7 +1,8 @@
 import BaseProvider from './BaseProvider.js'
+import { getThinkingStyle } from '../thinking.js'
 
 class DeepSeekProvider extends BaseProvider {
-  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
+  constructor({ apiKey, timeout, connectionTimeout } = {}) {
     super({
       name: 'DeepSeek',
       apiKey,
@@ -14,7 +15,7 @@ class DeepSeekProvider extends BaseProvider {
         { id: 'deepseek-flash', name: 'deepseek-flash', contextWindow: 1000000 }
       ],
       defaultModel: 'deepseek-v4-pro',
-      thinkingStyle: 'thinking',
+      thinkingStyle: getThinkingStyle('deepseek'),
       timeout,
       connectionTimeout
     })

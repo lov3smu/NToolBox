@@ -1,6 +1,11 @@
 import { ref, computed } from 'vue'
+import { t } from '@/i18n'
+import { DEFAULT_DATABASE_PAGE_SIZE, DEFAULT_DATABASE_REFRESH_INTERVAL } from '@shared/databaseClient'
 
-export function createState() {
+export function createState(options = {}) {
+  const defaultPageSize = options.defaultPageSize || ref(DEFAULT_DATABASE_PAGE_SIZE)
+  const refreshInterval = options.refreshInterval || ref(DEFAULT_DATABASE_REFRESH_INTERVAL)
+
   const messageDialog = ref({
     visible: false,
     type: 'info',
@@ -19,6 +24,13 @@ export function createState() {
 
   const promptInputRef = ref(null)
 
+  const sqlParamsDialog = ref({
+    show: false,
+    sql: '',
+    params: [],
+    resolve: null
+  })
+
   const connections = ref([])
 
   const groups = ref([])
@@ -34,6 +46,10 @@ export function createState() {
   const expandedObjectCategories = ref([])
 
   const databaseObjectsMap = ref({})
+
+  const objectCategoryLoading = ref({})
+
+  const tableSchemas = ref({})
 
   const connectionDatabases = ref({})
 
@@ -102,13 +118,6 @@ export function createState() {
     exporting: false
   })
 
-  const objectSearchDialog = ref({
-    show: false,
-    keyword: '',
-    items: [],
-    loading: false
-  })
-
   const historyDialog = ref({
     show: false,
     section: 'history',
@@ -124,7 +133,92 @@ export function createState() {
     sessionUser: '',
     users: [],
     source: '',
-    error: ''
+    error: '',
+    selected: null,
+    grants: [],
+    grantsLoading: false,
+    grantsError: '',
+    actionLoading: false,
+    form: {
+      mode: '',
+      user: '',
+      host: '%',
+      password: '',
+      scope: 'database',
+      database: '',
+      table: '*',
+      privileges: ['SELECT']
+    }
+  })
+
+  const serverStatusDialog = ref({
+    show: false,
+    connectionName: '',
+    database: '',
+    loading: false,
+    autoRefresh: true,
+    error: '',
+    status: null,
+    history: [],
+    qps: 0,
+    slowDelta: 0,
+    lastCounters: null,
+    slowQueries: [],
+    slowLoading: false,
+    slowEnabled: true,
+    slowReason: '',
+    slowError: ''
+  })
+
+  const healthDialog = ref({
+    show: false,
+    connectionName: '',
+    database: '',
+    databases: [],
+    loading: false,
+    error: '',
+    result: null
+  })
+
+  const sqlAuditDialog = ref({
+    show: false,
+    blocking: false,
+    issues: [],
+    resolve: null
+  })
+
+  const backupDialog = ref({
+    show: false,
+    loading: false,
+    saving: false,
+    runningId: '',
+    error: '',
+    tasks: [],
+    defaultDirectory: '',
+    form: {
+      id: '',
+      name: '',
+      connection: '',
+      database: '',
+      table: '',
+      format: 'sql',
+      mode: 'interval',
+      intervalMinutes: 1440,
+      time: '03:00',
+      maxRows: 100000,
+      directory: '',
+      enabled: true
+    }
+  })
+
+  const operationLogDialog = ref({
+    show: false,
+    loading: false,
+    clearing: false,
+    error: '',
+    connection: '',
+    keyword: '',
+    entries: []
   })
 
   const aiDialog = ref({
@@ -136,6 +230,26 @@ export function createState() {
     error: ''
   })
 
+  const sessionDialog = ref({
+    show: false,
+    connectionName: '',
+    tab: 'sessions',
+    loading: false,
+    autoRefresh: false,
+    keyword: '',
+    command: '',
+    activeOnly: true,
+    sessions: [],
+    selfId: 0,
+    version: '',
+    transactions: [],
+    locks: [],
+    waits: [],
+    deadlockText: '',
+    error: '',
+    killingId: 0
+  })
+
   const structureDialog = ref({
     show: false,
     tab: null,
@@ -143,11 +257,27 @@ export function createState() {
     loading: false
   })
 
+  const tableDesignerDialog = ref({
+    show: false,
+    tab: null,
+    meta: null,
+    loading: false,
+    previewing: false,
+    applying: false,
+    sql: '',
+    error: ''
+  })
+
   const erDialog = ref({
     show: false,
     tab: null,
     data: null,
     loading: false
+  })
+
+  const resultCompareDialog = ref({
+    show: false,
+    tab: null
   })
 
   const explainDialog = ref({
@@ -159,8 +289,56 @@ export function createState() {
 
   const sqlPreviewDialog = ref({
     show: false,
-    title: '待执行的 SQL',
+    title: t('待执行的 SQL'),
     sql: ''
+  })
+
+  const createTableDialog = ref({
+    show: false,
+    connectionName: '',
+    database: ''
+  })
+
+  const schemaDiffDialog = ref({
+    show: false,
+    connectionName: '',
+    database: '',
+    targetConnectionName: '',
+    targetDatabase: '',
+    loading: false,
+    result: null,
+    error: ''
+  })
+
+  const cellViewer = ref({
+    show: false,
+    field: '',
+    columnType: '',
+    value: null,
+    loading: false,
+    byteLength: 0,
+    error: '',
+    load: null
+  })
+
+  const eventDialog = ref({
+    show: false,
+    tab: 'definition',
+    loading: false,
+    saving: false,
+    connectionName: '',
+    database: '',
+    name: '',
+    definition: '',
+    comment: '',
+    status: 'ENABLED',
+    scheduleType: 'RECURRING',
+    starts: '',
+    ends: '',
+    intervalValue: '',
+    intervalField: 'DAY',
+    onCompletion: 'PRESERVE',
+    error: ''
   })
 
   const connectionTransferDialog = ref({
@@ -172,9 +350,40 @@ export function createState() {
     importing: false
   })
 
+  const dataTransferDialog = ref({
+    show: false,
+    sourceConnection: '',
+    sourceDatabase: '',
+    targetConnection: '',
+    targetDatabase: '',
+    sourceDatabases: [],
+    targetDatabases: [],
+    objects: [],
+    selectedObjects: [],
+    objectKeyword: '',
+    bulkOpen: false,
+    bulkText: '',
+    loadingDatabases: false,
+    loadingObjects: false,
+    transferring: false,
+    progress: '',
+    error: '',
+    summary: null,
+    contentMode: 'all',
+    targetMode: 'append',
+    tableNameCase: 'keep',
+    columnNameCase: 'keep',
+    batchSize: 1000,
+    timeoutMode: 'inherit',
+    tasks: [],
+    taskKeyword: ''
+  })
+
   const queryHistory = ref([])
 
   const querySnippets = ref([])
+
+  const snippetFolders = ref([])
 
   const tableMeta = ref(null)
 
@@ -186,7 +395,7 @@ export function createState() {
     filterSortActive: false
   })
 
-  const tabs = ref([{ id: 'object', name: '对象', type: 'object', closable: false }])
+  const tabs = ref([{ id: 'object', name: t('对象'), type: 'object', closable: false }])
 
   const activeTabId = ref('object')
 
@@ -227,13 +436,13 @@ export function createState() {
   const objectTypeLabel = computed(() => {
     if (!selectedObject.value) return ''
     const typeLabels = {
-      database: '数据库',
-      table: '表',
-      view: '视图',
-      function: '函数',
-      procedure: '存储过程',
-      trigger: '触发器',
-      event: '事件'
+      database: t('数据库'),
+      table: t('表'),
+      view: t('视图'),
+      function: t('函数'),
+      procedure: t('存储过程'),
+      trigger: t('触发器'),
+      event: t('事件')
     }
     return typeLabels[selectedObject.value.type] || ''
   })
@@ -284,6 +493,15 @@ export function createState() {
     fieldName: null
   })
 
+  const cellFilterMenu = ref({
+    show: false,
+    x: 0,
+    y: 0,
+    tab: null,
+    fieldName: null,
+    value: null
+  })
+
   const draggingConnection = ref(null)
 
   const dragOverGroup = ref(null)
@@ -305,7 +523,8 @@ export function createState() {
     readTimeout: 30,
     enableWriteTimeout: true,
     writeTimeout: 30,
-    autoConnect: false
+    autoConnect: false,
+    readOnly: false
   })
 
   const editingConnection = ref(null)
@@ -335,9 +554,12 @@ export function createState() {
   })
 
   return {
+    defaultPageSize,
+    refreshInterval,
     messageDialog,
     promptDialog,
     promptInputRef,
+    sqlParamsDialog,
     connections,
     groups,
     expandedGroups,
@@ -346,6 +568,8 @@ export function createState() {
     openedDatabases,
     expandedObjectCategories,
     databaseObjectsMap,
+    objectCategoryLoading,
+    tableSchemas,
     connectionDatabases,
     selectedConnection,
     showCreateDialog,
@@ -370,17 +594,30 @@ export function createState() {
     limitSettingsDialog,
     importDialog,
     exportDialog,
-    objectSearchDialog,
     historyDialog,
     userDialog,
+    healthDialog,
+    sqlAuditDialog,
+    backupDialog,
+    operationLogDialog,
     aiDialog,
+    sessionDialog,
+    serverStatusDialog,
     structureDialog,
+    tableDesignerDialog,
     erDialog,
     explainDialog,
+    resultCompareDialog,
     sqlPreviewDialog,
+    createTableDialog,
+    schemaDiffDialog,
+    cellViewer,
+    eventDialog,
     connectionTransferDialog,
+    dataTransferDialog,
     queryHistory,
     querySnippets,
+    snippetFolders,
     tableMeta,
     tableMetaLoading,
     transactionConnections,
@@ -410,6 +647,7 @@ export function createState() {
     contextMenu,
     tabContextMenu,
     fieldSortMenu,
+    cellFilterMenu,
     draggingConnection,
     dragOverGroup,
     newConnection,

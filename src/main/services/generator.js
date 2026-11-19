@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs'
+import { t } from './i18n.js'
 import { execFile } from 'child_process'
 import { shell } from 'electron'
 import { log } from '../utils'
@@ -19,7 +20,7 @@ let isGenerating = false
 
 export async function generateSQLFile(scriptInfo) {
   if (isGenerating) {
-    return { success: false, error: '正在生成中，请稍后再试' }
+    return { success: false, error: t('正在生成中，请稍后再试') }
   }
   isGenerating = true
 
@@ -28,25 +29,25 @@ export async function generateSQLFile(scriptInfo) {
     log.info('开始生成SQL文件', scriptInfo)
 
     if (!scriptInfo || typeof scriptInfo !== 'object') {
-      throw new Error('无效的脚本信息')
+      throw new Error(t('无效的脚本信息'))
     }
     if (!isValidIdentifier(scriptInfo.database)) {
-      throw new Error('数据库名称不合法，仅允许字母、数字和下划线')
+      throw new Error(t('数据库名称不合法，仅允许字母、数字和下划线'))
     }
     if (!VALID_OPERATE_TYPES.includes(scriptInfo.operateType)) {
-      throw new Error('无效的操作类型')
+      throw new Error(t('无效的操作类型'))
     }
     if (scriptInfo.operateType !== 'QUERY') {
-      const validScriptTypes = (config.script_types || []).map((st) => st.name)
+      const validScriptTypes = (config.sql_generator.script_types || []).map((st) => st.name)
       if (!scriptInfo.scriptType || !validScriptTypes.includes(scriptInfo.scriptType)) {
-        throw new Error(`脚本类型不合法，必须是 ${validScriptTypes.join('、')} 其中之一`)
+        throw new Error(t('脚本类型不合法，必须是 {p0} 其中之一', { p0: validScriptTypes.join(t('、')) }))
       }
     }
 
     const safeDirName = sanitizePathSegment(scriptInfo.dirName)
     const safeUsageForFilename = sanitizePathSegment(scriptInfo.usage)
-    if (!safeDirName) throw new Error('目录名不能为空或包含非法字符')
-    if (!safeUsageForFilename) throw new Error('脚本用途不能为空或包含非法字符')
+    if (!safeDirName) throw new Error(t('目录名不能为空或包含非法字符'))
+    if (!safeUsageForFilename) throw new Error(t('脚本用途不能为空或包含非法字符'))
 
     const now = new Date()
     const currentYear = now.getFullYear().toString()
@@ -57,20 +58,20 @@ export async function generateSQLFile(scriptInfo) {
     let targetPath
     switch (scriptInfo.operateType) {
       case 'FIX':
-        targetPath = path.join(config.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'QUERY':
-        targetPath = path.join(config.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
+        targetPath = path.join(config.app.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
     }
 
-    if (!isPathWithinBase(targetPath, config.base_path)) {
-      throw new Error('目标路径超出允许范围')
+    if (!isPathWithinBase(targetPath, config.app.base_path)) {
+      throw new Error(t('目标路径超出允许范围'))
     }
 
     await mkdirWithElevate(targetPath)
@@ -98,18 +99,21 @@ export async function generateSQLFile(scriptInfo) {
     filename = filename.replace(/\s/g, '_')
 
     const filePath = path.join(targetPath, filename)
-    if (!isPathWithinBase(filePath, config.base_path)) {
-      throw new Error('生成的文件路径超出允许范围')
+    if (!isPathWithinBase(filePath, config.app.base_path)) {
+      throw new Error(t('生成的文件路径超出允许范围'))
     }
 
     const safeUsage = escapeSql(scriptInfo.usage)
-    const safeDevEnName = escapeSql(config.developer_en_name)
+    const safeUsageComment = String(scriptInfo.usage)
+      .replace(/[\r\n]+/g, ' ')
+      .trim()
+    const safeDevEnName = escapeSql(config.app.developer.en_name)
     const safeFilename = escapeSql(filename)
     const safeDbIdentifier = escapeIdentifier(scriptInfo.database)
 
     const content = `-- Please use UTF8 encoding without BOM
--- Script Usage: ${scriptInfo.usage}
--- Script Author: ${config.developer_ch_name}
+-- Script Usage: ${safeUsageComment}
+-- Script Author: ${config.app.developer.ch_name}
 -- Creation Time: ${currentDate}
 
 USE ${safeDbIdentifier};

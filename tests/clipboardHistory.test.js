@@ -90,4 +90,18 @@ describe('normalizeStoredHistory', () => {
     expect(normalizeStoredHistory(null)).toEqual({ entries: [], paused: false })
     expect(normalizeStoredHistory({ entries: 'nope' })).toEqual({ entries: [], paused: false })
   })
+
+  it('honors a custom entry limit', () => {
+    const stored = normalizeStoredHistory(
+      {
+        entries: [
+          makeEntry('a', { updatedAt: 3000 }),
+          makeEntry('b', { updatedAt: 2000 }),
+          makeEntry('c', { updatedAt: 1000 })
+        ]
+      },
+      2
+    )
+    expect(stored.entries.map((entry) => entry.id)).toEqual(['a', 'b'])
+  })
 })

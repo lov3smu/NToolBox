@@ -10,12 +10,13 @@
   "parameters": {
     "type": "object",
     "properties": {},
-    "required": []
+    "required": [],
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [
     {
-      "input": "",
+      "input": "无需参数",
       "output": "返回数据库列表、脚本类型等配置信息"
     }
   ]

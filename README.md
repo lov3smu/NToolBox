@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  一款专为开发者设计的实用工具集，旨在提升日常开发效率
+  一款专为开发者设计的实用工具集，集成常用开发工具与多模型 AI 助手
 </p>
 
 <p align="center">
@@ -25,6 +25,23 @@
 
 ## ✨ 功能特性
 
+### 🤖 AI 助手
+
+集成多种大模型，具备完整 Agent 闭环（规划 → 工具调用 → 反思 → 总结）的开发助手。
+
+- **多模型支持** - 百炼、Moonshot、智谱、MiniMax、火山引擎、DeepSeek、小米 MiMo、OpenCode、OpenCode Go、OpenAI、Google、Anthropic
+- **Agent 能力** - 自动生成执行计划、多轮工具调用、结果反思与执行总结，支持随时停止；计划步骤实时显示完成 / 执行中 / 失败状态
+- **执行链路** - 实时展示思考过程、计划、工具参数、执行结果与运行轨迹
+- **多模态输入** - 支持图片与文本文件，可切换 Auto / 思考 / 快速模式
+- **工具审批** - 三档策略：写操作前询问 / 仅高危操作询问 / 自动执行；文件写入先出 dry-run 差异预览，可回滚
+- **扩展能力** - 内置技能（文件操作、网页查阅等）、MCP 连接器工具与子代理任务委派
+- **工作区与会话** - 会话可绑定项目工作区，支持置顶、重命名、分叉、归档与 Session ID 复制
+- **记忆与知识库** - 全局 / 项目记忆自动沉淀，可作为上下文注入对话
+- **用量统计** - 输入框下方展示上下文占比、生成速率、累计 token 与缓存命中，点击查看明细
+- **上下文压缩** - 上下文达到窗口 70% 时自动将历史压缩为摘要并保留最近对话
+- **场景预设** - 一键切换省钱 / 长任务 / 严格审批模式，批量调整温度、压缩、轮次与工具预算
+- **模型降级** - 支持配置备用模型，主模型异常时自动切换
+
 ### 🗄️ SQL 脚本生成器
 
 快速生成标准化的 SQL 脚本文件，规范团队开发流程。
@@ -32,73 +49,66 @@
 - **多操作类型** - 支持 FIX（修复）、PUBLISH（发布）、QUERY（查询）
 - **自定义配置** - 可配置数据库列表、脚本类型
 - **智能命名** - 自动生成带日期和用途的目录名
+- **实时预览** - 生成前即可查看最终内容与输出路径
 - **一键打开** - 生成后可立即用编辑器打开
 
-### 🤖 AI 助手
+### 🗃️ 数据库客户端
 
-集成多种 AI 大模型，具备 Agent 工具调用与多模态能力的开发助手。
+面向 MySQL 的连接管理与日常运维工作台。
 
-- **多模型支持** - 百炼、Moonshot、智谱、MiniMax、火山引擎、DeepSeek
-- **Agent 能力** - 自动规划、多轮工具调用、结果反思与执行总结，支持随时停止
-- **执行链路** - 实时展示思考过程、计划步骤、工具参数与执行结果
-- **多模态输入** - 支持图片与文本文件，可切换 Auto / 思考 / 快速模式
-- **工具审批** - 支持自动审批与仅对话两种模式，技能扩展按需调用
-- **用量统计** - 展示上下文占用比例、累计 token 与每条回复的 token 消耗
-- **上下文压缩** - 上下文达到窗口 70% 时自动压缩历史为摘要，保留最近对话
-- **会话恢复** - 对话列表本地持久化，流式输出中断后可恢复
+- **连接管理** - 多连接、连接加密存储、只读连接、SSH 隧道与 SSL 选项
+- **查询工作台** - SQL 编辑器、参数化查询、执行历史、收藏夹、结果集编辑回写
+- **表数据操作** - 分页、筛选排序、字段管理、大字段按需加载、JSON / 二进制单元格展示
+- **结构管理** - 表结构查看、可视化表设计器、ER 图
+- **数据传输** - 库表结构 / 数据迁移与导入导出
+- **运维面板** - 会话与锁、实例状态、容量与健康检查、用户与权限
+- **安全与审计** - SQL 审核规则、数据库操作日志、定时备份任务
 
-### 🔐 密码生成器
+### 🔐 密码管理
 
-生成高强度随机密码，保障账户安全。
-
-- **安全随机** - 使用 Crypto API 生成
-- **灵活配置** - 大写、小写、数字、特殊字符组合
-- **强度检测** - 实时显示密码强度评级
-- **历史记录** - 保存最近生成的密码
-- **长度调节** - 支持 1-100 位
+- **管理密码** - 首次进入需设置管理密码，离开页面自动重新锁定
+- **加密保险库** - 管理密码校验 + 本机密钥加密保存分组密码与登录信息
+- **分组管理** - 多级子分组、右键菜单与子树统计
+- **内置生成器** - 在页面或密码编辑框中打开，使用 Crypto API 生成，长度 1-100 位，实时强度检测与历史记录
 
 ### ⏰ Cron 表达式生成器
 
-可视化生成 Cron 表达式，告别手动编写。
-
 - **图形化配置** - 秒、分钟、小时、日、月、周、年
 - **表达式解析** - 反解析现有表达式
-- **执行预览** - 显示最近5次执行时间
+- **执行预览** - 显示最近 5 次执行时间
 - **中文描述** - 自动生成表达式说明
 
-### 📄 Markdown 编辑器
+### ⏱️ Unix 时间戳转换器
 
-Markdown 编写、实时预览与主题定制。
+- **实时显示** - 当前秒级与毫秒级时间戳
+- **双向转换** - 时间戳 ↔ 日期时间，支持 YYYYMMDDHHMMSS 快捷输入
+- **一键复制** - 结果快速复制
+
+### 📄 Markdown 编辑器
 
 - **实时预览** - 左侧编辑、右侧即时渲染
 - **语法支持** - GFM 表格、任务列表与代码高亮
 - **主题定制** - 多套预览主题，字号与强调色可调
-- **快捷插入** - 标题、列表、表格、代码块等一键插入
-- **导出** - 将当前内容导出为 Markdown 文件
+- **快捷插入与导出** - 标题、列表、表格、代码块一键插入，可导出 Markdown 文件
 
 ### 🎨 公众号文章排版
-
-将 Markdown 一键排版为可直接粘贴到公众号的富文本。
 
 - **多套主题** - 内置多种公众号排版样式
 - **内联样式** - 颜色、间距、边框全部内联，复制后排版不丢失
 - **富文本复制** - 一键复制到公众号编辑器，也可复制 Markdown 原文
 - **图表公式** - 支持 Mermaid / PlantUML 图表与数学公式渲染
-- **图片处理** - 本地图片以 Base64 内嵌，支持导入内容
-- **AI 写作** - 支持润色、生成标题与摘要、续写、翻译
+- **图片处理** - 本地图片以 Base64 内嵌
+- **AI 写作** - 润色、生成标题与摘要、续写、翻译
 
-### ⏱️ Unix 时间戳转换器
+### 🖼️ 图床
 
-时间戳与日期时间的便捷互转。
-
-- **实时显示** - 当前秒级和毫秒级时间戳
-- **双向转换** - 时间戳转日期、日期转时间戳
-- **快速输入** - 支持 YYYYMMDDHHMMSS 格式
-- **一键复制** - 结果快速复制
+- **多种服务商** - GitHub、Gitee、SM.MS、Imgur、七牛云、阿里云 OSS、腾讯云 COS、S3 / MinIO
+- **上传与历史** - 支持拖拽 / 粘贴上传，历史记录保留最近 100 条
+- **限制与格式** - 单文件 ≤ 30 MB，支持 png / jpg / jpeg / gif / webp / bmp / svg / avif
+- **链接格式** - URL / Markdown / HTML 三种复制格式
+- **配置分离** - 服务商配置集中在 设置 →「图床配置」
 
 ### 📝 YAML 编辑器
-
-YAML 格式编辑、校验与转换。
 
 - **格式化** - 标准缩进格式化
 - **语法校验** - 实时错误提示
@@ -107,67 +117,51 @@ YAML 格式编辑、校验与转换。
 
 ### 📋 JSON 解析器
 
-JSON 格式化、校验与可视化。
-
-- **格式化** - 美化 JSON 代码
-- **语法校验** - 实时错误检测
+- **格式化与校验** - 美化 JSON、实时错误检测
 - **树形视图** - 结构化展示
 - **路径提取** - 快速定位节点
 
 ### 🌐 HTML 查看器
 
-HTML 代码实时预览。
-
 - **实时渲染** - 代码即时预览
-- **安全沙箱** - 防止恶意脚本执行
-- **代码编辑** - 内置编辑器
+- **安全沙箱** - 隔离预览，防止恶意脚本影响应用
 - **响应式** - 支持不同视口尺寸
 
-### 🗃️ 数据库管理
+### 📁 文件管理器 & 图片浏览器
 
-MySQL 数据库连接与管理。
-
-- **多连接管理** - 支持多个数据库连接
-- **连接加密** - 密码安全存储
-- **表结构查看** - 浏览数据库表结构
-- **数据查询** - 执行 SQL 查询
-
-### 📁 文件管理器
-
-便捷的文件目录浏览与管理。
-
-- **目录浏览** - 浏览脚本存储目录
-- **视图切换** - 列表、平铺、紧凑模式
-- **时间排序** - 按创建时间排列
+- **目录浏览** - 浏览脚本存储目录，支持列表 / 平铺 / 紧凑视图与时间排序
+- **目录搜索** - 在当前目录内快速过滤
 - **右键菜单** - 打开、复制路径、查看属性
+- **图片浏览** - 缩放、平移与旋转查看本地图片
 
-### 📋 剪切板管理
+### 📋 剪贴板管理
 
-自动记录剪贴板中的文本与图片。
-
-- **历史记录** - 自动收集最近的复制内容，最多保留 120 条
+- **历史记录** - 自动收集最近复制内容，条数可选 50 / 120 / 200 / 300
 - **文本与图片** - 按类型筛选，图片支持缩略图预览
 - **置顶与删除** - 常用内容可置顶，置顶项不会被自动清理
-- **快速复制** - 点击即可重新写入剪贴板
+- **持久化开关** - 可选择重启后是否保留历史
 
-### 🧩 扩展市场
+### 🧩 扩展
 
-从技能市场发现并安装 AI 扩展。
+插件、技能与连接器（MCP）的统一市场与管理。
 
-- **内置扩展** - 内置技能离线可用
-- **在线市场** - 接入开源技能市场 ClawHub，支持搜索与分类
-- **一键安装** - 安装到本机用户目录，由 AI 助手按需调用
-- **统一管理** - 扩展页面与设置页均可查看、更新、卸载
+- **插件** - 技能（instructions）+ 连接器（MCP）打包分发，支持从本地目录或第三方市场安装
+- **技能** - 内置技能离线可用，可安装 ClawHub 开源技能，支持单技能覆盖与禁用
+- **连接器** - 接入官方 MCP registry，为 AI 助手提供外部工具
+- **统一管理** - 扩展市场负责发现与安装，设置 →「扩展管理」负责查看、启用、卸载
 
 ### 🎨 界面特色
 
-- **现代化 UI** - 毛玻璃设计风格与统一设计 token
-- **主题切换** - 支持跟随系统 / 浅色 / 深色，内置 5 套配色主题
-- **字体大小** - 小 / 标准 / 大 / 特大四档，下拉即时生效
+- **现代化 UI** - 统一设计 token、紧凑布局与自绘窗口控件
+- **中英双语** - 中文（默认）/ English 切换即时生效，覆盖全部界面
+- **主题切换** - 跟随系统 / 浅色 / 深色，内置 5 套配色主题
+- **字体大小** - 小 / 标准 / 大 / 特大四档，即时生效
 - **全局搜索** - Ctrl+K 快速搜索工具
 - **系统托盘** - 最小化到托盘运行
 - **开机自启** - 可配置自动启动
-- **自动更新** - 支持自动检测更新
+- **自动更新** - 自动检测更新，支持查看更新日志与历史版本
+- **网络代理** - 跟随系统 / 直连 / 手动（HTTP、SOCKS5），支持自定义市场镜像源
+- **通知** - 上传完成、备份完成、发现更新、Agent 任务完成可分别开关
 - **动效与无障碍** - 页面过渡动效，并适配系统「减少动态效果」设置
 
 ---
@@ -178,21 +172,23 @@ MySQL 数据库连接与管理。
 
 从 [Releases](https://github.com/lov3smu/NToolBox/releases) 页面下载对应平台的安装包：
 
-| 平台 | 文件格式 | 说明 |
-|:---:|:---:|:---|
-| 🪟 Windows | `.exe` (NSIS 安装程序 / 便携版) | 标准安装包或免安装版本 |
-| 🍎 macOS | `.dmg` / `.zip` | macOS 磁盘镜像和压缩包 |
-| 🐧 Linux | `.AppImage` / `.deb` / `.rpm` / `.tar.gz` | Linux 通用格式 |
+|    平台    |                 文件格式                  | 说明                   |
+| :--------: | :---------------------------------------: | :--------------------- |
+| 🪟 Windows |      `.exe` (NSIS 安装程序 / 便携版)      | 标准安装包或免安装版本 |
+|  🍎 macOS  |              `.dmg` / `.zip`              | Intel 与 Apple Silicon |
+|  🐧 Linux  | `.AppImage` / `.deb` / `.rpm` / `.tar.gz` | 主流发行版通用格式     |
 
 ### 系统要求
 
 - **Windows**: Windows 10 或更高版本 (x64)
-- **macOS**: macOS 10.15 (Catalina) 或更高版本 (Intel/Apple Silicon)
+- **macOS**: macOS 10.15 (Catalina) 或更高版本 (Intel / Apple Silicon)
 - **Linux**: Ubuntu 18.04+ 或其他兼容发行版 (x64)
 - **内存**: 至少 2GB RAM
 - **磁盘空间**: 至少 100MB 可用空间
 
 ### 从源码运行
+
+需要 Node.js 20.19+ 或 22.12+。
 
 ```bash
 # 克隆仓库
@@ -212,31 +208,35 @@ npm run dev
 
 ### 全局搜索
 
-按下 `Ctrl+K` 打开全局搜索，快速访问任意工具；也可通过左侧导航打开，`Ctrl+,` 直接进入设置。
+按下 `Ctrl+K` 打开全局搜索，快速访问任意工具；也可通过左侧导航打开，`Ctrl+,` 直接进入设置（macOS 使用 Cmd）。
 
 ### SQL 脚本生成
 
 1. 打开 SQL 脚本生成器
 2. 选择操作类型：FIX / PUBLISH / QUERY
-3. 输入脚本用途描述
-4. 选择目标数据库
-5. 选择脚本类型
-6. 点击生成脚本
+3. 输入脚本用途描述，选择目标数据库与脚本类型
+4. 在右侧预览中确认内容与输出路径
+5. 点击生成脚本
 
 ### AI 助手
 
 1. 打开 AI 助手
-2. 在设置中配置 AI API Key
-3. 选择平台与模型，可附加图片或文本文件
-4. 按需切换「自动审批 / 仅对话」和「Auto / 思考 / 快速」，开始对话
-5. 输入框上方会显示上下文占用与累计 token，达到 70% 时自动压缩历史
+2. 在 设置 →「模型」中配置服务商 API Key 并选择模型
+3. 选择模型，可附加图片或文本文件，按需切换 Auto / 思考 / 快速
+4. 在 设置 →「AI 助手」中配置人设、温度、分场景模型与工具审批策略
+5. 开始对话；输入框下方会显示上下文占比、生成速率与 token 统计，达到 70% 时自动压缩历史
 
-### 密码生成
+### 图床
 
-1. 打开密码生成器
-2. 选择字符类型
-3. 调节密码长度
-4. 点击生成并复制
+1. 在 设置 →「图床配置」中选择服务商并填写凭据，测试连接后保存
+2. 打开图床页面，拖拽或粘贴图片上传
+3. 从历史记录中复制 URL / Markdown / HTML
+
+### 密码管理
+
+1. 首次打开密码管理页面，设置管理密码（至少 8 位），之后每次进入都需要输入
+2. 新建密码或分组；在密码编辑框中点击生成按钮，选择字符类型并调节长度
+3. 点击「使用此密码」填入，保存后由本机密钥加密
 
 ---
 
@@ -250,60 +250,58 @@ NToolBox/
 ├── src/                    # 源代码目录
 │   ├── shared/             # 主进程与渲染进程共享契约
 │   │   ├── ipc.js          # IPC 通道与方法定义
-│   │   └── tools.js        # 工具注册表（导航/菜单/托盘/搜索）
-│   ├── main/               # Electron 主进程
+│   │   ├── i18n.js         # 支持语言、默认语言与占位符插值
+│   │   ├── locales/en-US/  # 英文词条（按域拆分，键为中文原文）
+│   │   ├── tools.js        # 工具注册表（导航/菜单/托盘/搜索）
+│   │   ├── aiBehavior.js   # 人设、温度、场景模型、审批策略
+│   │   ├── network.js      # 代理模式与镜像源
+│   │   ├── imageHosts.js   # 图床服务商与链接格式
+│   │   └── …               # notifications、clipboardSettings、pluginBundle 等
+│   ├── main/               # Electron 主进程（ESM）
 │   │   ├── index.js        # 主进程入口
-│   │   ├── ipc/            # IPC 通信
+│   │   ├── ipc/            # IPC 注册
 │   │   ├── windows/        # 窗口管理
 │   │   ├── ui/             # 菜单、托盘
 │   │   ├── services/       # 业务服务
-│   │   │   ├── ai/         # AI Provider、能力与用量估算
-│   │   │   ├── chat.js     # AI Agent 循环与上下文压缩
-│   │   │   ├── config.js   # 配置管理
-│   │   │   ├── generator.js# SQL 脚本生成
-│   │   │   ├── updater.js  # 自动更新
-│   │   │   ├── skills.js   # 技能扩展
-│   │   │   ├── clawhub.js  # ClawHub 市场
-│   │   │   └── database.js # 数据库管理
-│   │   ├── utils/          # 工具函数
-│   │   └── constants/      # 常量定义
-│   ├── preload/            # 预加载脚本
+│   │   │   ├── ai/         # Provider 注册、能力、重试、降级、用量
+│   │   │   ├── chat.js     # Agent 循环、流式事件与上下文压缩
+│   │   │   ├── config.js   # 配置读写与归一化编排
+│   │   │   ├── database.js # 连接、查询、传输、会话与权限
+│   │   │   ├── network.js  # 代理应用、netFetch / createRequest
+│   │   │   ├── mcp.js      # MCP 客户端；mcpRegistry.js 官方市场
+│   │   │   ├── plugins.js  # 插件注册表；pluginInstaller.js 安装卸载
+│   │   │   ├── skills.js   # 技能管理；clawhub.js 技能市场
+│   │   │   ├── toolPolicy.js / toolPreview.js / toolResults.js
+│   │   │   ├── memory.js / workspace.js
+│   │   │   ├── sshTunnel.js / backupScheduler.js / dbAuditLog.js
+│   │   │   ├── imageHost/  # 图床上传服务商实现
+│   │   │   └── updater.js / notifications.js / generator.js
+│   │   ├── utils/          # 路径、图标、日志、加解密
+│   │   ├── constants/      # 常量定义
+│   │   └── skills/builtin/ # 内置 AI 技能（skill.json + handler.js）
+│   ├── preload/            # 预加载脚本（由 shared/ipc.js 生成桥接）
 │   └── renderer/           # Vue 渲染进程
 │       └── src/
-│           ├── views/      # 页面组件
-│           │   ├── Dashboard.vue        # 首页
-│           │   ├── SqlScriptGenerator.vue # SQL 生成
-│           │   ├── Chat.vue             # AI 助手
-│           │   ├── Password.vue         # 密码生成
-│           │   ├── Cron.vue             # Cron 生成
-│           │   ├── UnixTimestamp.vue    # 时间戳转换
-│           │   ├── Markdown.vue         # Markdown 编辑
-│           │   ├── WechatFormatter.vue  # 公众号排版
-│           │   ├── Clipboard.vue        # 剪切板管理
-│           │   ├── YamlEditor.vue       # YAML 编辑
-│           │   ├── JsonParser.vue       # JSON 解析
-│           │   ├── HtmlViewer.vue       # HTML 查看
-│           │   ├── Database.vue         # 数据库管理
-│           │   ├── FileManager.vue      # 文件管理
-│           │   ├── Market.vue           # 扩展市场
-│           │   └── Settings.vue         # 设置
-│           ├── components/  # 公共组件
-│           ├── composables/ # 组合式函数
-│           ├── layouts/     # AppShell、标题栏、页面壳层
-│           ├── api/         # API 接口
-│           ├── config/      # 配置文件
-│           ├── styles/      # 设计 token 与页面样式
-│           ├── utils/       # 主题、路径、Markdown 等工具
-│           └── router/      # 路由配置
-├── tests/                  # vitest 测试
-├── .github/
-│   └ workflows/
-│     └ build.yml           # CI/CD 工作流
-├── package.json            # 项目配置
-├── electron.vite.config.js # 构建配置
-├── LICENSE.txt             # 许可证
-└ README.md                 # 说明文档
+│           ├── views/      # 页面组件（含 database/ 子目录拆分）
+│           ├── components/ # 公共组件（settings 面板、对话框、编辑器）
+│           ├── composables/ # useConfig、useSidebar、useToast 等
+│           ├── layouts/    # AppShell、标题栏、页面壳层
+│           ├── api/        # IPC API 封装
+│           ├── styles/     # 设计 token 与页面样式
+│           ├── utils/      # 主题、路径、Markdown 等工具
+│           ├── router/     # 路由配置
+│           └── i18n.js     # 多语言运行时（t / setLocale）
+├── tests/                  # vitest 测试（70 个文件 / 570 个用例）
+├── .github/workflows/      # CI/CD 构建发布
+├── package.json
+├── electron.vite.config.js
+├── AGENTS.md               # 架构速览
+├── PROJECT.md              # 开发规范
+├── LICENSE.txt
+└── README.md
 ```
+
+开发规范见 [PROJECT.md](./PROJECT.md)，架构与命令速览见 [AGENTS.md](./AGENTS.md)。
 
 ### 构建打包
 
@@ -324,14 +322,20 @@ npm run build
 ### 代码检查与测试
 
 ```bash
-# 运行 ESLint 检查
+# ESLint 检查 / 自动修复
 npm run lint:check
-
-# 自动修复代码问题
 npm run lint
 
-# 运行测试
+# Prettier 检查 / 格式化
+npm run format:check
+npm run format
+
+# 运行全部测试 / 监听模式
 npm run test
+npm run test:watch
+
+# Agent 评测套件
+npm run eval
 ```
 
 ---
@@ -345,33 +349,52 @@ npm run test
 
 ### 主要配置项
 
-| 配置项 | 说明 |
-|:---|:---|
-| `base_path` | SQL 脚本存储根目录 |
-| `developer_ch_name` | 开发者中文名 |
-| `developer_en_name` | 开发者英文名 |
-| `databases` | 数据库列表 |
-| `script_types` | 脚本类型配置 |
-| `ai_provider` | AI 服务提供商 |
-| `ai_api_keys` | 各平台 API Key |
-| `ai_models` | 各平台选择的模型 |
-| `dbConnections` | 数据库连接配置 |
-| `theme` | 主题模式：`system` / `light` / `dark` |
-| `theme_style` | 配色主题：`sapphire` / `forest` / `mint` / `bee` / `parchment` |
-| `font_size` | 字体大小：`small` / `medium` / `large` / `xlarge` |
-| `shortcuts` | 快捷键配置（仅设置页可配置） |
-| `auto_update` | 自动更新开关 |
-| `auto_start` | 开机自启动开关 |
-| `close_action` | 关闭窗口行为 |
+| 配置项                                                       | 说明                                                           |
+| :----------------------------------------------------------- | :------------------------------------------------------------- |
+| `base_path`                                                  | SQL 脚本存储根目录                                             |
+| `developer_ch_name` / `developer_en_name`                    | 开发者中英文名                                                 |
+| `text_edit_app`                                              | 打开脚本使用的编辑器                                           |
+| `databases` / `script_types`                                 | SQL 脚本生成的数据库与脚本类型                                 |
+| `ai_provider` / `ai_models` / `ai_api_keys` / `ai_base_urls` | AI 服务商、模型、密钥与自定义接口地址                          |
+| `ai_persona` / `ai_temperature`                              | 人设与温度                                                     |
+| `ai_timeout`                                                 | AI 请求超时（秒，10–600）                                      |
+| `ai_compress_threshold` / `ai_compress_keep_recent`          | 上下文压缩触发阈值（50–90%）与压缩后保留消息数                 |
+| `ai_max_attachments` / `ai_max_image_mb` / `ai_max_text_kb`  | 附件数量、图片大小与文本附件上限                               |
+| `ai_scenario_models`                                         | 分场景模型（`planner` / `compression`）                        |
+| `ai_tool_policy`                                             | 工具审批策略：`all` / `high-risk` / `auto`                     |
+| `ai_agent_max_iterations` / `ai_agent_timeout_min`           | Agent 最大执行轮次（3–30）与单任务时长上限（1–30 分钟）        |
+| `ai_agent_plan_steps` / `ai_agent_parallel_tools`            | 计划步骤上限（3–12）与并行工具数（1–8）                        |
+| `ai_tool_result_max_kb` / `ai_tool_result_run_kb`            | 单个工具结果与单次运行的输出预算（KB）                         |
+| `ai_tool_result_retention_days`                              | 落盘工具结果保留天数（1–30）                                   |
+| `ai_fallback_enabled` / `ai_fallback_models`                 | 模型降级开关与备用模型列表                                     |
+| `dbConnections`                                              | 数据库连接配置（密码加密存储）                                 |
+| `database_safe_mode` / `database_audit_*`                    | 数据库安全模式与 SQL 审核规则                                  |
+| `database_page_size` / `database_refresh_interval`           | 数据库默认分页大小与实例/会话自动刷新间隔（0 为关闭）          |
+| `database_transfer_batch_size` / `database_history_limit`    | 数据传输默认批量行数与本地查询历史保留条数                     |
+| `db_backup_tasks`                                            | 定时备份任务                                                   |
+| `image_hosting`                                              | 图床服务商配置、当前服务商与链接格式                           |
+| `mcp_servers`                                                | MCP 连接器配置                                                 |
+| `disabled_skills` / `skill_overrides`                        | 技能禁用与单技能覆盖                                           |
+| `network` / `market_sources`                                 | 代理模式、绕过列表与市场镜像源                                 |
+| `notifications`                                              | 通知开关                                                       |
+| `clipboard_history`                                          | 剪贴板持久化开关与保留条数                                     |
+| `theme`                                                      | 主题模式：`system` / `light` / `dark`                          |
+| `theme_style`                                                | 配色主题：`sapphire` / `forest` / `mint` / `bee` / `parchment` |
+| `font_size`                                                  | 字体大小：`small` / `medium` / `large` / `xlarge`              |
+| `memory_auto_capture`                                        | 自动沉淀记忆开关                                               |
+| `shortcuts`                                                  | 快捷键配置（仅设置页可配置）                                   |
+| `auto_update` / `auto_start` / `close_action`                | 自动更新、开机自启与关闭窗口行为                               |
+| `update_check_interval`                                      | 自动检查更新间隔（小时：1 / 6 / 24）                           |
+| `recent_tools_limit`                                         | 首页「最近使用」展示的工具数量（2–8）                          |
 
 ### 快捷键
 
-工具不再占用全局快捷键，通过侧边栏或全局搜索打开。
+工具不占用全局快捷键，通过侧边栏或全局搜索打开。
 
-| 功能 | 快捷键 |
-|:---|:---|
-| 全局搜索 | Ctrl+K |
-| 设置 | Ctrl+, |
+| 功能           | 快捷键     |
+| :------------- | :--------- |
+| 全局搜索       | Ctrl+K     |
+| 设置           | Ctrl+,     |
 | 数据库执行查询 | Ctrl+Enter |
 
 设置页的快捷键可在配置中修改（`shortcuts.settings`），macOS 上使用 Cmd 替代 Ctrl。
@@ -380,25 +403,25 @@ npm run test
 
 ## 🔧 技术栈
 
-| 技术 | 说明 |
-|:---|:---|
-| [Electron](https://www.electronjs.org/) | 跨平台桌面应用框架 |
-| [Vue 3](https://vuejs.org/) | 渐进式 JavaScript 框架 |
-| [Vite](https://vitejs.dev/) | 下一代前端构建工具 |
-| [electron-vite](https://electron-vite.org/) | Electron Vite 构建方案 |
-| [Vue Router](https://router.vuejs.org/) | Vue.js 官方路由 |
-| [electron-builder](https://www.electron.build/) | 应用打包工具 |
-| [electron-log](https://github.com/megahertz/electron-log) | 日志记录 |
-| [electron-updater](https://github.com/electron-userland/electron-updater) | 自动更新 |
-| [mysql2](https://github.com/sidorares/node-mysql2) | MySQL 客户端 |
-| [js-yaml](https://github.com/nodeca/js-yaml) | YAML 解析 |
-| [CodeMirror](https://codemirror.net/) | 代码编辑器 |
-| [marked](https://github.com/markedjs/marked) | Markdown 渲染 |
-| [DOMPurify](https://github.com/cure53/DOMPurify) | HTML 安全过滤 |
-| [highlight.js](https://highlightjs.org/) | 代码高亮 |
-| [Mermaid](https://mermaid.js.org/) | 图表渲染 |
-| [MathJax](https://www.mathjax.org/) | 数学公式渲染 |
-| [Vitest](https://vitest.dev/) | 单元测试框架 |
+| 技术                                                                      | 说明                   |
+| :------------------------------------------------------------------------ | :--------------------- |
+| [Electron](https://www.electronjs.org/)                                   | 跨平台桌面应用框架     |
+| [Vue 3](https://vuejs.org/)                                               | 渐进式 JavaScript 框架 |
+| [electron-vite](https://electron-vite.org/)                               | Electron 构建方案      |
+| [Vite](https://vitejs.dev/)                                               | 前端构建工具           |
+| [Vue Router](https://router.vuejs.org/)                                   | Vue.js 官方路由        |
+| [electron-builder](https://www.electron.build/)                           | 应用打包工具           |
+| [electron-log](https://github.com/megahertz/electron-log)                 | 日志记录               |
+| [electron-updater](https://github.com/electron-userland/electron-updater) | 自动更新               |
+| [mysql2](https://github.com/sidorares/node-mysql2)                        | MySQL 客户端           |
+| [js-yaml](https://github.com/nodeca/js-yaml)                              | YAML 解析              |
+| [CodeMirror 6](https://codemirror.net/)                                   | 代码编辑器             |
+| [marked](https://github.com/markedjs/marked)                              | Markdown 渲染          |
+| [DOMPurify](https://github.com/cure53/DOMPurify)                          | HTML 安全过滤          |
+| [highlight.js](https://highlightjs.org/)                                  | 代码高亮               |
+| [Mermaid](https://mermaid.js.org/)                                        | 图表渲染               |
+| [MathJax](https://www.mathjax.org/)                                       | 数学公式渲染           |
+| [Vitest](https://vitest.dev/)                                             | 单元测试框架           |
 
 ---
 

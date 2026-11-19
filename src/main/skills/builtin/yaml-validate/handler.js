@@ -1,40 +1,39 @@
+import * as yaml from 'js-yaml'
+
 export default function handler(params) {
   const yamlString = params.yaml_string
 
+  if (typeof yamlString !== 'string' || !yamlString.trim()) {
+    return { success: false, error: '请提供要验证的 YAML 字符串' }
+  }
+
+  const lineCount = yamlString.split('\n').length
+
   try {
-    const lines = yamlString.split('\n')
-    const errors = []
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      const lineNum = i + 1
-
-      const colonIndex = line.indexOf(':')
-      if (colonIndex > 0 && line[colonIndex - 1] === ' ') {
-        if (!errors.some((e) => e.line === lineNum)) {
-          errors.push({
-            line: lineNum,
-            message: '键名后面可能有空格'
-          })
-        }
+    yaml.load(yamlString)
+    return {
+      success: true,
+      content: 'YAML格式验证通过',
+      metadata: {
+        valid: true,
+        errors: [],
+        line_count: lineCount
       }
     }
-
-    const valid = errors.length === 0
+  } catch (error) {
+    const line = error.mark?.line === undefined ? null : error.mark.line + 1
+    const column = error.mark?.column === undefined ? null : error.mark.column + 1
+    const message = error.reason || error.message || '未知的 YAML 解析错误'
+    const position = line === null ? '' : `第 ${line} 行${column === null ? '' : `第 ${column} 列`}：`
 
     return {
       success: true,
-      content: valid ? 'YAML格式验证通过' : `发现 ${errors.length} 个潜在问题`,
+      content: `YAML格式错误：${position}${message}`,
       metadata: {
-        valid,
-        errors,
-        line_count: lines.length
+        valid: false,
+        errors: [{ line, column, message }],
+        line_count: lineCount
       }
-    }
-  } catch (e) {
-    return {
-      success: false,
-      error: `YAML验证失败: ${e.message}`
     }
   }
 }

@@ -1,7 +1,8 @@
 import BaseProvider from './BaseProvider.js'
+import { getThinkingStyle } from '../thinking.js'
 
 class BailianProvider extends BaseProvider {
-  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
+  constructor({ apiKey, timeout, connectionTimeout } = {}) {
     super({
       name: '百炼',
       apiKey,
@@ -15,7 +16,7 @@ class BailianProvider extends BaseProvider {
         { id: 'qwen3.8-flash', name: 'qwen3.8-flash', contextWindow: 1000000 }
       ],
       defaultModel: 'qwen3.8-max',
-      thinkingStyle: 'enable_thinking',
+      thinkingStyle: getThinkingStyle('bailian'),
       streamUsage: true,
       timeout,
       connectionTimeout

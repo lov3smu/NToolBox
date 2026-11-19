@@ -1,7 +1,8 @@
 import BaseProvider from './BaseProvider.js'
+import { getThinkingStyle } from '../thinking.js'
 
 class ZhipuProvider extends BaseProvider {
-  constructor(apiKey, timeout = 60000, connectionTimeout = 10000) {
+  constructor({ apiKey, timeout, connectionTimeout } = {}) {
     super({
       name: '智谱AI',
       apiKey,
@@ -17,7 +18,7 @@ class ZhipuProvider extends BaseProvider {
         { id: 'glm-4.7-flash', name: 'glm-4.7-flash', contextWindow: 204800 }
       ],
       defaultModel: 'glm-5.3',
-      thinkingStyle: 'zhipu',
+      thinkingStyle: getThinkingStyle('zhipu'),
       timeout,
       connectionTimeout
     })

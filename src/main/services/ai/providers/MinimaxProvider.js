@@ -1,7 +1,8 @@
 import BaseProvider from './BaseProvider.js'
+import { getThinkingStyle } from '../thinking.js'
 
 class MinimaxProvider extends BaseProvider {
-  constructor(apiKey, groupId, timeout = 60000, connectionTimeout = 10000) {
+  constructor({ apiKey, groupId, timeout, connectionTimeout } = {}) {
     super({
       name: 'MiniMax',
       apiKey,
@@ -14,7 +15,7 @@ class MinimaxProvider extends BaseProvider {
         { id: 'MiniMax-M3', name: 'MiniMax-M3', contextWindow: 1000000 }
       ],
       defaultModel: 'MiniMax-M3',
-      thinkingStyle: 'minimax',
+      thinkingStyle: getThinkingStyle('minimax'),
       timeout,
       connectionTimeout
     })

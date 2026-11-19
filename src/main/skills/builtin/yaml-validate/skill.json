@@ -15,7 +15,8 @@
         "description": "要验证的YAML字符串"
       }
     },
-    "required": ["yaml_string"]
+    "required": ["yaml_string"],
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [

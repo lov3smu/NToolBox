@@ -38,8 +38,8 @@
             </div>
           </div>
           <div class="message-actions">
-            <button v-if="type === 'confirm'" class="btn btn-secondary" @click="cancel">取消</button>
-            <button class="btn btn-primary" @click="confirm">确定</button>
+            <button v-if="type === 'confirm'" class="btn btn-secondary" @click="cancel">{{ t('取消') }}</button>
+            <button class="btn btn-primary" @click="confirm">{{ t('确定') }}</button>
           </div>
         </div>
       </div>
@@ -48,7 +48,10 @@
 </template>
 
 <script setup>
-defineProps({
+import { watch, onUnmounted } from 'vue'
+import { t } from '@/i18n'
+
+const props = defineProps({
   visible: {
     type: Boolean,
     default: false
@@ -82,6 +85,25 @@ function cancel() {
   emit('cancel')
   close()
 }
+
+function handleKeydown(event) {
+  if (event.key !== 'Escape') return
+  event.stopPropagation()
+  cancel()
+}
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) window.addEventListener('keydown', handleKeydown, true)
+    else window.removeEventListener('keydown', handleKeydown, true)
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown, true)
+})
 </script>
 
 <style scoped>
@@ -91,7 +113,7 @@ function cancel() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -103,6 +125,8 @@ function cancel() {
 .message-dialog {
   width: 420px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);

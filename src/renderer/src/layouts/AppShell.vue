@@ -24,7 +24,7 @@
               @click="navigate(tool)"
             >
               <span class="nav-icon" v-html="tool.icon" />
-              <span class="nav-label">{{ tool.name }}</span>
+              <span class="nav-label">{{ t(tool.name) }}</span>
             </button>
           </div>
         </nav>
@@ -36,15 +36,15 @@
             type="button"
             class="nav-item"
             :class="{ active: isActive(tool) }"
-            :title="tool.name"
+            :title="t(tool.name)"
             @click="navigate(tool)"
           >
             <span class="nav-icon" v-html="tool.icon" />
-            <span class="nav-label">{{ tool.name }}</span>
+            <span class="nav-label">{{ t(tool.name) }}</span>
           </button>
-          <button type="button" class="nav-item" title="设置" @click="openSettings">
+          <button type="button" class="nav-item" :title="t('设置')" @click="openSettings">
             <span class="nav-icon" v-html="settingsTool?.icon" />
-            <span class="nav-label">设置</span>
+            <span class="nav-label">{{ t('设置') }}</span>
           </button>
         </div>
       </aside>
@@ -52,7 +52,7 @@
         v-if="!collapsed && !isNarrow"
         orientation="vertical"
         :resizing="sidebarResizing"
-        label="拖动调整导航栏宽度"
+        :label="t('拖动调整导航栏宽度')"
         @pointerdown="startSidebarResize"
         @keydown="onSidebarKeydown"
       />
@@ -71,6 +71,7 @@ import { openSettings as openSettingsWindow, platform } from '@/api'
 import { SETTINGS_PATH, addToRecent, getToolsByMenuGroup, tools } from '@shared/tools'
 import { usePaneResize } from '@/composables/usePaneResize'
 import { useSidebar } from '@/composables/useSidebar'
+import { t } from '@/i18n'
 import SplitHandle from '@/components/SplitHandle.vue'
 import AppTitleBar from './AppTitleBar.vue'
 import iconUrl from '@assets/icon.png'
@@ -116,10 +117,10 @@ const sections = computed(() => {
   const home = homeTool ? [homeTool] : []
   const fileTools = getToolsByMenuGroup('file').filter((tool) => tool.path !== '/')
   return [
-    { title: '概览', tools: home },
-    { title: '核心', tools: getToolsByMenuGroup('primary') },
-    ...(fileTools.length ? [{ title: '文件', tools: fileTools }] : []),
-    { title: '实用工具', tools: getToolsByMenuGroup('utilities') }
+    { title: t('概览'), tools: home },
+    { title: t('核心'), tools: getToolsByMenuGroup('primary') },
+    ...(fileTools.length ? [{ title: t('文件'), tools: fileTools }] : []),
+    { title: t('实用工具'), tools: getToolsByMenuGroup('utilities') }
   ].filter((section) => section.tools.length > 0)
 })
 
@@ -128,11 +129,12 @@ function isActive(tool) {
 }
 
 function toolTitle(tool) {
-  if (!tool.accelerator) return tool.name
+  const name = t(tool.name)
+  if (!tool.accelerator) return name
   const label = isMac
     ? tool.accelerator.replace('CmdOrCtrl+', '⌘').replace('Shift+', '⇧').replace('Alt+', '⌥').replaceAll('+', '')
     : tool.accelerator.replace('CmdOrCtrl+', 'Ctrl+')
-  return `${tool.name} · ${label}`
+  return `${name} · ${label}`
 }
 
 function navigate(tool) {

@@ -2,19 +2,23 @@
   <div class="dashboard-container">
     <header class="dashboard-header">
       <div class="dashboard-heading">
-        <span class="dashboard-eyebrow">NToolBox 工作台</span>
+        <span class="dashboard-eyebrow">{{ t('NToolBox 工作台') }}</span>
         <h1>{{ greeting }}</h1>
-        <p>{{ dateText }} · {{ tools.length }} 个工具随时可用</p>
+        <p>{{ t('{date} · {count} 个工具随时可用', { date: dateText, count: tools.length }) }}</p>
       </div>
       <div class="dashboard-header-actions">
         <button type="button" class="dash-search" @click="emit('open-search')">
           <span class="dash-search-icon" v-html="SEARCH_ICON" />
-          <span>搜索工具</span>
+          <span>{{ t('搜索工具') }}</span>
           <kbd>{{ searchShortcut }}</kbd>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="navigateTo(MARKET_PATH)">
+          <span class="btn-inline-icon" v-html="marketTool.icon" />
+          {{ t('扩展') }}
         </button>
         <button type="button" class="btn btn-secondary btn-sm" @click="navigateTo(SETTINGS_PATH)">
           <span class="btn-inline-icon" v-html="SETTINGS_ICON" />
-          设置
+          {{ t('设置') }}
         </button>
       </div>
     </header>
@@ -23,21 +27,32 @@
       <section class="hero-panel">
         <span class="hero-glow" aria-hidden="true" />
         <div class="hero-copy">
-          <span class="hero-badge">一站式开发工具箱</span>
-          <h2>常用工具，一个入口就够了</h2>
-          <p>格式化、生成、数据库管理与公众号排版，都在这里实时完成。</p>
+          <span class="hero-badge">{{ t('一站式开发工具箱') }}</span>
+          <h2>{{ t('常用工具，一个入口就够了') }}</h2>
+          <p>{{ t('AI 助手、数据库客户端、图床与内容排版，开发日常在一个窗口完成。') }}</p>
+          <div class="hero-tags">
+            <span class="hero-tag">{{ t('Agent 闭环') }}</span>
+            <span class="hero-tag">{{ t('多模型 AI') }}</span>
+            <span class="hero-tag">{{ t('MCP 连接器') }}</span>
+            <span class="hero-tag">{{ t('中英双语') }}</span>
+          </div>
           <div class="hero-actions">
-            <button type="button" class="btn btn-primary" @click="navigateTo('/wechat-formatter')">开始文章排版</button>
-            <button type="button" class="btn btn-secondary" @click="navigateTo('/chat')">打开 AI 助手</button>
+            <button type="button" class="btn btn-primary" @click="navigateTo('/chat')">{{ t('打开 AI 助手') }}</button>
+            <button type="button" class="btn btn-secondary" @click="navigateTo('/database')">
+              {{ t('数据库客户端') }}
+            </button>
+            <button type="button" class="btn btn-secondary" @click="navigateTo('/wechat-formatter')">
+              {{ t('开始文章排版') }}
+            </button>
           </div>
         </div>
         <button type="button" class="hero-continue" @click="navigateTo(heroTool.path)">
-          <span class="hero-continue-label">{{ recentTools.length ? '继续上次使用' : '推荐上手' }}</span>
+          <span class="hero-continue-label">{{ recentTools.length ? t('继续上次使用') : t('推荐上手') }}</span>
           <span class="hero-continue-main">
             <span class="hero-continue-icon" v-html="heroTool.icon" />
             <span class="hero-continue-info">
-              <strong>{{ heroTool.name }}</strong>
-              <span>{{ heroTool.description }}</span>
+              <strong>{{ t(heroTool.name) }}</strong>
+              <span>{{ t(heroTool.description) }}</span>
             </span>
             <span class="hero-continue-arrow" v-html="ARROW_ICON" />
           </span>
@@ -46,49 +61,47 @@
 
       <section class="stats-section">
         <div class="stats-grid">
-          <article v-for="stat in stats" :key="stat.key" class="stat-card" :class="stat.tone">
+          <button
+            v-for="stat in stats"
+            :key="stat.key"
+            type="button"
+            class="stat-card"
+            :class="stat.tone"
+            :title="stat.actionLabel"
+            @click="stat.action()"
+          >
             <span class="stat-icon" v-html="stat.icon" />
             <div class="stat-info">
               <span class="stat-label">{{ stat.label }}</span>
               <span class="stat-value">{{ stat.value }}</span>
               <span class="stat-hint">{{ stat.hint }}</span>
             </div>
-          </article>
+          </button>
         </div>
       </section>
 
-      <section class="feature-section">
+      <section class="picks-section">
         <div class="section-head">
-          <h2>新功能</h2>
-          <span class="section-pill">NEW</span>
-          <span class="section-meta">最近上线的工具，点击即可体验</span>
+          <h2>{{ t('精选工具') }}</h2>
+          <span class="section-meta">{{ t('创作、调试与素材管理，一步直达') }}</span>
         </div>
-        <div class="feature-grid">
-          <button
-            v-for="tool in newTools"
-            :key="tool.path"
-            type="button"
-            class="feature-card"
-            @click="navigateTo(tool.path)"
-          >
-            <span class="feature-icon" v-html="tool.icon" />
-            <span class="feature-body">
-              <span class="feature-name">
-                {{ tool.name }}
-                <em class="new-pill">新</em>
-              </span>
-              <span class="feature-desc">{{ tool.description }}</span>
+        <div class="picks-grid">
+          <button v-for="tool in picks" :key="tool.path" type="button" class="pick-card" @click="navigateTo(tool.path)">
+            <span class="pick-icon" v-html="tool.icon" />
+            <span class="pick-body">
+              <span class="pick-name">{{ t(tool.name) }}</span>
+              <span class="pick-desc">{{ t(tool.description) }}</span>
             </span>
-            <span class="feature-arrow" v-html="ARROW_ICON" />
+            <span class="pick-arrow" v-html="ARROW_ICON" />
           </button>
         </div>
       </section>
 
       <section class="recent-section">
         <div class="section-head">
-          <h2>最近使用</h2>
+          <h2>{{ t('最近使用') }}</h2>
           <span class="section-count">{{ recentTools.length }}</span>
-          <span class="section-meta">最多保留 {{ MAX_RECENT }} 个</span>
+          <span class="section-meta">{{ t('最多保留 {count} 个', { count: recentLimit }) }}</span>
         </div>
         <div v-if="recentTools.length" class="recent-grid">
           <button
@@ -100,15 +113,18 @@
           >
             <span class="recent-icon" v-html="tool.icon" />
             <span class="recent-info">
-              <span class="recent-name">{{ tool.name }}</span>
-              <span class="recent-desc">{{ tool.description }}</span>
+              <span class="recent-name">{{ t(tool.name) }}</span>
+              <span class="recent-desc">{{ t(tool.description) }}</span>
             </span>
             <kbd v-if="toolShortcut(tool)" class="tool-kbd">{{ toolShortcut(tool) }}</kbd>
           </button>
         </div>
         <div v-else class="recent-empty">
-          <span>还没有最近使用记录</span>
-          <span>从下方选择一个工具开始使用吧</span>
+          <span>{{ t('暂无最近使用记录') }}</span>
+          <span>{{ t('从下方选择一个工具开始使用吧') }}</span>
+          <button type="button" class="btn btn-secondary btn-sm recent-empty-action" @click="emit('open-search')">
+            {{ t('搜索工具') }}
+          </button>
         </div>
       </section>
 
@@ -129,11 +145,10 @@
             <div class="tool-icon" v-html="tool.icon" />
             <div class="tool-info">
               <div class="tool-name">
-                {{ tool.name }}
-                <em v-if="isNewTool(tool)" class="new-pill">新</em>
+                {{ t(tool.name) }}
               </div>
               <div class="tool-desc">
-                {{ tool.description }}
+                {{ t(tool.description) }}
               </div>
             </div>
             <kbd v-if="toolShortcut(tool)" class="tool-kbd">{{ toolShortcut(tool) }}</kbd>
@@ -147,34 +162,63 @@
         <span class="footer-dot" />
         NToolBox v{{ version }} · {{ platformLabel }}
       </span>
-      <span class="footer-meta">{{ tools.length }} 个工具 · {{ searchShortcut }} 搜索 · Esc 关闭弹窗</span>
+      <span class="footer-meta">{{
+        t('{count} 个工具 · {shortcut} 搜索 · Esc 关闭弹窗', { count: tools.length, shortcut: searchShortcut })
+      }}</span>
       <span class="footer-meta">{{ new Date().getFullYear() }}</span>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getConfig, getPackageInfo, openSettings, platform, skillsList } from '@/api'
+import { getConfig, getPackageInfo, onConfigChanged, openSettings, platform, skillsList } from '@/api'
+import { t, getLocale } from '@/i18n'
 import {
-  MAX_RECENT,
+  MARKET_PATH,
   SETTINGS_PATH,
   addToRecent,
   dashboardTools,
   getRecentTools,
-  getToolAccelerator
+  getToolAccelerator,
+  normalizeRecentToolsLimit,
+  setRecentToolsLimit,
+  tools as allTools
 } from '@shared/tools'
 
 const emit = defineEmits(['open-search'])
 
 const TOOL_GROUPS = [
-  { key: 'primary', title: '核心工具', description: '高频使用的开发与 AI 工具' },
-  { key: 'utilities', title: '日常工具', description: '转换、生成与内容处理' },
-  { key: ['file', 'settings'], title: '文件与系统', description: '文件管理与应用设置' }
+  {
+    key: 'primary',
+    get title() {
+      return t('核心工具')
+    },
+    get description() {
+      return t('高频使用的开发与 AI 工具')
+    }
+  },
+  {
+    key: 'utilities',
+    get title() {
+      return t('日常工具')
+    },
+    get description() {
+      return t('转换、生成与内容处理')
+    }
+  },
+  {
+    key: ['file', 'settings'],
+    get title() {
+      return t('文件与系统')
+    },
+    get description() {
+      return t('文件管理与应用设置')
+    }
+  }
 ]
-
-const NEW_TOOL_PATHS = ['/image-viewer', '/wechat-formatter', '/markdown-editor', '/clipboard']
+const PICK_TOOL_PATHS = ['/image-hosting', '/markdown-editor', '/json-parser', '/clipboard']
 const SEARCH_ACCELERATOR = 'CmdOrCtrl+K'
 
 const SEARCH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -200,18 +244,28 @@ const recentTools = ref([])
 const skills = ref([])
 
 const tools = dashboardTools
-const newTools = computed(() => NEW_TOOL_PATHS.map((path) => tools.find((tool) => tool.path === path)).filter(Boolean))
+const marketTool = allTools.find((tool) => tool.path === MARKET_PATH)
+const picks = computed(() => PICK_TOOL_PATHS.map((path) => tools.find((tool) => tool.path === path)).filter(Boolean))
+const recentLimit = computed(() => normalizeRecentToolsLimit(config.value?.app?.recent_tools_limit))
 
 const toolGroups = computed(() =>
   TOOL_GROUPS.map((group) => {
     const keys = Array.isArray(group.key) ? group.key : [group.key]
-    return { ...group, tools: tools.filter((tool) => keys.includes(tool.menuGroup)) }
+    return {
+      ...group,
+      title: t(group.title),
+      description: t(group.description),
+      tools: tools.filter((tool) => keys.includes(tool.menuGroup))
+    }
   }).filter((group) => group.tools.length > 0)
 )
 
-const connectionCount = computed(() => (config.value.dbConnections || []).length)
+const connectionCount = computed(() => (config.value?.database?.connections || []).length)
+const connectorCount = computed(
+  () => (config.value?.extensions?.mcp_servers || []).filter((server) => server && server.enabled !== false).length
+)
 const aiProviderCount = computed(
-  () => Object.values(config.value.ai_api_keys || {}).filter((key) => typeof key === 'string' && key.trim()).length
+  () => Object.values(config.value?.ai?.keys || {}).filter((key) => typeof key === 'string' && key.trim()).length
 )
 
 const skillSummary = computed(() => {
@@ -226,10 +280,12 @@ const heroTool = computed(
 const stats = computed(() => [
   {
     key: 'tools',
-    label: '可用工具',
+    label: t('可用工具'),
     value: tools.length,
-    hint: `${toolGroups.value.length} 个分类`,
+    hint: t('{count} 个分类', { count: toolGroups.value.length }),
     tone: 'accent',
+    actionLabel: t('搜索工具'),
+    action: () => emit('open-search'),
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <rect x="3" y="3" width="7" height="7" rx="1.5"/>
       <rect x="14" y="3" width="7" height="7" rx="1.5"/>
@@ -239,12 +295,17 @@ const stats = computed(() => [
   },
   {
     key: 'skills',
-    label: '可用技能',
+    label: t('可用技能'),
     value: skillSummary.value.total,
     hint: skillSummary.value.total
-      ? `内置 ${skillSummary.value.builtin} · 已安装 ${skillSummary.value.installed}`
-      : '前往扩展市场安装',
+      ? t('内置 {builtin} · 已安装 {installed}', {
+          builtin: skillSummary.value.builtin,
+          installed: skillSummary.value.installed
+        })
+      : t('前往扩展市场安装'),
     tone: 'info',
+    actionLabel: t('管理技能'),
+    action: () => openSettings('extensions'),
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="m12 2 9 5-9 5-9-5 9-5z"/>
       <path d="m3 12 9 5 9-5"/>
@@ -252,22 +313,27 @@ const stats = computed(() => [
     </svg>`
   },
   {
-    key: 'recent',
-    label: '最近使用',
-    value: recentTools.value.length,
-    hint: `最多保留 ${MAX_RECENT} 个`,
+    key: 'connectors',
+    label: t('MCP 连接器'),
+    value: connectorCount.value,
+    hint: connectorCount.value ? t('已启用的连接器') : t('前往扩展管理添加'),
     tone: 'success',
+    actionLabel: t('管理连接器'),
+    action: () => openSettings('extensions'),
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="9"/>
-      <polyline points="12 7 12 12 15 14"/>
+      <path d="M9 7V3M15 7V3"/>
+      <path d="M7 7h10v4a5 5 0 0 1-5 5 5 5 0 0 1-5-5z"/>
+      <path d="M12 16v5"/>
     </svg>`
   },
   {
     key: 'database',
-    label: '数据库连接',
+    label: t('数据库连接'),
     value: connectionCount.value,
-    hint: connectionCount.value ? '已保存的连接' : '尚未添加连接',
+    hint: connectionCount.value ? t('已保存的连接') : t('尚未添加连接'),
     tone: 'warning',
+    actionLabel: t('打开数据库客户端'),
+    action: () => router.push('/database'),
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <ellipse cx="12" cy="5" rx="9" ry="3"/>
       <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
@@ -276,10 +342,12 @@ const stats = computed(() => [
   },
   {
     key: 'ai',
-    label: 'AI 平台',
+    label: t('模型服务商'),
     value: aiProviderCount.value,
-    hint: aiProviderCount.value ? '已配置密钥' : '前往设置配置',
+    hint: aiProviderCount.value ? t('已配置服务商') : t('前往设置配置'),
     tone: 'neutral',
+    actionLabel: t('配置模型服务商'),
+    action: () => openSettings('api'),
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>
       <path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/>
@@ -295,16 +363,16 @@ const searchShortcut = computed(() => formatAccelerator(SEARCH_ACCELERATOR))
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  if (hour < 5) return '夜深了'
-  if (hour < 9) return '早上好'
-  if (hour < 12) return '上午好'
-  if (hour < 14) return '中午好'
-  if (hour < 18) return '下午好'
-  return '晚上好'
+  if (hour < 5) return t('夜深了')
+  if (hour < 9) return t('早上好')
+  if (hour < 12) return t('上午好')
+  if (hour < 14) return t('中午好')
+  if (hour < 18) return t('下午好')
+  return t('晚上好')
 })
 
 const dateText = computed(() =>
-  new Intl.DateTimeFormat('zh-CN', {
+  new Intl.DateTimeFormat(getLocale() === 'en-US' ? 'en-US' : 'zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -312,12 +380,8 @@ const dateText = computed(() =>
   }).format(new Date())
 )
 
-function isNewTool(tool) {
-  return NEW_TOOL_PATHS.includes(tool.path)
-}
-
 function toolAccelerator(tool) {
-  return getToolAccelerator(tool, config.value.shortcuts || {})
+  return getToolAccelerator(tool, config.value?.app?.shortcuts || {})
 }
 
 function toolShortcut(tool) {
@@ -356,6 +420,8 @@ function navigateTo(path) {
   }
 }
 
+let removeConfigListener = null
+
 onMounted(async () => {
   recentTools.value = getRecentTools()
 
@@ -373,6 +439,17 @@ onMounted(async () => {
   if (Array.isArray(skillList)) {
     skills.value = skillList
   }
+
+  removeConfigListener = onConfigChanged(async () => {
+    const nextConfig = await getConfig()
+    if (nextConfig) config.value = nextConfig
+    setRecentToolsLimit(nextConfig?.app.recent_tools_limit)
+    recentTools.value = getRecentTools()
+  })
+})
+
+onUnmounted(() => {
+  removeConfigListener?.()
 })
 </script>
 
@@ -391,7 +468,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 14px 28px;
+  padding: 14px 20px;
   background: var(--app-header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -482,7 +559,8 @@ onMounted(async () => {
 
 .tool-card:focus-visible,
 .recent-card:focus-visible,
-.feature-card:focus-visible,
+.stat-card:focus-visible,
+.pick-card:focus-visible,
 .hero-continue:focus-visible,
 .dash-search:focus-visible {
   outline: 2px solid var(--accent-color);
@@ -492,7 +570,7 @@ onMounted(async () => {
 .dashboard-main {
   flex: 1;
   min-height: 0;
-  padding: 20px 28px 24px;
+  padding: 16px 20px 20px;
   overflow-y: auto;
 }
 
@@ -559,6 +637,22 @@ onMounted(async () => {
   font-size: var(--font-size-sm);
   line-height: 1.6;
   color: var(--text-secondary);
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.hero-tag {
+  padding: 2px 8px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
 }
 
 .hero-actions {
@@ -648,7 +742,7 @@ onMounted(async () => {
 }
 
 .hero-continue-arrow,
-.feature-arrow {
+.pick-arrow {
   display: flex;
   width: var(--icon-size-xs);
   height: var(--icon-size-xs);
@@ -658,7 +752,7 @@ onMounted(async () => {
 }
 
 .hero-continue:hover .hero-continue-arrow,
-.feature-card:hover .feature-arrow {
+.pick-card:hover .pick-arrow {
   color: var(--accent-color);
   transform: translateX(2px);
 }
@@ -677,10 +771,15 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 12px 14px;
   background: var(--panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   transition: var(--transition-fast);
 }
 
@@ -783,8 +882,7 @@ onMounted(async () => {
   color: var(--text-primary);
 }
 
-.section-count,
-.section-pill {
+.section-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -797,33 +895,28 @@ onMounted(async () => {
   border-radius: 999px;
 }
 
-.section-pill {
-  font-size: calc(10px * var(--font-scale));
-  letter-spacing: 0.06em;
-}
-
 .section-meta {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
-.feature-section {
+.picks-section {
   container-type: inline-size;
 }
 
-.feature-grid {
+.picks-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 @container (min-width: 996px) {
-  .feature-grid {
+  .picks-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-.feature-card {
+.pick-card {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -839,13 +932,13 @@ onMounted(async () => {
   transition: var(--transition-fast);
 }
 
-.feature-card:hover {
+.pick-card:hover {
   border-color: rgba(var(--accent-rgb), 0.48);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-.feature-icon {
+.pick-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -857,22 +950,19 @@ onMounted(async () => {
   color: var(--text-inverse);
 }
 
-.feature-icon :deep(svg) {
+.pick-icon :deep(svg) {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);
 }
 
-.feature-body {
+.pick-body {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
 }
 
-.feature-name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.pick-name {
   margin-bottom: 3px;
   font-size: var(--font-size-base);
   font-weight: 600;
@@ -882,19 +972,7 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-.new-pill {
-  flex-shrink: 0;
-  padding: 0 5px;
-  font-size: calc(10px * var(--font-scale));
-  font-style: normal;
-  font-weight: 600;
-  line-height: 16px;
-  color: var(--accent-color);
-  background: rgba(var(--accent-rgb), 0.12);
-  border-radius: 999px;
-}
-
-.feature-desc {
+.pick-desc {
   font-size: var(--font-size-sm);
   color: var(--text-tertiary);
   white-space: nowrap;
@@ -983,6 +1061,10 @@ onMounted(async () => {
   background: var(--content-bg);
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-md);
+}
+
+.recent-empty-action {
+  margin-top: 8px;
 }
 
 .tools-grid {
@@ -1081,7 +1163,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 9px 28px;
+  padding: 9px 20px;
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
   border-top: 1px solid var(--border-color);
@@ -1111,35 +1193,35 @@ onMounted(async () => {
   }
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > * {
+:is(.stats-grid, .picks-grid, .recent-grid) > * {
   animation: card-in var(--motion-base) var(--motion-ease) backwards;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(1) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(1) {
   animation-delay: 0ms;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(2) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(2) {
   animation-delay: 20ms;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(3) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(3) {
   animation-delay: 40ms;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(4) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(4) {
   animation-delay: 60ms;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(5) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(5) {
   animation-delay: 80ms;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(6) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(6) {
   animation-delay: 100ms;
 }
 
-:is(.stats-grid, .feature-grid, .recent-grid) > :nth-child(n + 7) {
+:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(n + 7) {
   animation-delay: 120ms;
 }
 

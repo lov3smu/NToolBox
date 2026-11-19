@@ -41,6 +41,15 @@ module.exports = [
         module: 'readonly',
         require: 'readonly',
         Buffer: 'readonly',
+        global: 'readonly',
+        setImmediate: 'readonly',
+        clearImmediate: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
+        Request: 'readonly',
+        ReadableStream: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
         // Electron globals
         electron: 'readonly'
       }
@@ -53,18 +62,13 @@ module.exports = [
       'no-unused-vars': 'warn',
       'no-console': 'off',
       'no-debugger': 'off',
-      'eqeqeq': ['warn', 'always', { null: 'ignore' }],
+      eqeqeq: ['warn', 'always', { null: 'ignore' }],
       'no-multiple-empty-lines': ['warn', { max: 1, maxEOF: 1 }],
       'prefer-const': 'warn',
       'no-var': 'warn'
     }
   },
   {
-    ignores: [
-      'out/**',
-      'dist/**',
-      'node_modules/**',
-      '*.js'
-    ]
+    ignores: ['out/**', 'dist/**', 'node_modules/**', '*.js']
   }
 ]

@@ -16,10 +16,14 @@
       },
       "indent": {
         "type": "integer",
-        "description": "缩进空格数，默认2"
+        "minimum": 0,
+        "maximum": 10,
+        "default": 2,
+        "description": "缩进空格数（0-10），0 表示压缩输出，默认2"
       }
     },
-    "required": ["json_string"]
+    "required": ["json_string"],
+    "additionalProperties": false
   },
   "handler": "handler.js",
   "examples": [

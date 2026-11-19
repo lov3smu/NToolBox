@@ -5,10 +5,10 @@
         <section class="update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-dialog-title">
           <header class="update-header">
             <div class="update-header-title">
-              <h2 id="update-dialog-title">更新中心</h2>
+              <h2 id="update-dialog-title">{{ t('更新中心') }}</h2>
               <span v-if="badgeText" class="update-badge" :class="`update-badge-${badgeTone}`">{{ badgeText }}</span>
             </div>
-            <button type="button" class="update-close" aria-label="关闭" @click="closeUpdateCenter">
+            <button type="button" class="update-close" :aria-label="t('关闭')" @click="closeUpdateCenter">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -16,12 +16,45 @@
             </button>
           </header>
 
-          <div class="update-body">
+          <nav class="update-tabs" role="tablist" :aria-label="t('更新中心视图')">
+            <button
+              id="update-tab-app"
+              type="button"
+              role="tab"
+              class="update-tab"
+              :class="{ active: activeTab === 'app' }"
+              :aria-selected="activeTab === 'app'"
+              aria-controls="update-panel-app"
+              @click="activeTab = 'app'"
+            >
+              {{ center.appName }}
+            </button>
+            <button
+              id="update-tab-changelog"
+              type="button"
+              role="tab"
+              class="update-tab"
+              :class="{ active: activeTab === 'changelog' }"
+              :aria-selected="activeTab === 'changelog'"
+              aria-controls="update-panel-changelog"
+              @click="activeTab = 'changelog'"
+            >
+              {{ t('更新日志') }}
+            </button>
+          </nav>
+
+          <div
+            v-if="activeTab === 'app'"
+            id="update-panel-app"
+            class="update-body"
+            role="tabpanel"
+            aria-labelledby="update-tab-app"
+          >
             <div v-if="center.phase === 'checking'" class="update-state">
               <span class="update-spinner" aria-hidden="true" />
               <div>
-                <p class="update-state-title">正在检查更新</p>
-                <p class="update-state-text">正在连接更新服务器，请稍候...</p>
+                <p class="update-state-title">{{ t('正在检查更新') }}</p>
+                <p class="update-state-text">{{ t('正在连接更新服务器，请稍候...') }}</p>
               </div>
             </div>
 
@@ -32,8 +65,10 @@
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               <div>
-                <p class="update-state-title">开发环境无法检查更新</p>
-                <p class="update-state-text">请在打包后的应用中测试更新功能。</p>
+                <p class="update-state-title">{{ t('开发环境无法检查更新') }}</p>
+                <p class="update-state-text">
+                  {{ t('请在打包后的应用中测试更新功能，下方仍可查看历史版本。') }}
+                </p>
               </div>
             </div>
 
@@ -49,8 +84,10 @@
                 <polyline points="9 12 12 15 16 9" />
               </svg>
               <div>
-                <p class="update-state-title">当前已是最新版本</p>
-                <p v-if="center.currentVersion" class="update-state-text">当前版本 v{{ center.currentVersion }}</p>
+                <p class="update-state-title">
+                  {{ latestVersionText }}
+                </p>
+                <p class="update-state-text">{{ t('已是最新正式版本，历史版本可在下方展开查看。') }}</p>
               </div>
             </div>
 
@@ -67,35 +104,32 @@
                 <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
               <div>
-                <p class="update-state-title">检查更新失败</p>
-                <p class="update-state-text">{{ center.error || '无法连接更新服务器，请稍后重试。' }}</p>
+                <p class="update-state-title">{{ t('检查更新失败') }}</p>
+                <p class="update-state-text">{{ center.error || t('无法连接更新服务器，请稍后重试。') }}</p>
               </div>
             </div>
 
             <template v-else-if="hasUpdate">
               <p class="update-version-line">
-                <span>发现新版本</span>
+                <span>{{ t('发现新版本') }}</span>
                 <strong class="update-version-latest">v{{ center.latestVersion }}</strong>
-                <span v-if="center.currentVersion" class="update-version-current"
-                  >当前 v{{ center.currentVersion }}</span
-                >
+                <span v-if="center.currentVersion" class="update-version-current">{{
+                  t('当前 v{version}', { version: center.currentVersion })
+                }}</span>
               </p>
-
-              <div v-if="center.releaseNotes" class="update-notes">
-                <div class="update-notes-title">更新日志</div>
-                <div class="update-notes-content" @click="handleNotesClick" v-html="renderedNotes" />
-              </div>
-              <p v-else class="update-state-text">新版本已准备好下载。</p>
+              <p v-if="center.phase === 'available'" class="update-state-text">
+                {{ t('完整更新内容可在「更新日志」中查看。') }}
+              </p>
 
               <div v-if="center.phase === 'downloading'" class="update-progress">
                 <div class="update-progress-track">
                   <div class="update-progress-bar" :style="{ width: `${progressValue}%` }" />
                 </div>
                 <div class="update-progress-meta">
-                  <span>正在下载更新</span>
+                  <span>{{ t('正在下载更新') }}</span>
                   <span class="update-progress-value">{{ progressValue }}%</span>
                 </div>
-                <p class="update-state-text">可以关闭此窗口，下载会在后台继续。</p>
+                <p class="update-state-text">{{ t('可以关闭此窗口，下载会在后台继续。') }}</p>
               </div>
 
               <div v-else-if="center.phase === 'downloaded'" class="update-ready">
@@ -109,54 +143,179 @@
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="9 12 12 15 16 9" />
                 </svg>
-                <span>更新已下载完成，重启应用即可安装。</span>
+                <span>{{ t('更新已下载完成，重启应用即可安装。') }}</span>
               </div>
 
               <div v-else-if="center.phase === 'installing'" class="update-state">
                 <span class="update-spinner" aria-hidden="true" />
-                <span class="update-state-text">正在准备安装，应用即将重启...</span>
+                <span class="update-state-text">{{ t('正在准备安装，应用即将重启...') }}</span>
               </div>
             </template>
 
             <div v-else class="update-state">
               <span class="update-spinner" aria-hidden="true" />
-              <span class="update-state-text">正在准备更新...</span>
+              <span class="update-state-text">{{ t('正在准备更新...') }}</span>
             </div>
+
+            <section class="update-history">
+              <button
+                type="button"
+                class="update-history-toggle"
+                :class="{ open: historyOpen }"
+                :aria-expanded="historyOpen"
+                aria-controls="update-history-panel"
+                @click="historyOpen = !historyOpen"
+              >
+                <span class="update-history-toggle-title">{{ t('历史版本') }}</span>
+                <span v-if="historyReleases.length" class="update-history-count">{{ historyReleases.length }}</span>
+                <svg class="update-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              <div id="update-history-panel" class="update-history-collapse" :class="{ open: historyOpen }">
+                <div class="update-history-inner">
+                  <p class="update-history-hint">
+                    {{ t('回退到旧版本前请先备份数据，旧版本可能无法读取新版本创建的数据或凭据。') }}
+                  </p>
+
+                  <div v-if="center.historyLoading" class="update-history-state">
+                    <span class="update-spinner" aria-hidden="true" />
+                    <span>{{ t('正在加载历史版本...') }}</span>
+                  </div>
+
+                  <div v-else-if="center.historyError" class="update-history-state">
+                    <span>{{ t(center.historyError) }}</span>
+                    <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
+                      {{ t('重试') }}
+                    </button>
+                  </div>
+
+                  <p v-else-if="historyReleases.length === 0" class="update-history-state">
+                    {{ t('暂无历史版本。') }}
+                  </p>
+
+                  <template v-else>
+                    <ul class="update-history-list">
+                      <li
+                        v-for="release in visibleHistory"
+                        :key="release.tag || release.version"
+                        class="update-history-item"
+                      >
+                        <span class="update-history-version">v{{ release.version }}</span>
+                        <span class="update-history-date">{{ formatReleaseDate(release.publishedAt) }}</span>
+                        <button
+                          type="button"
+                          class="update-history-link"
+                          :disabled="!release.htmlUrl"
+                          @click="openRelease(release.htmlUrl)"
+                        >
+                          {{ t('打开下载页') }}
+                        </button>
+                      </li>
+                    </ul>
+
+                    <div v-if="hasMoreHistory" class="update-load-more">
+                      <button type="button" class="update-load-more-btn" @click="loadMoreHistory">
+                        {{ t('加载更多') }}
+                        <span class="update-load-more-count">{{
+                          t('剩余 {count}', { count: historyReleases.length - visibleHistory.length })
+                        }}</span>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div
+            v-else
+            id="update-panel-changelog"
+            class="update-body update-changelog"
+            role="tabpanel"
+            aria-labelledby="update-tab-changelog"
+          >
+            <div v-if="center.historyLoading" class="update-history-state">
+              <span class="update-spinner" aria-hidden="true" />
+              <span>{{ t('正在加载更新日志...') }}</span>
+            </div>
+
+            <div v-else-if="center.historyError" class="update-history-state">
+              <span>{{ t(center.historyError) }}</span>
+              <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
+                {{ t('重试') }}
+              </button>
+            </div>
+
+            <template v-else-if="changelogEntries.length">
+              <article v-for="entry in visibleChangelogEntries" :key="entry.key" class="update-changelog-entry">
+                <header class="update-changelog-head">
+                  <span class="update-changelog-version">v{{ entry.version }}</span>
+                  <span v-if="entry.isLatest" class="update-changelog-new">NEW</span>
+                  <span v-if="entry.publishedLabel" class="update-changelog-date">{{ entry.publishedLabel }}</span>
+                </header>
+                <div v-if="entry.html" class="update-notes-content" @click="handleNotesClick" v-html="entry.html" />
+                <p v-else class="update-state-text">{{ t('该版本暂无更新说明。') }}</p>
+              </article>
+
+              <div v-if="hasMoreChangelog" class="update-load-more">
+                <button type="button" class="update-load-more-btn" @click="loadMoreChangelog">
+                  {{ t('加载更多') }}
+                  <span class="update-load-more-count">{{
+                    t('剩余 {count}', { count: changelogEntries.length - visibleChangelogEntries.length })
+                  }}</span>
+                </button>
+              </div>
+            </template>
+
+            <p v-else class="update-state-text">{{ t('暂无更新日志。') }}</p>
           </div>
 
           <footer class="update-footer">
-            <button
-              v-if="showReleaseButton"
-              type="button"
-              class="btn btn-default btn-sm"
-              @click="openUpdateReleasePage"
-            >
-              打开发布页
+            <button type="button" class="btn btn-secondary btn-sm" @click="openUpdateReleasePage">
+              {{ t('打开下载页') }}
             </button>
             <span class="update-footer-spacer" />
 
             <template v-if="center.phase === 'available'">
-              <button type="button" class="btn btn-default btn-sm" @click="closeUpdateCenter">稍后</button>
-              <button type="button" class="btn btn-primary btn-sm" @click="startUpdateDownload">立即下载</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+                {{ t('稍后') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" @click="startUpdateDownload">
+                {{ t('立即下载') }}
+              </button>
             </template>
 
             <template v-else-if="center.phase === 'downloading'">
-              <button type="button" class="btn btn-default btn-sm" @click="cancelUpdateDownloadNow">取消下载</button>
-              <button type="button" class="btn btn-primary btn-sm" disabled>下载中 {{ progressValue }}%</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="cancelUpdateDownloadNow">
+                {{ t('取消下载') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" disabled>
+                {{ t('下载中 {percent}%', { percent: progressValue }) }}
+              </button>
             </template>
 
             <template v-else-if="center.phase === 'downloaded'">
-              <button type="button" class="btn btn-default btn-sm" @click="closeUpdateCenter">稍后</button>
-              <button type="button" class="btn btn-primary btn-sm" @click="installUpdateNow">立即重启安装</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+                {{ t('稍后') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" @click="installUpdateNow">
+                {{ t('立即重启安装') }}
+              </button>
             </template>
 
             <button v-else-if="center.phase === 'installing'" type="button" class="btn btn-primary btn-sm" disabled>
-              正在安装...
+              {{ t('正在安装...') }}
             </button>
 
             <template v-else-if="center.phase === 'error' || center.phase === 'not-available'">
-              <button type="button" class="btn btn-default btn-sm" @click="closeUpdateCenter">关闭</button>
-              <button type="button" class="btn btn-primary btn-sm" @click="openUpdateCenter">重新检查</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+                {{ t('关闭') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" @click="openUpdateCenter">
+                {{ t('重新检查') }}
+              </button>
             </template>
 
             <button
@@ -165,9 +324,11 @@
               class="btn btn-primary btn-sm"
               @click="closeUpdateCenter"
             >
-              知道了
+              {{ t('知道了') }}
             </button>
-            <button v-else type="button" class="btn btn-default btn-sm" @click="closeUpdateCenter">取消</button>
+            <button v-else type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+              {{ t('取消') }}
+            </button>
           </footer>
         </section>
       </div>
@@ -176,24 +337,137 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { openExternal } from '@/api'
 import {
   cancelUpdateDownloadNow,
   closeUpdateCenter,
   installUpdateNow,
+  loadUpdateReleases,
   openUpdateCenter,
   openUpdateReleasePage,
   startUpdateDownload,
   useUpdateCenter
 } from '@/composables'
 import { renderMarkdown } from '@/utils/markdown'
+import { t, getLocale } from '@/i18n'
 
 const { updateCenter: center } = useUpdateCenter()
 
+const activeTab = ref('app')
+const historyOpen = ref(false)
+
+const PAGE_SIZE = 10
+const historyVisibleCount = ref(PAGE_SIZE)
+const changelogVisibleCount = ref(PAGE_SIZE)
+
 const hasUpdate = computed(() => ['available', 'downloading', 'downloaded', 'installing'].includes(center.phase))
 
-const renderedNotes = computed(() => renderMarkdown(center.releaseNotes))
+const progressValue = computed(() => Math.max(0, Math.min(100, Math.round(center.progress ?? 0))))
+
+const latestVersionText = computed(() => {
+  if (center.currentVersion) {
+    return t('{name} 已是最新版本（v{version}）。', { name: center.appName, version: center.currentVersion })
+  }
+  return t('{name} 已是最新版本。', { name: center.appName })
+})
+
+function formatReleaseDate(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  if (getLocale() === 'en-US') {
+    return `Released ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(date)}`
+  }
+  return t('发布于 {p0}年{p1}月{p2}日', { p0: date.getFullYear(), p1: date.getMonth() + 1, p2: date.getDate() })
+}
+
+function normalizeVersion(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^v/i, '')
+}
+
+function compareVersions(left, right) {
+  const partsA = normalizeVersion(left).split('.')
+  const partsB = normalizeVersion(right).split('.')
+  const length = Math.max(partsA.length, partsB.length)
+  for (let i = 0; i < length; i++) {
+    const numA = Number.parseInt(partsA[i], 10)
+    const numB = Number.parseInt(partsB[i], 10)
+    if (Number.isNaN(numA) || Number.isNaN(numB)) {
+      const result = String(partsA[i] || '').localeCompare(String(partsB[i] || ''), undefined, { numeric: true })
+      if (result) return result
+      continue
+    }
+    if (numA !== numB) return numA - numB
+  }
+  return 0
+}
+
+const historyReleases = computed(() => {
+  const currentKey = normalizeVersion(center.currentVersion)
+  return center.history.filter((release) => normalizeVersion(release.version) !== currentKey)
+})
+
+const visibleHistory = computed(() => historyReleases.value.slice(0, historyVisibleCount.value))
+
+const hasMoreHistory = computed(() => historyVisibleCount.value < historyReleases.value.length)
+
+function loadMoreHistory() {
+  historyVisibleCount.value += PAGE_SIZE
+}
+
+watch(historyReleases, () => {
+  historyVisibleCount.value = PAGE_SIZE
+})
+
+const latestReleaseVersion = computed(() => {
+  let latest = normalizeVersion(center.latestVersion)
+  for (const release of center.history) {
+    const version = normalizeVersion(release.version)
+    if (version && compareVersions(version, latest) > 0) latest = version
+  }
+  return latest
+})
+
+const changelogEntries = computed(() => {
+  if (center.history.length) {
+    return center.history.map((release) => ({
+      key: release.tag || release.version,
+      version: release.version,
+      publishedLabel: formatReleaseDate(release.publishedAt),
+      isLatest: normalizeVersion(release.version) === latestReleaseVersion.value,
+      html: renderMarkdown(release.notes || '')
+    }))
+  }
+
+  if (center.releaseNotes) {
+    return [
+      {
+        key: 'latest',
+        version: center.latestVersion || center.currentVersion,
+        publishedLabel: formatReleaseDate(center.releaseDate),
+        isLatest: true,
+        html: renderMarkdown(center.releaseNotes)
+      }
+    ]
+  }
+
+  return []
+})
+
+const visibleChangelogEntries = computed(() => changelogEntries.value.slice(0, changelogVisibleCount.value))
+
+const hasMoreChangelog = computed(() => changelogVisibleCount.value < changelogEntries.value.length)
+
+function loadMoreChangelog() {
+  changelogVisibleCount.value += PAGE_SIZE
+}
+
+watch(changelogEntries, () => {
+  changelogVisibleCount.value = PAGE_SIZE
+})
 
 function handleNotesClick(event) {
   const link = event.target.closest?.('a')
@@ -204,28 +478,28 @@ function handleNotesClick(event) {
   openExternal(href)
 }
 
-const progressValue = computed(() => Math.max(0, Math.min(100, Math.round(center.progress ?? 0))))
-
-const showReleaseButton = computed(() => hasUpdate.value || center.phase === 'error')
+function openRelease(url) {
+  if (/^https?:\/\//i.test(url || '')) openExternal(url)
+}
 
 const badgeText = computed(() => {
   switch (center.phase) {
     case 'checking':
-      return '检查中'
+      return t('检查中')
     case 'available':
-      return '发现新版本'
+      return t('发现新版本')
     case 'downloading':
       return `${progressValue.value}%`
     case 'downloaded':
-      return '已下载'
+      return t('已下载')
     case 'installing':
-      return '安装中'
+      return t('安装中')
     case 'not-available':
-      return '已是最新'
+      return t('已是最新')
     case 'error':
-      return '检查失败'
+      return t('检查失败')
     case 'dev-environment':
-      return '开发环境'
+      return t('开发环境')
     default:
       return ''
   }
@@ -248,6 +522,17 @@ const badgeTone = computed(() => {
   }
 })
 
+watch(
+  () => center.visible,
+  (visible) => {
+    if (visible) {
+      activeTab.value = 'app'
+      historyVisibleCount.value = PAGE_SIZE
+      changelogVisibleCount.value = PAGE_SIZE
+    }
+  }
+)
+
 function onKeydown(event) {
   if (event.key === 'Escape' && center.visible) closeUpdateCenter()
 }
@@ -265,7 +550,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -273,9 +558,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .update-dialog {
   display: flex;
   flex-direction: column;
-  width: 640px;
+  width: 680px;
   max-width: calc(100vw - 32px);
-  max-height: min(680px, calc(100vh - 48px));
+  max-height: min(720px, calc(100vh - 48px));
   overflow: hidden;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -367,6 +652,50 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   height: var(--icon-size-2xs);
 }
 
+.update-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.update-tab {
+  position: relative;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 550;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--motion-ease);
+}
+
+.update-tab::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background var(--motion-fast) var(--motion-ease);
+}
+
+.update-tab:hover {
+  color: var(--text-primary);
+}
+
+.update-tab.active {
+  color: var(--accent-color);
+}
+
+.update-tab.active::after {
+  background: var(--accent-color);
+}
+
 .update-body {
   flex: 1;
   min-height: 0;
@@ -432,7 +761,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   font-size: var(--font-size-base);
 }
 
@@ -446,32 +775,252 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   font-size: var(--font-size-sm);
 }
 
-.update-notes {
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--surface-muted);
+.update-history {
+  margin-top: 20px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-color);
 }
 
-.update-notes-title {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-secondary);
+.update-history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.update-history-toggle-title {
+  flex-shrink: 0;
+}
+
+.update-history-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-tertiary);
   font-size: var(--font-size-xs);
   font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.update-chevron {
+  width: var(--icon-size-2xs);
+  height: var(--icon-size-2xs);
+  margin-left: auto;
+  color: var(--text-tertiary);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.update-history-toggle.open .update-chevron {
+  transform: rotate(180deg);
+}
+
+.update-history-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--motion-panel) var(--motion-ease);
+}
+
+.update-history-collapse.open {
+  grid-template-rows: 1fr;
+}
+
+.update-history-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.update-history-hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+}
+
+.update-history-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 0 10px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.update-history-state .update-spinner {
+  width: var(--spinner-sm, 14px);
+  height: var(--spinner-sm, 14px);
+  margin-top: 0;
+}
+
+.update-history-retry {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-color);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update-history-list {
+  margin: 0;
+  padding: 0 0 6px;
+  list-style: none;
+}
+
+.update-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 2px;
+  border-top: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+}
+
+.update-history-item:first-child {
+  border-top: none;
+}
+
+.update-history-version {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.update-history-date {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.update-history-link {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-color);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update-history-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.update-history-link:disabled {
+  color: var(--text-tertiary);
+  cursor: default;
+  text-decoration: none;
+}
+
+.update-changelog {
+  padding-top: 8px;
+}
+
+.update-changelog-entry {
+  padding: 14px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.update-changelog-entry:first-child {
+  padding-top: 8px;
+  border-top: none;
+}
+
+.update-changelog-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.update-changelog-version {
+  font-size: var(--font-size-base);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.update-changelog-new {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(var(--success-rgb), 0.14);
+  color: var(--success-dark);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+.update-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 2px;
+}
+
+.update-load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.update-load-more-btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.update-load-more-count {
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.update-changelog-date {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
 }
 
 .update-notes-content {
-  max-height: 240px;
   margin: 0;
-  padding: 12px;
-  overflow: auto;
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.65;
   word-break: break-word;
+}
+
+.update-changelog .update-notes-content {
+  max-height: none;
+  padding: 0;
+  overflow: visible;
 }
 
 .update-notes-content :deep(h1),

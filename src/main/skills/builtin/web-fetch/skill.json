@@ -1,0 +1,39 @@
+{
+  "name": "web-fetch",
+  "version": "1.0.0",
+  "description": "安全读取公开网页或 API 文本内容：抓取标题与正文，用于查阅文档、博客、公告等最新资料。仅支持 http/https 公网地址，拒绝本地与内网地址。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["网页", "链接", "文档", "查阅", "搜索"],
+  "icon": "globe",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "要读取的 http/https 公网地址"
+      },
+      "max_chars": {
+        "type": "integer",
+        "minimum": 500,
+        "maximum": 20000,
+        "default": 8000,
+        "description": "返回正文的最大字符数"
+      }
+    },
+    "required": ["url"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "url: https://nodejs.org/api/fs.html",
+      "output": "返回页面标题、状态码、最终地址与正文摘要"
+    },
+    {
+      "input": "url: https://example.com/changelog, max_chars: 4000",
+      "output": "限制正文长度的网页阅读结果"
+    }
+  ]
+}

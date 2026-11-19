@@ -700,10 +700,10 @@ export function extractHeadings(root) {
   }))
 }
 
-export function buildTocHtml(headings) {
+export function buildTocHtml(headings, emptyLabel = '暂无标题') {
   const items = headings.filter((heading) => heading.level > 1)
   if (items.length === 0) {
-    return '<p data-wx-toc-empty="1">暂无标题</p>'
+    return `<p data-wx-toc-empty="1">${escapeHtml(emptyLabel)}</p>`
   }
   const minLevel = Math.min(...items.map((item) => item.level))
   let html = '<nav data-wx-toc-nav="1"><ul>'
@@ -796,12 +796,12 @@ export function splitHighlightedHtmlByLines(html) {
   return lines
 }
 
-export function buildMermaidPlaceholder(diagram, theme, svg) {
+export function buildMermaidPlaceholder(diagram, theme, svg, labels = {}) {
   if (typeof svg === 'string' && svg) {
     return `<section data-wx-diagram="mermaid" data-wx-theme="${theme}">${svg}</section>`
   }
   const failed = svg === ''
-  const label = failed ? 'Mermaid 图表渲染失败，请检查语法' : 'Mermaid 图表加载中…'
+  const label = failed ? labels.failed || 'Mermaid 图表渲染失败，请检查语法' : labels.loading || 'Mermaid 图表加载中…'
   const color = failed ? '#b91c1c' : '#9ca3af'
   return `<section data-wx-diagram="mermaid" data-wx-theme="${theme}" data-key="${diagram.key}"><p style="text-align:center;color:${color};font-size:13px;padding:18px;border:1px dashed #d1d5db;border-radius:8px;background:#fafafa;">${label}</p></section>`
 }
