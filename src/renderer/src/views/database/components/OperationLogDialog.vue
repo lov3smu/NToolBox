@@ -2,12 +2,12 @@
   <div v-if="operationLogDialog.show" class="dialog-overlay" @click.self="closeOperationLog">
     <div class="dialog oplog-dialog">
       <div class="dialog-header">
-        <h3>数据库操作日志</h3>
+        <h3>{{ t('数据库操作日志') }}</h3>
         <div class="health-toolbar">
           <button class="btn btn-secondary btn-sm" :disabled="operationLogDialog.loading" @click="loadOperationLog()">
-            {{ operationLogDialog.loading ? '读取中...' : '刷新' }}
+            {{ operationLogDialog.loading ? t('读取中...') : t('刷新') }}
           </button>
-          <button class="btn-icon btn-sm" title="关闭" @click="closeOperationLog">
+          <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeOperationLog">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -22,47 +22,47 @@
             class="input-field-inline oplog-connection"
             @change="loadOperationLog()"
           >
-            <option value="">全部连接</option>
+            <option value="">{{ t('全部连接') }}</option>
             <option v-for="conn in connections" :key="conn.name" :value="conn.name">{{ conn.name }}</option>
           </select>
           <input
             v-model="operationLogDialog.keyword"
             class="input-field-inline oplog-search"
-            placeholder="搜索 SQL / 数据库 / 表"
+            :placeholder="t('搜索 SQL / 数据库 / 表')"
             @keydown.enter="loadOperationLog()"
           />
           <button class="btn btn-secondary btn-sm" :disabled="operationLogDialog.loading" @click="loadOperationLog()">
-            查询
+            {{ t('查询') }}
           </button>
-          <span class="oplog-count">最近 {{ operationLogDialog.entries.length }} 条</span>
+          <span class="oplog-count">{{ t('最近') }} {{ operationLogDialog.entries.length }} {{ t('条') }}</span>
           <button
             class="btn btn-secondary btn-sm"
             :disabled="operationLogDialog.clearing || !operationLogDialog.entries.length"
             @click="clearOperationLog"
           >
-            {{ operationLogDialog.clearing ? '清空中...' : '清空日志' }}
+            {{ operationLogDialog.clearing ? t('清空中...') : t('清空日志') }}
           </button>
         </div>
 
         <div v-if="operationLogDialog.error" class="health-error">{{ operationLogDialog.error }}</div>
         <div v-else-if="operationLogDialog.loading && !operationLogDialog.entries.length" class="health-loading">
-          正在读取操作日志...
+          {{ t('正在读取操作日志...') }}
         </div>
         <div v-else-if="!operationLogDialog.entries.length" class="oplog-empty">
-          暂无操作日志。执行写入类 SQL（INSERT / UPDATE / DELETE / DDL）后会自动记录。
+          {{ t('暂无操作日志。执行写入类 SQL（INSERT / UPDATE / DELETE / DDL）后会自动记录。') }}
         </div>
         <div v-else class="oplog-table-wrap">
           <table class="oplog-table">
             <thead>
               <tr>
-                <th>时间</th>
-                <th>动作</th>
-                <th>连接</th>
-                <th>数据库</th>
-                <th>表</th>
-                <th>结果</th>
-                <th class="num">行数</th>
-                <th class="num">耗时</th>
+                <th>{{ t('时间') }}</th>
+                <th>{{ t('动作') }}</th>
+                <th>{{ t('连接') }}</th>
+                <th>{{ t('数据库') }}</th>
+                <th>{{ t('表') }}</th>
+                <th>{{ t('结果') }}</th>
+                <th class="num">{{ t('行数') }}</th>
+                <th class="num">{{ t('耗时') }}</th>
                 <th>SQL</th>
               </tr>
             </thead>
@@ -74,9 +74,9 @@
                 <td>{{ entry.database || '—' }}</td>
                 <td>{{ entry.table || '—' }}</td>
                 <td>
-                  <span v-if="entry.readonlyBlocked" class="oplog-chip blocked">只读拦截</span>
+                  <span v-if="entry.readonlyBlocked" class="oplog-chip blocked">{{ t('只读拦截') }}</span>
                   <span v-else :class="['oplog-chip', entry.success ? 'ok' : 'fail']">
-                    {{ entry.success ? '成功' : '失败' }}
+                    {{ entry.success ? t('成功') : t('失败') }}
                   </span>
                 </td>
                 <td class="num">{{ entry.rows || '—' }}</td>
@@ -92,13 +92,14 @@
         </div>
       </div>
       <div class="dialog-footer">
-        <button class="btn btn-primary" @click="closeOperationLog">关闭</button>
+        <button class="btn btn-primary" @click="closeOperationLog">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { inject } from 'vue'
 
 const databaseStore = inject('database')

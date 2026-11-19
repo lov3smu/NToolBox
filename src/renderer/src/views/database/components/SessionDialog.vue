@@ -3,12 +3,12 @@
     <div class="dialog dialog-wide session-dialog">
       <div class="dialog-header">
         <h3>
-          会话与锁 ·
+          {{ t('会话与锁 ·') }}
           <span class="session-connection">{{ sessionDialog.connectionName }}</span>
         </h3>
         <div class="session-header-meta">
           <span v-if="sessionDialog.version" class="session-version">MySQL {{ sessionDialog.version }}</span>
-          <button class="btn-icon btn-sm" title="关闭" @click="closeSessionDialog">
+          <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeSessionDialog">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -21,11 +21,11 @@
           :class="['dialog-tab', { active: sessionDialog.tab === 'sessions' }]"
           @click="sessionDialog.tab = 'sessions'"
         >
-          会话
+          {{ t('会话') }}
           <span class="session-tab-count">{{ sessionDialog.sessions.length }}</span>
         </div>
         <div :class="['dialog-tab', { active: sessionDialog.tab === 'locks' }]" @click="sessionDialog.tab = 'locks'">
-          锁与等待
+          {{ t('锁与等待') }}
           <span v-if="sessionDialog.waits.length" class="session-tab-count danger">{{
             sessionDialog.waits.length
           }}</span>
@@ -39,28 +39,28 @@
               v-model="sessionDialog.keyword"
               type="text"
               class="input-field session-search"
-              placeholder="搜索用户 / 来源 / 数据库 / 语句"
+              :placeholder="t('搜索用户 / 来源 / 数据库 / 语句')"
             />
             <select v-model="sessionDialog.command" class="select-field session-command">
-              <option value="">全部命令</option>
+              <option value="">{{ t('全部命令') }}</option>
               <option v-for="command in sessionCommands" :key="command" :value="command">{{ command }}</option>
             </select>
             <label class="checkbox-label-inline">
               <input v-model="sessionDialog.activeOnly" type="checkbox" />
-              <span>仅活跃会话</span>
+              <span>{{ t('仅活跃会话') }}</span>
             </label>
           </template>
-          <span v-else class="session-hint">锁信息展示 InnoDB 事务、锁等待与最近一次死锁记录</span>
+          <span v-else class="session-hint">{{ t('锁信息展示 InnoDB 事务、锁等待与最近一次死锁记录') }}</span>
           <div class="session-toolbar-right">
-            <span v-if="sessionDialog.loading" class="session-hint">刷新中…</span>
+            <span v-if="sessionDialog.loading" class="session-hint">{{ t('刷新中…') }}</span>
             <button
               :class="['btn btn-sm', sessionDialog.autoRefresh ? 'btn-primary' : 'btn-secondary']"
               @click="toggleAutoRefresh"
             >
-              {{ sessionDialog.autoRefresh ? '自动刷新中' : '自动刷新' }}
+              {{ sessionDialog.autoRefresh ? t('自动刷新中') : t('自动刷新') }}
             </button>
             <button class="btn btn-sm btn-secondary" :disabled="sessionDialog.loading" @click="loadSessions">
-              刷新
+              {{ t('刷新') }}
             </button>
           </div>
         </div>
@@ -73,14 +73,14 @@
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>用户</th>
-                  <th>来源</th>
-                  <th>数据库</th>
-                  <th>命令</th>
-                  <th>时间</th>
-                  <th>状态</th>
-                  <th>当前语句</th>
-                  <th>操作</th>
+                  <th>{{ t('用户') }}</th>
+                  <th>{{ t('来源') }}</th>
+                  <th>{{ t('数据库') }}</th>
+                  <th>{{ t('命令') }}</th>
+                  <th>{{ t('时间') }}</th>
+                  <th>{{ t('状态') }}</th>
+                  <th>{{ t('当前语句') }}</th>
+                  <th>{{ t('操作') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,7 +91,7 @@
                 >
                   <td class="session-mono">
                     {{ session.id }}
-                    <span v-if="session.isSelf" class="session-self-badge">当前</span>
+                    <span v-if="session.isSelf" class="session-self-badge">{{ t('当前') }}</span>
                   </td>
                   <td>{{ session.user }}</td>
                   <td class="session-mono">{{ session.host }}</td>
@@ -111,19 +111,19 @@
                       :disabled="session.isSelf || sessionDialog.killingId === session.id"
                       @click="killSessionById(session, 'query')"
                     >
-                      取消查询
+                      {{ t('取消查询') }}
                     </button>
                     <button
                       class="btn btn-xs btn-secondary danger"
                       :disabled="session.isSelf || sessionDialog.killingId === session.id"
                       @click="killSessionById(session, 'connection')"
                     >
-                      终止
+                      {{ t('终止') }}
                     </button>
                   </td>
                 </tr>
                 <tr v-if="!filteredSessions.length">
-                  <td colspan="9" class="session-empty">没有匹配的会话</td>
+                  <td colspan="9" class="session-empty">{{ t('没有匹配的会话') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -132,27 +132,27 @@
 
         <template v-else>
           <div class="session-summary">
-            <span class="session-summary-chip">事务 {{ sessionDialog.transactions.length }}</span>
+            <span class="session-summary-chip">{{ t('事务') }} {{ sessionDialog.transactions.length }}</span>
             <span :class="['session-summary-chip', { danger: waitingTransactions.length }]">
-              锁等待 {{ waitingTransactions.length }}
+              {{ t('锁等待') }} {{ waitingTransactions.length }}
             </span>
-            <span class="session-summary-chip">锁 {{ sessionDialog.locks.length }}</span>
+            <span class="session-summary-chip">{{ t('锁') }} {{ sessionDialog.locks.length }}</span>
           </div>
 
           <div class="lock-section">
-            <div class="lock-section-title">锁等待</div>
+            <div class="lock-section-title">{{ t('锁等待') }}</div>
             <div class="session-table-scroll">
               <table class="result-table session-table">
                 <thead>
                   <tr>
-                    <th>等待会话</th>
-                    <th>阻塞会话</th>
-                    <th>库表</th>
-                    <th>等待锁</th>
-                    <th>阻塞锁</th>
-                    <th>等待语句</th>
-                    <th>阻塞语句</th>
-                    <th>操作</th>
+                    <th>{{ t('等待会话') }}</th>
+                    <th>{{ t('阻塞会话') }}</th>
+                    <th>{{ t('库表') }}</th>
+                    <th>{{ t('等待锁') }}</th>
+                    <th>{{ t('阻塞锁') }}</th>
+                    <th>{{ t('等待语句') }}</th>
+                    <th>{{ t('阻塞语句') }}</th>
+                    <th>{{ t('操作') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,13 +171,13 @@
                         :disabled="sessionDialog.killingId === wait.blockingThreadId"
                         @click="killBlockingSession(wait)"
                       >
-                        终止阻塞会话
+                        {{ t('终止阻塞会话') }}
                       </button>
                       <span v-else class="session-hint">-</span>
                     </td>
                   </tr>
                   <tr v-if="!sessionDialog.waits.length">
-                    <td colspan="8" class="session-empty">当前没有锁等待</td>
+                    <td colspan="8" class="session-empty">{{ t('当前没有锁等待') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -185,20 +185,20 @@
           </div>
 
           <div class="lock-section">
-            <div class="lock-section-title">事务</div>
+            <div class="lock-section-title">{{ t('事务') }}</div>
             <div class="session-table-scroll">
               <table class="result-table session-table">
                 <thead>
                   <tr>
-                    <th>事务 ID</th>
-                    <th>状态</th>
-                    <th>会话</th>
-                    <th>开始时间</th>
-                    <th>等待开始</th>
-                    <th>锁定行</th>
-                    <th>修改行</th>
-                    <th>当前语句</th>
-                    <th>操作</th>
+                    <th>{{ t('事务 ID') }}</th>
+                    <th>{{ t('状态') }}</th>
+                    <th>{{ t('会话') }}</th>
+                    <th>{{ t('开始时间') }}</th>
+                    <th>{{ t('等待开始') }}</th>
+                    <th>{{ t('锁定行') }}</th>
+                    <th>{{ t('修改行') }}</th>
+                    <th>{{ t('当前语句') }}</th>
+                    <th>{{ t('操作') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -222,13 +222,13 @@
                         :disabled="trx.threadId === sessionDialog.selfId || sessionDialog.killingId === trx.threadId"
                         @click="killTrxSession(trx)"
                       >
-                        终止会话
+                        {{ t('终止会话') }}
                       </button>
                       <span v-else class="session-hint">-</span>
                     </td>
                   </tr>
                   <tr v-if="!sessionDialog.transactions.length">
-                    <td colspan="9" class="session-empty">当前没有运行中的事务</td>
+                    <td colspan="9" class="session-empty">{{ t('当前没有运行中的事务') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -236,19 +236,19 @@
           </div>
 
           <div class="lock-section">
-            <div class="lock-section-title">InnoDB 锁</div>
+            <div class="lock-section-title">{{ t('InnoDB 锁') }}</div>
             <div class="session-table-scroll">
               <table class="result-table session-table">
                 <thead>
                   <tr>
-                    <th>事务 ID</th>
-                    <th>会话</th>
-                    <th>库</th>
-                    <th>表</th>
-                    <th>索引</th>
-                    <th>类型</th>
-                    <th>模式</th>
-                    <th>状态</th>
+                    <th>{{ t('事务 ID') }}</th>
+                    <th>{{ t('会话') }}</th>
+                    <th>{{ t('库') }}</th>
+                    <th>{{ t('表') }}</th>
+                    <th>{{ t('索引') }}</th>
+                    <th>{{ t('类型') }}</th>
+                    <th>{{ t('模式') }}</th>
+                    <th>{{ t('状态') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -267,7 +267,7 @@
                     </td>
                   </tr>
                   <tr v-if="!sessionDialog.locks.length">
-                    <td colspan="8" class="session-empty">当前没有 InnoDB 锁记录</td>
+                    <td colspan="8" class="session-empty">{{ t('当前没有 InnoDB 锁记录') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -275,22 +275,23 @@
           </div>
 
           <div class="lock-section">
-            <div class="lock-section-title">最近一次死锁</div>
+            <div class="lock-section-title">{{ t('最近一次死锁') }}</div>
             <pre v-if="sessionDialog.deadlockText" class="deadlock-block">{{ sessionDialog.deadlockText }}</pre>
-            <div v-else class="session-empty deadlock-empty">未检测到死锁记录</div>
+            <div v-else class="session-empty deadlock-empty">{{ t('未检测到死锁记录') }}</div>
           </div>
         </template>
       </div>
 
       <div class="dialog-footer">
-        <span class="session-hint">终止会话会断开目标连接，请确认不是自身使用的连接</span>
-        <button class="btn btn-primary" @click="closeSessionDialog">关闭</button>
+        <span class="session-hint">{{ t('终止会话会断开目标连接，请确认不是自身使用的连接') }}</span>
+        <button class="btn btn-primary" @click="closeSessionDialog">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { inject } from 'vue'
 
 const databaseStore = inject('database')

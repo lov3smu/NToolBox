@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { finalizeContent, normalizeLegacyThinking } from '@/utils/chatContent'
 
@@ -196,7 +198,7 @@ export function useChatSessions({
     try {
       localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions.value))
     } catch {
-      showError('会话保存失败：附件体积过大，请删除部分图片后重试')
+      showError(t('会话保存失败：附件体积过大，请删除部分图片后重试'))
     }
   }
 
@@ -270,7 +272,7 @@ export function useChatSessions({
     if (!session) return
     session.pinned = !session.pinned
     saveSessions()
-    showSuccess(session.pinned ? '会话已置顶' : '已取消置顶')
+    showSuccess(t(session.pinned ? '会话已置顶' : '已取消置顶'))
   }
 
   function forkSession(id) {
@@ -282,7 +284,7 @@ export function useChatSessions({
     for (const message of messages) message.isStreaming = false
     const fork = {
       id: generateId(),
-      title: `${session.title || '新会话'} · 分叉`,
+      title: t('{p0} · 分叉', { p0: session.title || t('新会话') }),
       messages,
       workspace: session.workspace || '',
       provider: session.provider || '',
@@ -298,25 +300,25 @@ export function useChatSessions({
     sessions.value.splice(index + 1, 0, fork)
     saveSessions()
     selectSession(fork.id)
-    showSuccess('已创建分叉会话')
+    showSuccess(t('已创建分叉会话'))
   }
 
   async function copySessionId(id) {
     const session = sessions.value.find((item) => item.id === id)
     if (!session) return
     const ok = await copyToClipboard(session.id)
-    if (ok) showSuccess('已复制 Session ID')
-    else showError('复制失败')
+    if (ok) showSuccess(t('已复制 Session ID'))
+    else showError(t('复制失败'))
   }
 
   async function revealSessionWorkspace(id) {
     const session = sessions.value.find((item) => item.id === id)
     if (!session?.workspace) {
-      showError('当前会话没有关联工作区')
+      showError(t('当前会话没有关联工作区'))
       return
     }
     const result = await openWorkspacePath(session.workspace, session.workspace)
-    if (result && result.success === false) showError(result.error || '无法打开工作区文件夹')
+    if (result && result.success === false) showError(result.error || t('无法打开工作区文件夹'))
   }
 
   function toggleArchiveSession(id) {
@@ -336,7 +338,7 @@ export function useChatSessions({
       }
     }
     saveSessions()
-    showSuccess(archiving ? '会话已归档' : '已取消归档')
+    showSuccess(t(archiving ? '会话已归档' : '已取消归档'))
   }
 
   function onRailMore(action) {
@@ -357,7 +359,7 @@ export function useChatSessions({
     finalizeContent(message)
     message.stopped = true
     if (!message.notices) message.notices = []
-    if (!message.notices.includes('生成已中断')) message.notices.push('生成已中断')
+    if (!message.notices.includes(t('生成已中断'))) message.notices.push(t('生成已中断'))
   }
 
   function recoverStreamState() {
@@ -379,7 +381,9 @@ export function useChatSessions({
     saveScroll()
     const newSession = {
       id: generateId(),
-      title: '新会话',
+      get title() {
+        return t('新会话')
+      },
       messages: [],
       workspace: typeof workspace === 'string' ? workspace : '',
       provider: selectedProvider.value,
@@ -424,7 +428,7 @@ export function useChatSessions({
   function requestDeleteSession(id) {
     const session = sessions.value.find((item) => item.id === id)
     if (!session) return
-    deleteTarget.value = { id: session.id, title: session.title || '新会话' }
+    deleteTarget.value = { id: session.id, title: session.title || t('新会话') }
   }
 
   function confirmDeleteSession() {
@@ -460,7 +464,7 @@ export function useChatSessions({
 
   function startEditTitle(id, title) {
     editingSessionId.value = id
-    editingTitle.value = title || '新会话'
+    editingTitle.value = title || t('新会话')
     nextTick(() => {
       const input = document.querySelector('.session-edit-input')
       if (input) {

@@ -4,7 +4,7 @@
     <div class="info-panel-toolbar">
       <button
         :class="['info-tab-btn', { active: tableInfoMode === 'info' }]"
-        title="信息"
+        :title="t('信息')"
         @click="tableInfoMode = 'info'"
       >
         <svg class="info-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,64 +94,64 @@
 
     <div class="info-panel-content">
       <div v-if="!selectedInfoType" class="info-empty">
-        <p>请选择对象查看信息</p>
+        <p>{{ t('请选择对象查看信息') }}</p>
       </div>
 
       <div v-else-if="selectedInfoType === 'group'" class="info-content">
         <div class="info-item">
-          <span class="info-label">连接数量</span>
+          <span class="info-label">{{ t('连接数量') }}</span>
           <span class="info-value">{{ selectedGroup?.connections?.length || 0 }}</span>
         </div>
       </div>
 
       <div v-else-if="selectedInfoType === 'connection'" class="info-content">
         <div class="info-item">
-          <span class="info-label">主机</span>
+          <span class="info-label">{{ t('主机') }}</span>
           <span class="info-value">{{ selectedConnection?.host }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">端口</span>
+          <span class="info-label">{{ t('端口') }}</span>
           <span class="info-value">{{ selectedConnection?.port }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">用户名</span>
+          <span class="info-label">{{ t('用户名') }}</span>
           <span class="info-value">{{ selectedConnection?.user }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">状态</span>
+          <span class="info-label">{{ t('状态') }}</span>
           <span :class="['info-value', selectedConnection?.active ? 'connected' : 'disconnected']">
-            {{ selectedConnection?.active ? '已连接' : '未连接' }}
+            {{ selectedConnection?.active ? t('已连接') : t('未连接') }}
           </span>
         </div>
         <div v-if="connectionInfo" class="info-item">
-          <span class="info-label">服务器版本</span>
+          <span class="info-label">{{ t('服务器版本') }}</span>
           <span class="info-value">{{ connectionInfo.version }}</span>
         </div>
         <div v-if="connectionInfo" class="info-item">
-          <span class="info-label">字符集</span>
+          <span class="info-label">{{ t('字符集') }}</span>
           <span class="info-value">{{ connectionInfo.charset }}</span>
         </div>
         <div v-if="connectionInfo" class="info-item">
-          <span class="info-label">排序规则</span>
+          <span class="info-label">{{ t('排序规则') }}</span>
           <span class="info-value">{{ connectionInfo.collation }}</span>
         </div>
       </div>
 
       <div v-else-if="selectedInfoType === 'database'" class="info-content">
         <div class="info-item">
-          <span class="info-label">连接</span>
+          <span class="info-label">{{ t('连接') }}</span>
           <span class="info-value">{{ selectedConnection?.name }}</span>
         </div>
         <div v-if="databaseInfo" class="info-item">
-          <span class="info-label">字符集</span>
+          <span class="info-label">{{ t('字符集') }}</span>
           <span class="info-value">{{ databaseInfo.charset }}</span>
         </div>
         <div v-if="databaseInfo" class="info-item">
-          <span class="info-label">排序规则</span>
+          <span class="info-label">{{ t('排序规则') }}</span>
           <span class="info-value">{{ databaseInfo.collation }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">表数量</span>
+          <span class="info-label">{{ t('表数量') }}</span>
           <span class="info-value">{{ objectTableDetails?.length || 0 }}</span>
         </div>
       </div>
@@ -234,94 +234,95 @@
 
       <div v-else-if="selectedInfoType === 'object'" class="info-content">
         <div class="info-item">
-          <span class="info-label">连接</span>
+          <span class="info-label">{{ t('连接') }}</span>
           <span class="info-value">{{ selectedObject?.connectionName }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">数据库</span>
+          <span class="info-label">{{ t('数据库') }}</span>
           <span class="info-value">{{ selectedObject?.database }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">类型</span>
+          <span class="info-label">{{ t('类型') }}</span>
           <span class="info-value">{{ objectTypeLabel }}</span>
         </div>
       </div>
 
       <div v-else-if="selectedInfoType === 'table' && tableInfoMode === 'info'" class="info-content">
         <div class="info-item">
-          <span class="info-label">连接</span>
+          <span class="info-label">{{ t('连接') }}</span>
           <span class="info-value">{{ selectedObject?.connectionName }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">数据库</span>
+          <span class="info-label">{{ t('数据库') }}</span>
           <span class="info-value">{{ selectedObject?.database }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">行数</span>
+          <span class="info-label">{{ t('行数') }}</span>
           <span class="info-value">{{ tableInfo?.TABLE_ROWS ?? '--' }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">引擎</span>
+          <span class="info-label">{{ t('引擎') }}</span>
           <span class="info-value">{{ tableInfo?.ENGINE ?? '--' }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">自动递增</span>
+          <span class="info-label">{{ t('自动递增') }}</span>
           <span class="info-value">{{ tableInfo?.AUTO_INCREMENT ?? '--' }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">行格式</span>
+          <span class="info-label">{{ t('行格式') }}</span>
           <span class="info-value">{{ tableInfo?.ROW_FORMAT ?? '--' }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">数据长度</span>
+          <span class="info-label">{{ t('数据长度') }}</span>
           <span class="info-value">{{ formatSize(tableInfo?.DATA_LENGTH) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">索引长度</span>
+          <span class="info-label">{{ t('索引长度') }}</span>
           <span class="info-value">{{ formatSize(tableInfo?.INDEX_LENGTH) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">最大数据长度</span>
+          <span class="info-label">{{ t('最大数据长度') }}</span>
           <span class="info-value">{{ formatSize(tableInfo?.MAX_DATA_LENGTH) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">数据可用空间</span>
+          <span class="info-label">{{ t('数据可用空间') }}</span>
           <span class="info-value">{{ formatSize(tableInfo?.DATA_FREE) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">创建日期</span>
+          <span class="info-label">{{ t('创建日期') }}</span>
           <span class="info-value">{{ formatDate(tableInfo?.CREATE_TIME) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">修改日期</span>
+          <span class="info-label">{{ t('修改日期') }}</span>
           <span class="info-value">{{ formatDate(tableInfo?.UPDATE_TIME) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">检查时间</span>
+          <span class="info-label">{{ t('检查时间') }}</span>
           <span class="info-value">{{ formatDate(tableInfo?.CHECK_TIME) }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">排序规则</span>
+          <span class="info-label">{{ t('排序规则') }}</span>
           <span class="info-value">{{ tableInfo?.TABLE_COLLATION ?? '--' }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">创建选项</span>
+          <span class="info-label">{{ t('创建选项') }}</span>
           <span class="info-value">{{ tableInfo?.CREATE_OPTIONS ?? '--' }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">注释</span>
+          <span class="info-label">{{ t('注释') }}</span>
           <span class="info-value">{{ tableInfo?.TABLE_COMMENT ?? '--' }}</span>
         </div>
       </div>
 
       <div v-else-if="selectedInfoType === 'table' && tableInfoMode === 'ddl'" class="info-content info-ddl-content">
-        <SqlHighlight class="info-ddl" :code="tableDDL" placeholder="加载中..." />
+        <SqlHighlight class="info-ddl" :code="tableDDL" :placeholder="t('加载中...')" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { inject } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 

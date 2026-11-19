@@ -1,3 +1,5 @@
+import { t } from './i18n.js'
+
 const TYPE_VALIDATORS = {
   string: (value) => typeof value === 'string',
   integer: (value) => Number.isInteger(value),
@@ -28,7 +30,7 @@ export function normalizeSkillParams(schema, params) {
 
   const input = params === undefined || params === null ? {} : params
   if (typeof input !== 'object' || Array.isArray(input)) {
-    return { error: '工具参数必须是 JSON 对象' }
+    return { error: t('工具参数必须是 JSON 对象') }
   }
 
   const properties = schema.properties || {}
@@ -43,7 +45,7 @@ export function normalizeSkillParams(schema, params) {
       if (property && property.default !== undefined) {
         value = cloneValue(property.default)
       } else if (required.has(key)) {
-        errors.push(`缺少必填参数：${key}`)
+        errors.push(t('缺少必填参数：{p0}', { p0: key }))
         continue
       } else {
         continue
@@ -53,23 +55,23 @@ export function normalizeSkillParams(schema, params) {
     if (property?.type) {
       const validator = TYPE_VALIDATORS[property.type]
       if (validator && !validator(value)) {
-        errors.push(`参数 ${key} 应为 ${property.type}，实际为 ${describeType(value)}`)
+        errors.push(t('参数 {p0} 应为 {p1}，实际为 {p2}', { p0: key, p1: property.type, p2: describeType(value) }))
         continue
       }
     }
 
     if (Array.isArray(property?.enum) && !property.enum.includes(value)) {
-      errors.push(`参数 ${key} 取值无效，可选值：${property.enum.join('、')}`)
+      errors.push(t('参数 {p0} 取值无效，可选值：{p1}', { p0: key, p1: property.enum.join(t('、')) }))
       continue
     }
 
     if (typeof value === 'number') {
       if (typeof property?.minimum === 'number' && value < property.minimum) {
-        errors.push(`参数 ${key} 不能小于 ${property.minimum}`)
+        errors.push(t('参数 {p0} 不能小于 {p1}', { p0: key, p1: property.minimum }))
         continue
       }
       if (typeof property?.maximum === 'number' && value > property.maximum) {
-        errors.push(`参数 ${key} 不能大于 ${property.maximum}`)
+        errors.push(t('参数 {p0} 不能大于 {p1}', { p0: key, p1: property.maximum }))
         continue
       }
     }
@@ -79,12 +81,12 @@ export function normalizeSkillParams(schema, params) {
 
   for (const key of required) {
     if (!(key in normalized) && !errors.some((error) => error.includes(key))) {
-      errors.push(`缺少必填参数：${key}`)
+      errors.push(t('缺少必填参数：{p0}', { p0: key }))
     }
   }
 
   if (errors.length > 0) {
-    return { error: errors.join('；') }
+    return { error: errors.join(t('；')) }
   }
 
   return { params: normalized }
@@ -106,7 +108,7 @@ export function renderPromptTemplate(template, params = {}) {
   })
 
   if (missing.size > 0) {
-    return { error: `缺少提示词参数：${[...missing].join('、')}` }
+    return { error: t('缺少提示词参数：{p0}', { p0: [...missing].join(t('、')) }) }
   }
 
   return { content }

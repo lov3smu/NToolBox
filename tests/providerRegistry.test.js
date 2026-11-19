@@ -58,7 +58,7 @@ describe('Provider 注册表', () => {
 
 describe('Provider 实例独立性', () => {
   it('每次 getProvider 返回互不共享的实例', () => {
-    const config = resolveProviderRuntimeConfig('deepseek', { ai_api_keys: { deepseek: 'sk-test' } })
+    const config = resolveProviderRuntimeConfig('deepseek', { ai: { keys: { deepseek: 'sk-test' } } })
     const first = getProviderFromIndex('deepseek', config)
     const second = getProviderFromIndex('deepseek', config)
     expect(first).not.toBe(second)

@@ -23,6 +23,7 @@ import UpdateDialog from '@/components/UpdateDialog.vue'
 import AboutDialog from '@/components/AboutDialog.vue'
 import { getConfig, onConfigChanged, onNavigateTo, onShowAbout } from '@/api'
 import { syncThemeFromConfig, syncThemeStyleFromConfig, syncFontSizeFromConfig } from '@/utils/theme'
+import { setLocale } from '@/i18n'
 import { SETTINGS_PATH, setRecentToolsLimit } from '@shared/tools'
 
 const route = useRoute()
@@ -36,10 +37,11 @@ let removeAboutListener = null
 
 async function loadThemeFromConfig() {
   const config = await getConfig()
-  syncThemeFromConfig(config?.theme)
-  syncThemeStyleFromConfig(config?.theme_style)
-  syncFontSizeFromConfig(config?.font_size)
-  setRecentToolsLimit(config?.recent_tools_limit)
+  syncThemeFromConfig(config?.appearance.theme)
+  syncThemeStyleFromConfig(config?.appearance.theme_style)
+  syncFontSizeFromConfig(config?.appearance.font_size)
+  setLocale(config?.appearance.language)
+  setRecentToolsLimit(config?.app.recent_tools_limit)
 }
 
 onMounted(async () => {

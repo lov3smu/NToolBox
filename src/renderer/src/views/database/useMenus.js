@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 export function createMenus(state, api) {
   const { contextMenu, fieldSortMenu, tabContextMenu, tableToolbarState } = state
 
@@ -94,7 +95,7 @@ export function createMenus(state, api) {
 
   async function refreshTableData(tab) {
     if (api.hasPendingChanges?.(tab)) {
-      const confirmed = await api.showConfirm('刷新会丢弃未保存的修改，是否继续？')
+      const confirmed = await api.showConfirm(t('刷新会丢弃未保存的修改，是否继续？'))
       if (!confirmed) return
     }
     await api.executeTableQuery(tab, tab.queryResult?.currentPage || 1)

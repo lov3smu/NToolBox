@@ -3,12 +3,12 @@
     <div class="dialog dialog-wide table-designer-dialog">
       <div class="dialog-header">
         <h3>
-          表设计器 ·
+          {{ t('表设计器 ·') }}
           <span class="table-designer-title-ref"
             >{{ tableDesignerDialog.tab?.database }}.{{ tableDesignerDialog.tab?.tableName }}</span
           >
         </h3>
-        <button class="btn-icon btn-sm" title="关闭" @click="closeTableDesigner">
+        <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeTableDesigner">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -16,15 +16,15 @@
         </button>
       </div>
       <div class="dialog-content create-table-body" @input="invalidatePreview" @change="invalidatePreview">
-        <div v-if="tableDesignerDialog.loading" class="structure-loading">正在读取表结构…</div>
+        <div v-if="tableDesignerDialog.loading" class="structure-loading">{{ t('正在读取表结构…') }}</div>
         <template v-else-if="draft">
           <div class="create-table-meta">
             <div class="form-group">
-              <label>表注释</label>
+              <label>{{ t('表注释') }}</label>
               <input v-model="draft.comment" type="text" class="input-field" maxlength="120" />
             </div>
             <div class="form-group">
-              <label>默认字符集</label>
+              <label>{{ t('默认字符集') }}</label>
               <select v-model="draft.charset" class="select-field">
                 <option v-for="charset in charsets" :key="charset" :value="charset">{{ charset }}</option>
               </select>
@@ -33,28 +33,30 @@
 
           <div class="create-table-section">
             <div class="create-table-section-head">
-              <span class="create-table-section-title">字段</span>
+              <span class="create-table-section-title">{{ t('字段') }}</span>
               <div class="table-designer-section-actions">
-                <span class="table-designer-hint">重命名主键字段时主键会自动跟随；新字段不支持直接设为主键</span>
-                <button class="btn btn-sm btn-secondary" @click="addColumn">+ 添加字段</button>
+                <span class="table-designer-hint">{{
+                  t('重命名主键字段时主键会自动跟随；新字段不支持直接设为主键')
+                }}</span>
+                <button class="btn btn-sm btn-secondary" @click="addColumn">{{ t('+ 添加字段') }}</button>
               </div>
             </div>
             <div class="create-column-grid create-column-head">
-              <span>字段名</span>
-              <span>类型</span>
-              <span title="非空">非空</span>
-              <span title="主键">主键</span>
-              <span title="自增">自增</span>
-              <span>默认值</span>
-              <span>注释</span>
-              <span title="删除">删除</span>
+              <span>{{ t('字段名') }}</span>
+              <span>{{ t('类型') }}</span>
+              <span :title="t('非空')">{{ t('非空') }}</span>
+              <span :title="t('主键')">{{ t('主键') }}</span>
+              <span :title="t('自增')">{{ t('自增') }}</span>
+              <span>{{ t('默认值') }}</span>
+              <span>{{ t('注释') }}</span>
+              <span :title="t('删除')">{{ t('删除') }}</span>
             </div>
             <div
               v-for="(column, index) in draft.columns"
               :key="index"
               :class="['create-column-grid', { 'table-designer-row-deleted': column.deleted }]"
             >
-              <input v-model="column.name" type="text" class="input-field" placeholder="字段名" />
+              <input v-model="column.name" type="text" class="input-field" :placeholder="t('字段名')" />
               <input
                 v-model="column.type"
                 type="text"
@@ -74,16 +76,16 @@
                   v-model="column.primaryKey"
                   type="checkbox"
                   :disabled="!column.existed || column.deleted"
-                  :title="column.existed ? '' : '新字段不能直接设为主键'"
+                  :title="column.existed ? '' : t('新字段不能直接设为主键')"
                   @change="onPrimaryKeyChange(column)"
                 />
               </label>
               <label class="create-column-check">
                 <input v-model="column.autoIncrement" type="checkbox" @change="onAutoIncrementChange(column)" />
               </label>
-              <input v-model="column.defaultValue" type="text" class="input-field" placeholder="无" />
-              <input v-model="column.comment" type="text" class="input-field" placeholder="可选" />
-              <label class="create-column-check" title="删除字段">
+              <input v-model="column.defaultValue" type="text" class="input-field" :placeholder="t('无')" />
+              <input v-model="column.comment" type="text" class="input-field" :placeholder="t('可选')" />
+              <label class="create-column-check" :title="t('删除字段')">
                 <input v-model="column.deleted" type="checkbox" />
               </label>
             </div>
@@ -94,14 +96,14 @@
 
           <div class="create-table-section">
             <div class="create-table-section-head">
-              <span class="create-table-section-title">索引</span>
-              <button class="btn btn-sm btn-secondary" @click="addIndex">+ 添加索引</button>
+              <span class="create-table-section-title">{{ t('索引') }}</span>
+              <button class="btn btn-sm btn-secondary" @click="addIndex">{{ t('+ 添加索引') }}</button>
             </div>
-            <div v-if="!draft.indexes.length" class="create-table-empty">主键无需在此维护</div>
+            <div v-if="!draft.indexes.length" class="create-table-empty">{{ t('主键无需在此维护') }}</div>
             <div class="create-index-row create-column-head">
-              <span>索引名</span>
-              <span>字段（逗号分隔）</span>
-              <span>唯一</span>
+              <span>{{ t('索引名') }}</span>
+              <span>{{ t('字段（逗号分隔）') }}</span>
+              <span>{{ t('唯一') }}</span>
               <span />
             </div>
             <div
@@ -109,13 +111,13 @@
               :key="index"
               :class="['create-index-row', { 'table-designer-row-deleted': indexItem.deleted }]"
             >
-              <input v-model="indexItem.name" type="text" class="input-field" placeholder="留空自动生成" />
-              <input v-model="indexItem.columns" type="text" class="input-field" placeholder="字段，逗号分隔" />
+              <input v-model="indexItem.name" type="text" class="input-field" :placeholder="t('留空自动生成')" />
+              <input v-model="indexItem.columns" type="text" class="input-field" :placeholder="t('字段，逗号分隔')" />
               <label class="create-column-check create-index-unique">
                 <input v-model="indexItem.unique" type="checkbox" />
-                <span>唯一</span>
+                <span>{{ t('唯一') }}</span>
               </label>
-              <label class="create-column-check" title="删除索引">
+              <label class="create-column-check" :title="t('删除索引')">
                 <input v-model="indexItem.deleted" type="checkbox" />
               </label>
             </div>
@@ -123,13 +125,13 @@
 
           <div class="create-table-section">
             <div class="create-table-section-head">
-              <span class="create-table-section-title">外键</span>
+              <span class="create-table-section-title">{{ t('外键') }}</span>
               <div class="table-designer-section-actions">
-                <span class="table-designer-hint">已创建的外键可删除，新外键仅支持单字段引用</span>
-                <button class="btn btn-sm btn-secondary" @click="addForeignKey">+ 添加外键</button>
+                <span class="table-designer-hint">{{ t('已创建的外键可删除，新外键仅支持单字段引用') }}</span>
+                <button class="btn btn-sm btn-secondary" @click="addForeignKey">{{ t('+ 添加外键') }}</button>
               </div>
             </div>
-            <div v-if="!draft.foreignKeys.length" class="create-table-empty">没有外键</div>
+            <div v-if="!draft.foreignKeys.length" class="create-table-empty">{{ t('没有外键') }}</div>
             <div v-for="foreignKey in draft.foreignKeys" :key="foreignKey.name" class="table-designer-fk-existing">
               <span class="table-designer-fk-name">{{ foreignKey.name }}</span>
               <span class="table-designer-fk-detail">
@@ -138,7 +140,7 @@
               <span class="table-designer-fk-detail"
                 >{{ foreignKey.deleteRule || '-' }} / {{ foreignKey.updateRule || '-' }}</span
               >
-              <label class="create-column-check" title="删除外键">
+              <label class="create-column-check" :title="t('删除外键')">
                 <input v-model="foreignKey.drop" type="checkbox" />
               </label>
             </div>
@@ -147,20 +149,20 @@
               :key="`new-fk-${index}`"
               class="table-designer-fk-row"
             >
-              <input v-model="foreignKey.name" type="text" class="input-field" placeholder="约束名（可留空）" />
+              <input v-model="foreignKey.name" type="text" class="input-field" :placeholder="t('约束名（可留空）')" />
               <select v-model="foreignKey.column" class="select-field">
-                <option value="">本表字段</option>
+                <option value="">{{ t('本表字段') }}</option>
                 <option v-for="column in activeColumnNames" :key="column" :value="column">{{ column }}</option>
               </select>
-              <input v-model="foreignKey.refTable" type="text" class="input-field" placeholder="引用表 / 库.表" />
-              <input v-model="foreignKey.refColumns" type="text" class="input-field" placeholder="引用字段" />
+              <input v-model="foreignKey.refTable" type="text" class="input-field" :placeholder="t('引用表 / 库.表')" />
+              <input v-model="foreignKey.refColumns" type="text" class="input-field" :placeholder="t('引用字段')" />
               <select v-model="foreignKey.onDelete" class="select-field">
                 <option v-for="rule in fkRules" :key="rule" :value="rule">{{ rule }}</option>
               </select>
               <select v-model="foreignKey.onUpdate" class="select-field">
                 <option v-for="rule in fkRules" :key="rule" :value="rule">{{ rule }}</option>
               </select>
-              <button class="btn-icon btn-sm" title="移除" @click="draft.newForeignKeys.splice(index, 1)">
+              <button class="btn-icon btn-sm" :title="t('移除')" @click="draft.newForeignKeys.splice(index, 1)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -173,8 +175,8 @@
 
           <div v-if="tableDesignerDialog.sql" class="table-designer-preview">
             <div class="table-designer-preview-head">
-              <span class="create-table-section-title">变更 SQL 预览</span>
-              <button class="btn btn-xs btn-secondary" @click="copyPreviewSql">复制 SQL</button>
+              <span class="create-table-section-title">{{ t('变更 SQL 预览') }}</span>
+              <button class="btn btn-xs btn-secondary" @click="copyPreviewSql">{{ t('复制 SQL') }}</button>
             </div>
             <SqlHighlight class="sql-preview-block" :code="tableDesignerDialog.sql" />
           </div>
@@ -182,21 +184,21 @@
       </div>
       <div class="dialog-footer">
         <button class="btn btn-secondary" :disabled="tableDesignerDialog.applying" @click="closeTableDesigner">
-          关闭
+          {{ t('关闭') }}
         </button>
         <button
           class="btn btn-secondary"
           :disabled="tableDesignerDialog.loading || tableDesignerDialog.previewing || tableDesignerDialog.applying"
           @click="handlePreview"
         >
-          {{ tableDesignerDialog.previewing ? '生成中...' : '预览 SQL' }}
+          {{ tableDesignerDialog.previewing ? t('生成中...') : t('预览 SQL') }}
         </button>
         <button
           class="btn btn-primary"
           :disabled="!tableDesignerDialog.sql || tableDesignerDialog.applying || tableDesignerDialog.previewing"
           @click="handleApply"
         >
-          {{ tableDesignerDialog.applying ? '执行中...' : '执行变更' }}
+          {{ tableDesignerDialog.applying ? t('执行中...') : t('执行变更') }}
         </button>
       </div>
     </div>
@@ -204,6 +206,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject, ref, watch } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
@@ -401,19 +404,19 @@ function indexColumnList(text, renameMap) {
 function buildOperations() {
   const kept = draft.value.columns.filter((column) => !column.deleted)
   if (!kept.length) {
-    throw new Error('至少需要一个字段')
+    throw new Error(t('至少需要一个字段'))
   }
   const seen = new Set()
   for (const column of kept) {
     const name = column.name.trim()
-    if (!name) throw new Error('字段名不能为空')
-    if (seen.has(name.toLowerCase())) throw new Error(`字段名重复: ${name}`)
+    if (!name) throw new Error(t('字段名不能为空'))
+    if (seen.has(name.toLowerCase())) throw new Error(t('字段名重复: {p0}', { p0: name }))
     seen.add(name)
-    if (!column.type.trim()) throw new Error(`字段 ${name} 缺少类型`)
+    if (!column.type.trim()) throw new Error(t('字段 {p0} 缺少类型', { p0: name }))
   }
   const autoColumns = kept.filter((column) => column.autoIncrement)
-  if (autoColumns.length > 1) throw new Error('只能设置一个自增字段')
-  if (autoColumns.length && !autoColumns[0].primaryKey) throw new Error('自增字段必须同时设为主键')
+  if (autoColumns.length > 1) throw new Error(t('只能设置一个自增字段'))
+  if (autoColumns.length && !autoColumns[0].primaryKey) throw new Error(t('自增字段必须同时设为主键'))
 
   const renameMap = new Map()
   for (const column of kept) {
@@ -477,11 +480,11 @@ function buildOperations() {
       continue
     }
     if (!columns.length) {
-      if (indexItem.existed) throw new Error(`索引 ${indexItem.originalName} 缺少字段`)
+      if (indexItem.existed) throw new Error(t('索引 {p0} 缺少字段', { p0: indexItem.originalName }))
       continue
     }
     const invalid = columns.filter((column) => !indexColumns.has(column))
-    if (invalid.length) throw new Error(`索引字段不存在: ${invalid.join(', ')}`)
+    if (invalid.length) throw new Error(t('索引字段不存在: {p0}', { p0: invalid.join(', ') }))
     if (indexItem.existed) {
       const mappedOriginal = indexColumnList(indexItem.originalColumns, renameMap)
       const changed =
@@ -514,10 +517,10 @@ function buildOperations() {
       .map((item) => item.trim())
       .filter(Boolean)
     if (!column && !refTableText && !refColumns.length) continue
-    if (!column) throw new Error('外键需要选择本表字段')
-    if (!indexColumns.has(column)) throw new Error(`外键字段不存在: ${column}`)
-    if (!refTableText) throw new Error('外键需要填写引用表')
-    if (!refColumns.length) throw new Error('外键需要填写引用字段')
+    if (!column) throw new Error(t('外键需要选择本表字段'))
+    if (!indexColumns.has(column)) throw new Error(t('外键字段不存在: {p0}', { p0: column }))
+    if (!refTableText) throw new Error(t('外键需要填写引用表'))
+    if (!refColumns.length) throw new Error(t('外键需要填写引用字段'))
     const [refSchema, refTable] = refTableText.includes('.')
       ? refTableText.split(/\.(.*)/s)
       : [tableDesignerDialog.value.tab?.database || '', refTableText]
@@ -542,7 +545,7 @@ function buildOperations() {
   }
 
   if (!Object.keys(operations).length) {
-    throw new Error('没有检测到结构变更')
+    throw new Error(t('没有检测到结构变更'))
   }
   return operations
 }
@@ -567,7 +570,7 @@ async function handlePreview() {
 async function handleApply() {
   const operations = await prepareOperations()
   if (!operations) return
-  const confirmed = await showConfirm('将执行上述 ALTER TABLE 语句，确定继续吗？')
+  const confirmed = await showConfirm(t('将执行上述 ALTER TABLE 语句，确定继续吗？'))
   if (!confirmed) return
   await applyTableDesigner(tableDesignerDialog.value.tab, operations)
 }

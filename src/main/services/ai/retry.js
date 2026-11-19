@@ -1,3 +1,5 @@
+import { t } from '../i18n.js'
+
 const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504])
 const RETRYABLE_NETWORK_CODES = new Set([
   'ETIMEDOUT',
@@ -57,7 +59,7 @@ export async function withRetry(task, options = {}) {
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     if (shouldStop()) {
-      return { success: false, cancelled: true, error: '已停止' }
+      return { success: false, cancelled: true, error: t('已停止') }
     }
 
     try {
@@ -74,7 +76,7 @@ export async function withRetry(task, options = {}) {
     }
 
     if (shouldStop()) {
-      return { success: false, cancelled: true, error: '已停止' }
+      return { success: false, cancelled: true, error: t('已停止') }
     }
 
     const delay = computeRetryDelay(attempt + 1, options.baseDelay, options.maxDelay)
@@ -83,9 +85,9 @@ export async function withRetry(task, options = {}) {
     }
     const canContinue = await waitForDelay(delay, shouldStop)
     if (!canContinue) {
-      return { success: false, cancelled: true, error: '已停止' }
+      return { success: false, cancelled: true, error: t('已停止') }
     }
   }
 
-  return last || { success: false, error: '请求失败' }
+  return last || { success: false, error: t('请求失败') }
 }

@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { getConfig, patchConfig } from '@/api'
 export function createGroups(state, api) {
   const {
@@ -34,24 +35,24 @@ export function createGroups(state, api) {
 
   async function saveGroup() {
     if (!newGroupName.value) {
-      await api.showMessage('请输入分组名称', 'warning')
+      await api.showMessage(t('请输入分组名称'), 'warning')
       return
     }
 
     try {
       const config = await getConfig()
-      const dbConnectionGroups = config.dbConnectionGroups || []
+      const dbConnectionGroups = config.database?.connection_groups || []
 
       if (editingGroup.value) {
         const index = dbConnectionGroups.indexOf(editingGroup.value.name)
         if (index >= 0) {
           if (newGroupName.value !== editingGroup.value.name && dbConnectionGroups.includes(newGroupName.value)) {
-            await api.showMessage('分组名称已存在', 'error')
+            await api.showMessage(t('分组名称已存在'), 'error')
             return
           }
           dbConnectionGroups[index] = newGroupName.value
 
-          const dbConnections = config.dbConnections || []
+          const dbConnections = config.database?.connections || []
           dbConnections.forEach((conn) => {
             if (conn.group === editingGroup.value.name) {
               conn.group = newGroupName.value
@@ -60,13 +61,13 @@ export function createGroups(state, api) {
         }
       } else {
         if (dbConnectionGroups.includes(newGroupName.value)) {
-          await api.showMessage('分组名称已存在', 'error')
+          await api.showMessage(t('分组名称已存在'), 'error')
           return
         }
         dbConnectionGroups.push(newGroupName.value)
       }
 
-      await patchConfig({ dbConnectionGroups })
+      await patchConfig({ database: { connection_groups: dbConnectionGroups } })
 
       showGroupDialog.value = false
       editingGroup.value = null
@@ -74,35 +75,37 @@ export function createGroups(state, api) {
       await api.loadConnections()
     } catch (error) {
       console.error('保存分组失败:', error)
-      await api.showMessage('保存分组失败: ' + error.message, 'error')
+      await api.showMessage(t('保存分组失败: ') + error.message, 'error')
     }
   }
 
   async function deleteGroup(groupName) {
-    const confirmed = await api.showConfirm(`确定要删除分组 "${groupName}" 吗？分组内的连接将变为未分组状态。`)
+    const confirmed = await api.showConfirm(
+      t('确定要删除分组 "{p0}" 吗？分组内的连接将变为未分组状态。', { p0: groupName })
+    )
     if (!confirmed) return
 
     try {
       const config = await getConfig()
-      const dbConnectionGroups = config.dbConnectionGroups || []
+      const dbConnectionGroups = config.database?.connection_groups || []
       const index = dbConnectionGroups.indexOf(groupName)
 
       if (index >= 0) {
         dbConnectionGroups.splice(index, 1)
 
-        const dbConnections = config.dbConnections || []
+        const dbConnections = config.database?.connections || []
         dbConnections.forEach((conn) => {
           if (conn.group === groupName) {
             conn.group = ''
           }
         })
 
-        await patchConfig({ dbConnectionGroups })
+        await patchConfig({ database: { connection_groups: dbConnectionGroups } })
         await api.loadConnections()
       }
     } catch (error) {
       console.error('删除分组失败:', error)
-      await api.showMessage('删除分组失败: ' + error.message, 'error')
+      await api.showMessage(t('删除分组失败: ') + error.message, 'error')
     }
   }
 
@@ -127,34 +130,34 @@ export function createGroups(state, api) {
   async function moveToGroup(conn, groupName) {
     try {
       const config = await getConfig()
-      const dbConnections = config.dbConnections || []
+      const dbConnections = config.database?.connections || []
       const index = dbConnections.findIndex((c) => c.name === conn.name)
 
       if (index >= 0) {
         dbConnections[index].group = groupName
-        await patchConfig({ dbConnections })
+        await patchConfig({ database: { connections: dbConnections } })
         await api.loadConnections()
       }
     } catch (error) {
       console.error('移动连接失败:', error)
-      await api.showMessage('移动连接失败: ' + error.message, 'error')
+      await api.showMessage(t('移动连接失败: ') + error.message, 'error')
     }
   }
 
   async function removeFromGroup(conn) {
     try {
       const config = await getConfig()
-      const dbConnections = config.dbConnections || []
+      const dbConnections = config.database?.connections || []
       const index = dbConnections.findIndex((c) => c.name === conn.name)
 
       if (index >= 0) {
         dbConnections[index].group = ''
-        await patchConfig({ dbConnections })
+        await patchConfig({ database: { connections: dbConnections } })
         await api.loadConnections()
       }
     } catch (error) {
       console.error('从组中删除失败:', error)
-      await api.showMessage('从组中删除失败: ' + error.message, 'error')
+      await api.showMessage(t('从组中删除失败: ') + error.message, 'error')
     }
   }
 

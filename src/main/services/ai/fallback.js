@@ -21,7 +21,7 @@ export function normalizeFallbackTarget(value) {
 }
 
 export function resolveFallbackTargets(config, primaryType, primaryModel) {
-  if (!config || config.ai_fallback_enabled === false) return []
+  if (!config || config.ai?.fallback?.enabled === false) return []
 
   const targets = []
   const seen = new Set()
@@ -33,7 +33,7 @@ export function resolveFallbackTargets(config, primaryType, primaryModel) {
     targets.push({ provider: type, model })
   }
 
-  const configured = Array.isArray(config.ai_fallback_models) ? config.ai_fallback_models : []
+  const configured = Array.isArray(config.ai?.fallback?.models) ? config.ai?.fallback?.models : []
   if (configured.length > 0) {
     for (const item of configured) {
       const target = normalizeFallbackTarget(item)
@@ -42,12 +42,12 @@ export function resolveFallbackTargets(config, primaryType, primaryModel) {
     return targets.slice(0, MAX_TARGETS)
   }
 
-  const apiKeys = config.ai_api_keys || {}
+  const apiKeys = config.ai?.keys || {}
   for (const type of AUTO_PRIORITY) {
     if (type === primaryType || !PROVIDER_INFO[type]) continue
     const storedKey = typeof apiKeys[type] === 'string' ? apiKeys[type].trim() : ''
     if (!storedKey && !getProviderEnvApiKey(type)) continue
-    push(type, resolveProviderDefaultModel(type, config.ai_models))
+    push(type, resolveProviderDefaultModel(type, config.ai?.models))
     if (targets.length >= MAX_AUTO_TARGETS) break
   }
   return targets

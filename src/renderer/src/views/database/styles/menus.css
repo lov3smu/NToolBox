@@ -106,6 +106,25 @@
     display: block;
   }
 
+  .context-menu.is-clamped-x .submenu {
+    left: auto;
+    right: 100%;
+  }
+
+  .context-menu.is-clamped-y .submenu {
+    top: auto;
+    bottom: -4px;
+  }
+
+  .submenu {
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+  }
+
+  .menu-item.has-submenu.is-clamped-x .submenu-arrow {
+    transform: scaleX(-1);
+  }
+
   .submenu-header {
     padding: 4px 12px;
     font-size: var(--font-size-xs);

@@ -4,11 +4,11 @@
       <div class="image-host-grid">
         <section class="panel upload-panel">
           <div class="panel-header">
-            <span class="panel-title">上传图片</span>
-            <span class="panel-hint">拖拽、粘贴或选择本地图片</span>
+            <span class="panel-title">{{ t('上传图片') }}</span>
+            <span class="panel-hint">{{ t('拖拽、粘贴或选择本地图片') }}</span>
             <div class="panel-actions upload-actions">
               <label class="provider-select">
-                <span>图床</span>
+                <span>{{ t('图床') }}</span>
                 <select
                   v-model="settings.active"
                   class="select-field"
@@ -16,13 +16,13 @@
                   @change="onProviderSelect"
                 >
                   <option v-for="provider in providers" :key="provider.id" :value="provider.id">
-                    {{ provider.name
-                    }}{{ isProviderConfigured(provider.id, settings.providers[provider.id]) ? '' : '（未配置）' }}
+                    {{ t(provider.name)
+                    }}{{ isProviderConfigured(provider.id, settings.providers[provider.id]) ? '' : t('（未配置）') }}
                   </option>
                 </select>
               </label>
               <button class="btn btn-primary btn-sm" :disabled="uploading || loading" @click="chooseFiles">
-                选择图片
+                {{ t('选择图片') }}
               </button>
             </div>
           </div>
@@ -30,10 +30,10 @@
             <div v-if="!activeConfigured" class="setup-callout">
               <span class="setup-icon">!</span>
               <div class="setup-text">
-                <strong>{{ activeMeta.name }} 尚未配置完整</strong>
-                <span>补全 {{ missingLabels }} 后即可上传图片。</span>
+                <strong>{{ t('{name} 尚未配置完整', { name: activeMeta.name }) }}</strong>
+                <span>{{ t('补全 {fields} 后即可上传图片。', { fields: missingLabels }) }}</span>
               </div>
-              <button class="btn btn-secondary btn-sm" @click="openConfig">前往配置</button>
+              <button class="btn btn-secondary btn-sm" @click="openConfig">{{ t('前往配置') }}</button>
             </div>
 
             <div
@@ -57,34 +57,33 @@
                 </svg>
               </div>
               <div class="drop-title">
-                {{ dragging ? '松开即可上传' : uploading ? '正在上传图片…' : '拖拽图片到这里，或点击选择' }}
+                {{ dragging ? t('松开即可上传') : uploading ? t('正在上传图片…') : t('拖拽图片到这里，或点击选择') }}
               </div>
-              <div class="drop-sub">支持 PNG / JPG / GIF / WebP / SVG / AVIF，单张不超过 {{ maxSizeLabel }}</div>
+              <div class="drop-sub">
+                {{ t('支持 PNG / JPG / GIF / WebP / SVG / AVIF，单张不超过 {size}', { size: maxSizeLabel }) }}
+              </div>
               <div class="drop-actions">
                 <button class="btn btn-primary" :disabled="uploading || loading" @click.stop="chooseFiles">
-                  选择图片
+                  {{ t('选择图片') }}
                 </button>
                 <button class="btn btn-secondary" :disabled="uploading || loading" @click.stop="uploadClipboard">
-                  从剪贴板上传
+                  {{ t('从剪贴板上传') }}
                 </button>
               </div>
-              <div class="drop-hint">也可以直接按 Ctrl / Cmd + V 上传剪贴板中的图片</div>
+              <div class="drop-hint">{{ t('也可以直接按 Ctrl / Cmd + V 上传剪贴板中的图片') }}</div>
             </div>
 
             <div class="upload-options">
               <label class="option-switch" :class="{ active: settings.rename }">
-                <input v-model="settings.rename" type="checkbox" @change="onRenameChange" />
-                <span class="option-switch-track" aria-hidden="true">
-                  <span class="option-switch-thumb" />
-                </span>
-                <span>重命名文件</span>
+                <input v-model="settings.rename" class="switch" type="checkbox" @change="onRenameChange" />
+                <span>{{ t('重命名文件') }}</span>
               </label>
-              <span class="option-hint">自动追加时间戳，避免同名文件覆盖</span>
+              <span class="option-hint">{{ t('自动追加时间戳，避免同名文件覆盖') }}</span>
             </div>
 
             <div v-if="tasks.length" class="task-section">
               <div class="task-header">
-                <span class="task-title">本次上传</span>
+                <span class="task-title">{{ t('本次上传') }}</span>
                 <span class="task-count">{{ tasks.length }}</span>
               </div>
               <div class="task-list">
@@ -102,7 +101,7 @@
                     <span class="task-meta" :title="task.error || task.url">
                       {{
                         task.status === 'uploading'
-                          ? `正在上传到 ${activeMeta.name}`
+                          ? t('正在上传到 {name}', { name: activeMeta.name })
                           : task.status === 'success'
                             ? task.url
                             : task.error
@@ -117,7 +116,7 @@
                     v-if="task.url"
                     class="btn-icon btn-sm"
                     :class="{ active: copiedId === task.id }"
-                    title="复制链接"
+                    :title="t('复制链接')"
                     @click="copyTask(task)"
                   >
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -133,7 +132,7 @@
 
         <section class="panel history-panel">
           <div class="panel-header">
-            <span class="panel-title">上传记录</span>
+            <span class="panel-title">{{ t('上传记录') }}</span>
             <span class="history-count">{{ history.length }}</span>
             <div class="panel-actions history-actions">
               <div class="segmented link-format">
@@ -148,7 +147,9 @@
                   {{ format.label }}
                 </button>
               </div>
-              <button v-if="history.length" class="btn btn-danger btn-sm" @click="requestClearHistory">清空</button>
+              <button v-if="history.length" class="btn btn-danger btn-sm" @click="requestClearHistory">
+                {{ t('清空') }}
+              </button>
             </div>
           </div>
           <div class="panel-body history-body">
@@ -160,8 +161,8 @@
                   <path d="m21 15-5-5L5 21" />
                 </svg>
               </span>
-              <span class="empty-state-title">暂无上传记录</span>
-              <span class="empty-state-hint">上传成功的图片会显示在这里，点击复制按钮即可获取链接</span>
+              <span class="empty-state-title">{{ t('暂无上传记录') }}</span>
+              <span class="empty-state-hint">{{ t('上传成功的图片会显示在这里，点击复制按钮即可获取链接') }}</span>
             </div>
             <div v-else class="history-list">
               <article v-for="record in history" :key="record.id" class="history-item">
@@ -183,14 +184,14 @@
                   <span class="history-name" :title="record.name">{{ record.name }}</span>
                   <span class="history-meta">
                     {{ record.providerName || record.provider }} · {{ formatFileSize(record.size) }} ·
-                    {{ record.uploadedAt ? formatRelativeTime(record.uploadedAt) : '未知时间' }}
+                    {{ record.uploadedAt ? formatRelativeTime(record.uploadedAt) : t('未知时间') }}
                   </span>
                 </div>
                 <div class="history-item-actions">
                   <button
                     class="btn-icon btn-sm"
                     :class="{ active: copiedId === record.id }"
-                    title="复制链接"
+                    :title="t('复制链接')"
                     @click="copyRecord(record)"
                   >
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -198,14 +199,18 @@
                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                     </svg>
                   </button>
-                  <button class="btn-icon btn-sm" title="打开链接" @click="openRecord(record)">
+                  <button class="btn-icon btn-sm" :title="t('打开链接')" @click="openRecord(record)">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
                   </button>
-                  <button class="btn-icon btn-sm btn-icon-danger" title="删除记录" @click="requestRemoveRecord(record)">
+                  <button
+                    class="btn-icon btn-sm btn-icon-danger"
+                    :title="t('删除记录')"
+                    @click="requestRemoveRecord(record)"
+                  >
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M3 6h18" />
                       <path d="M8 6V4h8v2" />
@@ -239,6 +244,7 @@ import PageLayout from '@/layouts/PageLayout.vue'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import { useToast } from '@/composables'
+import { getLocale, t } from '@/i18n'
 import { copyToClipboard } from '@/utils'
 import { formatFileSize, formatRelativeTime } from '@/utils/format'
 import {
@@ -281,7 +287,7 @@ const uploading = ref(false)
 const pendingConfirm = ref(null)
 
 const confirmVisible = computed(() => Boolean(pendingConfirm.value))
-const confirmTitle = computed(() => (pendingConfirm.value?.kind === 'record' ? '删除记录' : '清空记录'))
+const confirmTitle = computed(() => (pendingConfirm.value?.kind === 'record' ? t('删除记录') : t('清空记录')))
 const confirmMessage = computed(() => pendingConfirm.value?.message || '')
 const saving = ref(false)
 const dragging = ref(false)
@@ -296,7 +302,9 @@ const missingFields = computed(() =>
   getMissingRequiredFields(activeMeta.value.id, settings.value.providers[activeMeta.value.id])
 )
 const activeConfigured = computed(() => missingFields.value.length === 0)
-const missingLabels = computed(() => missingFields.value.map((field) => field.label).join('、'))
+const missingLabels = computed(() =>
+  missingFields.value.map((field) => t(field.label)).join(getLocale() === 'en-US' ? ', ' : '、')
+)
 const linkFormatLabel = computed(
   () => linkFormats.find((format) => format.value === settings.value.linkFormat)?.label || 'URL'
 )
@@ -310,9 +318,9 @@ function fileName(filePath) {
 }
 
 function taskStatusLabel(task) {
-  if (task.status === 'uploading') return '上传中'
-  if (task.status === 'success') return '已上传'
-  return '失败'
+  if (task.status === 'uploading') return t('上传中')
+  if (task.status === 'success') return t('已上传')
+  return t('失败')
 }
 
 async function applySettings(next) {
@@ -361,19 +369,19 @@ async function persistSettings(options = {}) {
 
   const state = await imageHostState()
   if (state?.settings) await applySettings(state.settings)
-  showError('保存图床配置失败')
+  showError(t('保存图床配置失败'))
   return false
 }
 
 async function onProviderSelect() {
-  await persistSettings({ successMessage: `上传图床已切换为 ${activeMeta.value.name}` })
+  await persistSettings({ successMessage: t('上传图床已切换为 {name}', { name: activeMeta.value.name }) })
 }
 
 async function setLinkFormat(format) {
   if (format === settings.value.linkFormat) return
   settings.value.linkFormat = format
   const label = linkFormats.find((item) => item.value === format)?.label || format
-  await persistSettings({ successMessage: `复制格式已切换为 ${label}` })
+  await persistSettings({ successMessage: t('复制格式已切换为 {format}', { format: label }) })
 }
 
 async function onRenameChange() {
@@ -397,11 +405,11 @@ async function copyText(text, id, label = linkFormatLabel.value) {
   if (!text) return
   const success = await copyToClipboard(text)
   if (!success) {
-    showError('复制失败')
+    showError(t('复制失败'))
     return
   }
   markCopied(id)
-  showInfo(`已复制 ${label}`)
+  showInfo(t('已复制 {label}', { label }))
 }
 
 function copyTask(task) {
@@ -421,7 +429,7 @@ function requestRemoveRecord(record) {
   pendingConfirm.value = {
     kind: 'record',
     id: record.id,
-    message: `确定删除「${record.name}」这条上传记录吗？图床上的图片不会被删除。`
+    message: t('确定删除「{name}」这条上传记录吗？图床上的图片不会被删除。', { name: record.name })
   }
 }
 
@@ -429,9 +437,9 @@ async function removeRecord(id) {
   const response = await imageHostRemoveHistory(id)
   if (response?.success) {
     history.value = response.history
-    showInfo('已删除该条上传记录')
+    showInfo(t('已删除该条上传记录'))
   } else {
-    showError('删除记录失败')
+    showError(t('删除记录失败'))
   }
 }
 
@@ -439,7 +447,7 @@ function requestClearHistory() {
   if (!history.value.length) return
   pendingConfirm.value = {
     kind: 'clear',
-    message: '确定要清空全部上传记录吗？该操作不会删除图床上的图片。'
+    message: t('确定要清空全部上传记录吗？该操作不会删除图床上的图片。')
   }
 }
 
@@ -447,9 +455,9 @@ async function clearHistory() {
   const response = await imageHostClearHistory()
   if (response?.success) {
     history.value = response.history
-    showInfo('已清空上传记录')
+    showInfo(t('已清空上传记录'))
   } else {
-    showError('清空记录失败')
+    showError(t('清空记录失败'))
   }
 }
 
@@ -466,16 +474,16 @@ async function startUpload(paths) {
   const candidates = [...new Set((paths || []).filter((item) => typeof item === 'string' && item))]
   if (!candidates.length) return
   if (uploading.value) {
-    showWarning('已有上传任务正在进行')
+    showWarning(t('已有上传任务正在进行'))
     return
   }
   if (!activeConfigured.value) {
-    showWarning(`请先完善 ${activeMeta.value.name} 配置：${missingLabels.value}`)
+    showWarning(t('请先完善 {name} 配置：{fields}', { name: activeMeta.value.name, fields: missingLabels.value }))
     return
   }
 
   const selected = candidates.slice(0, 20)
-  if (candidates.length > 20) showWarning('单次最多上传 20 张图片，已选择前 20 张')
+  if (candidates.length > 20) showWarning(t('单次最多上传 20 张图片，已选择前 20 张'))
 
   uploading.value = true
   const created = selected.map((filePath) => createTask(fileName(filePath)))
@@ -488,7 +496,7 @@ async function startUpload(paths) {
     created.forEach((task, index) => {
       const result = results[index]
       if (!result) {
-        updateTask(task.id, { status: 'error', error: response?.error || '未返回上传结果' })
+        updateTask(task.id, { status: 'error', error: response?.error || t('未返回上传结果') })
         return
       }
       if (result.success) {
@@ -498,7 +506,7 @@ async function startUpload(paths) {
           name: result.name || task.name
         })
       } else {
-        updateTask(task.id, { status: 'error', error: result.error || '上传失败' })
+        updateTask(task.id, { status: 'error', error: result.error || t('上传失败') })
       }
     })
 
@@ -506,13 +514,13 @@ async function startUpload(paths) {
 
     const successCount = results.filter((result) => result?.success).length
     if (successCount > 0) {
-      showSuccess(`已上传 ${successCount} 张图片`)
+      showSuccess(t('已上传 {count} 张图片', { count: successCount }))
     } else {
-      showError(response?.error || results.find((result) => result?.error)?.error || '上传失败')
+      showError(response?.error || results.find((result) => result?.error)?.error || t('上传失败'))
     }
   } catch (error) {
-    created.forEach((task) => updateTask(task.id, { status: 'error', error: error?.message || '上传失败' }))
-    showError(error?.message || '上传失败')
+    created.forEach((task) => updateTask(task.id, { status: 'error', error: error?.message || t('上传失败') }))
+    showError(error?.message || t('上传失败'))
   } finally {
     uploading.value = false
   }
@@ -521,12 +529,12 @@ async function startUpload(paths) {
 async function uploadClipboard() {
   if (loading.value || uploading.value) return
   if (!activeConfigured.value) {
-    showWarning(`请先完善 ${activeMeta.value.name} 配置：${missingLabels.value}`)
+    showWarning(t('请先完善 {name} 配置：{fields}', { name: activeMeta.value.name, fields: missingLabels.value }))
     return
   }
 
   uploading.value = true
-  const task = createTask('剪贴板图片')
+  const task = createTask(t('剪贴板图片'))
   tasks.value = [task, ...tasks.value].slice(0, 30)
 
   try {
@@ -535,20 +543,20 @@ async function uploadClipboard() {
 
     if (result?.success) {
       updateTask(task.id, { status: 'success', url: result.url, name: result.name || task.name })
-      showSuccess('剪贴板图片已上传')
+      showSuccess(t('剪贴板图片已上传'))
     } else {
-      updateTask(task.id, { status: 'error', error: response?.error || '上传失败' })
-      if (response?.error === '剪贴板中没有图片') {
-        showWarning('剪贴板中没有图片')
+      updateTask(task.id, { status: 'error', error: response?.error || t('上传失败') })
+      if (response?.error === t('剪贴板中没有图片')) {
+        showWarning(t('剪贴板中没有图片'))
       } else {
-        showError(response?.error || '上传失败')
+        showError(response?.error || t('上传失败'))
       }
     }
 
     if (Array.isArray(response?.history)) history.value = response.history
   } catch (error) {
-    updateTask(task.id, { status: 'error', error: error?.message || '上传失败' })
-    showError(error?.message || '上传失败')
+    updateTask(task.id, { status: 'error', error: error?.message || t('上传失败') })
+    showError(error?.message || t('上传失败'))
   } finally {
     uploading.value = false
   }
@@ -577,7 +585,7 @@ function onDrop(event) {
   const paths = [...(event.dataTransfer?.files || [])].map((file) => getPathForFile(file)).filter(Boolean)
   const imagePaths = paths.filter((filePath) => imagePathPattern.test(filePath))
   if (!imagePaths.length) {
-    showWarning('未找到可上传的图片文件')
+    showWarning(t('未找到可上传的图片文件'))
     return
   }
   startUpload(imagePaths)
@@ -654,13 +662,16 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
 
 .provider-select .select-field {
   height: 28px;
-  width: 150px;
+  min-width: 150px;
+  width: auto;
+  max-width: 260px;
   font-size: var(--font-size-sm);
 }
 
@@ -810,51 +821,6 @@ onUnmounted(() => {
   border-color: rgba(var(--accent-rgb), 0.45);
   background: rgba(var(--accent-rgb), 0.07);
   color: var(--text-primary);
-}
-
-.option-switch input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.option-switch-track {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  width: 26px;
-  height: 15px;
-  border-radius: 999px;
-  background: var(--border-strong);
-  transition: background var(--motion-fast) var(--motion-ease);
-}
-
-.option-switch-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--motion-fast) var(--motion-ease);
-}
-
-.option-switch.active .option-switch-track {
-  background: var(--accent-color);
-}
-
-.option-switch.active .option-switch-thumb {
-  transform: translateX(11px);
-}
-
-.option-switch input:focus-visible + .option-switch-track {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
 }
 
 .option-hint {

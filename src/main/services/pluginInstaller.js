@@ -1,5 +1,6 @@
 import fs from 'fs'
 import os from 'os'
+import { t } from './i18n.js'
 import path from 'path'
 import zlib from 'zlib'
 import { fileURLToPath } from 'url'
@@ -24,10 +25,10 @@ export function normalizeRegistry(value) {
   try {
     url = new URL(raw)
   } catch {
-    throw new Error('安装源地址格式无效，请以 http:// 或 https:// 开头')
+    throw new Error(t('安装源地址格式无效，请以 http:// 或 https:// 开头'))
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('安装源地址必须以 http:// 或 https:// 开头')
+    throw new Error(t('安装源地址必须以 http:// 或 https:// 开头'))
   }
   return `${url.origin}${url.pathname.replace(/\/+$/, '')}`
 }
@@ -35,14 +36,14 @@ export function normalizeRegistry(value) {
 export function parsePluginSource(rawInput) {
   const raw = String(rawInput || '').trim()
   if (!raw) {
-    throw new Error('请输入插件包名、GitHub 仓库地址或本地目录路径')
+    throw new Error(t('请输入插件包名、GitHub 仓库地址或本地目录路径'))
   }
 
   if (raw.startsWith('file://')) {
     try {
       return { kind: 'local', path: fileURLToPath(raw) }
     } catch {
-      throw new Error('本地目录路径无效')
+      throw new Error(t('本地目录路径无效'))
     }
   }
 
@@ -59,22 +60,22 @@ export function parsePluginSource(rawInput) {
     try {
       url = new URL(raw)
     } catch {
-      throw new Error('插件地址格式无效')
+      throw new Error(t('插件地址格式无效'))
     }
     if (url.hostname !== 'github.com' && url.hostname !== 'www.github.com') {
-      throw new Error('仅支持 GitHub 仓库地址，或 npm 包名与本地目录')
+      throw new Error(t('仅支持 GitHub 仓库地址，或 npm 包名与本地目录'))
     }
     const segments = url.pathname.split('/').filter(Boolean)
     const owner = segments[0] || ''
     const repo = (segments[1] || '').replace(/\.git$/i, '')
     if (!owner || !repo) {
-      throw new Error('GitHub 地址格式无效，请填写仓库根地址，例如 https://github.com/owner/repo')
+      throw new Error(t('GitHub 地址格式无效，请填写仓库根地址，例如 https://github.com/owner/repo'))
     }
     if (segments.length > 2) {
-      throw new Error('请填写仓库根地址，不要包含子目录')
+      throw new Error(t('请填写仓库根地址，不要包含子目录'))
     }
     if (!/^[\w.-]+$/.test(owner) || !/^[\w.-]+$/.test(repo)) {
-      throw new Error('GitHub 仓库地址无效')
+      throw new Error(t('GitHub 仓库地址无效'))
     }
     return { kind: 'github', owner, repo }
   }
@@ -97,10 +98,10 @@ export function parsePluginSource(rawInput) {
   }
 
   if (!NPM_NAME_RE.test(name)) {
-    throw new Error('无法识别插件来源，请输入 npm 包名、GitHub 仓库地址或本地目录路径')
+    throw new Error(t('无法识别插件来源，请输入 npm 包名、GitHub 仓库地址或本地目录路径'))
   }
   if (version && !/^[a-zA-Z0-9][a-zA-Z0-9._~^<>=-]*$/.test(version)) {
-    throw new Error('版本号格式无效')
+    throw new Error(t('版本号格式无效'))
   }
 
   return { kind: 'npm', name, version }
@@ -145,7 +146,7 @@ export function extractTarGz(buffer) {
   try {
     tar = zlib.gunzipSync(buffer, { maxOutputLength: EXTRACTED_MAX_BYTES })
   } catch {
-    throw new Error('插件压缩包解压失败，请确认插件源有效')
+    throw new Error(t('插件压缩包解压失败，请确认插件源有效'))
   }
 
   const entries = []
@@ -160,12 +161,12 @@ export function extractTarGz(buffer) {
     const flag = String.fromCharCode(header[156] || 48)
     const size = Number.parseInt(readTarString(header, 124, 12).trim() || '0', 8)
     if (!Number.isFinite(size) || size < 0) {
-      throw new Error('插件压缩包格式无效')
+      throw new Error(t('插件压缩包格式无效'))
     }
     const dataStart = offset + 512
     const dataEnd = dataStart + size
     if (dataEnd > tar.length) {
-      throw new Error('插件压缩包格式无效')
+      throw new Error(t('插件压缩包格式无效'))
     }
     const data = tar.subarray(dataStart, dataEnd)
 
@@ -184,7 +185,7 @@ export function extractTarGz(buffer) {
         entries.push({ path: safePath, data })
         totalBytes += size
         if (entries.length > MAX_ENTRIES || totalBytes > EXTRACTED_MAX_BYTES) {
-          throw new Error('插件包内容过大，已中止安装')
+          throw new Error(t('插件包内容过大，已中止安装'))
         }
       }
     } else {
@@ -195,7 +196,7 @@ export function extractTarGz(buffer) {
   }
 
   if (!entries.length) {
-    throw new Error('插件压缩包为空')
+    throw new Error(t('插件压缩包为空'))
   }
   return entries
 }
@@ -207,14 +208,14 @@ export function findManifestRoot(entries, manifestName) {
     .map((entryPath) => (entryPath === manifestName ? '' : entryPath.slice(0, -`/${manifestName}`.length)))
 
   if (!candidates.length) {
-    throw new Error(`插件包中未找到 ${manifestName}，请确认该插件适配 NToolBox`)
+    throw new Error(t('插件包中未找到 {p0}，请确认该插件适配 NToolBox', { p0: manifestName }))
   }
 
   const depth = (dir) => (dir ? dir.split('/').length : 0)
   const minDepth = Math.min(...candidates.map(depth))
   const shallowest = candidates.filter((dir) => depth(dir) === minDepth)
   if (shallowest.length > 1) {
-    throw new Error(`插件包中包含多个 ${manifestName}，无法确定安装目录`)
+    throw new Error(t('插件包中包含多个 {p0}，无法确定安装目录', { p0: manifestName }))
   }
   return shallowest[0]
 }
@@ -257,13 +258,13 @@ async function fetchResponse(target, { headers = {}, timeout = 30000, notFound =
     })
   } catch (error) {
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-      throw new Error('连接安装源超时，请检查网络或更换安装源', { cause: error })
+      throw new Error(t('连接安装源超时，请检查网络或更换安装源'), { cause: error })
     }
-    throw new Error(`无法连接安装源：${error.message}`, { cause: error })
+    throw new Error(t('无法连接安装源：{p0}', { p0: error.message }), { cause: error })
   }
 
   if (response.status === 404 && notFound) throw new Error(notFound)
-  if (!response.ok) throw new Error(`安装源返回 HTTP ${response.status}`)
+  if (!response.ok) throw new Error(t('安装源返回 HTTP {p0}', { p0: response.status }))
   return response
 }
 
@@ -271,7 +272,7 @@ async function fetchText(target, options = {}) {
   const response = await fetchResponse(target, options)
   const text = await response.text()
   if (Buffer.byteLength(text) > METADATA_MAX_BYTES) {
-    throw new Error('插件元数据超过大小限制')
+    throw new Error(t('插件元数据超过大小限制'))
   }
   return text
 }
@@ -280,14 +281,14 @@ async function fetchBuffer(target, options = {}) {
   const response = await fetchResponse(target, options)
   const declared = Number(response.headers.get('content-length')) || 0
   if (declared > ARCHIVE_MAX_BYTES) {
-    throw new Error('插件包超过 40MB 大小限制')
+    throw new Error(t('插件包超过 40MB 大小限制'))
   }
   const buffer = Buffer.from(await response.arrayBuffer())
   if (buffer.length > ARCHIVE_MAX_BYTES) {
-    throw new Error('插件包超过 40MB 大小限制')
+    throw new Error(t('插件包超过 40MB 大小限制'))
   }
   if (!buffer.length) {
-    throw new Error('插件包下载为空')
+    throw new Error(t('插件包下载为空'))
   }
   return buffer
 }
@@ -300,14 +301,14 @@ async function downloadNpmPackage(source, registry) {
   const metadataUrl = `${registry}/${source.name.replace('/', '%2f')}`
   const text = await fetchText(metadataUrl, {
     headers,
-    notFound: `在安装源中未找到插件 ${source.name}`
+    notFound: t('在安装源中未找到插件 {p0}', { p0: source.name })
   })
 
   let metadata
   try {
     metadata = JSON.parse(text)
   } catch {
-    throw new Error('安装源返回的插件信息无法解析')
+    throw new Error(t('安装源返回的插件信息无法解析'))
   }
 
   let version
@@ -320,7 +321,9 @@ async function downloadNpmPackage(source, registry) {
   const manifest = version ? metadata.versions?.[version] : null
   if (!manifest?.dist?.tarball) {
     throw new Error(
-      source.version ? `安装源中未找到 ${source.name}@${source.version}` : `插件 ${source.name} 没有可安装的版本`
+      source.version
+        ? t('安装源中未找到 {p0}@{p1}', { p0: source.name, p1: source.version })
+        : t('插件 {p0} 没有可安装的版本', { p0: source.name })
     )
   }
 
@@ -328,10 +331,10 @@ async function downloadNpmPackage(source, registry) {
   try {
     tarballUrl = new URL(manifest.dist.tarball)
   } catch {
-    throw new Error('插件下载地址无效')
+    throw new Error(t('插件下载地址无效'))
   }
   if (tarballUrl.protocol !== 'http:' && tarballUrl.protocol !== 'https:') {
-    throw new Error('插件下载地址无效')
+    throw new Error(t('插件下载地址无效'))
   }
 
   const tarballHeaders = {}
@@ -347,7 +350,7 @@ async function downloadGitHubRepository(source) {
   const buffer = await fetchBuffer(archiveUrl, {
     headers: { accept: 'application/x-gzip, application/octet-stream' },
     timeout: 120000,
-    notFound: `GitHub 仓库不存在或无法访问：${source.owner}/${source.repo}`
+    notFound: t('GitHub 仓库不存在或无法访问：{p0}/{p1}', { p0: source.owner, p1: source.repo })
   })
   return { buffer, label: `github:${source.owner}/${source.repo}` }
 }
@@ -356,7 +359,7 @@ async function writeArchiveEntries(entries, root) {
   for (const entry of entries) {
     const target = path.resolve(root, entry.path)
     if (!isPathWithinBase(target, root)) {
-      throw new Error('插件包包含非法路径，已中止安装')
+      throw new Error(t('插件包包含非法路径，已中止安装'))
     }
     await fs.promises.mkdir(path.dirname(target), { recursive: true })
     await fs.promises.writeFile(target, entry.data)
@@ -374,12 +377,12 @@ export async function installPluginSource(input, { registry } = {}) {
   if (source.kind === 'local') {
     try {
       const stat = await fs.promises.stat(source.path)
-      if (!stat.isDirectory()) return { success: false, error: '本地插件路径必须是一个目录' }
+      if (!stat.isDirectory()) return { success: false, error: t('本地插件路径必须是一个目录') }
     } catch {
-      return { success: false, error: `本地目录不存在：${source.path}` }
+      return { success: false, error: t('本地目录不存在：{p0}', { p0: source.path }) }
     }
     if (isPathWithinBase(source.path, getUserSkillsDirectory())) {
-      return { success: false, error: '该目录已在扩展安装目录中，无需重复安装' }
+      return { success: false, error: t('该目录已在扩展安装目录中，无需重复安装') }
     }
     await initSkills()
     return await installSkill(source.path, { overwrite: true })
@@ -404,7 +407,7 @@ export async function installPluginSource(input, { registry } = {}) {
     const skillPath = pluginRoot ? path.join(tempRoot, pluginRoot) : tempRoot
     const result = await installSkill(skillPath, { overwrite: true })
     if (result.success) {
-      log.info(`已从第三方源安装 Skill: ${result.name}（${archive.label}）`)
+      log.info(t('已从第三方源安装 Skill: {p0}（{p1}）', { p0: result.name, p1: archive.label }))
       return { ...result, source: archive.label }
     }
     return result
@@ -427,18 +430,18 @@ export async function installPluginBundleSource(input, { registry } = {}) {
   if (source.kind === 'local') {
     try {
       const stat = await fs.promises.stat(source.path)
-      if (!stat.isDirectory()) return { success: false, error: '本地插件路径必须是一个目录' }
+      if (!stat.isDirectory()) return { success: false, error: t('本地插件路径必须是一个目录') }
     } catch {
-      return { success: false, error: `本地目录不存在：${source.path}` }
+      return { success: false, error: t('本地目录不存在：{p0}', { p0: source.path }) }
     }
     if (!fs.existsSync(path.join(source.path, 'plugin.json'))) {
-      return { success: false, error: '该目录缺少 plugin.json 定义文件，可能不是插件包' }
+      return { success: false, error: t('该目录缺少 plugin.json 定义文件，可能不是插件包') }
     }
     if (
       isPathWithinBase(source.path, getPluginDirectory()) ||
       isPathWithinBase(source.path, getUserSkillsDirectory())
     ) {
-      return { success: false, error: '该目录已在扩展安装目录中，无需重复安装' }
+      return { success: false, error: t('该目录已在扩展安装目录中，无需重复安装') }
     }
     return await installPluginBundle(source.path, { source: 'local' })
   }
@@ -461,7 +464,7 @@ export async function installPluginBundleSource(input, { registry } = {}) {
     const pluginPath = pluginRoot ? path.join(tempRoot, pluginRoot) : tempRoot
     const result = await installPluginBundle(pluginPath, { source: archive.label })
     if (result.success) {
-      log.info(`已从第三方源安装插件: ${result.name}（${archive.label}）`)
+      log.info(t('已从第三方源安装插件: {p0}（{p1}）', { p0: result.name, p1: archive.label }))
     }
     return result
   } catch (error) {

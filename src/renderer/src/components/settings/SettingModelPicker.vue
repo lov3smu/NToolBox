@@ -7,7 +7,7 @@
         class="input-field setting-combo-input"
         type="text"
         spellcheck="false"
-        :placeholder="placeholder"
+        :placeholder="t(placeholder)"
         @focus="openPanel"
         @input="onInput"
         @keydown="onKeydown"
@@ -49,7 +49,7 @@
           @click="pick(option)"
           @mousemove="highlighted = index"
         >
-          <span class="setting-combo-option-label">{{ option.label }}</span>
+          <span class="setting-combo-option-label">{{ t(option.label) }}</span>
           <svg
             v-if="option.value === modelValue"
             class="setting-combo-check"
@@ -63,7 +63,9 @@
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </button>
-        <div v-if="!visibleOptions.length" class="setting-combo-empty">没有匹配的模型，可直接输入 provider:model</div>
+        <div v-if="!visibleOptions.length" class="setting-combo-empty">
+          {{ t('没有匹配的模型，可直接输入 provider:model') }}
+        </div>
       </div>
     </Teleport>
   </div>
@@ -71,6 +73,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { t } from '@/i18n'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },

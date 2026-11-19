@@ -50,6 +50,8 @@ const icon = computed(() => {
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
+  max-width: calc(100vw - 48px);
+  box-sizing: border-box;
   background: var(--success-gradient);
   color: var(--text-inverse);
   padding: 12px 24px;

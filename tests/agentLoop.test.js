@@ -13,12 +13,38 @@ vi.mock('../src/main/utils/index.js', () => ({
 
 vi.mock('../src/main/services/config.js', () => ({
   getConfig: () => ({
-    ai_provider: 'bailian',
-    ai_api_keys: { bailian: 'test-key', deepseek: 'fallback-key' },
-    ai_models: {},
-    ai_fallback_enabled: true,
-    ai_fallback_models: ['deepseek:deepseek-chat'],
-    ai_agent_max_iterations: 10
+    ai: {
+      provider: 'bailian',
+      keys: { bailian: 'test-key', deepseek: 'fallback-key' },
+      models: {},
+      fallback: { enabled: true, models: ['deepseek:deepseek-chat'] },
+      persona: '',
+      temperature: null,
+      timeout: 120,
+      connection_timeout: 10,
+      base_urls: {},
+      context: { compress_threshold: 70, keep_recent: 6 },
+      attachments: { max_count: 5, max_image_mb: 10, max_text_kb: 256 },
+      agent: {
+        max_iterations: 10,
+        timeout_min: 5,
+        max_plan_steps: 8,
+        max_parallel_tools: 2,
+        scenario_models: {},
+        tool_policy: 'all'
+      },
+      tool_result: { max_kb: 24, run_kb: 160, retention_days: 7 }
+    },
+    database: { connections: [] },
+    extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} },
+    app: { base_path: '', text_edit_app: '' },
+    network: { market_sources: {} },
+    update: { auto_update: false, check_interval: 24 },
+    appearance: { theme: 'system' },
+    memory: { auto_capture: true },
+    image_hosting: {},
+    notifications: {},
+    clipboard_history: {}
   })
 }))
 
@@ -45,7 +71,7 @@ vi.mock('../src/main/services/ai/index.js', () => ({
   resolveProviderModels: () => [],
   resolveProviderDefaultModel: () => 'test-model',
   resolveProviderRuntimeConfig: (type, config) => ({
-    apiKey: (config.ai_api_keys || {})[type] || '',
+    apiKey: (config.ai?.keys || {})[type] || '',
     baseUrl: '',
     models: [],
     defaultModel: 'test-model'

@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { onUnmounted } from 'vue'
 import { dbExplainQuery, dbQueryServerStatus, dbQuerySlowQueries } from '@/api'
 
@@ -41,7 +42,7 @@ export function createInstanceStatus(state, api) {
     if (serverStatusDialog.value.autoRefresh) {
       stopAutoRefresh()
     } else if ((refreshInterval?.value ?? 0) <= 0) {
-      api.showMessage('自动刷新已在「设置 > 数据库客户端」中关闭', 'warning')
+      api.showMessage(t('自动刷新已在「设置 > 数据库客户端」中关闭'), 'warning')
     } else {
       startAutoRefresh()
     }
@@ -50,11 +51,11 @@ export function createInstanceStatus(state, api) {
   function openServerStatusDialog() {
     const connection = selectedConnection.value
     if (!connection) {
-      api.showMessage('请先在左侧选择连接', 'warning')
+      api.showMessage(t('请先在左侧选择连接'), 'warning')
       return
     }
     if (!connection.active) {
-      api.showMessage('请先连接数据库', 'warning')
+      api.showMessage(t('请先连接数据库'), 'warning')
       return
     }
     serverStatusDialog.value = {
@@ -107,7 +108,7 @@ export function createInstanceStatus(state, api) {
       const result = await dbQueryServerStatus(dialog.connectionName)
       if (!serverStatusDialog.value.show) return
       if (!result.success) {
-        dialog.error = result.error || '读取实例状态失败'
+        dialog.error = result.error || t('读取实例状态失败')
         return
       }
 
@@ -133,7 +134,7 @@ export function createInstanceStatus(state, api) {
       }
       appendHistory(dialog, result, sampledAt, qps)
     } catch (error) {
-      dialog.error = '读取实例状态失败: ' + error.message
+      dialog.error = t('读取实例状态失败: {p0}', { p0: error.message })
     } finally {
       dialog.loading = false
     }
@@ -148,14 +149,14 @@ export function createInstanceStatus(state, api) {
       const result = await dbQuerySlowQueries(dialog.connectionName, dialog.database, 10)
       if (!serverStatusDialog.value.show) return
       if (!result.success) {
-        dialog.slowError = result.error || '读取慢查询失败'
+        dialog.slowError = result.error || t('读取慢查询失败')
         return
       }
       dialog.slowQueries = result.queries || []
       dialog.slowEnabled = result.enabled !== false
       dialog.slowReason = result.reason || ''
     } catch (error) {
-      dialog.slowError = '读取慢查询失败: ' + error.message
+      dialog.slowError = t('读取慢查询失败: ') + error.message
     } finally {
       dialog.slowLoading = false
     }
@@ -165,7 +166,7 @@ export function createInstanceStatus(state, api) {
     const dialog = serverStatusDialog.value
     if (!query?.sql) return
     if (!/^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH)\b/i.test(query.sql)) {
-      api.showMessage('该语句类型不支持 EXPLAIN', 'warning')
+      api.showMessage(t('该语句类型不支持 EXPLAIN'), 'warning')
       return
     }
     const explainableSql = query.sql.replace(/\?/g, '1')

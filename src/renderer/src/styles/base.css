@@ -1133,6 +1133,14 @@ select:focus,
   box-shadow: var(--shadow-glow);
 }
 
+.select-field-sm {
+  height: var(--control-height-sm);
+  padding: 0 26px 0 8px;
+  background-position: right 7px center;
+  background-size: 12px;
+  font-size: var(--font-size-xs);
+}
+
 /* ---------- 开关 ---------- */
 .switch {
   appearance: none;
@@ -1239,6 +1247,126 @@ input[type='checkbox']:not(.switch):focus-visible {
 input[type='checkbox']:not(.switch):disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ---------- 单选按钮 ---------- */
+input[type='radio'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background-color: var(--surface);
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: var(--transition-fast);
+}
+
+input[type='radio']:hover:not(:disabled) {
+  border-color: var(--accent-color);
+}
+
+input[type='radio']:checked {
+  border-color: var(--accent-color);
+  background-color: var(--accent-color);
+  background-image: radial-gradient(circle, var(--btn-primary-text) 0 3px, transparent 3.4px);
+}
+
+input[type='radio']:focus-visible {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-glow);
+}
+
+input[type='radio']:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* RadioOption 组件的布局骨架：global 便于各页面复用同一主题 */
+.radio-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.radio-option-body {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.radio-option.is-disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.radio-option.is-disabled input {
+  cursor: not-allowed;
+}
+
+.radio-option-block {
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.radio-option-block input[type='radio'] {
+  margin-top: 2px;
+}
+
+.radio-option-block .radio-option-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+}
+
+.radio-option-pill {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.radio-option-pill input[type='radio'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radio-option-pill .radio-option-body {
+  display: contents;
+}
+
+.radio-option-pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.radio-option-pill.is-checked {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+  color: var(--btn-primary-text);
+}
+
+.radio-option-pill:has(input:focus-visible) {
+  box-shadow: var(--shadow-glow);
 }
 
 /* ---------- 表单组件 ---------- */
@@ -1463,6 +1591,8 @@ input[type='checkbox']:not(.switch):disabled {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
+  max-width: calc(100vw - 48px);
+  box-sizing: border-box;
   background: linear-gradient(135deg, var(--danger-bg) 0%, var(--danger-bg-hover) 100%);
   color: var(--text-inverse);
   padding: 14px 28px;

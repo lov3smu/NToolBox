@@ -32,14 +32,14 @@ import { createOperationLog } from './useOperationLog'
 
 export function useDatabase(appConfig) {
   const state = createState({
-    defaultPageSize: computed(() => normalizeDatabasePageSize(appConfig?.value?.database_page_size)),
-    refreshInterval: computed(() => normalizeDatabaseRefreshInterval(appConfig?.value?.database_refresh_interval))
+    defaultPageSize: computed(() => normalizeDatabasePageSize(appConfig?.value?.database?.page_size)),
+    refreshInterval: computed(() => normalizeDatabaseRefreshInterval(appConfig?.value?.database?.refresh_interval))
   })
   const api = {}
   const transferBatchSize = computed(() =>
-    normalizeDatabaseTransferBatchSize(appConfig?.value?.database_transfer_batch_size)
+    normalizeDatabaseTransferBatchSize(appConfig?.value?.database?.transfer_batch_size)
   )
-  const queryHistoryLimit = computed(() => normalizeDatabaseHistoryLimit(appConfig?.value?.database_history_limit))
+  const queryHistoryLimit = computed(() => normalizeDatabaseHistoryLimit(appConfig?.value?.database?.history_limit))
 
   Object.assign(
     api,

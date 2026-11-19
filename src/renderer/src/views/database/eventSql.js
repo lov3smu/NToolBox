@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 const EVENT_INTERVAL_FIELDS = ['YEAR', 'QUARTER', 'MONTH', 'WEEK', 'DAY', 'HOUR', 'MINUTE', 'SECOND']
 
 function pad(value) {
@@ -39,31 +40,31 @@ function quoteIdentifier(value) {
 }
 
 export function buildAlterEventSql(dialog) {
-  if (!dialog) throw new Error('缺少事件信息')
+  if (!dialog) throw new Error(t('缺少事件信息'))
 
   const database = String(dialog.database || '').trim()
   const name = String(dialog.name || '').trim()
-  if (!database) throw new Error('缺少数据库名称')
-  if (!name) throw new Error('事件名称不能为空')
+  if (!database) throw new Error(t('缺少数据库名称'))
+  if (!name) throw new Error(t('事件名称不能为空'))
 
   const body = String(dialog.definition || '')
     .trim()
     .replace(/;\s*$/, '')
-  if (!body) throw new Error('事件定义不能为空')
+  if (!body) throw new Error(t('事件定义不能为空'))
 
   const clauses = [`ALTER EVENT ${quoteIdentifier(database)}.${quoteIdentifier(name)}`]
 
   if (dialog.scheduleType === 'ONCE') {
     const at = toMysqlDateTime(dialog.starts)
-    if (!at) throw new Error('请填写执行时间')
+    if (!at) throw new Error(t('请填写执行时间'))
     clauses.push(`ON SCHEDULE AT ${quoteSqlString(at)}`)
   } else {
     const value = String(dialog.intervalValue ?? '').trim()
-    if (!/^\d+$/.test(value) || Number(value) <= 0) throw new Error('间隔值必须是正整数')
+    if (!/^\d+$/.test(value) || Number(value) <= 0) throw new Error(t('间隔值必须是正整数'))
     const field = String(dialog.intervalField || '')
       .trim()
       .toUpperCase()
-    if (!EVENT_INTERVAL_FIELDS.includes(field)) throw new Error('间隔单位无效')
+    if (!EVENT_INTERVAL_FIELDS.includes(field)) throw new Error(t('间隔单位无效'))
 
     let schedule = `ON SCHEDULE EVERY ${value} ${field}`
     const starts = toMysqlDateTime(dialog.starts)

@@ -6,7 +6,7 @@ vi.mock('electron', () => ({
 }))
 
 vi.mock('../src/main/services/config.js', () => ({
-  getConfig: () => ({ mcp_servers: [] })
+  getConfig: () => ({ extensions: { mcp_servers: [] } })
 }))
 
 vi.mock('../src/main/utils/index.js', () => ({

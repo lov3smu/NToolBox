@@ -118,14 +118,21 @@ describe('image host settings', () => {
 
   it('validates image_hosting config shape', () => {
     const baseConfig = {
-      base_path: '/tmp/scripts',
-      developer_ch_name: '张三',
-      developer_en_name: 'zhangsan',
-      auto_update: true,
-      auto_start: true,
-      databases: [],
-      script_types: [],
-      shortcuts: {}
+      app: {
+        base_path: '/tmp/scripts',
+        developer: { ch_name: '张三', en_name: 'zhangsan' },
+        auto_start: true,
+        shortcuts: {}
+      },
+      appearance: {},
+      update: { auto_update: true },
+      network: {},
+      database: {},
+      sql_generator: { databases: [], script_types: [] },
+      ai: { keys: {} },
+      extensions: {},
+      notifications: {},
+      clipboard_history: {}
     }
     expect(validateConfig({ ...baseConfig, image_hosting: {} })).toBeNull()
     expect(validateConfig({ ...baseConfig, image_hosting: [] })).toBe('image_hosting 必须是对象')

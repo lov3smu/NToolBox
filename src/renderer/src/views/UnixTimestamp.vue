@@ -4,8 +4,8 @@
       <div class="ts-grid">
         <section class="panel now-panel">
           <div class="panel-header">
-            <span class="panel-title">当前时间戳</span>
-            <span class="panel-hint live-hint"><span class="live-dot" />每秒刷新</span>
+            <span class="panel-title">{{ t('当前时间戳') }}</span>
+            <span class="panel-hint live-hint"><span class="live-dot" />{{ t('每秒刷新') }}</span>
           </div>
           <div class="panel-body">
             <div class="timestamp-display">
@@ -15,7 +15,7 @@
                 :class="{ active: timestampType === '10' }"
                 @click="timestampType = '10'"
               >
-                <span class="timestamp-label">10 位 · 秒级</span>
+                <span class="timestamp-label">{{ t('10 位 · 秒级') }}</span>
                 <span class="timestamp-value">{{ currentTimestamp10 }}</span>
               </button>
               <button
@@ -24,12 +24,12 @@
                 :class="{ active: timestampType === '13' }"
                 @click="timestampType = '13'"
               >
-                <span class="timestamp-label">13 位 · 毫秒级</span>
+                <span class="timestamp-label">{{ t('13 位 · 毫秒级') }}</span>
                 <span class="timestamp-value">{{ currentTimestamp13 }}</span>
               </button>
             </div>
             <div class="current-datetime">
-              <span class="datetime-label">北京时间</span>
+              <span class="datetime-label">{{ t('北京时间') }}</span>
               <span class="datetime-value">{{ currentDatetime }}</span>
             </div>
           </div>
@@ -37,8 +37,8 @@
 
         <section class="panel to-datetime-panel">
           <div class="panel-header">
-            <span class="panel-title">时间戳 → 北京时间</span>
-            <span class="panel-hint">支持 10 位秒级或 13 位毫秒级</span>
+            <span class="panel-title">{{ t('时间戳 → 北京时间') }}</span>
+            <span class="panel-hint">{{ t('支持 10 位秒级或 13 位毫秒级') }}</span>
           </div>
           <div class="panel-body">
             <div class="input-row">
@@ -46,16 +46,16 @@
                 v-model="timestampInput"
                 type="text"
                 class="input-field mono"
-                placeholder="输入时间戳（10 位或 13 位）"
+                :placeholder="t('输入时间戳（10 位或 13 位）')"
                 @input="onTimestampInput"
               />
-              <button class="btn btn-primary" @click="convertTimestampToDatetime">转换</button>
+              <button class="btn btn-primary" @click="convertTimestampToDatetime">{{ t('转换') }}</button>
             </div>
             <div v-if="datetimeResult" class="ts-results">
               <div class="ts-result">
-                <span class="ts-result-label">北京时间</span>
+                <span class="ts-result-label">{{ t('北京时间') }}</span>
                 <span class="ts-result-value">{{ datetimeResult }}</span>
-                <button class="btn-icon btn-sm" title="复制时间" @click="copyResult(datetimeResult)">
+                <button class="btn-icon btn-sm" :title="t('复制时间')" @click="copyResult(datetimeResult)">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -68,13 +68,13 @@
 
         <section class="panel to-timestamp-panel">
           <div class="panel-header">
-            <span class="panel-title">北京时间 → 时间戳</span>
-            <span class="panel-hint">按逐项选择的北京时间换算</span>
+            <span class="panel-title">{{ t('北京时间 → 时间戳') }}</span>
+            <span class="panel-hint">{{ t('按逐项选择的北京时间换算') }}</span>
           </div>
           <div class="panel-body">
             <div class="datetime-grid">
               <label class="datetime-field">
-                <span class="field-label">年</span>
+                <span class="field-label">{{ t('年') }}</span>
                 <select v-model="yearValue" class="select-field">
                   <option v-for="y in yearOptions" :key="y" :value="y">
                     {{ y }}
@@ -82,7 +82,7 @@
                 </select>
               </label>
               <label class="datetime-field">
-                <span class="field-label">月</span>
+                <span class="field-label">{{ t('月') }}</span>
                 <select v-model="monthValue" class="select-field">
                   <option v-for="m in 12" :key="m" :value="m">
                     {{ m }}
@@ -90,7 +90,7 @@
                 </select>
               </label>
               <label class="datetime-field">
-                <span class="field-label">日</span>
+                <span class="field-label">{{ t('日') }}</span>
                 <select v-model="dayValue" class="select-field">
                   <option v-for="d in dayOptions" :key="d" :value="d">
                     {{ d }}
@@ -98,7 +98,7 @@
                 </select>
               </label>
               <label class="datetime-field">
-                <span class="field-label">时</span>
+                <span class="field-label">{{ t('时') }}</span>
                 <select v-model="hourValue" class="select-field">
                   <option v-for="h in 24" :key="h - 1" :value="h - 1">
                     {{ (h - 1).toString().padStart(2, '0') }}
@@ -106,7 +106,7 @@
                 </select>
               </label>
               <label class="datetime-field">
-                <span class="field-label">分</span>
+                <span class="field-label">{{ t('分') }}</span>
                 <select v-model="minuteValue" class="select-field">
                   <option v-for="m in 60" :key="m - 1" :value="m - 1">
                     {{ (m - 1).toString().padStart(2, '0') }}
@@ -114,7 +114,7 @@
                 </select>
               </label>
               <label class="datetime-field">
-                <span class="field-label">秒</span>
+                <span class="field-label">{{ t('秒') }}</span>
                 <select v-model="secondValue" class="select-field">
                   <option v-for="s in 60" :key="s - 1" :value="s - 1">
                     {{ (s - 1).toString().padStart(2, '0') }}
@@ -122,7 +122,7 @@
                 </select>
               </label>
               <label class="datetime-field">
-                <span class="field-label">毫秒</span>
+                <span class="field-label">{{ t('毫秒') }}</span>
                 <select v-model="millisecondValue" class="select-field">
                   <option v-for="ms in 1000" :key="ms - 1" :value="ms - 1">
                     {{ (ms - 1).toString().padStart(3, '0') }}
@@ -131,13 +131,13 @@
               </label>
             </div>
             <div class="form-actions">
-              <button class="btn btn-primary" @click="convertDatetimeToTimestamp">转换</button>
+              <button class="btn btn-primary" @click="convertDatetimeToTimestamp">{{ t('转换') }}</button>
             </div>
             <div v-if="timestampResult10 || timestampResult13" class="ts-results">
               <div class="ts-result">
-                <span class="ts-result-label">10 位</span>
+                <span class="ts-result-label">{{ t('10 位') }}</span>
                 <span class="ts-result-value">{{ timestampResult10 }}</span>
-                <button class="btn-icon btn-sm" title="复制 10 位时间戳" @click="copyResult(timestampResult10)">
+                <button class="btn-icon btn-sm" :title="t('复制 10 位时间戳')" @click="copyResult(timestampResult10)">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -145,9 +145,9 @@
                 </button>
               </div>
               <div class="ts-result">
-                <span class="ts-result-label">13 位</span>
+                <span class="ts-result-label">{{ t('13 位') }}</span>
                 <span class="ts-result-value">{{ timestampResult13 }}</span>
-                <button class="btn-icon btn-sm" title="复制 13 位时间戳" @click="copyResult(timestampResult13)">
+                <button class="btn-icon btn-sm" :title="t('复制 13 位时间戳')" @click="copyResult(timestampResult13)">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -160,8 +160,8 @@
 
         <section class="panel quick-panel">
           <div class="panel-header">
-            <span class="panel-title">快速转换</span>
-            <span class="panel-hint">格式 YYYYMMDDHHMMSS</span>
+            <span class="panel-title">{{ t('快速转换') }}</span>
+            <span class="panel-hint">{{ t('格式 YYYYMMDDHHMMSS') }}</span>
           </div>
           <div class="panel-body">
             <div class="input-row">
@@ -169,17 +169,21 @@
                 v-model="quickInput"
                 type="text"
                 class="input-field mono"
-                placeholder="例如：20240101120000"
+                :placeholder="t('例如：20240101120000')"
                 @input="onQuickInput"
               />
-              <button class="btn btn-primary" @click="convertQuickInput">转换</button>
+              <button class="btn btn-primary" @click="convertQuickInput">{{ t('转换') }}</button>
             </div>
-            <div class="quick-hint">年月日时分秒，如 20240101120000 表示 2024年01月01日 12:00:00</div>
+            <div class="quick-hint">{{ t('年月日时分秒，如 20240101120000 表示 2024年01月01日 12:00:00') }}</div>
             <div v-if="quickTimestampResult10 || quickTimestampResult13" class="ts-results">
               <div class="ts-result">
-                <span class="ts-result-label">10 位</span>
+                <span class="ts-result-label">{{ t('10 位') }}</span>
                 <span class="ts-result-value">{{ quickTimestampResult10 }}</span>
-                <button class="btn-icon btn-sm" title="复制 10 位时间戳" @click="copyResult(quickTimestampResult10)">
+                <button
+                  class="btn-icon btn-sm"
+                  :title="t('复制 10 位时间戳')"
+                  @click="copyResult(quickTimestampResult10)"
+                >
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -187,9 +191,13 @@
                 </button>
               </div>
               <div class="ts-result">
-                <span class="ts-result-label">13 位</span>
+                <span class="ts-result-label">{{ t('13 位') }}</span>
                 <span class="ts-result-value">{{ quickTimestampResult13 }}</span>
-                <button class="btn-icon btn-sm" title="复制 13 位时间戳" @click="copyResult(quickTimestampResult13)">
+                <button
+                  class="btn-icon btn-sm"
+                  :title="t('复制 13 位时间戳')"
+                  @click="copyResult(quickTimestampResult13)"
+                >
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -202,19 +210,21 @@
 
         <section class="panel help-panel">
           <div class="panel-header">
-            <span class="panel-title">工具介绍</span>
-            <span class="panel-hint">关于 Unix 时间戳</span>
+            <span class="panel-title">{{ t('工具介绍') }}</span>
+            <span class="panel-hint">{{ t('关于 Unix 时间戳') }}</span>
           </div>
           <div class="panel-body help-content">
-            <p>Unix 时间戳表示从 1970-01-01 00:00:00 UTC 起至现在的总秒数，被广泛用于各类操作系统与编程语言。</p>
+            <p>
+              {{ t('Unix 时间戳表示从 1970-01-01 00:00:00 UTC 起至现在的总秒数，被广泛用于各类操作系统与编程语言。') }}
+            </p>
             <div class="help-list">
               <div class="help-item">
-                <strong>10 位时间戳</strong>
-                <span>秒级精度，日常接口与数据库中最常用</span>
+                <strong>{{ t('10 位时间戳') }}</strong>
+                <span>{{ t('秒级精度，日常接口与数据库中最常用') }}</span>
               </div>
               <div class="help-item">
-                <strong>13 位时间戳</strong>
-                <span>毫秒级精度，适合需要更细时间粒度的场景</span>
+                <strong>{{ t('13 位时间戳') }}</strong>
+                <span>{{ t('毫秒级精度，适合需要更细时间粒度的场景') }}</span>
               </div>
             </div>
           </div>
@@ -232,6 +242,7 @@ import { useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
 import Toast from '@/components/Toast.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { t } from '@/i18n'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
 
@@ -301,13 +312,13 @@ function onTimestampInput() {
 function convertTimestampToDatetime() {
   const input = timestampInput.value.trim()
   if (!input) {
-    showWarning('请输入时间戳')
+    showWarning(t('请输入时间戳'))
     return
   }
 
   const timestamp = parseInt(input)
   if (isNaN(timestamp)) {
-    showError('时间戳格式错误，请输入数字')
+    showError(t('时间戳格式错误，请输入数字'))
     return
   }
 
@@ -317,17 +328,17 @@ function convertTimestampToDatetime() {
   } else if (input.length === 13) {
     date = new Date(timestamp)
   } else {
-    showError('时间戳长度应为10位或13位')
+    showError(t('时间戳长度应为 10 位或 13 位'))
     return
   }
 
   if (date.toString() === 'Invalid Date') {
-    showError('时间戳无效')
+    showError(t('时间戳无效'))
     return
   }
 
   datetimeResult.value = formatDatetime(date)
-  showSuccess('转换成功')
+  showSuccess(t('转换成功'))
 }
 
 function convertDatetimeToTimestamp() {
@@ -342,13 +353,13 @@ function convertDatetimeToTimestamp() {
   )
 
   if (date.toString() === 'Invalid Date') {
-    showError('日期无效')
+    showError(t('日期无效'))
     return
   }
 
   timestampResult10.value = Math.floor(date.getTime() / 1000).toString()
   timestampResult13.value = date.getTime().toString()
-  showSuccess('转换成功')
+  showSuccess(t('转换成功'))
 }
 
 function onQuickInput() {
@@ -359,12 +370,12 @@ function onQuickInput() {
 function convertQuickInput() {
   const input = quickInput.value.trim()
   if (!input) {
-    showWarning('请输入日期时间')
+    showWarning(t('请输入日期时间'))
     return
   }
 
   if (input.length !== 14) {
-    showError('格式应为14位数字：YYYYMMDDHHMMSS')
+    showError(t('格式应为 14 位数字：YYYYMMDDHHMMSS'))
     return
   }
 
@@ -376,44 +387,44 @@ function convertQuickInput() {
   const second = parseInt(input.substring(12, 14))
 
   if (month < 1 || month > 12) {
-    showError('月份应在1-12之间')
+    showError(t('月份应在 1-12 之间'))
     return
   }
   if (day < 1 || day > 31) {
-    showError('日期应在1-31之间')
+    showError(t('日期应在 1-31 之间'))
     return
   }
   if (hour < 0 || hour > 23) {
-    showError('小时应在0-23之间')
+    showError(t('小时应在 0-23 之间'))
     return
   }
   if (minute < 0 || minute > 59) {
-    showError('分钟应在0-59之间')
+    showError(t('分钟应在 0-59 之间'))
     return
   }
   if (second < 0 || second > 59) {
-    showError('秒应在0-59之间')
+    showError(t('秒应在 0-59 之间'))
     return
   }
 
   const date = new Date(year, month - 1, day, hour, minute, second)
   if (date.toString() === 'Invalid Date') {
-    showError('日期无效')
+    showError(t('日期无效'))
     return
   }
 
   quickTimestampResult10.value = Math.floor(date.getTime() / 1000).toString()
   quickTimestampResult13.value = date.getTime().toString()
-  showSuccess('转换成功')
+  showSuccess(t('转换成功'))
 }
 
 async function copyResult(text) {
   if (!text) return
   const success = await copyToClipboard(text)
   if (success) {
-    showSuccess('已复制到剪贴板')
+    showSuccess(t('已复制到剪贴板'))
   } else {
-    showError('复制失败，请手动复制')
+    showError(t('复制失败，请手动复制'))
   }
 }
 

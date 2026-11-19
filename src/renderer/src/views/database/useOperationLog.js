@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { dbClearOperationLog, dbQueryOperationLog } from '@/api'
 
 export function createOperationLog(state, api) {
@@ -13,10 +14,10 @@ export function createOperationLog(state, api) {
         keyword: dialog.keyword,
         limit: 300
       })
-      if (!result?.success) throw new Error(result?.error || '读取操作日志失败')
+      if (!result?.success) throw new Error(result?.error || t('读取操作日志失败'))
       dialog.entries = result.entries || []
     } catch (error) {
-      dialog.error = error.message || '读取操作日志失败'
+      dialog.error = error.message || t('读取操作日志失败')
     } finally {
       dialog.loading = false
     }
@@ -32,16 +33,16 @@ export function createOperationLog(state, api) {
   }
 
   async function clearOperationLog() {
-    const confirmed = await api.showConfirm('确定清空数据库操作日志？此操作不可恢复。', '清空操作日志')
+    const confirmed = await api.showConfirm(t('确定清空数据库操作日志？此操作不可恢复。'), t('清空操作日志'))
     if (!confirmed) return
     operationLogDialog.value.clearing = true
     try {
       const result = await dbClearOperationLog()
-      if (!result?.success) throw new Error(result?.error || '清空失败')
+      if (!result?.success) throw new Error(result?.error || t('清空失败'))
       await loadOperationLog()
-      await api.showMessage('操作日志已清空', 'success')
+      await api.showMessage(t('操作日志已清空'), 'success')
     } catch (error) {
-      await api.showMessage('清空操作日志失败: ' + error.message, 'error')
+      await api.showMessage(t('清空操作日志失败: ') + error.message, 'error')
     } finally {
       operationLogDialog.value.clearing = false
     }

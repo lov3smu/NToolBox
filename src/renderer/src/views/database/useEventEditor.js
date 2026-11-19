@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { computed } from 'vue'
 import { dbExecuteQuery } from '@/api'
 import { buildAlterEventSql, toDateTimeInput } from './eventSql'
@@ -36,10 +37,10 @@ export function createEventEditor(state, api) {
         [target.database, target.event],
         { autoLimit: false }
       )
-      if (!result.success) throw new Error(result.error || '读取事件失败')
+      if (!result.success) throw new Error(result.error || t('读取事件失败'))
 
       const row = result.rows?.[0]
-      if (!row) throw new Error('事件不存在或无权访问')
+      if (!row) throw new Error(t('事件不存在或无权访问'))
 
       dialog.definition = row.EVENT_DEFINITION || ''
       dialog.comment = row.EVENT_COMMENT || ''
@@ -51,7 +52,7 @@ export function createEventEditor(state, api) {
       dialog.intervalField = row.INTERVAL_FIELD || 'DAY'
       dialog.onCompletion = row.ON_COMPLETION === 'NOT PRESERVE' ? 'NOT PRESERVE' : 'PRESERVE'
     } catch (error) {
-      dialog.error = error.message || '读取事件失败'
+      dialog.error = error.message || t('读取事件失败')
     } finally {
       dialog.loading = false
     }
@@ -87,17 +88,17 @@ export function createEventEditor(state, api) {
 
     try {
       const result = await dbExecuteQuery(dialog.connectionName, sql, [], { database: dialog.database })
-      if (!result.success) throw new Error(result.error || '保存事件失败')
+      if (!result.success) throw new Error(result.error || t('保存事件失败'))
 
       dialog.show = false
-      api.showMessage('事件已保存', 'success')
+      api.showMessage(t('事件已保存'), 'success')
 
       if (selectedObject.value?.type === 'event' && selectedObject.value.name === dialog.name) {
         await api.loadObjectDefinitionForObject('event', dialog.name)
       }
       await api.loadDatabaseCategory(dialog.connectionName, dialog.database, 'events', { force: true })
     } catch (error) {
-      dialog.error = error.message || '保存事件失败'
+      dialog.error = error.message || t('保存事件失败')
     } finally {
       dialog.saving = false
     }

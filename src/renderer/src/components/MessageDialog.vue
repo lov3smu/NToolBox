@@ -38,8 +38,8 @@
             </div>
           </div>
           <div class="message-actions">
-            <button v-if="type === 'confirm'" class="btn btn-secondary" @click="cancel">取消</button>
-            <button class="btn btn-primary" @click="confirm">确定</button>
+            <button v-if="type === 'confirm'" class="btn btn-secondary" @click="cancel">{{ t('取消') }}</button>
+            <button class="btn btn-primary" @click="confirm">{{ t('确定') }}</button>
           </div>
         </div>
       </div>
@@ -49,6 +49,7 @@
 
 <script setup>
 import { watch, onUnmounted } from 'vue'
+import { t } from '@/i18n'
 
 const props = defineProps({
   visible: {
@@ -124,6 +125,8 @@ onUnmounted(() => {
 .message-dialog {
   width: 420px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);

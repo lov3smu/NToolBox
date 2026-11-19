@@ -1,39 +1,39 @@
 <template>
   <PageLayout tool-path="/html-viewer">
     <template #actions>
-      <button class="btn-icon btn-sm" title="格式化" @click="formatHtml">
+      <button class="btn-icon btn-sm" :title="t('格式化')" @click="formatHtml">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="压缩" @click="minifyHtml">
+      <button class="btn-icon btn-sm" :title="t('压缩')" @click="minifyHtml">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="复制输入" @click="copyInput">
+      <button class="btn-icon btn-sm" :title="t('复制输入')" @click="copyInput">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6v4H9V2z" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="清空" @click="clearInput">
+      <button class="btn-icon btn-sm" :title="t('清空')" @click="clearInput">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
       <span class="toolbar-sep" />
-      <button class="btn btn-primary btn-sm" title="运行预览" @click="runPreview">
+      <button class="btn btn-primary btn-sm" :title="t('运行预览')" @click="runPreview">
         <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
           <path d="M8 5v14l11-7z" />
         </svg>
-        运行预览
+        {{ t('运行预览') }}
       </button>
-      <button class="btn-icon btn-sm" title="复制输出" @click="copyOutput">
+      <button class="btn-icon btn-sm" :title="t('复制输出')" @click="copyOutput">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M8 17H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2M9 11l3 3 3-3M12 14V2" />
         </svg>
       </button>
-      <button class="btn-icon btn-sm" title="下载" @click="downloadHtml">
+      <button class="btn-icon btn-sm" :title="t('下载')" @click="downloadHtml">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
         </svg>
@@ -41,11 +41,11 @@
       <span class="toolbar-sep" />
       <label class="auto-update-label">
         <input v-model="autoUpdate" type="checkbox" />
-        <span>自动更新</span>
+        <span>{{ t('自动更新') }}</span>
       </label>
       <div class="indent-control">
-        <span class="toolbar-label">缩进</span>
-        <select v-model="indentSize" class="indent-select">
+        <span class="toolbar-label">{{ t('缩进') }}</span>
+        <select v-model="indentSize" class="select-field-sm indent-select">
           <option :value="2">2</option>
           <option :value="4">4</option>
         </select>
@@ -57,7 +57,9 @@
         <div class="panel editor-panel">
           <div class="panel-header">
             <span class="panel-title">HTML</span>
-            <div class="panel-actions size-info">{{ inputSize }} 字符 · {{ lineCount }} 行</div>
+            <div class="panel-actions size-info">
+              {{ t('{chars} 字符 · {lines} 行', { chars: inputSize, lines: lineCount }) }}
+            </div>
           </div>
           <div class="editor-wrapper">
             <div ref="lineNumbersRef" class="line-numbers">
@@ -80,14 +82,14 @@
         <SplitHandle
           orientation="vertical"
           :resizing="splitResizing"
-          label="拖动调整编辑与预览宽度"
+          :label="t('拖动调整编辑与预览宽度')"
           @pointerdown="startSplitResize"
           @keydown="onSplitKeydown"
         />
 
         <div class="panel preview-panel">
           <div class="panel-header">
-            <span class="panel-title">预览</span>
+            <span class="panel-title">{{ t('预览') }}</span>
           </div>
           <div class="preview-wrapper">
             <!-- 不授予 same-origin：预览脚本无法访问父页面与 electronAPI -->
@@ -107,6 +109,7 @@ import { usePaneResize, useToast } from '@/composables'
 import Toast from '@/components/Toast.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { t } from '@/i18n'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
 
@@ -180,7 +183,7 @@ function syncScroll() {
 
 function runPreview() {
   updatePreview()
-  showInfo('预览已更新')
+  showInfo(t('预览已更新'))
 }
 
 function updatePreview() {
@@ -215,7 +218,7 @@ function handleThemeChange(event) {
 
 function formatHtml() {
   if (!htmlInput.value.trim()) {
-    showWarning('请输入HTML代码')
+    showWarning(t('请输入 HTML 代码'))
     return
   }
 
@@ -229,9 +232,9 @@ function formatHtml() {
         editorRef.value.scrollLeft = 0
       }
     })
-    showSuccess('格式化成功')
+    showSuccess(t('格式化成功'))
   } catch {
-    showError('格式化失败')
+    showError(t('格式化失败'))
   }
 }
 
@@ -334,7 +337,7 @@ function formatHtmlCode(html, indent) {
 
 function minifyHtml() {
   if (!htmlInput.value.trim()) {
-    showWarning('请输入HTML代码')
+    showWarning(t('请输入 HTML 代码'))
     return
   }
 
@@ -354,28 +357,28 @@ function minifyHtml() {
         editorRef.value.scrollLeft = 0
       }
     })
-    showSuccess('压缩成功')
+    showSuccess(t('压缩成功'))
   } catch {
-    showError('压缩失败')
+    showError(t('压缩失败'))
   }
 }
 
 function copyInput() {
   if (!htmlInput.value.trim()) {
-    showWarning('没有可复制的内容')
+    showWarning(t('没有可复制的内容'))
     return
   }
   copyToClipboard(htmlInput.value)
-  showSuccess('已复制输入')
+  showSuccess(t('已复制输入'))
 }
 
 function copyOutput() {
   if (!previewContent.value.trim()) {
-    showWarning('没有预览内容')
+    showWarning(t('没有预览内容'))
     return
   }
   copyToClipboard(previewContent.value)
-  showSuccess('已复制输出')
+  showSuccess(t('已复制输出'))
 }
 
 function clearInput() {
@@ -388,12 +391,12 @@ function clearInput() {
       editorRef.value.scrollTop = 0
     }
   })
-  showInfo('已清空')
+  showInfo(t('已清空'))
 }
 
 function downloadHtml() {
   if (!htmlInput.value.trim()) {
-    showWarning('没有可下载的内容')
+    showWarning(t('没有可下载的内容'))
     return
   }
 
@@ -404,14 +407,14 @@ function downloadHtml() {
   a.download = 'document.html'
   a.click()
   URL.revokeObjectURL(url)
-  showSuccess('下载成功')
+  showSuccess(t('下载成功'))
 }
 
 function copyToClipboard(text) {
   navigator.clipboard
     .writeText(text)
     .then(() => {
-      showSuccess('已复制到剪贴板')
+      showSuccess(t('已复制到剪贴板'))
     })
     .catch(() => {
       const textarea = document.createElement('textarea')
@@ -422,9 +425,9 @@ function copyToClipboard(text) {
       textarea.select()
       try {
         document.execCommand('copy')
-        showSuccess('已复制到剪贴板')
+        showSuccess(t('已复制到剪贴板'))
       } catch {
-        showError('复制失败')
+        showError(t('复制失败'))
       }
       document.body.removeChild(textarea)
     })
@@ -495,7 +498,6 @@ onUnmounted(() => {
   width: var(--icon-size-xs);
   height: var(--icon-size-xs);
   cursor: pointer;
-  accent-color: var(--accent-color);
 }
 
 .indent-control {
@@ -506,11 +508,6 @@ onUnmounted(() => {
 
 .indent-select {
   width: 56px;
-  height: var(--control-height-sm);
-  padding: 0 24px 0 8px;
-  font-size: var(--font-size-xs);
-  background-size: 12px;
-  background-position: right 6px center;
 }
 
 .editor-wrapper {

@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import {
   dbApplyTableChanges,
   dbExportTable,
@@ -206,7 +207,7 @@ export function createTableOps(state, api) {
 
   async function confirmDiscardPending(tab) {
     if (!hasPendingChanges(tab)) return true
-    return Boolean(await api.showConfirm('此操作会丢弃未保存的修改，是否继续？'))
+    return Boolean(await api.showConfirm(t('此操作会丢弃未保存的修改，是否继续？')))
   }
 
   function rowKey(tab, row) {
@@ -332,7 +333,7 @@ export function createTableOps(state, api) {
     ensureTableState(tab)
     const selected = Object.entries(tab.selectedRows)
     if (!selected.length) {
-      api.showMessage('请先选择要删除的行', 'warning')
+      api.showMessage(t('请先选择要删除的行'), 'warning')
       return
     }
     for (const [key, keys] of selected) {
@@ -357,7 +358,7 @@ export function createTableOps(state, api) {
   async function discardTableChanges(tab) {
     ensureTableState(tab)
     if (!hasPendingChanges(tab)) return
-    if (!(await api.showConfirm('确定撤销所有未提交的修改吗？'))) return
+    if (!(await api.showConfirm(t('确定撤销所有未提交的修改吗？')))) return
     tab.rowEdits = {}
     tab.rowDeletes = {}
     tab.rowInserts = []
@@ -367,7 +368,7 @@ export function createTableOps(state, api) {
   function addRow(tab) {
     ensureTableState(tab)
     if (!canEditTable(tab)) {
-      api.showMessage('视图或没有主键的表不支持直接编辑', 'warning')
+      api.showMessage(t('视图或没有主键的表不支持直接编辑'), 'warning')
       return
     }
     const values = {}
@@ -402,12 +403,12 @@ export function createTableOps(state, api) {
   function previewChanges(tab) {
     const sql = buildPendingSqlForTab(tab)
     if (!sql) {
-      api.showMessage('没有待保存的修改', 'info')
+      api.showMessage(t('没有待保存的修改'), 'info')
       return
     }
     sqlPreviewDialog.value = {
       show: true,
-      title: '待执行的 SQL',
+      title: t('待执行的 SQL'),
       sql
     }
   }
@@ -415,7 +416,7 @@ export function createTableOps(state, api) {
   async function saveTableChanges(tab) {
     ensureTableState(tab)
     if (!hasPendingChanges(tab)) {
-      api.showMessage('没有待保存的修改', 'info')
+      api.showMessage(t('没有待保存的修改'), 'info')
       return
     }
 
@@ -443,19 +444,23 @@ export function createTableOps(state, api) {
       })
 
       if (!result.success) {
-        await api.showMessage('保存失败: ' + result.error, 'error')
+        await api.showMessage(t('保存失败: ') + result.error, 'error')
         return
       }
 
       await api.showMessage(
-        `保存成功（更新 ${result.updated || 0}，删除 ${result.deleted || 0}，新增 ${result.inserted || 0}）`,
+        t('保存成功（更新 {p0}，删除 {p1}，新增 {p2}）', {
+          p0: result.updated || 0,
+          p1: result.deleted || 0,
+          p2: result.inserted || 0
+        }),
         'success'
       )
       await executeTableQuery(tab, tab.queryResult?.currentPage || 1)
       await api.loadDatabaseObjects(tab.connectionName, tab.database, { force: true })
     } catch (error) {
       console.error('保存表数据失败:', error)
-      await api.showMessage('保存表数据失败: ' + error.message, 'error')
+      await api.showMessage(t('保存表数据失败: ') + error.message, 'error')
     } finally {
       tab.executing = false
     }
@@ -489,11 +494,11 @@ export function createTableOps(state, api) {
     ensureTableState(tab)
     for (const filter of tab.filters) {
       if (!filter.field) {
-        await api.showMessage('请选择筛选字段', 'warning')
+        await api.showMessage(t('请选择筛选字段'), 'warning')
         return
       }
       if (!['IS NULL', 'IS NOT NULL'].includes(filter.operator) && filter.value === '') {
-        await api.showMessage('请填写筛选值', 'warning')
+        await api.showMessage(t('请填写筛选值'), 'warning')
         return
       }
     }
@@ -715,7 +720,7 @@ export function createTableOps(state, api) {
   async function deleteTable(target) {
     if (!target.connection || !target.database || !target.table) return
 
-    const confirmed = await api.showConfirm(`确定要删除表 "${target.table}" 吗？此操作不可恢复！`)
+    const confirmed = await api.showConfirm(t('确定要删除表 "{p0}" 吗？此操作不可恢复！', { p0: target.table }))
     if (!confirmed) return
 
     api.selectConnection(target.connection)
@@ -727,16 +732,18 @@ export function createTableOps(state, api) {
 
     if (result.success) {
       await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
-      await api.showMessage(`表 "${target.table}" 已删除`, 'success')
+      await api.showMessage(t('表 "{p0}" 已删除', { p0: target.table }), 'success')
     } else {
-      await api.showMessage('删除表失败: ' + result.error, 'error')
+      await api.showMessage(t('删除表失败: ') + result.error, 'error')
     }
   }
 
   async function emptyTable(target) {
     if (!target.connection || !target.database || !target.table) return
 
-    const confirmed = await api.showConfirm(`确定要清空表 "${target.table}" 的所有数据吗？此操作不可恢复！`)
+    const confirmed = await api.showConfirm(
+      t('确定要清空表 "{p0}" 的所有数据吗？此操作不可恢复！', { p0: target.table })
+    )
     if (!confirmed) return
 
     api.selectConnection(target.connection)
@@ -747,9 +754,9 @@ export function createTableOps(state, api) {
     )
 
     if (result.success) {
-      await api.showMessage(`表 "${target.table}" 已清空`, 'success')
+      await api.showMessage(t('表 "{p0}" 已清空', { p0: target.table }), 'success')
     } else {
-      await api.showMessage('清空表失败: ' + result.error, 'error')
+      await api.showMessage(t('清空表失败: ') + result.error, 'error')
     }
   }
 
@@ -757,7 +764,7 @@ export function createTableOps(state, api) {
     if (!target.connection || !target.database || !target.table) return
 
     const confirmed = await api.showConfirm(
-      `确定要截断表 "${target.table}" 吗？此操作将删除所有数据并重置自增ID，不可恢复！`
+      t('确定要截断表 "{p0}" 吗？此操作将删除所有数据并重置自增ID，不可恢复！', { p0: target.table })
     )
     if (!confirmed) return
 
@@ -769,9 +776,9 @@ export function createTableOps(state, api) {
     )
 
     if (result.success) {
-      await api.showMessage(`表 "${target.table}" 已截断`, 'success')
+      await api.showMessage(t('表 "{p0}" 已截断', { p0: target.table }), 'success')
     } else {
-      await api.showMessage('截断表失败: ' + result.error, 'error')
+      await api.showMessage(t('截断表失败: ') + result.error, 'error')
     }
   }
 
@@ -790,9 +797,9 @@ export function createTableOps(state, api) {
 
       if (result.success) {
         await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
-        await api.showMessage(`表结构已复制到 "${newTableName}"`, 'success')
+        await api.showMessage(t('表结构已复制到 "{p0}"', { p0: newTableName }), 'success')
       } else {
-        await api.showMessage('复制表结构失败: ' + result.error, 'error')
+        await api.showMessage(t('复制表结构失败: ') + result.error, 'error')
       }
     } else {
       const createResult = await api.executeSqlDirect(
@@ -801,7 +808,7 @@ export function createTableOps(state, api) {
       )
 
       if (!createResult.success) {
-        await api.showMessage('复制表结构失败: ' + createResult.error, 'error')
+        await api.showMessage(t('复制表结构失败: ') + createResult.error, 'error')
         return
       }
 
@@ -812,9 +819,9 @@ export function createTableOps(state, api) {
 
       if (insertResult.success) {
         await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
-        await api.showMessage(`表已复制到 "${newTableName}"（包含数据）`, 'success')
+        await api.showMessage(t('表已复制到 "{p0}"（包含数据）', { p0: newTableName }), 'success')
       } else {
-        await api.showMessage('复制表数据失败: ' + insertResult.error, 'error')
+        await api.showMessage(t('复制表数据失败: ') + insertResult.error, 'error')
       }
     }
   }
@@ -830,10 +837,10 @@ export function createTableOps(state, api) {
       }
 
       const header = [
-        `-- 表转储: ${target.table}`,
-        `-- 数据库: ${target.database}`,
-        `-- 生成时间: ${new Date().toISOString()}`,
-        `-- 连接: ${target.connection.host}:${target.connection.port}`,
+        t('-- 表转储: {p0}', { p0: target.table }),
+        t('-- 数据库: {p0}', { p0: target.database }),
+        t('-- 生成时间: {p0}', { p0: new Date().toISOString() }),
+        t('-- 连接: {p0}:{p1}', { p0: target.connection.host, p1: target.connection.port }),
         '',
         `USE \`${target.database}\`;`,
         ''
@@ -843,7 +850,7 @@ export function createTableOps(state, api) {
       if (type === 'structure') {
         const meta = await dbGetTableMeta(target.connection.name, target.database, target.table)
         if (!meta.success) {
-          await api.showMessage('获取表结构失败: ' + meta.error, 'error')
+          await api.showMessage(t('获取表结构失败: ') + meta.error, 'error')
           return
         }
         body = `DROP TABLE IF EXISTS \`${target.table}\`;\n${meta.ddl};\n`
@@ -854,12 +861,12 @@ export function createTableOps(state, api) {
           maxRows: 1000000
         })
         if (!result.success) {
-          await api.showMessage('转储表失败: ' + result.error, 'error')
+          await api.showMessage(t('转储表失败: ') + result.error, 'error')
           return
         }
         body = result.content
         if (result.truncated) {
-          body += '\n-- 提示: 数据量超过导出上限，已截断\n'
+          body += '\n' + t('-- 提示: 数据量超过导出上限，已截断') + '\n'
         }
       }
 
@@ -869,13 +876,13 @@ export function createTableOps(state, api) {
 
       const writeResult = await writeFile(saveResult.filePath, `${header}${body}\n`)
       if (writeResult.success) {
-        await api.showMessage(`转储文件已保存到: ${saveResult.filePath}`, 'success')
+        await api.showMessage(t('转储文件已保存到: {p0}', { p0: saveResult.filePath }), 'success')
       } else {
-        await api.showMessage('保存文件失败: ' + writeResult.error, 'error')
+        await api.showMessage(t('保存文件失败: ') + writeResult.error, 'error')
       }
     } catch (error) {
       console.error('转储表失败:', error)
-      await api.showMessage('转储表失败: ' + error.message, 'error')
+      await api.showMessage(t('转储表失败: ') + error.message, 'error')
     }
   }
 
@@ -885,7 +892,9 @@ export function createTableOps(state, api) {
     const newTableName = await api.showPrompt('请输入新的表名：', target.table)
     if (!newTableName || newTableName === target.table) return
 
-    const confirmed = await api.showConfirm(`确定要将表 "${target.table}" 重命名为 "${newTableName}" 吗？`)
+    const confirmed = await api.showConfirm(
+      t('确定要将表 "{p0}" 重命名为 "{p1}" 吗？', { p0: target.table, p1: newTableName })
+    )
     if (!confirmed) return
 
     api.selectConnection(target.connection)
@@ -897,9 +906,9 @@ export function createTableOps(state, api) {
 
     if (result.success) {
       await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
-      await api.showMessage(`表已重命名为 "${newTableName}"`, 'success')
+      await api.showMessage(t('表已重命名为 "{p0}"', { p0: newTableName }), 'success')
     } else {
-      await api.showMessage('重命名表失败: ' + result.error, 'error')
+      await api.showMessage(t('重命名表失败: ') + result.error, 'error')
     }
   }
 
@@ -908,13 +917,13 @@ export function createTableOps(state, api) {
 
     api.selectConnection(target.connection)
     await api.loadDatabaseObjects(target.connection.name, target.database, { force: true })
-    await api.showMessage('表列表已刷新', 'success')
+    await api.showMessage(t('表列表已刷新'), 'success')
   }
 
   async function duplicateRow(tab, row) {
     ensureTableState(tab)
     if (!canEditTable(tab)) {
-      api.showMessage('视图或没有主键的表不支持直接编辑', 'warning')
+      api.showMessage(t('视图或没有主键的表不支持直接编辑'), 'warning')
       return
     }
     const [source] = await resolveLazyRowValues(tab, [row])
@@ -924,7 +933,7 @@ export function createTableOps(state, api) {
       values[column.name] = source[column.name] ?? ''
     }
     tab.rowInserts.push({ values })
-    api.showMessage('已复制为新行，请修改后提交', 'success')
+    api.showMessage(t('已复制为新行，请修改后提交'), 'success')
   }
 
   function buildInsertSqlForRows(tab, rows) {
@@ -947,13 +956,16 @@ export function createTableOps(state, api) {
     ensureTableState(tab)
     const rows = (tab.queryResult?.rows || []).filter((row) => isRowSelected(tab, row) && !isRowDeleted(tab, row))
     if (!rows.length) {
-      await api.showMessage('请先勾选要复制的行', 'warning')
+      await api.showMessage(t('请先勾选要复制的行'), 'warning')
       return
     }
     const sql = buildInsertSqlForRows(tab, await resolveLazyRowValues(tab, rows))
     if (!sql) return
     const copied = await copyToClipboard(sql)
-    await api.showMessage(copied ? `已复制 ${rows.length} 行 INSERT 语句` : '复制失败', copied ? 'success' : 'error')
+    await api.showMessage(
+      copied ? t('已复制 {p0} 行 INSERT 语句', { p0: rows.length }) : t('复制失败'),
+      copied ? 'success' : 'error'
+    )
   }
 
   async function copyRowAsInsert(tab, row) {
@@ -961,7 +973,7 @@ export function createTableOps(state, api) {
     const sql = buildInsertSqlForRows(tab, [resolved])
     if (!sql) return
     const copied = await copyToClipboard(sql)
-    await api.showMessage(copied ? '已复制该行 INSERT 语句' : '复制失败', copied ? 'success' : 'error')
+    await api.showMessage(copied ? t('已复制该行 INSERT 语句') : t('复制失败'), copied ? 'success' : 'error')
   }
 
   return {

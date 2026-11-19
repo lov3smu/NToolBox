@@ -25,8 +25,8 @@ vi.mock('../src/main/utils/sanitize.js', () => ({
 }))
 
 vi.mock('../src/main/services/index.js', () => ({
-  getConfig: vi.fn(() => ({ base_path: '/tmp/scripts' })),
-  getPublicConfig: vi.fn(() => ({ base_path: '/tmp/scripts' })),
+  getConfig: vi.fn(() => ({ app: { base_path: '/tmp/scripts' } })),
+  getPublicConfig: vi.fn(() => ({ app: { base_path: '/tmp/scripts' } })),
   saveConfig: vi.fn(async () => true),
   loadConfig: vi.fn(async () => ({})),
   generateSQLFile: vi.fn(async () => ({})),
@@ -109,9 +109,9 @@ describe('IPC startup smoke test', () => {
   })
 
   it('wraps successful responses in the unified envelope', async () => {
-    getPublicConfig.mockReturnValueOnce({ base_path: '/tmp/custom' })
+    getPublicConfig.mockReturnValueOnce({ app: { base_path: '/tmp/custom' } })
     const result = await getHandler(IPC_CHANNELS.getConfig)({})
-    expect(result).toEqual({ __ipc: true, ok: true, data: { base_path: '/tmp/custom' } })
+    expect(result).toEqual({ __ipc: true, ok: true, data: { app: { base_path: '/tmp/custom' } } })
   })
 
   it('converts thrown errors into a logged failure envelope', async () => {

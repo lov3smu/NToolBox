@@ -6,13 +6,13 @@
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.5" y2="16.5" />
         </svg>
-        <input v-model="keyword" type="text" placeholder="筛选目标、模型或终止原因" />
+        <input v-model="keyword" type="text" :placeholder="t('筛选目标、模型或终止原因')" />
       </label>
       <span class="runs-count">{{ filteredRuns.length }} / {{ runs.length }}</span>
       <div class="runs-toolbar-actions">
-        <button type="button" class="runs-btn" :disabled="loading" @click="loadRuns()">刷新</button>
+        <button type="button" class="runs-btn" :disabled="loading" @click="loadRuns()">{{ t('刷新') }}</button>
         <button type="button" class="runs-btn" :disabled="!selectedId || exporting" @click="handleExport">
-          {{ exporting ? '导出中…' : '导出 JSON' }}
+          {{ exporting ? t('导出中…') : t('导出 JSON') }}
         </button>
       </div>
     </div>
@@ -20,9 +20,11 @@
     <div class="runs-body">
       <div class="runs-list">
         <div class="runs-list-body">
-          <div v-if="loading" class="runs-hint">加载中…</div>
+          <div v-if="loading" class="runs-hint">{{ t('加载中…') }}</div>
           <div v-else-if="listError" class="runs-hint error">{{ listError }}</div>
-          <div v-else-if="!filteredRuns.length" class="runs-hint">暂无运行轨迹，在 AI 助手中执行一次任务后再查看</div>
+          <div v-else-if="!filteredRuns.length" class="runs-hint">
+            {{ t('暂无运行轨迹，在 AI 助手中执行一次任务后再查看') }}
+          </div>
           <button
             v-for="run in filteredRuns"
             :key="run.id"
@@ -37,10 +39,10 @@
                 {{ terminationLabel(run.termination || run.status) }}
               </span>
             </div>
-            <div class="run-item-goal">{{ run.goal || '未记录目标' }}</div>
+            <div class="run-item-goal">{{ run.goal || t('未记录目标') }}</div>
             <div class="run-item-meta">
               <span>{{ formatDuration(run.durationMs) }}</span>
-              <span>{{ run.toolCalls }} 次工具</span>
+              <span>{{ t('{count} 次工具', { count: run.toolCalls }) }}</span>
               <span v-if="run.model">{{ run.model }}</span>
             </div>
           </button>
@@ -49,36 +51,36 @@
 
       <section class="runs-detail">
         <div v-if="exportNote" class="runs-note">{{ exportNote }}</div>
-        <div v-if="detailLoading" class="runs-hint">读取中…</div>
+        <div v-if="detailLoading" class="runs-hint">{{ t('读取中…') }}</div>
         <div v-else-if="detailError" class="runs-hint error">{{ detailError }}</div>
-        <div v-else-if="!trace" class="runs-hint">选择左侧的运行记录查看详情</div>
+        <div v-else-if="!trace" class="runs-hint">{{ t('选择左侧的运行记录查看详情') }}</div>
         <div v-else class="runs-detail-body">
           <header class="run-detail-head">
             <div class="run-detail-title">
-              <h2>{{ trace.plan?.goal || trace.summary?.goal || '未记录目标' }}</h2>
+              <h2>{{ trace.plan?.goal || trace.summary?.goal || t('未记录目标') }}</h2>
               <span class="run-badge" :class="trace.termination || trace.status">
                 {{ terminationLabel(trace.termination || trace.status) }}
               </span>
             </div>
             <div class="run-detail-meta">
-              <span>{{ trace.meta?.provider || '未知平台' }} · {{ trace.meta?.model || '默认模型' }}</span>
-              <span>审批：{{ approvalLabel(trace.meta?.approvalPolicy) }}</span>
+              <span>{{ trace.meta?.provider || t('未知平台') }} · {{ trace.meta?.model || t('默认模型') }}</span>
+              <span>{{ t('审批：{policy}', { policy: approvalLabel(trace.meta?.approvalPolicy) }) }}</span>
               <span>{{ formatTime(trace.startedAt) }}</span>
-              <span>耗时 {{ formatDuration(trace.durationMs) }}</span>
+              <span>{{ t('耗时 {duration}', { duration: formatDuration(trace.durationMs) }) }}</span>
             </div>
           </header>
 
           <div class="run-stats">
             <div class="run-stat">
-              <span class="run-stat-label">轮次</span>
+              <span class="run-stat-label">{{ t('轮次') }}</span>
               <strong>{{ trace.summary?.iterations ?? '—' }}</strong>
             </div>
             <div class="run-stat">
-              <span class="run-stat-label">工具调用</span>
+              <span class="run-stat-label">{{ t('工具调用') }}</span>
               <strong>{{ trace.summary?.toolCalls ?? trace.steps?.length ?? 0 }}</strong>
             </div>
             <div class="run-stat">
-              <span class="run-stat-label">成功 / 失败</span>
+              <span class="run-stat-label">{{ t('成功 / 失败') }}</span>
               <strong>{{ successCount }} / {{ failCount }}</strong>
             </div>
             <div class="run-stat">
@@ -86,13 +88,13 @@
               <strong>{{ trace.usage?.total_tokens ?? '—' }}</strong>
             </div>
             <div class="run-stat">
-              <span class="run-stat-label">步骤耗时峰值</span>
+              <span class="run-stat-label">{{ t('步骤耗时峰值') }}</span>
               <strong>{{ formatDuration(longestStep) || '—' }}</strong>
             </div>
           </div>
 
           <section v-if="trace.plan?.steps?.length" class="run-section">
-            <div class="run-section-title">执行计划</div>
+            <div class="run-section-title">{{ t('执行计划') }}</div>
             <ol class="run-plan">
               <li v-for="(step, index) in trace.plan.steps" :key="index" :class="planState(step)">
                 <span class="run-plan-index">{{ index + 1 }}</span>
@@ -103,7 +105,7 @@
           </section>
 
           <section class="run-section">
-            <div class="run-section-title">工具时间线（{{ trace.steps?.length || 0 }}）</div>
+            <div class="run-section-title">{{ t('工具时间线（{count}）', { count: trace.steps?.length || 0 }) }}</div>
             <ol v-if="trace.steps?.length" class="run-timeline">
               <li
                 v-for="step in trace.steps"
@@ -116,7 +118,7 @@
                 </div>
                 <div class="run-step-main">
                   <div class="run-step-head">
-                    <strong class="run-step-tool">{{ step.tool || '未知工具' }}</strong>
+                    <strong class="run-step-tool">{{ step.tool || t('未知工具') }}</strong>
                     <span class="run-step-args" :title="step.arguments">{{ step.arguments || '—' }}</span>
                     <span class="run-step-duration">{{ formatDuration(step.duration) }}</span>
                   </div>
@@ -127,30 +129,34 @@
                     <span v-if="step.risk && step.risk !== 'read'" class="run-tag" :class="step.risk">
                       {{ riskLabel(step.risk) }}
                     </span>
-                    <span v-if="step.approval === 'denied'" class="run-tag denied">已拒绝</span>
-                    <span v-else-if="step.approval === 'remembered'" class="run-tag">白名单</span>
+                    <span v-if="step.approval === 'denied'" class="run-tag denied">{{ t('已拒绝') }}</span>
+                    <span v-else-if="step.approval === 'remembered'" class="run-tag">{{ t('白名单') }}</span>
                     <span class="run-tag" :class="step.success ? 'ok' : 'fail'">{{
-                      step.success ? '成功' : '失败'
+                      step.success ? t('成功') : t('失败')
                     }}</span>
-                    <span v-if="step.approvalMs" class="run-tag">审批 {{ formatDuration(step.approvalMs) }}</span>
-                    <span v-if="step.truncated" class="run-tag">结果已截断</span>
-                    <span v-if="step.untrusted" class="run-tag">不可信来源</span>
-                    <span v-if="step.injectionSuspected" class="run-tag fail">疑似提示注入</span>
+                    <span v-if="step.approvalMs" class="run-tag">
+                      {{ t('审批 {duration}', { duration: formatDuration(step.approvalMs) }) }}
+                    </span>
+                    <span v-if="step.truncated" class="run-tag">{{ t('结果已截断') }}</span>
+                    <span v-if="step.untrusted" class="run-tag">{{ t('不可信来源') }}</span>
+                    <span v-if="step.injectionSuspected" class="run-tag fail">{{ t('疑似提示注入') }}</span>
                     <span class="run-tag muted">{{ formatTime(step.at) }}</span>
                   </div>
                   <details v-if="step.result" class="run-step-result">
-                    <summary>结果摘要</summary>
+                    <summary>{{ t('结果摘要') }}</summary>
                     <pre>{{ step.result }}</pre>
-                    <p v-if="step.injectionSnippet" class="run-injection">注入特征：{{ step.injectionSnippet }}</p>
+                    <p v-if="step.injectionSnippet" class="run-injection">
+                      {{ t('注入特征：{snippet}', { snippet: step.injectionSnippet }) }}
+                    </p>
                   </details>
                 </div>
               </li>
             </ol>
-            <div v-else class="runs-hint">本次运行未调用工具</div>
+            <div v-else class="runs-hint">{{ t('本次运行未调用工具') }}</div>
           </section>
 
           <section v-if="trace.reflections?.length" class="run-section">
-            <div class="run-section-title">反思记录</div>
+            <div class="run-section-title">{{ t('反思记录') }}</div>
             <ul class="run-reflections">
               <li v-for="(item, index) in trace.reflections" :key="index" :class="item.status">
                 <strong>{{ item.name }}</strong>
@@ -160,7 +166,7 @@
           </section>
 
           <section v-if="trace.summary?.limitations?.length" class="run-section">
-            <div class="run-section-title">执行限制</div>
+            <div class="run-section-title">{{ t('执行限制') }}</div>
             <ul class="run-limitations">
               <li v-for="(item, index) in trace.summary.limitations" :key="index">{{ item }}</li>
             </ul>
@@ -168,12 +174,12 @@
 
           <section v-if="trace.contentPreview" class="run-section">
             <details class="run-preview">
-              <summary>最终输出（前 2000 字）</summary>
+              <summary>{{ t('最终输出（前 2000 字）') }}</summary>
               <pre>{{ trace.contentPreview }}</pre>
             </details>
           </section>
 
-          <p v-if="trace.error" class="run-error">终止原因：{{ trace.error }}</p>
+          <p v-if="trace.error" class="run-error">{{ t('终止原因：{reason}', { reason: trace.error }) }}</p>
         </div>
       </section>
     </div>
@@ -182,6 +188,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { t } from '@/i18n'
 import { listRunTraces, readRunTrace, exportRunTrace } from '@/api'
 
 const props = defineProps({
@@ -192,17 +199,67 @@ const props = defineProps({
 })
 
 const TERMINATION_LABELS = {
-  goal_reached: '目标完成',
-  cancelled: '用户停止',
-  max_steps: '达到最大轮次',
-  timeout: '执行超时',
-  error: '执行异常',
-  running: '进行中',
-  ended: '已结束'
+  get goal_reached() {
+    return t('目标完成')
+  },
+  get cancelled() {
+    return t('用户停止')
+  },
+  get max_steps() {
+    return t('达到最大轮次')
+  },
+  get timeout() {
+    return t('执行超时')
+  },
+  get error() {
+    return t('执行异常')
+  },
+  get running() {
+    return t('进行中')
+  },
+  get ended() {
+    return t('已结束')
+  }
 }
-const APPROVAL_LABELS = { ask: '写操作前询问', auto: '自动执行', chat: '仅对话' }
-const RISK_LABELS = { read: '只读', write: '写入', destructive: '破坏性' }
-const PLAN_STATE_LABELS = { pending: '未开始', running: '进行中', done: '已完成', failed: '失败', skipped: '未执行' }
+const APPROVAL_LABELS = {
+  get ask() {
+    return t('写操作前询问')
+  },
+  get auto() {
+    return t('自动执行')
+  },
+  get chat() {
+    return t('仅对话')
+  }
+}
+const RISK_LABELS = {
+  get read() {
+    return t('只读')
+  },
+  get write() {
+    return t('写入')
+  },
+  get destructive() {
+    return t('破坏性')
+  }
+}
+const PLAN_STATE_LABELS = {
+  get pending() {
+    return t('未开始')
+  },
+  get running() {
+    return t('进行中')
+  },
+  get done() {
+    return t('已完成')
+  },
+  get failed() {
+    return t('失败')
+  },
+  get skipped() {
+    return t('未执行')
+  }
+}
 
 const runs = ref([])
 const selectedId = ref('')
@@ -231,15 +288,15 @@ const failCount = computed(() => (trace.value?.steps || []).filter((step) => ste
 const longestStep = computed(() => Math.max(0, ...(trace.value?.steps || []).map((step) => Number(step.duration) || 0)))
 
 function terminationLabel(value) {
-  return TERMINATION_LABELS[value] || '已结束'
+  return t(TERMINATION_LABELS[value] || t('已结束'))
 }
 
 function approvalLabel(value) {
-  return APPROVAL_LABELS[value] || '未记录'
+  return t(APPROVAL_LABELS[value] || t('未记录'))
 }
 
 function riskLabel(value) {
-  return RISK_LABELS[value] || value
+  return RISK_LABELS[value] ? t(RISK_LABELS[value]) : value
 }
 
 function planText(step) {
@@ -251,7 +308,8 @@ function planState(step) {
 }
 
 function planStateLabel(step) {
-  return PLAN_STATE_LABELS[planState(step)] || planState(step)
+  const state = planState(step)
+  return PLAN_STATE_LABELS[state] ? t(PLAN_STATE_LABELS[state]) : state
 }
 
 function formatDuration(ms) {
@@ -288,11 +346,11 @@ async function loadTrace(id) {
       trace.value = result.trace
     } else {
       trace.value = null
-      detailError.value = result?.error || '读取运行轨迹失败'
+      detailError.value = result?.error || t('读取运行轨迹失败')
     }
   } catch (error) {
     trace.value = null
-    detailError.value = error?.message || '读取运行轨迹失败'
+    detailError.value = error?.message || t('读取运行轨迹失败')
   } finally {
     detailLoading.value = false
   }
@@ -313,7 +371,7 @@ async function loadRuns(preferredId) {
     if (!target && !detailLoading.value) trace.value = null
   } catch (error) {
     runs.value = []
-    listError.value = error?.message || '加载运行轨迹失败'
+    listError.value = error?.message || t('加载运行轨迹失败')
   } finally {
     loading.value = false
   }
@@ -333,10 +391,10 @@ async function handleExport() {
   try {
     const result = await exportRunTrace(selectedId.value)
     if (result?.canceled) return
-    if (result?.success) exportNote.value = `已导出到 ${result.filePath}`
-    else detailError.value = result?.error || '导出失败'
+    if (result?.success) exportNote.value = t('已导出到 {path}', { path: result.filePath })
+    else detailError.value = result?.error || t('导出失败')
   } catch (error) {
-    detailError.value = error?.message || '导出失败'
+    detailError.value = error?.message || t('导出失败')
   } finally {
     exporting.value = false
   }

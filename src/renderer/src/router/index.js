@@ -22,9 +22,9 @@ const routes = [
     component: () => import('@/views/Settings.vue')
   },
   {
-    path: '/password',
-    name: 'Password',
-    component: () => import('@/views/Password.vue')
+    path: '/password-manager',
+    name: 'PasswordManager',
+    component: () => import('@/views/PasswordManager.vue')
   },
   {
     path: '/cron',

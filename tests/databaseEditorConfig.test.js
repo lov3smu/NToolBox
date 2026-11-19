@@ -4,18 +4,23 @@ import { validateConfig } from '../src/main/services/configValidation.js'
 
 function createConfig(overrides = {}) {
   return {
-    base_path: '/tmp/scripts',
-    developer_ch_name: '张三',
-    developer_en_name: 'zhangsan',
-    text_edit_app: '',
-    auto_update: true,
-    auto_start: true,
-    close_action: 'ask',
-    ai_provider: 'bailian',
-    ai_api_keys: {},
-    databases: ['main_db'],
-    script_types: [{ name: 'DDL' }],
-    shortcuts: { settings: 'CmdOrCtrl+,' },
+    app: {
+      base_path: '/tmp/scripts',
+      developer: { ch_name: '张三', en_name: 'zhangsan' },
+      text_edit_app: '',
+      auto_start: true,
+      close_action: 'ask',
+      shortcuts: { settings: 'CmdOrCtrl+,' }
+    },
+    appearance: {},
+    update: { auto_update: true },
+    network: {},
+    database: {},
+    sql_generator: { databases: ['main_db'], script_types: [{ name: 'DDL' }] },
+    ai: { provider: 'bailian', keys: {} },
+    extensions: {},
+    notifications: {},
+    clipboard_history: {},
     ...overrides
   }
 }
@@ -60,17 +65,17 @@ describe('validateConfig database_editor', () => {
     expect(
       validateConfig(
         createConfig({
-          database_editor: { theme: 'auto', line_numbers: true, hover_ddl: false }
+          database: { editor: { theme: 'auto', line_numbers: true, hover_ddl: false } }
         })
       )
     ).toBeNull()
   })
 
   it('rejects invalid shapes and values', () => {
-    expect(validateConfig(createConfig({ database_editor: [] }))).toBe('database_editor 必须是对象')
-    expect(validateConfig(createConfig({ database_editor: { theme: 'sepia' } }))).toBe('database_editor.theme 值不合法')
-    expect(validateConfig(createConfig({ database_editor: { run_button: 1 } }))).toBe(
-      'database_editor.run_button 必须是布尔值'
+    expect(validateConfig(createConfig({ database: { editor: [] } }))).toBe('database.editor 必须是对象')
+    expect(validateConfig(createConfig({ database: { editor: { theme: 'sepia' } } }))).toBe('database.editor.theme 值不合法')
+    expect(validateConfig(createConfig({ database: { editor: { run_button: 1 } } }))).toBe(
+      'database.editor.run_button 必须是布尔值'
     )
   })
 })

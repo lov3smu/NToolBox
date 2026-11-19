@@ -35,7 +35,8 @@
 - 渲染层禁止导入 `node:*` 模块；路径拼接用 `utils/path.js` 的 `joinPath`
 - 组合式函数放 `composables/`，经 `composables/index.js` 汇总导出（`useConfig`、`useToast` 等），页面按 barrel 导入
 - 跨进程共享的枚举、默认值、`normalizeXxx` 只放 `src/shared/`（见 §3），禁止主进程与渲染层各维护一份
-- 设置页、扩展管理等模块的界面文案集中在 `src/renderer/src/i18n.js`，通过 `t('域.键')` 引用，不散落硬编码字符串
+- 渲染层配置异步加载：`useConfig` 初始值为 `null`，加载完成前所有嵌套读取必须用可选链（如 `config.value?.app?.recent_tools_limit`）并给出默认值；禁止直接解引用 `config.value.app / .database / .ai`——首屏渲染异常会中断路由过渡链，导致整窗空白
+- 界面文案一律经 `t()` 获取（键为中文原文，见 §8），组件模板与脚本中不散落硬编码可见文案
 
 ### 2.4 注释与日志
 
@@ -60,7 +61,7 @@
 | 共享常量   | SCREAMING_SNAKE              | `IMAGE_HOST_PROVIDERS`、`AUTO_SAVE_KINDS`  |
 | 归一化函数 | normalizeXxx                 | `normalizeImageHostSettings`               |
 | IPC 通道   | 小写冒号域分隔               | `db:query`（见 `shared/ipc.js`）           |
-| i18n 文案键 | 小写点分域 + 小驼峰段        | `settings.imageHosting.saved`              |
+| i18n 文案键 | 中文原文整句（占位符 `{name}`） | `t('备份完成')`、`t('{name} 已备份到 {file}')` |
 | CSS 类     | kebab-case，页面级加命名空间 | `.ihs-field`、`.setting-row`               |
 | 设计 token | `--域-名称`                  | `--accent-color`、`--surface-muted`        |
 | 测试文件   | 被测域名.test.js             | `ipcContract.test.js`、`config.test.js`    |
@@ -129,8 +130,10 @@
 
 - 开关一律用全局 `.switch`（36×20 轨道 + 滑块）；多选 / 勾选场景使用主题化复选框（`base.css` 全局 `input[type='checkbox']:not(.switch)`），禁止自定义外观或退回 `accent-color`
 - 复选框内置未选 / 选中 / 半选（`indeterminate`）/ 聚焦 / 禁用状态，整表或分组全选可用半选表达，不得另造选中图标或伪元素勾选
+- 单选场景一律用 `components/RadioOption.vue`（`v-model` + `value`，变体 `default | block | pill`），主题样式来自 `base.css` 全局 `input[type='radio']`；禁止直接写裸 `input[type='radio']` 或 `accent-color`
 - 按钮统一 `.btn` 体系（`btn-primary/secondary/ghost/danger`），同区域高度一致（默认 32px），不混用 `btn-sm`；主操作每屏至多一个
 - 输入框统一 `.input-field`（高度 `--control-height`，聚焦 `--shadow-glow`）；密码类输入配「显示 / 隐藏」按钮
+- 下拉统一继承全局 `select` / `.select-field`（含主题箭头）；工具条等紧凑场景用 `.select-field-sm`（28px、`--font-size-xs`、12px 箭头），禁止用 `background` 简写覆盖箭头或另写一套边框焦点样式
 - 边框规则：卡片外框实线 `1px solid var(--border-color)`，卡片内部分隔线（分组头底部、行与行之间）用 `1px dashed var(--border-color)`
 - 交互元素必须有 `:focus-visible` 焦点样式；纯图标按钮必须带 `title` / `aria-label`
 
@@ -182,11 +185,11 @@
 - 设置页禁止使用原生 `<select>`、`datalist`（系统弹层无法主题化，长列表卡顿）
 - 单选下拉用 `components/settings/SettingSelect.vue`（选项支持标题 + 副说明、当前项打勾，支持键盘方向键 / Enter / Esc）
 - 模型选择用 `components/settings/SettingModelPicker.vue`（`provider:model`，输入即过滤、允许自由文本、无匹配时提示）
-- 弹层统一 Teleport 到 `body`、`position: fixed`、z-index 1200，宽度跟随触发器，空间不足自动向上翻转；Esc / 点击外部 / 弹层滚动均关闭
+- 弹层统一 Teleport 到 `body`、`position: fixed`、z-index 1200，宽度跟随触发器，空间不足自动向上翻转；Esc / 点击外部 / 弹层滚动均关闭；弹层内容超出可用空间时内部滚动，不得超出窗口（见 §7.13）
 
 ### 7.9 主题与字体缩放
 
-- 配置键：`theme`（system/light/dark）、`theme_style`（sapphire/forest/mint/bee/parchment）、`font_size`（small~xlarge），经 `src/renderer/src/utils/theme.js` 应用到 `<html>` 的 `data-theme` / `data-theme-style` / `data-font-size` 与 `--font-scale`
+- 配置键：`appearance.theme`（system/light/dark）、`appearance.theme_style`（sapphire/forest/mint/bee/parchment）、`appearance.font_size`（small~xlarge），经 `src/renderer/src/utils/theme.js` 应用到 `<html>` 的 `data-theme` / `data-theme-style` / `data-font-size` 与 `--font-scale`
 - 切换字体大小时临时设置 `data-font-size-changing` 以关闭过渡，不得移除该保护
 - 新增影响窗口外观的配置必须调用 `refreshWindowTheme()`
 
@@ -207,7 +210,28 @@
 - 统一使用 `--motion-*` token；页面/标签切换、卡片展开、Toast 进出场保持 150–250ms
 - `prefers-reduced-motion: reduce` 下关闭所有非必要过渡与动画
 
-## 8. IPC 契约流程
+### 7.13 浮层、菜单与弹窗定位
+
+- 所有浮层（下拉、菜单、右键菜单、气泡卡片、对话框）必须完整留在窗口可视区内，任何情况下不得超出窗口被裁切
+- 默认在浮层根节点加全局指令 `v-clamp-viewport`（实现见 `src/renderer/src/utils/clampViewport.js`，在 `main.js` 注册）：以 8px 为边距，越界时用 `translate` 平移回窗口内，超出可用宽高时收缩 `max-width / max-height` 并允许内部滚动；挂载后延迟 120ms 与窗口 `resize` 时重新校正；可选参数覆盖边距，如 `v-clamp-viewport="12"`
+- 校正类供方向相关样式使用：`is-clamped-x` 表示右缘越界已向左平移（数据库子菜单改为向左展开、箭头翻转），`is-clamped-y` 表示下缘越界已向上平移（子菜单改为向上展开）
+- 自带定位能力的组件（`SettingSelect.vue`、`SettingModelPicker.vue`、`HoverPopover.vue`）已在内部完成视口约束，不得再叠加该指令
+- 模态对话框内容超高时在卡片内滚动：`max-height: calc(100vh - 32px); overflow-y: auto`，不得压缩内边距或截断内容
+- 气泡卡片 `HoverPopover.vue` 的 `placement` 支持 `top|bottom|left|right` 与 `-start|-center|-end` 组合，空间不足时自动翻转到对侧；需要「不得覆盖指定区域」时传 `boundary` 选择器（如 `boundary=".chat-rail"`）：卡片固定在边界外侧 `offset`（默认 8px）处，空间不足时收缩自身宽度，绝不翻转回边界内侧。工作区气泡卡片必须位于会话栏宽度之外，禁止盖住工作区内容
+- 层级约定：页面内浮层 1000，下拉 / 气泡 / 弹层 1200，右键菜单 2000（子菜单 2001），模态遮罩与消息弹窗 9999，Toast 10000；新增浮层沿用既有层级，不任意放大
+- 浮层改动必须在隔离实例中验证宽窗 / 窄窗、明暗主题、贴窗口四边等场景（见 §15）
+
+## 8. 多语言（i18n）
+
+- 支持 `zh-CN`（默认）与 `en-US`；语言配置键为 `appearance.language`，由 `src/main/services/config.js` 经 `normalizeLocale` 归一化，非法值回落默认语言
+- **键即中文原文**：渲染层 `src/renderer/src/i18n.js` 提供 `t / getLocale / setLocale / initLocale`，主进程 `src/main/services/i18n.js` 提供同构 `t / getLocale / setLocale`；调用形如 `t('备份完成')`，不使用语义点分键
+- 英文词条按域拆分在 `src/shared/locales/en-US/*.js`（common/shell/settings/extensions/tools/pages/chat/database/main/services），由 `index.js` 合并；新增或修改 `t('…')` 文案必须同步补英文词条，占位符名称与数量必须与中文键一致
+- 共享契约（`src/shared/*.js`）只输出带 `{p0}` 等占位符的中文模板，不直接调用 `t()`；由渲染层或主进程在消费处翻译
+- 语言状态：渲染层为响应式 `locale` ref 并用 localStorage `ntb_locale` 兜底，`App.vue` 在配置变更时重新 `setLocale` 即时生效；主进程在启动时读取已加载配置同步语言
+- 新增语言 = `shared/i18n.js` 的 `LOCALE_VALUES` / `LOCALE_OPTIONS` + 完整 `src/shared/locales/<locale>/` 目录 + 两套运行时同步 + 覆盖测试；不得只翻译部分界面
+- 禁止：模板/脚本硬编码可见 UI 文案、拼接已翻译片段（应按整句作为键）、翻译或改写英文目录的键名
+
+## 9. IPC 契约流程
 
 新功能必须四处同步，缺一不可（`tests/ipcContract.test.js` 会校验）：
 
@@ -218,11 +242,11 @@
 
 通道名必须来自 `IPC_CHANNELS`，渲染层只能经 `@/api` 调用，禁止手写字符串或直接访问 `ipcRenderer`。
 
-## 9. 工具注册流程
+## 10. 工具注册流程
 
 新增工具页 = 视图组件 + 路由 + `src/shared/tools.js` 注册项（含 `menuGroup`，需要托盘入口加 `trayGroup`）。注册表驱动侧边栏、菜单、托盘、首页与全局搜索，禁止绕过注册表硬编码入口。
 
-## 10. AI 助手模块约束
+## 11. AI 助手模块约束
 
 - 单 Agent 循环位于 `src/main/services/chat.js`；新流式事件必须同时实现主进程发射端与 `Chat.vue` 的 `handleStreamChunk`
 - 思考参数是服务商私有的，改动只在对应 `services/ai/providers/*` 的 `applyThinkingOptions` 内进行
@@ -231,35 +255,37 @@
 - 工具风险分级与审批在 `services/toolPolicy.js`：新内置工具必须在 `classifyToolRisk` 中登记（未登记工具默认按写入处理并触发审批），按 `needsApprovalForPolicy` 门控；文件写入先出 dry-run 预览
 - 长任务结束、图床上传、备份等结果提醒统一走 `services/notifications.js` 的 `notify(key)`，开关配置来自 `shared/notifications.js`
 
-## 11. 网络与外部请求
+## 12. 网络与外部请求
 
 - 业务代码的所有外部 HTTP 请求必须使用 `src/main/services/network.js` 的 `netFetch` / `createRequest`，确保代理与镜像源生效；禁止直接调用 `fetch`
 - 代理模式为 `system | direct | manual`（HTTP / SOCKS5 + 绕过列表），镜像源覆盖 ClawHub、MCP registry 与更新源；schema 与默认值在 `src/shared/network.js`，由 `applyNetworkConfig()` 应用到 Electron session
 - MCP 等子进程通过 `getNetworkEnv()` 注入代理环境变量
 - 第三方来源（ClawHub、官方 MCP registry 等）经 `clawhub.js` / `mcpRegistry.js` 访问，均走上述网络层
 
-## 12. 插件与扩展
+## 13. 插件与扩展
 
 - 插件 = 技能（instructions）+ 连接器（MCP），schema 与校验在 `src/shared/pluginBundle.js`；安装/卸载统一经 `services/pluginInstaller.js`，禁止手写落盘逻辑
 - 扩展管理 UI 按 插件/技能/连接器 分类；用户技能覆盖/禁用走 `shared/skillOverrides.js`
 - 新增插件类型必须同步更新 schema、校验、测试与扩展管理界面
 
-## 13. 配置兼容
+## 14. 配置兼容
 
 - 配置键变更必须保留旧键读取兼容，经 `src/main/services/config.js` 归一化默认值
 - 每类配置在 `src/shared/<domain>.js` 提供 `normalizeXxx`，config.js 只负责编排调用，不重复定义枚举或默认值
 - 生产配置位于 `~/.config/ntoolbox/config.json`（全平台同路径）；开发期 userData 固定，不得移动 `.dbkey` 相关路径
 
-## 14. 测试与验证
+## 15. 测试与验证
 
-- 每次交付前运行完整 `npm run test`（当前 62 个测试文件 / 512 项，全绿为准）
+- 每次交付前运行完整 `npm run test`（当前 75 个测试文件 / 593 项，全绿为准）
 - 主进程模块禁止在 import 时访问 `electron` 的 `app`（vitest node 环境无 electron mock）
 - 共享契约（`src/shared/*.js` 的 `normalize*`）必须有单元测试；IPC 契约由 `tests/ipcContract.test.js`、注册由 `tests/ipcRegistration.test.js` 兜底
+- 多语言改动必须通过 `tests/i18n.test.js`：`src/renderer/src` 与 `src/main` 中所有字面量 `t('…')` 键都要有 en-US 词条，且占位符一致；新增或修改文案时同步补词条
 - **UI 改动必须实测**：启动隔离实例（独立端口 + 独立 `XDG_CONFIG_HOME`），用 CDP 截图验证宽窗/窄窗/明暗主题；不得占用或干扰用户正在运行的开发实例（5173）与数据库容器（mysql57/redis）
+- 界面涉及语言的改动需在隔离实例中分别以 zh-CN / en-US 逐页巡检，确认无渲染异常与空白页
 - 隔离实例结束后按已验证的 PGID 终止，并清理临时目录与截图
 - 涉及数据库的功能用一次性容器验证，不得触碰用户现有容器
 
-## 15. 安全红线
+## 16. 安全红线
 
 - 不提交密钥、token、`config.json` 等敏感文件
 - 所有 IPC handler 校验入参；外部内容（网页、MCP 返回、AI 输出）按不可信数据处理，提示注入标记走 `services/promptSafety.js`

@@ -9,7 +9,7 @@
         class="approval-toggle"
         @click="detailsOpen = !detailsOpen"
       >
-        {{ detailsOpen ? '收起明细' : '查看明细' }}
+        {{ detailsOpen ? t('收起明细') : t('查看明细') }}
         <svg
           class="approval-toggle-chevron"
           :class="{ expanded: detailsOpen }"
@@ -25,7 +25,7 @@
         {{ approvalStatusText(approval.status) }}
       </span>
     </div>
-    <div class="approval-summary">{{ approval.summary || '等待确认的操作' }}</div>
+    <div class="approval-summary">{{ approval.summary || t('等待确认的操作') }}</div>
     <div v-if="hasApprovalArgs(approval) && (!compact || detailsOpen)" class="approval-args">
       <pre>{{ pretty(approval.arguments) }}</pre>
     </div>
@@ -38,7 +38,7 @@
             <i class="del">-{{ approval.preview.removed }}</i>
           </span>
         </div>
-        <div v-if="approval.preview.approximate" class="preview-note">文件差异过大，仅显示增删统计</div>
+        <div v-if="approval.preview.approximate" class="preview-note">{{ t('文件差异过大，仅显示增删统计') }}</div>
         <div v-else class="preview-lines">
           <div
             v-for="(line, lineIndex) in approval.preview.lines"
@@ -49,49 +49,78 @@
             <span class="preview-sign">{{ line.type === 'add' ? '+' : line.type === 'del' ? '-' : ' ' }}</span>
             <span class="preview-text">{{ line.text || ' ' }}</span>
           </div>
-          <div v-if="approval.preview.truncated" class="preview-note">预览已截断</div>
+          <div v-if="approval.preview.truncated" class="preview-note">{{ t('预览已截断') }}</div>
         </div>
       </template>
       <template v-else-if="approval.preview.kind === 'delete'">
         <div class="preview-head">
           <span class="preview-path">{{ approval.preview.path }}</span>
-          <span class="preview-stat"
-            >{{ approval.preview.total }} 项 · {{ formatFileSize(approval.preview.totalSize) }}</span
-          >
+          <span class="preview-stat">{{
+            t('{count} 项 · {size}', {
+              count: approval.preview.total,
+              size: formatFileSize(approval.preview.totalSize)
+            })
+          }}</span>
         </div>
         <ul class="preview-items">
           <li v-for="(item, itemIndex) in approval.preview.items" :key="itemIndex">{{ item.path }}</li>
         </ul>
         <div v-if="approval.preview.truncated" class="preview-note">
-          仅列出前 {{ approval.preview.items.length }} 项
+          {{ t('仅列出前 {count} 项', { count: approval.preview.items.length }) }}
         </div>
       </template>
       <template v-else-if="approval.preview.kind === 'transfer'">
         <div class="preview-head">
-          <span class="preview-path">{{ approval.preview.mode === 'move' ? '移动' : '复制' }}</span>
+          <span class="preview-path">{{ approval.preview.mode === 'move' ? t('移动') : t('复制') }}</span>
         </div>
         <div class="preview-transfer">
           <span>{{ approval.preview.from }}</span>
           <span class="preview-arrow">→</span>
           <span>{{ approval.preview.to }}</span>
         </div>
-        <div v-if="approval.preview.overwrite" class="preview-note warning">目标已存在，将被覆盖</div>
+        <div v-if="approval.preview.overwrite" class="preview-note warning">{{ t('目标已存在，将被覆盖') }}</div>
       </template>
       <div v-else-if="approval.preview.text" class="preview-note">{{ approval.preview.text }}</div>
     </div>
     <div v-if="approval.status === 'pending'" class="approval-actions">
-      <button type="button" class="ghost" @click="emit('respond', approval, 'deny')">拒绝</button>
-      <button type="button" class="ghost" @click="emit('respond', approval, 'allow_always')">总是允许</button>
-      <button type="button" class="primary" @click="emit('respond', approval, 'allow_once')">允许</button>
+      <button type="button" class="ghost" @click="emit('respond', approval, 'deny')">{{ t('拒绝') }}</button>
+      <button type="button" class="ghost" @click="emit('respond', approval, 'allow_always')">
+        {{ t('总是允许') }}
+      </button>
+      <button type="button" class="primary" @click="emit('respond', approval, 'allow_once')">{{ t('允许') }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { t } from '@/i18n'
 
-const RISK_LABELS = { read: '只读', write: '写入', destructive: '破坏性' }
-const STATUS_LABELS = { allowed: '已允许', always: '已允许', denied: '已拒绝', expired: '已失效' }
+const RISK_LABELS = {
+  get read() {
+    return t('只读')
+  },
+  get write() {
+    return t('写入')
+  },
+  get destructive() {
+    return t('破坏性')
+  }
+}
+const STATUS_LABELS = {
+  get allowed() {
+    return t('已允许')
+  },
+  get always() {
+    return t('已允许')
+  },
+  get denied() {
+    return t('已拒绝')
+  },
+  get expired() {
+    return t('已失效')
+  }
+}
 
 defineProps({
   approval: {
@@ -109,11 +138,11 @@ const detailsOpen = ref(false)
 const emit = defineEmits(['respond'])
 
 function riskLabel(risk) {
-  return RISK_LABELS[risk] || '操作'
+  return t(RISK_LABELS[risk] || t('操作'))
 }
 
 function approvalStatusText(status) {
-  return STATUS_LABELS[status] || ''
+  return STATUS_LABELS[status] ? t(STATUS_LABELS[status]) : ''
 }
 
 function hasApprovalArgs(approval) {

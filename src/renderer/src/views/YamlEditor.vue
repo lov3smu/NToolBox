@@ -1,21 +1,21 @@
 <template>
   <PageLayout tool-path="/yaml-editor">
     <template #actions>
-      <button class="btn btn-primary btn-sm" @click="formatYaml">格式化</button>
-      <button class="btn btn-secondary btn-sm" @click="compressYaml">压缩</button>
-      <button class="btn btn-secondary btn-sm" @click="validateYaml">校验</button>
-      <button class="btn btn-secondary btn-sm" @click="yamlToJson">转 JSON</button>
+      <button class="btn btn-primary btn-sm" @click="formatYaml">{{ t('格式化') }}</button>
+      <button class="btn btn-secondary btn-sm" @click="compressYaml">{{ t('压缩') }}</button>
+      <button class="btn btn-secondary btn-sm" @click="validateYaml">{{ t('校验') }}</button>
+      <button class="btn btn-secondary btn-sm" @click="yamlToJson">{{ t('转 JSON') }}</button>
     </template>
 
     <div class="page-body">
       <div ref="editorLayoutRef" class="editor-layout" :style="{ '--split-ratio': `${splitRatio}%` }">
         <div class="panel editor-panel">
           <div class="panel-header">
-            <span class="panel-title">YAML 输入</span>
+            <span class="panel-title">{{ t('YAML 输入') }}</span>
             <div class="panel-actions">
-              <button class="btn btn-secondary btn-xs" @click="clearInput">清空</button>
-              <button class="btn btn-secondary btn-xs" @click="loadExample">示例</button>
-              <button class="btn btn-secondary btn-xs" @click="loadFromFile">文件</button>
+              <button class="btn btn-secondary btn-xs" @click="clearInput">{{ t('清空') }}</button>
+              <button class="btn btn-secondary btn-xs" @click="loadExample">{{ t('示例') }}</button>
+              <button class="btn btn-secondary btn-xs" @click="loadFromFile">{{ t('文件') }}</button>
             </div>
           </div>
           <div class="editor-wrapper">
@@ -29,7 +29,7 @@
                 ref="textareaRef"
                 v-model="yamlInput"
                 class="code-editor"
-                placeholder="请输入YAML代码..."
+                :placeholder="t('请输入 YAML 代码...')"
                 spellcheck="false"
                 @input="onInputChange"
                 @scroll="syncScroll"
@@ -37,22 +37,22 @@
             </div>
           </div>
           <div class="input-stats">
-            <span>行数: {{ inputLines }}</span>
-            <span>字符: {{ inputChars }}</span>
+            <span>{{ t('行数') }}: {{ inputLines }}</span>
+            <span>{{ t('字符') }}: {{ inputChars }}</span>
           </div>
         </div>
 
         <SplitHandle
           orientation="vertical"
           :resizing="splitResizing"
-          label="拖动调整输入与输出宽度"
+          :label="t('拖动调整输入与输出宽度')"
           @pointerdown="startSplitResize"
           @keydown="onSplitKeydown"
         />
 
         <div class="panel editor-panel">
           <div class="panel-header">
-            <span class="panel-title">结果输出</span>
+            <span class="panel-title">{{ t('结果输出') }}</span>
             <div class="segmented">
               <button class="segmented-item" :class="{ active: outputType === 'yaml' }" @click="outputType = 'yaml'">
                 YAML
@@ -61,11 +61,11 @@
                 JSON
               </button>
               <button class="segmented-item" :class="{ active: outputType === 'tree' }" @click="outputType = 'tree'">
-                树形
+                {{ t('树形') }}
               </button>
             </div>
             <div class="panel-actions">
-              <button class="btn btn-secondary btn-xs" @click="copyOutput">复制</button>
+              <button class="btn btn-secondary btn-xs" @click="copyOutput">{{ t('复制') }}</button>
             </div>
           </div>
           <div class="editor-wrapper">
@@ -85,13 +85,13 @@
               />
             </div>
             <div v-else-if="outputType === 'tree'" class="tree-view">
-              <div v-if="!parsedData" class="tree-empty">请输入有效的YAML内容</div>
+              <div v-if="!parsedData" class="tree-empty">{{ t('请输入有效的 YAML 内容') }}</div>
               <div v-else class="tree-content" v-html="treeHtml" />
             </div>
           </div>
           <div class="output-stats">
-            <span v-if="outputType === 'yaml' || outputType === 'json'">行数: {{ outputLines }}</span>
-            <span v-if="outputType === 'yaml' || outputType === 'json'">字符: {{ outputChars }}</span>
+            <span v-if="outputType === 'yaml' || outputType === 'json'">{{ t('行数') }}: {{ outputLines }}</span>
+            <span v-if="outputType === 'yaml' || outputType === 'json'">{{ t('字符') }}: {{ outputChars }}</span>
           </div>
         </div>
       </div>
@@ -108,28 +108,34 @@
 
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">YAML 语法说明</span>
+          <span class="panel-title">{{ t('YAML 语法说明') }}</span>
         </div>
         <div class="panel-body help-content">
-          <p><strong>基本语法：</strong></p>
+          <p>
+            <strong>{{ t('基本语法：') }}</strong>
+          </p>
           <ul>
-            <li>使用缩进表示层级关系，缩进空格数不限（通常2或4个空格）</li>
-            <li>键值对使用 <code>key: value</code> 格式，冒号后必须有空格</li>
-            <li>列表项使用 <code>-</code> 开头，后面有空格</li>
-            <li>注释使用 <code>#</code> 开头</li>
+            <li>{{ t('使用缩进表示层级关系，缩进空格数不限（通常 2 或 4 个空格）') }}</li>
+            <li>{{ t('键值对使用 {example} 格式，冒号后必须有空格', { example: 'key: value' }) }}</li>
+            <li>{{ t('列表项使用 {dash} 开头，后面有空格', { dash: '-' }) }}</li>
+            <li>{{ t('注释使用 {hash} 开头', { hash: '#' }) }}</li>
           </ul>
-          <p><strong>数据类型：</strong></p>
+          <p>
+            <strong>{{ t('数据类型：') }}</strong>
+          </p>
           <ul>
-            <li>字符串：可以直接写，或用引号包裹</li>
-            <li>数字：直接写数字</li>
-            <li>布尔值：<code>true</code> / <code>false</code></li>
-            <li>空值：<code>null</code> 或留空</li>
-            <li>日期：ISO格式，如 <code>2024-01-01</code></li>
+            <li>{{ t('字符串：可以直接写，或用引号包裹') }}</li>
+            <li>{{ t('数字：直接写数字') }}</li>
+            <li>{{ t('布尔值：{example}', { example: 'true / false' }) }}</li>
+            <li>{{ t('空值：{example} 或留空', { example: 'null' }) }}</li>
+            <li>{{ t('日期：ISO 格式，如 {example}', { example: '2024-01-01' }) }}</li>
           </ul>
-          <p><strong>多行字符串：</strong></p>
+          <p>
+            <strong>{{ t('多行字符串：') }}</strong>
+          </p>
           <ul>
-            <li><code>|</code> 保留换行符</li>
-            <li><code>></code> 将换行符替换为空格</li>
+            <li>{{ t('{symbol} 保留换行符', { symbol: '|' }) }}</li>
+            <li>{{ t('{symbol} 将换行符替换为空格', { symbol: '>' }) }}</li>
           </ul>
         </div>
       </div>
@@ -146,6 +152,7 @@ import * as yaml from 'js-yaml'
 import Toast from '@/components/Toast.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { t } from '@/i18n'
 
 const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
 
@@ -173,7 +180,7 @@ const yamlInput = ref('')
 const outputContent = ref('')
 const outputType = ref('yaml')
 const parsedData = ref(null)
-const statusText = ref('等待输入')
+const statusText = ref(t('等待输入'))
 const statusClass = ref('status-error')
 const statusIcon = ref('')
 const errorDetail = ref('')
@@ -258,7 +265,7 @@ function renderValueInline(val) {
 function onInputChange() {
   errorDetail.value = ''
   if (!yamlInput.value.trim()) {
-    statusText.value = 'YAML内容不能为空'
+    statusText.value = t('YAML 内容不能为空')
     statusClass.value = 'status-error'
     parsedData.value = null
     outputContent.value = ''
@@ -295,24 +302,28 @@ function onInputChange() {
           afterColon !== '>' &&
           !afterColon.startsWith(':')
         ) {
-          throw new yaml.YAMLException(`第 ${i + 1} 行：冒号后缺少空格`)
+          throw new yaml.YAMLException(t('第 {line} 行：冒号后缺少空格', { line: i + 1 }))
         }
       }
     }
 
-    statusText.value = 'YAML格式正确'
+    statusText.value = t('YAML 格式正确')
     statusClass.value = 'status-valid'
     updateOutput()
   } catch (e) {
     parsedData.value = null
-    statusText.value = 'YAML格式错误'
+    statusText.value = t('YAML 格式错误')
     statusClass.value = 'status-error'
 
-    let errorMsg = e.message || '未知错误'
+    let errorMsg = e.message || t('未知错误')
     if (e.mark) {
       const lineNum = e.mark.line + 1
       const colNum = e.mark.column + 1
-      errorMsg = `第 ${lineNum} 行，第 ${colNum} 列: ${e.reason || e.message}`
+      errorMsg = t('第 {line} 行，第 {column} 列: {reason}', {
+        line: lineNum,
+        column: colNum,
+        reason: e.reason || e.message
+      })
     }
     errorDetail.value = errorMsg
     outputContent.value = ''
@@ -336,13 +347,13 @@ function updateOutput() {
         sortKeys: false
       })
     } catch (e) {
-      outputContent.value = '转换失败: ' + e.message
+      outputContent.value = t('转换失败: {message}', { message: e.message })
     }
   } else if (outputType.value === 'json') {
     try {
       outputContent.value = JSON.stringify(parsedData.value, null, 2)
     } catch (e) {
-      outputContent.value = '转换失败: ' + e.message
+      outputContent.value = t('转换失败: {message}', { message: e.message })
     }
   } else if (outputType.value === 'tree') {
     treeHtml.value = renderTree(parsedData.value)
@@ -355,7 +366,7 @@ watch(outputType, () => {
 
 function formatYaml() {
   if (!yamlInput.value.trim()) {
-    showWarning('请输入YAML内容')
+    showWarning(t('请输入 YAML 内容'))
     return
   }
 
@@ -368,15 +379,15 @@ function formatYaml() {
       sortKeys: false
     })
     onInputChange()
-    showSuccess('格式化成功')
+    showSuccess(t('格式化成功'))
   } catch (e) {
-    showError('格式化失败: ' + e.message)
+    showError(t('格式化失败: {message}', { message: e.message }))
   }
 }
 
 function compressYaml() {
   if (!yamlInput.value.trim()) {
-    showWarning('请输入YAML内容')
+    showWarning(t('请输入 YAML 内容'))
     return
   }
 
@@ -391,44 +402,48 @@ function compressYaml() {
       })
       .replace(/\n+/g, '\n')
     onInputChange()
-    showSuccess('压缩成功')
+    showSuccess(t('压缩成功'))
   } catch (e) {
-    showError('压缩失败: ' + e.message)
+    showError(t('压缩失败: {message}', { message: e.message }))
   }
 }
 
 function validateYaml() {
   if (!yamlInput.value.trim()) {
-    statusText.value = 'YAML内容不能为空'
+    statusText.value = t('YAML 内容不能为空')
     statusClass.value = 'status-error'
-    showWarning('请输入YAML内容')
+    showWarning(t('请输入 YAML 内容'))
     return
   }
 
   try {
     yaml.load(yamlInput.value)
-    statusText.value = 'YAML格式正确'
+    statusText.value = t('YAML 格式正确')
     statusClass.value = 'status-valid'
     errorDetail.value = ''
-    showSuccess('校验通过，YAML格式正确')
+    showSuccess(t('校验通过，YAML 格式正确'))
   } catch (e) {
-    statusText.value = 'YAML格式错误'
+    statusText.value = t('YAML 格式错误')
     statusClass.value = 'status-error'
 
-    let errorMsg = e.message || '未知错误'
+    let errorMsg = e.message || t('未知错误')
     if (e.mark) {
       const lineNum = e.mark.line + 1
       const colNum = e.mark.column + 1
-      errorMsg = `第 ${lineNum} 行，第 ${colNum} 列: ${e.reason || e.message}`
+      errorMsg = t('第 {line} 行，第 {column} 列: {reason}', {
+        line: lineNum,
+        column: colNum,
+        reason: e.reason || e.message
+      })
     }
     errorDetail.value = errorMsg
-    showError('校验失败: ' + errorMsg)
+    showError(t('校验失败: {message}', { message: errorMsg }))
   }
 }
 
 function yamlToJson() {
   if (!yamlInput.value.trim()) {
-    showWarning('请输入YAML内容')
+    showWarning(t('请输入 YAML 内容'))
     return
   }
 
@@ -436,9 +451,9 @@ function yamlToJson() {
     const data = yaml.load(yamlInput.value)
     outputType.value = 'json'
     outputContent.value = JSON.stringify(data, null, 2)
-    showSuccess('转换成功')
+    showSuccess(t('转换成功'))
   } catch (e) {
-    showError('转换失败: ' + e.message)
+    showError(t('转换失败: {message}', { message: e.message }))
   }
 }
 
@@ -446,15 +461,15 @@ function clearInput() {
   yamlInput.value = ''
   outputContent.value = ''
   parsedData.value = null
-  statusText.value = 'YAML内容不能为空'
+  statusText.value = t('YAML 内容不能为空')
   statusClass.value = 'status-error'
   errorDetail.value = ''
   treeHtml.value = ''
-  showInfo('已清空')
+  showInfo(t('已清空'))
 }
 
 function loadExample() {
-  yamlInput.value = `# YAML示例
+  yamlInput.value = `# ${t('YAML 示例')}
 server:
   host: localhost
   port: 8080
@@ -493,7 +508,7 @@ settings:
   retry_count: 3
   debug: false`
   onInputChange()
-  showInfo('已加载示例')
+  showInfo(t('已加载示例'))
 }
 
 function loadFromFile() {
@@ -507,10 +522,10 @@ function loadFromFile() {
     reader.onload = (event) => {
       yamlInput.value = event.target.result
       onInputChange()
-      showInfo('已加载文件: ' + file.name)
+      showInfo(t('已加载文件: {name}', { name: file.name }))
     }
     reader.onerror = () => {
-      showError('读取文件失败')
+      showError(t('读取文件失败'))
     }
     reader.readAsText(file)
   }
@@ -520,13 +535,13 @@ function loadFromFile() {
 function copyOutput() {
   const content = outputType.value === 'tree' ? JSON.stringify(parsedData.value, null, 2) : outputContent.value
   if (!content) {
-    showWarning('没有可复制的内容')
+    showWarning(t('没有可复制的内容'))
     return
   }
   navigator.clipboard
     .writeText(content)
     .then(() => {
-      showSuccess('已复制到剪贴板')
+      showSuccess(t('已复制到剪贴板'))
     })
     .catch(() => {
       const textarea = document.createElement('textarea')
@@ -537,9 +552,9 @@ function copyOutput() {
       textarea.select()
       try {
         document.execCommand('copy')
-        showSuccess('已复制到剪贴板')
+        showSuccess(t('已复制到剪贴板'))
       } catch {
-        showError('复制失败，请手动复制')
+        showError(t('复制失败，请手动复制'))
       }
       document.body.removeChild(textarea)
     })

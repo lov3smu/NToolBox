@@ -87,7 +87,7 @@ export const AI_COMPRESS_THRESHOLD_MAX = 90
 export const AI_COMPRESS_THRESHOLD_DEFAULT = 70
 
 export const AI_COMPRESS_KEEP_RECENT_OPTIONS = Object.freeze(
-  [4, 6, 8, 10, 12].map((value) => ({ value, label: `${value} 条`, hint: `压缩后保留最近 ${value} 条消息原文` }))
+  [4, 6, 8, 10, 12].map((value) => ({ value, label: '{p0} 条', hint: '压缩后保留最近 {p0} 条消息原文' }))
 )
 
 export const AI_COMPRESS_KEEP_RECENT_MIN = 4
@@ -95,7 +95,7 @@ export const AI_COMPRESS_KEEP_RECENT_MAX = 12
 export const AI_COMPRESS_KEEP_RECENT_DEFAULT = 6
 
 export const AI_MAX_ATTACHMENT_OPTIONS = Object.freeze(
-  [3, 6, 10, 15, 20].map((value) => ({ value, label: `${value} 个`, hint: `单条消息最多携带 ${value} 个附件` }))
+  [3, 6, 10, 15, 20].map((value) => ({ value, label: '{p0} 个', hint: '单条消息最多携带 {p0} 个附件' }))
 )
 
 export const AI_MAX_ATTACHMENTS_MIN = 1
@@ -103,7 +103,7 @@ export const AI_MAX_ATTACHMENTS_MAX = 20
 export const AI_MAX_ATTACHMENTS_DEFAULT = 6
 
 export const AI_MAX_IMAGE_MB_OPTIONS = Object.freeze(
-  [5, 10, 20, 30, 50].map((value) => ({ value, label: `${value} MB`, hint: `单张图片不超过 ${value} MB` }))
+  [5, 10, 20, 30, 50].map((value) => ({ value, label: '{p0} MB', hint: '单张图片不超过 {p0} MB' }))
 )
 
 export const AI_MAX_IMAGE_MB_MIN = 1
@@ -111,7 +111,7 @@ export const AI_MAX_IMAGE_MB_MAX = 50
 export const AI_MAX_IMAGE_MB_DEFAULT = 10
 
 export const AI_MAX_TEXT_KB_OPTIONS = Object.freeze(
-  [128, 256, 512, 1024].map((value) => ({ value, label: `${value} KB`, hint: `单个文本附件不超过 ${value} KB` }))
+  [128, 256, 512, 1024].map((value) => ({ value, label: '{p0} KB', hint: '单个文本附件不超过 {p0} KB' }))
 )
 
 export const AI_MAX_TEXT_KB_MIN = 32
@@ -163,8 +163,8 @@ export function normalizeAiRuntimeLimits(raw) {
 export const AI_AGENT_MAX_ITERATIONS_OPTIONS = Object.freeze(
   [5, 10, 15, 20, 30].map((value) => ({
     value,
-    label: `${value} 轮`,
-    hint: value === 20 ? '默认值，适合多步骤代码修改与排查任务' : `单次任务最多执行 ${value} 轮工具调用`
+    label: '{p0} 轮',
+    hint: value === 20 ? '默认值，适合多步骤代码修改与排查任务' : '单次任务最多执行 {p0} 轮工具调用'
   }))
 )
 
@@ -175,8 +175,8 @@ export const AI_AGENT_MAX_ITERATIONS_DEFAULT = 20
 export const AI_AGENT_TIMEOUT_MIN_OPTIONS = Object.freeze(
   [1, 3, 5, 10, 20, 30].map((value) => ({
     value,
-    label: `${value} 分钟`,
-    hint: value === 5 ? '默认值，超时后停止本轮任务并给出提示' : `单次任务最长运行 ${value} 分钟`
+    label: '{p0} 分钟',
+    hint: value === 5 ? '默认值，超时后停止本轮任务并给出提示' : '单次任务最长运行 {p0} 分钟'
   }))
 )
 
@@ -187,8 +187,8 @@ export const AI_AGENT_TIMEOUT_MIN_DEFAULT = 5
 export const AI_AGENT_PLAN_STEPS_OPTIONS = Object.freeze(
   [4, 6, 8, 10, 12].map((value) => ({
     value,
-    label: `${value} 步`,
-    hint: `规划器最多拆分 ${value} 个步骤，步骤越多计划越细`
+    label: '{p0} 步',
+    hint: '规划器最多拆分 {p0} 个步骤，步骤越多计划越细'
   }))
 )
 
@@ -199,8 +199,8 @@ export const AI_AGENT_PLAN_STEPS_DEFAULT = 8
 export const AI_AGENT_PARALLEL_TOOLS_OPTIONS = Object.freeze(
   [1, 2, 4, 6, 8].map((value) => ({
     value,
-    label: `${value} 个`,
-    hint: value === 1 ? '逐个执行工具调用' : `同一轮最多并行执行 ${value} 个工具调用`
+    label: '{p0} 个',
+    hint: value === 1 ? '逐个执行工具调用' : '同一轮最多并行执行 {p0} 个工具调用'
   }))
 )
 
@@ -211,8 +211,8 @@ export const AI_AGENT_PARALLEL_TOOLS_DEFAULT = 4
 export const AI_TOOL_RESULT_MAX_KB_OPTIONS = Object.freeze(
   [8, 16, 24, 32, 48].map((value) => ({
     value,
-    label: `${value} KB`,
-    hint: `单个工具结果超过 ${value} KB 时截断，完整内容可落盘分页读取`
+    label: '{p0} KB',
+    hint: '单个工具结果超过 {p0} KB 时截断，完整内容可落盘分页读取'
   }))
 )
 
@@ -223,8 +223,8 @@ export const AI_TOOL_RESULT_MAX_KB_DEFAULT = 24
 export const AI_TOOL_RESULT_RUN_KB_OPTIONS = Object.freeze(
   [80, 160, 240, 320].map((value) => ({
     value,
-    label: `${value} KB`,
-    hint: `单次任务累计工具输出超过 ${value} KB 后，后续结果都会被截断`
+    label: '{p0} KB',
+    hint: '单次任务累计工具输出超过 {p0} KB 后，后续结果都会被截断'
   }))
 )
 
@@ -235,8 +235,8 @@ export const AI_TOOL_RESULT_RUN_KB_DEFAULT = 160
 export const AI_TOOL_RESULT_RETENTION_OPTIONS = Object.freeze(
   [1, 3, 7, 14, 30].map((value) => ({
     value,
-    label: `${value} 天`,
-    hint: `落盘的完整工具结果保留 ${value} 天后自动清理`
+    label: '{p0} 天',
+    hint: '落盘的完整工具结果保留 {p0} 天后自动清理'
   }))
 )
 
@@ -297,16 +297,10 @@ export const AI_PRESETS = Object.freeze([
     name: '省钱模式',
     description: '更早压缩历史，收紧轮次、时长与工具输出，优先控制 token 消耗',
     values: Object.freeze({
-      ai_temperature: 0.3,
-      ai_compress_threshold: 60,
-      ai_compress_keep_recent: 4,
-      ai_agent_max_iterations: 5,
-      ai_agent_timeout_min: 3,
-      ai_agent_plan_steps: 6,
-      ai_agent_parallel_tools: 2,
-      ai_tool_result_max_kb: 16,
-      ai_tool_result_run_kb: 80,
-      ai_tool_result_retention_days: 7
+      temperature: 0.3,
+      context: { compress_threshold: 60, keep_recent: 4 },
+      agent: { max_iterations: 5, timeout_min: 3, max_plan_steps: 6, max_parallel_tools: 2 },
+      tool_result: { max_kb: 16, run_kb: 80, retention_days: 7 }
     })
   }),
   Object.freeze({
@@ -314,16 +308,10 @@ export const AI_PRESETS = Object.freeze([
     name: '长任务模式',
     description: '放宽轮次与时长、保留更多上下文，适合多步骤重构与排查',
     values: Object.freeze({
-      ai_temperature: null,
-      ai_compress_threshold: 80,
-      ai_compress_keep_recent: 10,
-      ai_agent_max_iterations: 20,
-      ai_agent_timeout_min: 20,
-      ai_agent_plan_steps: 12,
-      ai_agent_parallel_tools: 6,
-      ai_tool_result_max_kb: 32,
-      ai_tool_result_run_kb: 320,
-      ai_tool_result_retention_days: 14
+      temperature: null,
+      context: { compress_threshold: 80, keep_recent: 10 },
+      agent: { max_iterations: 20, timeout_min: 20, max_plan_steps: 12, max_parallel_tools: 6 },
+      tool_result: { max_kb: 32, run_kb: 320, retention_days: 14 }
     })
   }),
   Object.freeze({
@@ -331,17 +319,10 @@ export const AI_PRESETS = Object.freeze([
     name: '严格审批',
     description: '所有写操作与破坏性操作执行前确认，并收紧并行与预算；适合生产库',
     values: Object.freeze({
-      ai_tool_policy: 'all',
-      ai_temperature: null,
-      ai_compress_threshold: 70,
-      ai_compress_keep_recent: 6,
-      ai_agent_max_iterations: 10,
-      ai_agent_timeout_min: 5,
-      ai_agent_plan_steps: 8,
-      ai_agent_parallel_tools: 2,
-      ai_tool_result_max_kb: 24,
-      ai_tool_result_run_kb: 160,
-      ai_tool_result_retention_days: 7
+      temperature: null,
+      context: { compress_threshold: 70, keep_recent: 6 },
+      agent: { max_iterations: 10, timeout_min: 5, max_plan_steps: 8, max_parallel_tools: 2, tool_policy: 'all' },
+      tool_result: { max_kb: 24, run_kb: 160, retention_days: 7 }
     })
   })
 ])

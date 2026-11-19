@@ -3,7 +3,7 @@
     <div class="dialog dialog-wide server-status-dialog">
       <div class="dialog-header">
         <h3>
-          实例状态 ·
+          {{ t('实例状态 ·') }}
           <span class="server-status-connection">{{ serverStatusDialog.connectionName }}</span>
         </h3>
         <div class="dialog-header-actions">
@@ -12,12 +12,12 @@
             :class="['btn btn-sm', serverStatusDialog.autoRefresh ? 'btn-primary' : 'btn-secondary']"
             @click="toggleAutoRefresh"
           >
-            {{ serverStatusDialog.autoRefresh ? '自动刷新中' : '自动刷新' }}
+            {{ serverStatusDialog.autoRefresh ? t('自动刷新中') : t('自动刷新') }}
           </button>
           <button class="btn btn-sm btn-secondary" :disabled="serverStatusDialog.loading" @click="refreshAll">
-            刷新
+            {{ t('刷新') }}
           </button>
-          <button class="btn-icon btn-sm" title="关闭" @click="closeServerStatusDialog">
+          <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeServerStatusDialog">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -28,7 +28,9 @@
 
       <div class="dialog-content server-status-body">
         <p v-if="serverStatusDialog.error" class="create-table-error">{{ serverStatusDialog.error }}</p>
-        <div v-if="!status.success && serverStatusDialog.loading" class="session-hint">正在读取实例状态…</div>
+        <div v-if="!status.success && serverStatusDialog.loading" class="session-hint">
+          {{ t('正在读取实例状态…') }}
+        </div>
 
         <template v-if="status.success">
           <div class="status-card-grid">
@@ -36,44 +38,49 @@
               <span class="status-card-label">QPS</span>
               <span class="status-card-value">{{ formatQps(serverStatusDialog.qps) }}</span>
               <span class="status-card-sub"
-                >累计查询 {{ formatInteger(status.questions) }} · 平均 {{ formatQps(status.qpsAvg) }}</span
+                >{{ t('累计查询') }} {{ formatInteger(status.questions) }} {{ t('· 平均') }}
+                {{ formatQps(status.qpsAvg) }}</span
               >
             </div>
             <div class="status-card">
-              <span class="status-card-label">连接数</span>
+              <span class="status-card-label">{{ t('连接数') }}</span>
               <span class="status-card-value">
                 {{ formatInteger(status.threadsConnected) }}
                 <span class="status-card-unit">/ {{ formatInteger(status.maxConnections) }}</span>
               </span>
               <span class="status-card-sub"
-                >活跃 {{ formatInteger(status.threadsRunning) }} · 异常中断
+                >{{ t('活跃') }} {{ formatInteger(status.threadsRunning) }} {{ t('· 异常中断') }}
                 {{ formatInteger(status.abortedConnects) }}</span
               >
             </div>
             <div class="status-card">
-              <span class="status-card-label">缓存命中率</span>
+              <span class="status-card-label">{{ t('缓存命中率') }}</span>
               <span class="status-card-value">{{ formatRate(status.bufferPool?.hitRate) }}</span>
               <span class="status-card-sub">
-                缓冲池 {{ status.bufferPool?.sizeMb || 0 }} MB · 磁盘读 {{ formatInteger(status.bufferPool?.reads) }}
+                {{ t('缓冲池') }} {{ status.bufferPool?.sizeMb || 0 }} {{ t('MB · 磁盘读') }}
+                {{ formatInteger(status.bufferPool?.reads) }}
               </span>
             </div>
             <div class="status-card">
-              <span class="status-card-label">慢查询</span>
+              <span class="status-card-label">{{ t('慢查询') }}</span>
               <span class="status-card-value">{{ formatInteger(status.slowQueries) }}</span>
               <span class="status-card-sub">
-                近采样 +{{ formatInteger(serverStatusDialog.slowDelta) }} · 慢日志
-                {{ status.slowQueryLog ? '开启' : '关闭' }} · 阈值 {{ formatSeconds(status.longQueryTime) }}
+                {{ t('近采样 +') }}{{ formatInteger(serverStatusDialog.slowDelta) }} {{ t('· 慢日志') }}
+                {{ status.slowQueryLog ? t('开启') : t('关闭') }} {{ t('· 阈值') }}
+                {{ formatSeconds(status.longQueryTime) }}
               </span>
             </div>
           </div>
 
           <div class="status-trend">
             <div class="status-trend-header">
-              <span class="status-section-title">QPS 趋势</span>
-              <span class="status-trend-meta"> 最近 {{ trendSpanSeconds }} 秒 · 峰值 {{ formatQps(maxQps) }} </span>
+              <span class="status-section-title">{{ t('QPS 趋势') }}</span>
+              <span class="status-trend-meta">
+                {{ t('最近') }} {{ trendSpanSeconds }} {{ t('秒 · 峰值') }} {{ formatQps(maxQps) }}
+              </span>
             </div>
             <div class="status-trend-chart">
-              <div v-if="history.length === 0" class="session-hint">等待采样…</div>
+              <div v-if="history.length === 0" class="session-hint">{{ t('等待采样…') }}</div>
               <svg v-else viewBox="0 0 600 90" preserveAspectRatio="none" class="status-spark">
                 <polygon :points="areaPoints" class="status-spark-area" />
                 <polyline :points="linePoints" class="status-spark-line" />
@@ -83,36 +90,37 @@
 
           <div class="status-slow">
             <div class="status-slow-header">
-              <span class="status-section-title">慢查询 TOP 10</span>
+              <span class="status-section-title">{{ t('慢查询 TOP 10') }}</span>
               <span class="session-hint"
-                >按总耗时排序 · 来自 performance_schema{{
-                  serverStatusDialog.database ? ' · ' + serverStatusDialog.database : ''
-                }}</span
+                >{{ t('按总耗时排序 · 来自 performance_schema')
+                }}{{ serverStatusDialog.database ? ' · ' + serverStatusDialog.database : '' }}</span
               >
               <button
                 class="btn btn-xs btn-secondary"
                 :disabled="serverStatusDialog.slowLoading"
                 @click="loadSlowQueries"
               >
-                刷新慢查询
+                {{ t('刷新慢查询') }}
               </button>
             </div>
             <p v-if="serverStatusDialog.slowError" class="create-table-error">{{ serverStatusDialog.slowError }}</p>
-            <div v-else-if="serverStatusDialog.slowLoading" class="session-hint">正在读取慢查询…</div>
+            <div v-else-if="serverStatusDialog.slowLoading" class="session-hint">{{ t('正在读取慢查询…') }}</div>
             <div v-else-if="!serverStatusDialog.slowEnabled" class="session-hint">
-              {{ serverStatusDialog.slowReason || 'performance_schema 不可用' }}，无法展示慢查询排行
+              {{ serverStatusDialog.slowReason || t('performance_schema 不可用') }}{{ t('，无法展示慢查询排行') }}
             </div>
-            <div v-else-if="serverStatusDialog.slowQueries.length === 0" class="session-hint">暂无慢查询记录</div>
+            <div v-else-if="serverStatusDialog.slowQueries.length === 0" class="session-hint">
+              {{ t('暂无慢查询记录') }}
+            </div>
             <div v-else class="status-slow-scroll">
               <table class="result-table status-slow-table">
                 <thead>
                   <tr>
                     <th>SQL</th>
-                    <th>次数</th>
-                    <th>平均耗时</th>
-                    <th>最大耗时</th>
-                    <th>扫描行数</th>
-                    <th>操作</th>
+                    <th>{{ t('次数') }}</th>
+                    <th>{{ t('平均耗时') }}</th>
+                    <th>{{ t('最大耗时') }}</th>
+                    <th>{{ t('扫描行数') }}</th>
+                    <th>{{ t('操作') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -132,26 +140,29 @@
           </div>
 
           <div class="status-meta">
-            <span>运行时长 {{ formatUptime(status.uptimeSeconds) }}</span>
-            <span>认证用户 {{ status.currentUser || '-' }}</span>
+            <span>{{ t('运行时长') }} {{ formatUptime(status.uptimeSeconds) }}</span>
+            <span>{{ t('认证用户') }} {{ status.currentUser || '-' }}</span>
             <span
-              >缓冲池空闲页 {{ formatInteger(status.bufferPool?.pagesFree) }} /
+              >{{ t('缓冲池空闲页') }} {{ formatInteger(status.bufferPool?.pagesFree) }} /
               {{ formatInteger(status.bufferPool?.pagesTotal) }}</span
             >
-            <span v-if="status.performanceSchema === false" class="status-meta-warn">performance_schema 已关闭</span>
+            <span v-if="status.performanceSchema === false" class="status-meta-warn">{{
+              t('performance_schema 已关闭')
+            }}</span>
           </div>
         </template>
       </div>
 
       <div class="dialog-footer">
-        <span class="dialog-footer-hint">每 2 秒自动采样（仅对话框打开时），EXPLAIN 会将占位符替换为 1</span>
-        <button class="btn btn-primary" @click="closeServerStatusDialog">关闭</button>
+        <span class="dialog-footer-hint">{{ t('每 2 秒自动采样（仅对话框打开时），EXPLAIN 会将占位符替换为 1') }}</span>
+        <button class="btn btn-primary" @click="closeServerStatusDialog">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
 const databaseStore = inject('database')
@@ -223,9 +234,9 @@ function formatUptime(seconds) {
   const hours = Math.floor((total % 86400) / 3600)
   const minutes = Math.floor((total % 3600) / 60)
   const parts = []
-  if (days) parts.push(`${days} 天`)
-  if (hours) parts.push(`${hours} 小时`)
-  parts.push(`${minutes} 分钟`)
+  if (days) parts.push(t('{p0} 天', { p0: days }))
+  if (hours) parts.push(t('{p0} 小时', { p0: hours }))
+  parts.push(t('{p0} 分钟', { p0: minutes }))
   return parts.join(' ')
 }
 

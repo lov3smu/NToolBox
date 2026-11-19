@@ -5,7 +5,7 @@ import path from 'node:path'
 
 const state = vi.hoisted(() => ({
   userDataDir: '',
-  config: { memory_auto_capture: true }
+  config: { memory: { auto_capture: true } }
 }))
 
 vi.mock('electron', () => ({
@@ -40,7 +40,7 @@ describe('memory service', () => {
 
   beforeEach(() => {
     state.userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ntoolbox-memory-'))
-    state.config = { memory_auto_capture: true }
+    state.config = { memory: { auto_capture: true } }
     workspace = path.join(state.userDataDir, 'workspace')
     fs.mkdirSync(workspace, { recursive: true })
   })
@@ -219,11 +219,11 @@ describe('memory service', () => {
     expect(prompt).toContain('knowledge-search')
     expect(prompt).toContain('自动记忆已开启')
 
-    state.config = { memory_auto_capture: false }
+    state.config = { memory: { auto_capture: false } }
     const noAuto = await buildMemoryPrompt(workspace)
     expect(noAuto).not.toContain('自动记忆已开启')
 
-    state.config = { memory_auto_capture: true }
+    state.config = { memory: { auto_capture: true } }
     const chatOnly = await buildMemoryPrompt(workspace, false)
     expect(chatOnly).toContain('长期记忆')
     expect(chatOnly).toContain('始终使用中文回复')
@@ -244,7 +244,7 @@ describe('memory service', () => {
 
     expect(await buildMemoryPrompt(workspace, false)).toBe('')
 
-    state.config = { memory_auto_capture: false }
+    state.config = { memory: { auto_capture: false } }
     expect(await buildMemoryPrompt(workspace)).toBe('')
   })
 })

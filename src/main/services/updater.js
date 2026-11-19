@@ -7,6 +7,7 @@ import { netFetch } from './network.js'
 import { getUpdateFeedUrl } from '../../shared/network.js'
 import { IPC_EVENTS } from '../../shared/ipc'
 import { notify } from './notifications.js'
+import { t } from './i18n.js'
 
 autoUpdater.logger = log
 autoUpdater.logger.transports.file.level = 'info'
@@ -91,7 +92,7 @@ export async function getUpdateReleases() {
   const timer = setTimeout(() => controller.abort(), RELEASES_TIMEOUT)
 
   try {
-    const response = await netFetch(getUpdateFeedUrl(getConfig().market_sources), {
+    const response = await netFetch(getUpdateFeedUrl(getConfig().network?.market_sources), {
       signal: controller.signal,
       headers: {
         accept: 'application/vnd.github+json',
@@ -138,8 +139,8 @@ function initUpdater() {
     publish({ phase: 'available', ...describeInfo(info), progress: null, error: '' }, { open: true })
     if (!manualCheck) {
       void notify('update_found', {
-        title: '发现新版本',
-        body: `NToolBox ${info.version} 已发布，点击查看更新内容`
+        title: t('发现新版本'),
+        body: t('NToolBox {version} 已发布，点击查看更新内容', { version: info.version })
       })
     }
   })
@@ -154,7 +155,7 @@ function initUpdater() {
 
   autoUpdater.on('error', (err) => {
     log.error('更新出错:', err)
-    publish({ phase: 'error', error: err?.message || '检查更新失败', progress: null }, { open: manualCheck })
+    publish({ phase: 'error', error: err?.message || t('检查更新失败'), progress: null }, { open: manualCheck })
   })
 
   autoUpdater.on('download-progress', (progressObj) => {
@@ -299,8 +300,8 @@ export function startAutoUpdateCheck(mainWindow) {
   if (updateCheckInterval) clearInterval(updateCheckInterval)
 
   const config = getConfig()
-  if (config.auto_update && app.isPackaged) {
-    const hours = normalizeUpdateCheckInterval(config.update_check_interval)
+  if (config.update.auto_update && app.isPackaged) {
+    const hours = normalizeUpdateCheckInterval(config.update.check_interval)
     updateCheckInterval = setInterval(
       () => {
         log.info('定时检查更新')

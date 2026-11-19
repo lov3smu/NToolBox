@@ -21,7 +21,7 @@ npm run build:mac    # Build macOS (x64)
 npm run preview      # Preview production build
 ```
 
-Tests live in `tests/` (62 files, 512 cases) and run with vitest (`vitest.config.js`, node environment).
+Tests live in `tests/` (75 files, 593 cases) and run with vitest (`vitest.config.js`, node environment).
 
 ## Architecture
 
@@ -29,6 +29,8 @@ Tests live in `tests/` (62 files, 512 cases) and run with vitest (`vitest.config
 src/
 ├── shared/                    # Contracts shared by main / preload / renderer
 │   ├── ipc.js                 # IPC channels + method definitions (source of truth)
+│   ├── i18n.js                # Locale values/default, normalizeLocale, interpolate
+│   ├── locales/en-US/         # English catalog files keyed by Chinese source text
 │   ├── tools.js               # Tool registry (name, path, icon, menuGroup, trayGroup)
 │   ├── aiBehavior.js          # Persona/temperature/scenario models/tool policy + normalizers
 │   ├── network.js             # Proxy modes, mirror sources, net config normalizers
@@ -50,6 +52,7 @@ src/
 │   │   ├── chat.js            # Agent loop, streaming events, context compression
 │   │   ├── config.js          # Config read/normalize/write
 │   │   ├── configValidation.js
+│   │   ├── i18n.js            # Main-process t/getLocale/setLocale (synced from config)
 │   │   ├── database.js        # MySQL connections/queries/transfer/sessions
 │   │   ├── network.js         # Proxy applier, netFetch/createRequest, testNetwork
 │   │   ├── mcp.js / mcpRegistry.js   # MCP client + official registry client
@@ -80,9 +83,9 @@ src/
     ├── layouts/               # AppShell, AppTitleBar, PageLayout
     ├── api/                   # IPC API wrappers
     ├── styles/                # base.css design tokens + per-feature css
-    ├── utils/                 # theme.js, path.js (joinPath), markdown, format
+    ├── utils/                 # theme.js, path.js (joinPath), markdown, format, clampViewport.js
     ├── router/                # Vue Router config
-    └── i18n.js
+    └── i18n.js                # t/getLocale/setLocale + localStorage fallback
 ```
 
 ## Code Style
@@ -110,14 +113,27 @@ All code must work on Windows, Linux, and macOS. Platform-specific behavior need
 - Tabs, in order: 通用 → 外观 → 快捷键 → 模型 → AI 助手 → 网络 → 数据库客户端 → SQL 脚本生成 → 图床配置 → 扩展管理 → 关于. New tabs are inserted into the matching functional group.
 - Rows use the design system classes: `setting-section*`, `setting-row`, `setting-row-text/label/desc`, `setting-row-control`, `input-field`, `switch`.
 - Binary settings use `.switch`; multi-select uses the globally themed checkbox (`input[type='checkbox']:not(.switch)` in `base.css`). Never restyle it with `accent-color` or a custom indicator.
+- Radio choices use `components/RadioOption.vue` (`default | block | pill` variants) backed by the global `input[type='radio']` theme in `base.css`; never hand-roll a bare radio.
 - **Never use native `<select>`/`datalist` in Settings.** Use `components/settings/SettingSelect.vue` (label + hint options) or `SettingModelPicker.vue` (`provider:model`, type-to-filter, free text allowed). Panels teleport to `body`, `position: fixed`, z-index 1200, flip upward near the viewport bottom, close on Esc / outside click / scroll.
+- **Floating layers stay inside the viewport.** Menus/dialogs get the global `v-clamp-viewport` directive (`utils/clampViewport.js`: 8px margin, `translate` + max width/height clamp, re-runs on resize and 120ms after mount; `is-clamped-x/y` classes drive directional flips like database submenus). Components that position themselves (`SettingSelect` / `SettingModelPicker` / `HoverPopover`) must not double-apply it. Modal content scrolls internally via `max-height: calc(100vh - 32px)`.
+- **`HoverPopover` placement**: `top|bottom|left|right` plus `-start|-center|-end`, auto-flips near viewport edges. `boundary` (selector) pins the card outside that element with an `offset` gap and shrinks instead of flipping back — the session-rail workspace card uses `boundary=".chat-rail"` and must never cover the rail.
+- z-index scale: in-page layer 1000, dropdown/popover/panel 1200, context menu 2000 (submenu 2001), modal overlay / MessageDialog 9999, Toast 10000. Reuse these; do not invent larger values.
 - Feature pages stay functional; configuration lives in Settings (e.g. 图床 page = upload + history, providers configured in Settings → 图床配置; callout links to `/settings?tab=image-hosting`).
 - Design tokens (`styles/base.css`): `--font-size-base/dense/sm/xs`, `--control-height`, `--radius-*`, `--surface*`, `--text-*`, `--accent-color`, `--shadow-*`, `--motion-*`, `--spinner-*`; colors must come from theme tokens (no hardcoded light colors), honor `prefers-reduced-motion`.
 - Settings grid: `minmax(200px, 320px) 1fr`; `is-top` / `is-block` modifiers; dashed separators; rows stack at ≤900px (nested) and ≤720px (all).
+- Renderer config loads asynchronously (`useConfig` starts as `null`): read nested fields with `config.value?.app?...` and defaults. An unguarded read at first paint throws, breaks the route transition chain, and blanks every page.
+
+## Internationalization (i18n)
+
+- `t()` keys are the Chinese source text (no dotted keys): renderer `src/renderer/src/i18n.js`, main `src/main/services/i18n.js`. Locales: `zh-CN` (default) / `en-US`, config key `appearance.language`, normalized via `normalizeLocale` from `src/shared/i18n.js`.
+- English entries live in `src/shared/locales/en-US/*.js` (one file per domain, merged in `index.js`). Every literal `t('…')` key in `src/renderer/src` and `src/main` must have an entry with matching `{placeholder}` names — enforced by `tests/i18n.test.js`.
+- Shared contracts return Chinese templates with `{p0}`-style placeholders; they never call `t()` — consumers translate at the boundary.
+- Renderer keeps locale in a reactive ref (localStorage `ntb_locale` fallback) and re-applies config language on config change; main syncs at startup from the loaded config.
+- Never hardcode user-visible UI strings; never rename/translate catalog keys; a new locale needs `LOCALE_VALUES`/`LOCALE_OPTIONS`, a full catalog, both runtime modules, and test coverage.
 
 ## Theming & Font Size
 
-- Config keys `theme` (`system|light|dark`), `theme_style` (`sapphire|forest|mint|bee|parchment`), `font_size` (`small|medium|large|xlarge`) are normalized in `src/main/services/config.js`.
+- Config keys `appearance.theme` (`system|light|dark`), `appearance.theme_style` (`sapphire|forest|mint|bee|parchment`), `appearance.font_size` (`small|medium|large|xlarge`) are normalized in `src/main/services/config.js`.
 - `src/renderer/src/utils/theme.js` applies them as `data-theme`, `data-theme-style`, `data-font-size`, and `--font-scale` on `<html>`.
 - Main-process windows get title-bar overlay/background from `refreshWindowTheme()`; new theme-affecting config must call it.
 - Font-size switching sets a temporary `data-font-size-changing` attribute (CSS disables transitions); do not remove that guard.

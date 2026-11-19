@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import {
   dbApplyTableChanges,
   dbBeginTransaction,
@@ -119,7 +120,7 @@ export function createTabs(state, api) {
   }
 
   function createQueryTab(connName, dbName = '', options = {}) {
-    const { name = '无标题-查询', sqlQuery = '', previewKey = null } = options
+    const { name = t('无标题-查询'), sqlQuery = '', previewKey = null } = options
 
     if (previewKey) {
       const existingTab = tabs.value.find((t) => t.previewKey === previewKey)
@@ -159,9 +160,9 @@ export function createTabs(state, api) {
   }
 
   function createTableTab(connName, dbName, tableName, isView = false) {
-    const tabName = `${tableName}@${dbName}（${connName}）-${isView ? '视图' : '表'}`
-
-    const existingTab = tabs.value.find((t) => t.type === 'table' && t.name === tabName)
+    const existingTab = tabs.value.find(
+      (t) => t.type === 'table' && t.connectionName === connName && t.database === dbName && t.tableName === tableName
+    )
     if (existingTab) {
       activeTabId.value = existingTab.id
       return existingTab
@@ -171,7 +172,7 @@ export function createTabs(state, api) {
 
     tabs.value.push({
       id: tableId,
-      name: tabName,
+      name: tableName,
       type: 'table',
       closable: true,
       connectionName: connName,
@@ -227,8 +228,8 @@ export function createTabs(state, api) {
       for (const table of result.tables || []) {
         const columns = (table.columns || []).map((column) => {
           const notes = [
-            column.columnKey === 'PRI' ? '主键' : column.columnKey === 'UNI' ? '唯一' : '',
-            column.nullable === 'NO' ? '非空' : '可空'
+            column.columnKey === 'PRI' ? t('主键') : column.columnKey === 'UNI' ? t('唯一') : '',
+            column.nullable === 'NO' ? t('非空') : t('可空')
           ]
           return {
             label: column.name,
@@ -241,7 +242,7 @@ export function createTabs(state, api) {
           self: {
             label: table.name,
             type: 'class',
-            detail: '表',
+            detail: t('表'),
             info: table.comment || undefined
           },
           children: columns
@@ -259,9 +260,9 @@ export function createTabs(state, api) {
   }
 
   function getTabPlaceholder(tab) {
-    if (!tab.connectionName) return '请先选择数据库连接...'
-    if (!tab.database) return '请选择数据库...'
-    return '输入SQL查询...'
+    if (!tab.connectionName) return t('请先选择数据库连接...')
+    if (!tab.database) return t('请选择数据库...')
+    return t('输入SQL查询...')
   }
 
   async function onTabConnectionChange(tab) {
@@ -310,11 +311,11 @@ export function createTabs(state, api) {
       if (!sql) continue
       const head = sql.replace(/^(?:\/\*[\s\S]*?\*\/|--[^\n]*(?:\n|$)|#[^\n]*(?:\n|$)|\s)+/g, '')
       if (/^drop\b/i.test(head)) {
-        risks.push({ sql, reason: /^drop\s+database\b/i.test(head) ? '删除数据库' : '删除对象' })
+        risks.push({ sql, reason: /^drop\s+database\b/i.test(head) ? t('删除数据库') : t('删除对象') })
       } else if (/^truncate\b/i.test(head)) {
-        risks.push({ sql, reason: '清空表数据' })
+        risks.push({ sql, reason: t('清空表数据') })
       } else if (/^(update|delete)\b/i.test(head) && !/\bwhere\b/i.test(head)) {
-        risks.push({ sql, reason: '缺少 WHERE 条件' })
+        risks.push({ sql, reason: t('缺少 WHERE 条件') })
       }
     }
     return risks
@@ -324,7 +325,7 @@ export function createTabs(state, api) {
     let safeMode
     try {
       const config = await getConfig()
-      safeMode = config?.database_safe_mode !== false
+      safeMode = config?.database?.safe_mode !== false
     } catch {
       safeMode = true
     }
@@ -337,8 +338,17 @@ export function createTabs(state, api) {
       .slice(0, 3)
       .map((risk, index) => `${index + 1}. [${risk.reason}] ${risk.sql.split('\n')[0].slice(0, 120)}`)
       .join('\n')
-    const more = risks.length > 3 ? `\n… 另有 ${risks.length - 3} 条` : ''
-    return api.showConfirm(`检测到 ${risks.length} 条高风险语句：\n${preview}${more}\n\n确认继续执行吗？`, '安全模式')
+    const more = risks.length > 3 ? t('… 另有 {count} 条', { count: risks.length - 3 }) : ''
+    const message = [
+      t('检测到 {count} 条高风险语句：', { count: risks.length }),
+      preview,
+      more,
+      '',
+      t('确认继续执行吗？')
+    ]
+      .filter(Boolean)
+      .join('\n')
+    return api.showConfirm(message, t('安全模式'))
   }
 
   function unquoteSqlIdentifier(value) {
@@ -418,14 +428,14 @@ export function createTabs(state, api) {
 
     const source = parseSimpleSelectSource(result.sql)
     if (!source) {
-      result.readonlyReason = '仅支持单表 SELECT（不支持 JOIN、聚合、UNION 或字段别名）'
+      result.readonlyReason = t('仅支持单表 SELECT（不支持 JOIN、聚合、UNION 或字段别名）')
       result.editChecked = true
       return
     }
 
     const database = source.database || tab.database
     if (!database) {
-      result.readonlyReason = '无法确定结果来源数据库'
+      result.readonlyReason = t('无法确定结果来源数据库')
       result.editChecked = true
       return
     }
@@ -434,30 +444,30 @@ export function createTabs(state, api) {
     try {
       const meta = await dbGetTableMeta(tab.connectionName, database, source.tableName)
       if (!meta.success) {
-        result.readonlyReason = meta.error || '读取来源表结构失败'
+        result.readonlyReason = meta.error || t('读取来源表结构失败')
         return
       }
       if (meta.isView) {
-        result.readonlyReason = '视图结果不支持直接编辑'
+        result.readonlyReason = t('视图结果不支持直接编辑')
         return
       }
       const fieldNames = (result.fields || []).map((field) => field.name)
       const columnNames = new Set((meta.columns || []).map((column) => column.name))
       if (!fieldNames.length || new Set(fieldNames).size !== fieldNames.length) {
-        result.readonlyReason = '结果字段无法唯一定位到表字段'
+        result.readonlyReason = t('结果字段无法唯一定位到表字段')
         return
       }
       if (fieldNames.some((name) => !columnNames.has(name))) {
-        result.readonlyReason = '结果包含表达式或别名，无法定位到表字段'
+        result.readonlyReason = t('结果包含表达式或别名，无法定位到表字段')
         return
       }
       const primaryKeys = meta.primaryKeys?.length ? [...meta.primaryKeys] : findUniqueKey(meta)
       if (!primaryKeys.length) {
-        result.readonlyReason = '来源表没有主键或非空唯一键，无法安全定位行'
+        result.readonlyReason = t('来源表没有主键或非空唯一键，无法安全定位行')
         return
       }
       if (!primaryKeys.every((name) => fieldNames.includes(name))) {
-        result.readonlyReason = `结果缺少定位字段：${primaryKeys.join(', ')}`
+        result.readonlyReason = t('结果缺少定位字段：{p0}', { p0: primaryKeys.join(', ') })
         return
       }
       result.editSource = {
@@ -468,7 +478,7 @@ export function createTabs(state, api) {
         columns: meta.columns || []
       }
     } catch (error) {
-      result.readonlyReason = '读取来源表结构失败: ' + error.message
+      result.readonlyReason = t('读取来源表结构失败: ') + error.message
     } finally {
       result.editLoading = false
       result.editChecked = true
@@ -581,7 +591,7 @@ export function createTabs(state, api) {
   function deleteSelectedResultRows(result) {
     const selected = Object.entries(result.selectedRows || {})
     if (!selected.length) {
-      api.showMessage('请先勾选要删除的行', 'warning')
+      api.showMessage(t('请先勾选要删除的行'), 'warning')
       return
     }
     for (const [key, keys] of selected) {
@@ -631,17 +641,17 @@ export function createTabs(state, api) {
 
   async function discardResultChanges(result) {
     if (!hasResultPendingChanges(result)) return
-    if (!(await api.showConfirm('确定撤销结果中的所有未提交修改吗？'))) return
+    if (!(await api.showConfirm(t('确定撤销结果中的所有未提交修改吗？')))) return
     resetResultChanges(result)
   }
 
   async function toggleResultEditMode(result) {
     if (!canEditResult(result)) {
-      await api.showMessage(result?.readonlyReason || '当前结果不支持编辑', 'warning')
+      await api.showMessage(result?.readonlyReason || t('当前结果不支持编辑'), 'warning')
       return
     }
     if (result.editMode && hasResultPendingChanges(result)) {
-      const confirmed = await api.showConfirm('退出编辑会丢弃未提交的修改，是否继续？')
+      const confirmed = await api.showConfirm(t('退出编辑会丢弃未提交的修改，是否继续？'))
       if (!confirmed) return
       resetResultChanges(result)
     }
@@ -658,10 +668,10 @@ export function createTabs(state, api) {
       rowInserts: result.rowInserts
     })
     if (!sql) {
-      api.showMessage('没有待保存的修改', 'info')
+      api.showMessage(t('没有待保存的修改'), 'info')
       return
     }
-    sqlPreviewDialog.value = { show: true, title: '待执行的 SQL', sql }
+    sqlPreviewDialog.value = { show: true, title: t('待执行的 SQL'), sql }
   }
 
   async function refreshResultAfterSave(tab, result) {
@@ -675,7 +685,7 @@ export function createTabs(state, api) {
       limit: limitValue,
       database: result.editSource.database
     })
-    if (!executed.success) throw new Error(executed.error || '刷新结果失败')
+    if (!executed.success) throw new Error(executed.error || t('刷新结果失败'))
 
     result.rows = executed.rows || []
     result.fields = executed.fields || []
@@ -706,7 +716,7 @@ export function createTabs(state, api) {
 
   async function saveResultChanges(tab, result) {
     if (!canEditResult(result) || !hasResultPendingChanges(result)) {
-      await api.showMessage('没有待保存的修改', 'info')
+      await api.showMessage(t('没有待保存的修改'), 'info')
       return
     }
     result.saving = true
@@ -732,18 +742,22 @@ export function createTabs(state, api) {
         { updates, deletes, inserts }
       )
       if (!saved.success) {
-        await api.showMessage('保存失败: ' + (saved.error || ''), 'error')
+        await api.showMessage(t('保存失败: ') + (saved.error || ''), 'error')
         return
       }
 
       await api.showMessage(
-        `保存成功（更新 ${saved.updated || 0}，删除 ${saved.deleted || 0}，新增 ${saved.inserted || 0}）`,
+        t('保存成功（更新 {p0}，删除 {p1}，新增 {p2}）', {
+          p0: saved.updated || 0,
+          p1: saved.deleted || 0,
+          p2: saved.inserted || 0
+        }),
         'success'
       )
       await refreshResultAfterSave(tab, result)
       await api.loadDatabaseObjects(tab.connectionName, result.editSource.database, undefined, { force: true })
     } catch (error) {
-      await api.showMessage('保存结果失败: ' + error.message, 'error')
+      await api.showMessage(t('保存结果失败: ') + error.message, 'error')
     } finally {
       result.saving = false
     }
@@ -769,7 +783,7 @@ export function createTabs(state, api) {
     if (!sqlContent || sqlContent.trim() === '') return
 
     if ((tab.queryResults || []).some(hasResultPendingChanges)) {
-      const confirmed = await api.showConfirm('当前结果有未提交的修改，重新执行会丢弃这些修改，是否继续？')
+      const confirmed = await api.showConfirm(t('当前结果有未提交的修改，重新执行会丢弃这些修改，是否继续？'))
       if (!confirmed) return
     }
 
@@ -789,7 +803,7 @@ export function createTabs(state, api) {
       if (!values) return
       const missing = paramNames.filter((name) => isParamValueEmpty(values[name]))
       if (missing.length) {
-        await api.showMessage(`参数未填写: ${missing.join(', ')}`, 'warning')
+        await api.showMessage(t('参数未填写: {p0}', { p0: missing.join(', ') }), 'warning')
         return
       }
       paramValues = values
@@ -857,7 +871,7 @@ export function createTabs(state, api) {
 
         const entry = {
           index: i,
-          name: `结果(${i + 1})`,
+          name: t('结果({p0})', { p0: i + 1 }),
           sql,
           displaySql: originalSql,
           params: statementParams,
@@ -899,7 +913,7 @@ export function createTabs(state, api) {
       tab.queryResults = [
         {
           index: 0,
-          name: '结果(1)',
+          name: t('结果(1)'),
           sql: sqlContent,
           success: false,
           error: error.message
@@ -939,7 +953,7 @@ export function createTabs(state, api) {
     const result = await dbCancelQuery(tab.connectionName, tab.requestId)
     if (!result.success) {
       tab.canceling = false
-      await api.showMessage(result.error || '无法取消查询', 'warning')
+      await api.showMessage(result.error || t('无法取消查询'), 'warning')
     }
   }
 
@@ -947,7 +961,7 @@ export function createTabs(state, api) {
     if (!tab.connectionName) return
     const sqlContent = getExecutionSql(tab)
     if (!sqlContent || !sqlContent.trim()) {
-      await api.showMessage('请输入要分析的 SQL', 'warning')
+      await api.showMessage(t('请输入要分析的 SQL'), 'warning')
       return
     }
 
@@ -1046,9 +1060,9 @@ export function createTabs(state, api) {
       if (!transactionConnections.value.includes(tab.connectionName)) {
         transactionConnections.value.push(tab.connectionName)
       }
-      await api.showMessage('事务已开始', 'success')
+      await api.showMessage(t('事务已开始'), 'success')
     } else {
-      await api.showMessage(result.error || '开始事务失败', 'error')
+      await api.showMessage(result.error || t('开始事务失败'), 'error')
     }
   }
 
@@ -1057,9 +1071,9 @@ export function createTabs(state, api) {
     if (result.success) {
       tab.inTransaction = false
       transactionConnections.value = transactionConnections.value.filter((name) => name !== tab.connectionName)
-      await api.showMessage('事务已提交', 'success')
+      await api.showMessage(t('事务已提交'), 'success')
     } else {
-      await api.showMessage(result.error || '提交事务失败', 'error')
+      await api.showMessage(result.error || t('提交事务失败'), 'error')
     }
   }
 
@@ -1068,9 +1082,9 @@ export function createTabs(state, api) {
     if (result.success) {
       tab.inTransaction = false
       transactionConnections.value = transactionConnections.value.filter((name) => name !== tab.connectionName)
-      await api.showMessage('事务已回滚', 'success')
+      await api.showMessage(t('事务已回滚'), 'success')
     } else {
-      await api.showMessage(result.error || '回滚事务失败', 'error')
+      await api.showMessage(result.error || t('回滚事务失败'), 'error')
     }
   }
 
@@ -1123,7 +1137,7 @@ export function createTabs(state, api) {
         const queryId = `query_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         tabs.value.push({
           id: queryId,
-          name: item.name || '无标题-查询',
+          name: item.name || t('无标题-查询'),
           type: 'query',
           closable: true,
           connectionName: item.connectionName,
@@ -1142,12 +1156,18 @@ export function createTabs(state, api) {
         lastId = queryId
       } else if (item.type === 'table' && item.tableName) {
         const isView = Boolean(item.isView)
-        const tabName = `${item.tableName}@${item.database}（${item.connectionName}）-${isView ? '视图' : '表'}`
-        if (tabs.value.some((tab) => tab.name === tabName)) continue
+        const exists = tabs.value.some(
+          (tab) =>
+            tab.type === 'table' &&
+            tab.connectionName === item.connectionName &&
+            tab.database === item.database &&
+            tab.tableName === item.tableName
+        )
+        if (exists) continue
         const tableId = `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         tabs.value.push({
           id: tableId,
-          name: tabName,
+          name: item.tableName,
           type: 'table',
           closable: true,
           connectionName: item.connectionName,

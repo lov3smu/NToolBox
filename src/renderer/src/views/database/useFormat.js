@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { formatCellText } from './cellFormat'
 import { splitSqlStatements } from '@/utils/sqlStatements'
 
@@ -50,12 +51,12 @@ export function createFormat(state, api) {
     if (selectedInfoType.value === 'object') return selectedObject.value?.name
     if (selectedInfoType.value === 'category') {
       const typeLabels = {
-        tables: '表',
-        views: '视图',
-        functions: '函数',
-        procedures: '存储过程',
-        triggers: '触发器',
-        events: '事件'
+        tables: t('表'),
+        views: t('视图'),
+        functions: t('函数'),
+        procedures: t('存储过程'),
+        triggers: t('触发器'),
+        events: t('事件')
       }
       return typeLabels[selectedCategory.value?.type] || ''
     }
@@ -63,9 +64,9 @@ export function createFormat(state, api) {
   }
 
   function getInfoHeaderDesc() {
-    if (selectedInfoType.value === 'group') return '分组'
-    if (selectedInfoType.value === 'connection') return selectedConnection.value?.active ? '已连接' : '未连接'
-    if (selectedInfoType.value === 'database') return '数据库'
+    if (selectedInfoType.value === 'group') return t('分组')
+    if (selectedInfoType.value === 'connection') return selectedConnection.value?.active ? t('已连接') : t('未连接')
+    if (selectedInfoType.value === 'database') return t('数据库')
     if (selectedInfoType.value === 'table') return selectedObject.value?.database || ''
     if (selectedInfoType.value === 'object') return selectedObject.value?.database || ''
     if (selectedInfoType.value === 'category') return selectedCategory.value?.database || ''

@@ -7,10 +7,11 @@ export function createSqlAudit(state) {
   async function loadSqlAuditSettings() {
     try {
       const config = await getConfig()
+      const audit = config?.database?.audit || {}
       return {
-        enabled: config?.database_audit_enabled === true,
-        strict: config?.database_audit_strict === true,
-        rules: config?.database_audit_rules || {}
+        enabled: audit.enabled === true,
+        strict: audit.strict === true,
+        rules: audit.rules || {}
       }
     } catch {
       return { enabled: false, strict: false, rules: {} }

@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { dbExecuteQuery } from '@/api'
 export function createPagination(state, api) {
   const { lastExecutedSql, lastExecutedTime, limitCount } = state
@@ -35,7 +36,7 @@ export function createPagination(state, api) {
         Object.keys(tab.rowDeletes || {}).length > 0 ||
         (tab.rowInserts || []).length > 0
       if (hasPending) {
-        const confirmed = await api.showConfirm('翻页会丢弃未保存的修改，是否继续？')
+        const confirmed = await api.showConfirm(t('翻页会丢弃未保存的修改，是否继续？'))
         if (!confirmed) return
       }
       await api.executeTableQuery(tab, page)

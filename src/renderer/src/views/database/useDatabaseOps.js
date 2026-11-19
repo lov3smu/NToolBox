@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import {
   dbCompareSchemas,
   dbCreateTable,
@@ -43,7 +44,7 @@ export function createDatabaseOps(state, api) {
 
   async function submitCreateTable(payload) {
     const { connectionName, database } = createTableDialog.value
-    if (!connectionName || !database) return { success: false, error: '请先选择数据库' }
+    if (!connectionName || !database) return { success: false, error: t('请先选择数据库') }
 
     const result = await dbCreateTable(connectionName, database, payload.tableName, payload)
     if (!result.success) return result
@@ -53,7 +54,7 @@ export function createDatabaseOps(state, api) {
     if (selectedDatabase.value === database) {
       await api.selectDatabase(database)
     }
-    await api.showMessage(`表 "${payload.tableName}" 已创建`, 'success')
+    await api.showMessage(t('表 "{p0}" 已创建', { p0: payload.tableName }), 'success')
     return result
   }
 
@@ -96,7 +97,7 @@ export function createDatabaseOps(state, api) {
   async function compareSchemaDiff() {
     const { connectionName, database, targetConnectionName, targetDatabase } = schemaDiffDialog.value
     if (!connectionName || !database || !targetConnectionName || !targetDatabase) {
-      schemaDiffDialog.value.error = '请选择源连接/数据库和目标连接/数据库'
+      schemaDiffDialog.value.error = t('请选择源连接/数据库和目标连接/数据库')
       return
     }
     schemaDiffDialog.value.loading = true
@@ -104,13 +105,13 @@ export function createDatabaseOps(state, api) {
     try {
       const result = await dbCompareSchemas(connectionName, database, targetConnectionName, targetDatabase)
       if (!result.success) {
-        schemaDiffDialog.value.error = result.error || '结构对比失败'
+        schemaDiffDialog.value.error = result.error || t('结构对比失败')
         schemaDiffDialog.value.result = null
       } else {
         schemaDiffDialog.value.result = result
       }
     } catch (error) {
-      schemaDiffDialog.value.error = error.message || '结构对比失败'
+      schemaDiffDialog.value.error = error.message || t('结构对比失败')
     } finally {
       schemaDiffDialog.value.loading = false
     }
@@ -119,12 +120,12 @@ export function createDatabaseOps(state, api) {
   async function copySchemaDiffSql() {
     const statements = schemaDiffDialog.value.result?.statements || []
     if (!statements.length) {
-      await api.showMessage('没有需要同步的 SQL', 'warning')
+      await api.showMessage(t('没有需要同步的 SQL'), 'warning')
       return
     }
     const text = statements.map((sql) => `${sql};`).join('\n\n')
     const copied = await copyToClipboard(text)
-    await api.showMessage(copied ? '同步 SQL 已复制到剪贴板' : '复制失败', copied ? 'success' : 'error')
+    await api.showMessage(copied ? t('同步 SQL 已复制到剪贴板') : t('复制失败'), copied ? 'success' : 'error')
   }
 
   function openCellViewer(field, columnType, value, extra = {}) {
@@ -145,11 +146,11 @@ export function createDatabaseOps(state, api) {
         const viewer = cellViewer.value
         if (!viewer.show || viewer.load !== loader) return
         if (result?.success) viewer.value = result.value
-        else viewer.error = result?.error || '读取失败'
+        else viewer.error = result?.error || t('读取失败')
       })
       .catch((error) => {
         const viewer = cellViewer.value
-        if (viewer.show && viewer.load === loader) viewer.error = error.message || '读取失败'
+        if (viewer.show && viewer.load === loader) viewer.error = error.message || t('读取失败')
       })
       .finally(() => {
         const viewer = cellViewer.value
@@ -169,14 +170,18 @@ export function createDatabaseOps(state, api) {
     api.createQueryTab(target.connection.name, target.database)
     const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
     if (activeTab) {
-      activeTab.sqlQuery = `-- 编辑数据库: ${target.database}\n-- 修改数据库字符集\nALTER DATABASE \`${target.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+      activeTab.sqlQuery = [
+        t('-- 编辑数据库: {name}', { name: target.database }),
+        t('-- 修改数据库字符集'),
+        `ALTER DATABASE \`${target.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+      ].join('\n')
     }
   }
 
   async function deleteDatabase(target) {
     if (!target.connection || !target.database) return
 
-    const confirmed = await api.showConfirm(`确定要删除数据库 "${target.database}" 吗？此操作不可恢复！`)
+    const confirmed = await api.showConfirm(t('确定要删除数据库 "{p0}" 吗？此操作不可恢复！', { p0: target.database }))
     if (!confirmed) return
 
     api.selectConnection(target.connection)
@@ -189,9 +194,9 @@ export function createDatabaseOps(state, api) {
         selectedDatabase.value = ''
         tables.value = []
       }
-      await api.showMessage(`数据库 "${target.database}" 已删除`, 'success')
+      await api.showMessage(t('数据库 "{p0}" 已删除', { p0: target.database }), 'success')
     } else {
-      await api.showMessage('删除数据库失败: ' + result.error, 'error')
+      await api.showMessage(t('删除数据库失败: ') + result.error, 'error')
     }
   }
 
@@ -210,11 +215,11 @@ export function createDatabaseOps(state, api) {
       const statement = raw.replace(/^(?:\/\*[\s\S]*?\*\/|--[^\n]*(?:\n|$)|#[^\n]*(?:\n|$)|\s)+/g, '').trim()
       if (!statement) continue
       if (/^drop\b/i.test(statement)) {
-        risks.push(`删除对象: ${statement.split('\n')[0].slice(0, 80)}`)
+        risks.push(t('删除对象: {p0}', { p0: statement.split('\n')[0].slice(0, 80) }))
       } else if (/^truncate\b/i.test(statement)) {
-        risks.push(`清空表: ${statement.split('\n')[0].slice(0, 80)}`)
+        risks.push(t('清空表: {p0}', { p0: statement.split('\n')[0].slice(0, 80) }))
       } else if (/^(update|delete)\b/i.test(statement) && !/\bwhere\b/i.test(statement)) {
-        risks.push(`缺少 WHERE: ${statement.split('\n')[0].slice(0, 80)}`)
+        risks.push(t('缺少 WHERE: {p0}', { p0: statement.split('\n')[0].slice(0, 80) }))
       }
     }
     return risks
@@ -223,7 +228,7 @@ export function createDatabaseOps(state, api) {
   async function confirmRiskySqlFile(sqlText) {
     try {
       const config = await getConfig()
-      if (config?.database_safe_mode === false) return true
+      if (config?.database?.safe_mode === false) return true
     } catch {
       return true
     }
@@ -233,11 +238,17 @@ export function createDatabaseOps(state, api) {
       .slice(0, 5)
       .map((risk, index) => `${index + 1}. ${risk}`)
       .join('\n')
-    const more = risks.length > 5 ? `\n… 另有 ${risks.length - 5} 条` : ''
-    return api.showConfirm(
-      `SQL 文件中包含 ${risks.length} 条高风险语句：\n${preview}${more}\n\n确认继续执行吗？`,
-      '安全模式'
-    )
+    const more = risks.length > 5 ? t('… 另有 {count} 条', { count: risks.length - 5 }) : ''
+    const message = [
+      t('SQL 文件中包含 {count} 条高风险语句：', { count: risks.length }),
+      preview,
+      more,
+      '',
+      t('确认继续执行吗？')
+    ]
+      .filter(Boolean)
+      .join('\n')
+    return api.showConfirm(message, t('安全模式'))
   }
 
   async function runSqlFile(target) {
@@ -251,7 +262,7 @@ export function createDatabaseOps(state, api) {
       const fileResult = await readFile(filePath)
 
       if (!fileResult.success) {
-        await api.showMessage('读取文件失败: ' + fileResult.error, 'error')
+        await api.showMessage(t('读取文件失败: ') + fileResult.error, 'error')
         return
       }
 
@@ -270,13 +281,13 @@ export function createDatabaseOps(state, api) {
       const execResult = await api.executeSqlDirect(sql, target.connection.name)
 
       if (execResult.success) {
-        await api.showMessage('SQL文件执行成功', 'success')
+        await api.showMessage(t('SQL文件执行成功'), 'success')
       } else {
-        await api.showMessage('SQL文件执行失败: ' + execResult.error, 'error')
+        await api.showMessage(t('SQL文件执行失败: ') + execResult.error, 'error')
       }
     } catch (error) {
       console.error('运行SQL文件失败:', error)
-      await api.showMessage('运行SQL文件失败: ' + error.message, 'error')
+      await api.showMessage(t('运行SQL文件失败: ') + error.message, 'error')
     }
   }
 
@@ -292,16 +303,16 @@ export function createDatabaseOps(state, api) {
 
       const tablesResult = await dbQueryTables(target.connection.name, target.database)
       if (!tablesResult.success) {
-        await api.showMessage('获取表列表失败: ' + (tablesResult.error || ''), 'error')
+        await api.showMessage(t('获取表列表失败: ') + (tablesResult.error || ''), 'error')
         return
       }
 
       const tableNames = (tablesResult.details || []).filter((table) => !table.isView).map((table) => table.name)
 
       const header = [
-        `-- 数据库转储: ${target.database}`,
-        `-- 生成时间: ${new Date().toISOString()}`,
-        `-- 连接: ${target.connection.host}:${target.connection.port}`,
+        t('-- 数据库转储: {p0}', { p0: target.database }),
+        t('-- 生成时间: {p0}', { p0: new Date().toISOString() }),
+        t('-- 连接: {p0}:{p1}', { p0: target.connection.host, p1: target.connection.port }),
         '',
         `CREATE DATABASE IF NOT EXISTS \`${target.database}\`;`,
         `USE \`${target.database}\`;`,
@@ -315,10 +326,10 @@ export function createDatabaseOps(state, api) {
         if (type === 'structure') {
           const meta = await dbGetTableMeta(target.connection.name, target.database, tableName)
           if (!meta.success) {
-            parts.push(`-- 获取表 ${tableName} 结构失败: ${meta.error}`, '')
+            parts.push(t('-- 获取表 {p0} 结构失败: {p1}', { p0: tableName, p1: meta.error }), '')
             continue
           }
-          parts.push(`-- 表结构: ${tableName}`)
+          parts.push(t('-- 表结构: {p0}', { p0: tableName }))
           parts.push(`DROP TABLE IF EXISTS \`${tableName}\`;`)
           parts.push(`${meta.ddl};`, '')
           continue
@@ -331,17 +342,17 @@ export function createDatabaseOps(state, api) {
         })
 
         if (!exported.success) {
-          parts.push(`-- 导出表 ${tableName} 失败: ${exported.error}`, '')
+          parts.push(t('-- 导出表 {p0} 失败: {p1}', { p0: tableName, p1: exported.error }), '')
           continue
         }
 
-        parts.push(`-- 表: ${tableName} (${exported.rowCount} 行)`)
+        parts.push(t('-- 表: {p0} ({p1} 行)', { p0: tableName, p1: exported.rowCount }))
         parts.push(exported.content, '')
         if (exported.truncated) truncated = true
       }
 
       if (truncated) {
-        parts.push('-- 提示: 部分表数据量超过导出上限，已截断', '')
+        parts.push(t('-- 提示: 部分表数据量超过导出上限，已截断'), '')
       }
 
       const defaultFileName = `${target.database}_${type}_${Date.now()}.sql`
@@ -352,13 +363,13 @@ export function createDatabaseOps(state, api) {
       const writeResult = await writeFile(saveResult.filePath, parts.join('\n'))
 
       if (writeResult.success) {
-        await api.showMessage(`转储文件已保存到: ${saveResult.filePath}`, 'success')
+        await api.showMessage(t('转储文件已保存到: {p0}', { p0: saveResult.filePath }), 'success')
       } else {
-        await api.showMessage('保存文件失败: ' + writeResult.error, 'error')
+        await api.showMessage(t('保存文件失败: ') + writeResult.error, 'error')
       }
     } catch (error) {
       console.error('转储数据库失败:', error)
-      await api.showMessage('转储数据库失败: ' + error.message, 'error')
+      await api.showMessage(t('转储数据库失败: ') + error.message, 'error')
     }
   }
 
@@ -372,7 +383,7 @@ export function createDatabaseOps(state, api) {
       await api.selectDatabase(target.database)
     }
 
-    await api.showMessage('数据库列表已刷新', 'success')
+    await api.showMessage(t('数据库列表已刷新'), 'success')
   }
 
   async function refreshCategory(target) {
@@ -387,14 +398,14 @@ export function createDatabaseOps(state, api) {
     await api.loadDatabaseCategory(target.connection.name, target.database, target.category, { force: true })
 
     const categoryLabels = {
-      tables: '表',
-      views: '视图',
-      functions: '函数',
-      procedures: '存储过程',
-      triggers: '触发器',
-      events: '事件'
+      tables: t('表'),
+      views: t('视图'),
+      functions: t('函数'),
+      procedures: t('存储过程'),
+      triggers: t('触发器'),
+      events: t('事件')
     }
-    await api.showMessage(`${categoryLabels[target.category] || target.category}列表已刷新`, 'success')
+    await api.showMessage(t('{p0}列表已刷新', { p0: categoryLabels[target.category] || target.category }), 'success')
   }
 
   return {

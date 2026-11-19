@@ -13,7 +13,7 @@
           </span>
           <span class="status-divider">|</span>
           <span :class="['status-item', selectedConnection.active ? 'connected' : 'disconnected']">
-            {{ selectedConnection.active ? '已连接' : '未连接' }}
+            {{ selectedConnection.active ? t('已连接') : t('未连接') }}
           </span>
         </template>
         <template v-else>
@@ -23,13 +23,13 @@
               <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
               <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
             </svg>
-            共 {{ connections.length }} 个连接
+            {{ t('共') }} {{ connections.length }} {{ t('个连接') }}
           </span>
         </template>
       </div>
       <div v-if="lastExecutedSql" class="status-sql">
         <span class="sql-preview" :title="lastExecutedSql">{{ truncateSql(lastExecutedSql) }}</span>
-        <button class="copy-btn" title="复制SQL" @click="copyLastSql">
+        <button class="copy-btn" :title="t('复制SQL')" @click="copyLastSql">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -39,7 +39,11 @@
       </div>
     </div>
     <div class="status-right">
-      <button :class="['layout-btn', { active: layoutMode === 'two' }]" title="双栏布局" @click="layoutMode = 'two'">
+      <button
+        :class="['layout-btn', { active: layoutMode === 'two' }]"
+        :title="t('双栏布局')"
+        @click="layoutMode = 'two'"
+      >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="8" height="18" rx="2" />
           <rect x="13" y="3" width="8" height="18" rx="2" />
@@ -47,7 +51,7 @@
       </button>
       <button
         :class="['layout-btn', { active: layoutMode === 'three' }]"
-        title="三栏布局"
+        :title="t('三栏布局')"
         @click="layoutMode = 'three'"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -61,6 +65,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { inject } from 'vue'
 
 const databaseStore = inject('database')

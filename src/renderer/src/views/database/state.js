@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { t } from '@/i18n'
 import { DEFAULT_DATABASE_PAGE_SIZE, DEFAULT_DATABASE_REFRESH_INTERVAL } from '@shared/databaseClient'
 
 export function createState(options = {}) {
@@ -288,7 +289,7 @@ export function createState(options = {}) {
 
   const sqlPreviewDialog = ref({
     show: false,
-    title: '待执行的 SQL',
+    title: t('待执行的 SQL'),
     sql: ''
   })
 
@@ -394,7 +395,7 @@ export function createState(options = {}) {
     filterSortActive: false
   })
 
-  const tabs = ref([{ id: 'object', name: '对象', type: 'object', closable: false }])
+  const tabs = ref([{ id: 'object', name: t('对象'), type: 'object', closable: false }])
 
   const activeTabId = ref('object')
 
@@ -435,13 +436,13 @@ export function createState(options = {}) {
   const objectTypeLabel = computed(() => {
     if (!selectedObject.value) return ''
     const typeLabels = {
-      database: '数据库',
-      table: '表',
-      view: '视图',
-      function: '函数',
-      procedure: '存储过程',
-      trigger: '触发器',
-      event: '事件'
+      database: t('数据库'),
+      table: t('表'),
+      view: t('视图'),
+      function: t('函数'),
+      procedure: t('存储过程'),
+      trigger: t('触发器'),
+      event: t('事件')
     }
     return typeLabels[selectedObject.value.type] || ''
   })

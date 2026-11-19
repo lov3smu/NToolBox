@@ -1,17 +1,17 @@
 <template>
-  <div class="window-controls" role="group" aria-label="窗口控制">
-    <button type="button" class="window-control" aria-label="最小化" @click="emit('minimize')">
+  <div class="window-controls" role="group" :aria-label="t('窗口控制')">
+    <button type="button" class="window-control" :aria-label="t('最小化')" @click="emit('minimize')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
         <path d="M6 12h12" />
       </svg>
-      <span class="window-control-tip" aria-hidden="true">最小化</span>
+      <span class="window-control-tip" aria-hidden="true">{{ t('最小化') }}</span>
     </button>
 
     <button
       v-if="fullscreen"
       type="button"
       class="window-control"
-      aria-label="退出全屏"
+      :aria-label="t('退出全屏')"
       @click="emit('exit-fullscreen')"
     >
       <svg
@@ -25,14 +25,14 @@
         <rect x="3" y="8" width="13" height="13" rx="2" />
         <path d="M8 8V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-3" />
       </svg>
-      <span class="window-control-tip" aria-hidden="true">退出全屏</span>
+      <span class="window-control-tip" aria-hidden="true">{{ t('退出全屏') }}</span>
     </button>
 
     <button
       v-else
       type="button"
       class="window-control"
-      :aria-label="isMaximized ? '还原窗口' : '最大化'"
+      :aria-label="isMaximized ? t('还原窗口') : t('最大化')"
       @click="emit('maximize')"
     >
       <svg
@@ -58,10 +58,10 @@
       >
         <rect x="5" y="5" width="14" height="14" rx="1.5" />
       </svg>
-      <span class="window-control-tip" aria-hidden="true">{{ isMaximized ? '还原窗口' : '最大化' }}</span>
+      <span class="window-control-tip" aria-hidden="true">{{ isMaximized ? t('还原窗口') : t('最大化') }}</span>
     </button>
 
-    <button type="button" class="window-control close" aria-label="关闭" @click="emit('close')">
+    <button type="button" class="window-control close" :aria-label="t('关闭')" @click="emit('close')">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -72,7 +72,7 @@
       >
         <path d="m6 6 12 12M18 6 6 18" />
       </svg>
-      <span class="window-control-tip" aria-hidden="true">关闭</span>
+      <span class="window-control-tip" aria-hidden="true">{{ t('关闭') }}</span>
     </button>
   </div>
 </template>
@@ -80,6 +80,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { onWindowMaximized, windowIsMaximized } from '@/api'
+import { t } from '@/i18n'
 
 defineProps({
   fullscreen: { type: Boolean, default: false }

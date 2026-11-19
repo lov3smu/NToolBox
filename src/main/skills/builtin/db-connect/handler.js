@@ -5,7 +5,7 @@ export default async function handler(params, context) {
   log.debug(`执行 db-connect Skill: action=${action}`)
 
   const config = getConfig()
-  const dbConnections = config.dbConnections || []
+  const dbConnections = config.database.connections || []
 
   switch (action) {
     case 'list': {

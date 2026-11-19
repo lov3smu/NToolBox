@@ -12,17 +12,17 @@
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
         </svg>
-        我的连接
+        {{ t('我的连接') }}
       </h3>
       <div class="sidebar-header-actions" @click.stop>
-        <button class="sidebar-icon-btn" title="导入连接配置" @click="openConnectionTransferDialog('import')">
+        <button class="sidebar-icon-btn" :title="t('导入连接配置')" @click="openConnectionTransferDialog('import')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
         </button>
-        <button class="sidebar-icon-btn" title="导出连接配置" @click="openConnectionTransferDialog('export')">
+        <button class="sidebar-icon-btn" :title="t('导出连接配置')" @click="openConnectionTransferDialog('export')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
@@ -85,10 +85,10 @@
         v-else-if="!searchActive && connectionGroups.length === 0 && ungroupedConnections.length === 0"
         class="empty-list"
       >
-        <p>暂无连接</p>
-        <p class="hint">添加一个数据库连接开始使用</p>
+        <p>{{ t('暂无连接') }}</p>
+        <p class="hint">{{ t('添加一个数据库连接开始使用') }}</p>
         <button type="button" class="btn btn-secondary btn-sm empty-list-action" @click="showAddConnectionModal">
-          新建连接
+          {{ t('新建连接') }}
         </button>
       </div>
     </div>
@@ -98,12 +98,12 @@
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input v-model="searchKeyword" type="text" placeholder="搜索库和表" @keydown.esc="searchKeyword = ''" />
+        <input v-model="searchKeyword" type="text" :placeholder="t('搜索库和表')" @keydown.esc="searchKeyword = ''" />
         <button
           v-if="searchKeyword"
           type="button"
           class="sidebar-search-clear"
-          title="清除搜索"
+          :title="t('清除搜索')"
           @click="searchKeyword = ''"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -118,6 +118,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import ConnectionTreeItem from './ConnectionTreeItem.vue'
 import { computed, inject, onUnmounted, ref, watch } from 'vue'
 
@@ -201,7 +202,7 @@ const hasSearchMatches = computed(
   () => visibleConnectionGroups.value.length > 0 || visibleUngroupedConnections.value.length > 0
 )
 
-const searchHint = computed(() => (activeConnections.value.length ? '没有匹配的库或表' : '暂无已连接的链接'))
+const searchHint = computed(() => (activeConnections.value.length ? t('没有匹配的库或表') : t('暂无已连接的链接')))
 
 const loadingKeys = new Set()
 

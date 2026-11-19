@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { dbDeleteBackupTask, dbGetBackupTasks, dbRunBackupTask, dbSaveBackupTask, dbSelectBackupDirectory } from '@/api'
 import { backupTaskNextRun, backupTaskScheduleLabel } from '@shared/backupTasks'
 
@@ -31,12 +32,12 @@ export function createBackupTasks(state, api) {
     dialog.error = ''
     try {
       const result = await dbGetBackupTasks()
-      if (!result?.success) throw new Error(result?.error || '加载备份任务失败')
+      if (!result?.success) throw new Error(result?.error || t('加载备份任务失败'))
       dialog.tasks = result.tasks || []
       dialog.defaultDirectory = result.defaultDirectory || ''
       if (!dialog.form.directory) dialog.form.directory = dialog.defaultDirectory
     } catch (error) {
-      dialog.error = error.message || '加载备份任务失败'
+      dialog.error = error.message || t('加载备份任务失败')
     } finally {
       dialog.loading = false
     }
@@ -75,44 +76,44 @@ export function createBackupTasks(state, api) {
     const dialog = backupDialog.value
     const form = dialog.form
     if (!String(form.name || '').trim()) {
-      await api.showMessage('请输入任务名称', 'warning')
+      await api.showMessage(t('请输入任务名称'), 'warning')
       return
     }
     if (!form.connection) {
-      await api.showMessage('请选择连接', 'warning')
+      await api.showMessage(t('请选择连接'), 'warning')
       return
     }
     if (!String(form.database || '').trim()) {
-      await api.showMessage('请填写数据库名', 'warning')
+      await api.showMessage(t('请填写数据库名'), 'warning')
       return
     }
 
     dialog.saving = true
     try {
       const result = await dbSaveBackupTask({ ...form })
-      if (!result?.success) throw new Error(result?.error || '保存备份任务失败')
+      if (!result?.success) throw new Error(result?.error || t('保存备份任务失败'))
       dialog.tasks = result.tasks || []
       resetBackupForm()
       await loadBackupTasks()
-      await api.showMessage('备份任务已保存', 'success')
+      await api.showMessage(t('备份任务已保存'), 'success')
     } catch (error) {
-      await api.showMessage('保存备份任务失败: ' + error.message, 'error')
+      await api.showMessage(t('保存备份任务失败: ') + error.message, 'error')
     } finally {
       dialog.saving = false
     }
   }
 
   async function removeBackupTask(task) {
-    const confirmed = await api.showConfirm(`确定删除备份任务「${task.name}」？`, '删除备份任务')
+    const confirmed = await api.showConfirm(t('确定删除备份任务「{p0}」？', { p0: task.name }), t('删除备份任务'))
     if (!confirmed) return
     const result = await dbDeleteBackupTask(task.id)
     if (!result?.success) {
-      await api.showMessage('删除备份任务失败: ' + (result?.error || '未知错误'), 'error')
+      await api.showMessage(t('删除备份任务失败: ') + (result?.error || t('未知错误')), 'error')
       return
     }
     backupDialog.value.tasks = result.tasks || []
     if (backupDialog.value.form.id === task.id) resetBackupForm()
-    await api.showMessage('备份任务已删除', 'success')
+    await api.showMessage(t('备份任务已删除'), 'success')
   }
 
   async function runBackupTask(task) {
@@ -121,11 +122,11 @@ export function createBackupTasks(state, api) {
     dialog.runningId = task.id
     try {
       const result = await dbRunBackupTask(task.id)
-      if (!result?.success) throw new Error(result?.error || '备份失败')
-      const suffix = result.truncated ? '（数据量超过上限，已截断）' : ''
-      await api.showMessage(`备份完成${suffix}: ${result.file}`, 'success')
+      if (!result?.success) throw new Error(result?.error || t('备份失败'))
+      const suffix = result.truncated ? t('（数据量超过上限，已截断）') : ''
+      await api.showMessage(t('备份完成{p0}: {p1}', { p0: suffix, p1: result.file }), 'success')
     } catch (error) {
-      await api.showMessage('执行备份失败: ' + error.message, 'error')
+      await api.showMessage(t('执行备份失败: ') + error.message, 'error')
     } finally {
       dialog.runningId = ''
       await loadBackupTasks()
@@ -143,7 +144,7 @@ export function createBackupTasks(state, api) {
   }
 
   function backupTaskNextText(task) {
-    if (!task.enabled) return '已停用'
+    if (!task.enabled) return t('已停用')
     const next = backupTaskNextRun(task)
     if (!next) return ''
     const date = new Date(next)

@@ -1,5 +1,6 @@
 import path from 'path'
 import { spawn } from 'child_process'
+import { t } from './i18n.js'
 import { log } from '../utils'
 import { getConfig } from './config'
 import { buildMcpToolName, isMcpToolName, normalizeMcpServers, parseMcpToolName } from '../../shared/mcp.js'
@@ -13,7 +14,7 @@ const MAX_BUFFER_SIZE = 4 * 1024 * 1024
 const MAX_TOOLS_PER_SERVER = 200
 
 function trimError(error) {
-  const text = String(error?.message || error || '未知错误')
+  const text = String(error?.message || error || t('未知错误'))
     .replace(/\s+/g, ' ')
     .trim()
   return text.slice(0, 300)
@@ -104,7 +105,7 @@ export class McpClient {
   }
 
   request(method, params, timeout = REQUEST_TIMEOUT) {
-    if (!this.child || this.closed) return Promise.reject(new Error('MCP 服务未连接'))
+    if (!this.child || this.closed) return Promise.reject(new Error(t('MCP 服务未连接')))
 
     const id = this.nextId
     this.nextId += 1
@@ -112,7 +113,7 @@ export class McpClient {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id)
-        reject(new Error(`MCP 请求超时（${method}，${Math.round(timeout / 1000)} 秒）`))
+        reject(new Error(t('MCP 请求超时（{p0}，{p1} 秒）', { p0: method, p1: Math.round(timeout / 1000) })))
       }, timeout)
 
       this.pending.set(id, { resolve, reject, timer })
@@ -141,7 +142,7 @@ export class McpClient {
 
   stop() {
     this.closed = true
-    this._rejectPending(new Error('MCP 服务已停止'))
+    this._rejectPending(new Error(t('MCP 服务已停止')))
     if (!this.child) return
     const child = this.child
     this.child = null
@@ -227,7 +228,9 @@ export class McpClient {
     const wasRunning = !this.closed
     this.closed = true
     this.child = null
-    this._rejectPending(new Error(`MCP 服务已退出（code=${code ?? '-'}，signal=${signal || '-'}）`))
+    this._rejectPending(
+      new Error(t('MCP 服务已退出（code={p0}，signal={p1}）', { p0: code ?? '-', p1: signal || '-' }))
+    )
     if (wasRunning) {
       log.warn(`MCP 服务 ${this.server.name} 意外退出（code=${code ?? '-'}，signal=${signal || '-'}）`)
       if (typeof this.onToolsChanged === 'function') this.onToolsChanged()
@@ -277,7 +280,7 @@ class McpManager {
         }
         client.onExit = () => {
           entry.status = 'error'
-          entry.error = 'MCP 服务已退出'
+          entry.error = t('MCP 服务已退出')
           entry.tools = []
           this._reindex()
         }
@@ -391,12 +394,12 @@ class McpManager {
       const serverName = parsed?.server || ''
       const entry = serverName ? this.entries.get(serverName) : null
       const detail = entry?.error ? `：${entry.error}` : ''
-      return { success: false, error: `MCP 工具 ${name} 不可用${detail}` }
+      return { success: false, error: t('MCP 工具 {p0} 不可用{p1}', { p0: name, p1: detail }) }
     }
 
     const entry = this.entries.get(tool.serverName)
     if (!entry?.client || entry.status !== 'ready') {
-      return { success: false, error: `MCP 服务 ${tool.serverName} 未连接` }
+      return { success: false, error: t('MCP 服务 {p0} 未连接', { p0: tool.serverName }) }
     }
 
     try {
@@ -411,7 +414,7 @@ class McpManager {
       let content = [...texts, ...others].filter(Boolean).join('\n')
 
       if (!content && result?.structuredContent) content = JSON.stringify(result.structuredContent)
-      if (!content) content = '(MCP 工具未返回内容)'
+      if (!content) content = t('(MCP 工具未返回内容)')
 
       if (result?.isError) {
         return { success: false, error: content, metadata: { server: tool.serverName, tool: tool.toolName } }
@@ -459,7 +462,7 @@ class McpManager {
 const manager = new McpManager()
 
 export async function initMcp(servers) {
-  const source = servers === undefined ? getConfig().mcp_servers : servers
+  const source = servers === undefined ? getConfig().extensions?.mcp_servers : servers
   return await manager.reload(source)
 }
 
@@ -470,7 +473,7 @@ export async function reloadMcpFromConfig() {
 export async function testMcpServer(rawServer) {
   const [server] = normalizeMcpServers([{ ...rawServer, enabled: true }])
   if (!server) {
-    return { success: false, error: 'MCP 配置无效：服务名仅允许小写字母、数字和连字符，启动命令不能为空' }
+    return { success: false, error: t('MCP 配置无效：服务名仅允许小写字母、数字和连字符，启动命令不能为空') }
   }
 
   const client = new McpClient(server)

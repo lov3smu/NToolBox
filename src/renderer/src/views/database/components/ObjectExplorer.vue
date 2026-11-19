@@ -46,24 +46,24 @@
           <span class="object-type-label">{{ objectTypeLabel }}</span>
         </div>
         <div class="object-search">
-          <input v-model="objectSearchKeyword" type="text" placeholder="搜索..." class="search-input" />
+          <input v-model="objectSearchKeyword" type="text" :placeholder="t('搜索...')" class="search-input" />
         </div>
       </div>
       <div v-if="selectedObject.type === 'database'" class="object-tables">
         <div v-if="objectTableDetails.length === 0" class="object-loading">
-          <p>加载中...</p>
+          <p>{{ t('加载中...') }}</p>
         </div>
         <div v-else-if="filteredTableDetails.length === 0" class="object-empty-list">
-          <p>{{ objectSearchKeyword ? '没有匹配的结果' : '暂无表' }}</p>
+          <p>{{ objectSearchKeyword ? t('没有匹配的结果') : t('暂无表') }}</p>
         </div>
         <div v-else class="tables-list">
           <div class="tables-header">
-            <span class="col-name">名称</span>
-            <span class="col-rows">行数</span>
-            <span class="col-size">数据长度</span>
-            <span class="col-engine">引擎</span>
-            <span class="col-modified">修改日期</span>
-            <span class="col-comment">注释</span>
+            <span class="col-name">{{ t('名称') }}</span>
+            <span class="col-rows">{{ t('行数') }}</span>
+            <span class="col-size">{{ t('数据长度') }}</span>
+            <span class="col-engine">{{ t('引擎') }}</span>
+            <span class="col-modified">{{ t('修改日期') }}</span>
+            <span class="col-comment">{{ t('注释') }}</span>
           </div>
           <div class="tables-body">
             <div
@@ -91,16 +91,16 @@
       </div>
       <div v-else-if="selectedObject.type === 'table'" class="object-detail">
         <div v-if="tableStructure.length === 0" class="object-loading">
-          <p>加载中...</p>
+          <p>{{ t('加载中...') }}</p>
         </div>
         <div v-else class="structure-list">
           <div class="structure-header">
-            <span class="col-field">字段</span>
-            <span class="col-type">类型</span>
-            <span class="col-null">允许空</span>
-            <span class="col-key">键</span>
-            <span class="col-default">默认值</span>
-            <span class="col-extra">额外</span>
+            <span class="col-field">{{ t('字段') }}</span>
+            <span class="col-type">{{ t('类型') }}</span>
+            <span class="col-null">{{ t('允许空') }}</span>
+            <span class="col-key">{{ t('键') }}</span>
+            <span class="col-default">{{ t('默认值') }}</span>
+            <span class="col-extra">{{ t('额外') }}</span>
           </div>
           <div class="structure-body">
             <div v-for="field in filteredTableStructure" :key="field.name" class="structure-row">
@@ -116,20 +116,20 @@
       </div>
       <div v-else-if="selectedObject.type === 'view'" class="object-detail">
         <div class="view-definition">
-          <p class="definition-label">视图定义:</p>
+          <p class="definition-label">{{ t('视图定义:') }}</p>
           <SqlHighlight class="definition-code" :code="viewDefinition" />
         </div>
       </div>
       <div v-else-if="selectedObject.type === 'function'" class="object-detail">
         <div class="function-definition">
-          <p class="definition-label">函数定义:</p>
+          <p class="definition-label">{{ t('函数定义:') }}</p>
           <SqlHighlight class="definition-code" :code="functionDefinition" />
         </div>
       </div>
       <div v-else-if="['procedure', 'trigger', 'event'].includes(selectedObject.type)" class="object-detail">
         <div class="object-definition">
-          <p class="definition-label">{{ objectTypeLabel }}定义:</p>
-          <SqlHighlight class="definition-code" :code="objectDefinition" placeholder="加载中..." />
+          <p class="definition-label">{{ objectTypeLabel }}{{ t('定义:') }}</p>
+          <SqlHighlight class="definition-code" :code="objectDefinition" :placeholder="t('加载中...')" />
         </div>
       </div>
     </div>
@@ -137,6 +137,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { inject } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 

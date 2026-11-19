@@ -1,5 +1,6 @@
 import { CLAWHUB_DEFAULT_BASE } from '../../shared/network.js'
 import { netFetch } from './network.js'
+import { t } from './i18n.js'
 
 const REQUEST_TIMEOUT = 10000
 const MAX_LIST_LIMIT = 100
@@ -99,11 +100,11 @@ async function requestJson(url) {
       headers: { accept: 'application/json', 'user-agent': 'NToolBox' }
     })
 
-    if (!response.ok) throw new Error(`ClawHub 请求失败（HTTP ${response.status}）`)
+    if (!response.ok) throw new Error(t('ClawHub 请求失败（HTTP {p0}）', { p0: response.status }))
 
     return await response.json()
   } catch (error) {
-    if (error?.name === 'AbortError') throw new Error('连接 ClawHub 超时', { cause: error })
+    if (error?.name === 'AbortError') throw new Error(t('连接 ClawHub 超时'), { cause: error })
     throw error
   } finally {
     clearTimeout(timer)
@@ -187,13 +188,13 @@ export async function searchClawHubSkills(query, { limit = 10, base } = {}) {
 }
 
 export async function fetchClawHubSkillDetail({ ownerHandle, slug, base }) {
-  if (!ownerHandle || !slug) throw new Error('在线扩展缺少来源信息')
+  if (!ownerHandle || !slug) throw new Error(t('在线扩展缺少来源信息'))
 
   const root = resolveRoot(base)
   const query = new URLSearchParams({ owner: ownerHandle })
   const payload = await requestJson(`${root}/api/v1/skills/${encodeURIComponent(slug)}?${query.toString()}`)
   const skill = payload?.skill
-  if (!skill) throw new Error('ClawHub 未返回技能详情')
+  if (!skill) throw new Error(t('ClawHub 未返回技能详情'))
 
   const description = String(skill.description || '')
   const parsed = parseSkillFrontmatter(description)

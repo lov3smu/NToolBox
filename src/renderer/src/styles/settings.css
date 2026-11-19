@@ -241,7 +241,6 @@
 
 .form-group > label input[type='checkbox'] {
   margin-right: 6px;
-  accent-color: var(--accent-color);
 }
 
 .input-field {
@@ -259,6 +258,17 @@
 
 .path-input-group .input-field {
   flex: 1;
+}
+
+.name-input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.name-input-group .input-field {
+  flex: 1 1 160px;
+  min-width: 0;
 }
 
 .setting-hint {
@@ -362,6 +372,7 @@
 
 .setting-row-control > .input-field,
 .setting-row-control > .path-input-group,
+.setting-row-control > .name-input-group,
 .setting-row-control > .api-key-input-group,
 .setting-row-control > .config-list,
 .setting-row-control > .theme-options,

@@ -1,10 +1,42 @@
+import { t } from '@/i18n'
+
 export const TRANSFER_TYPES = [
-  { type: 'table', label: '表' },
-  { type: 'view', label: '视图' },
-  { type: 'procedure', label: '存储过程' },
-  { type: 'function', label: '函数' },
-  { type: 'trigger', label: '触发器' },
-  { type: 'event', label: '事件' }
+  {
+    type: 'table',
+    get label() {
+      return t('表')
+    }
+  },
+  {
+    type: 'view',
+    get label() {
+      return t('视图')
+    }
+  },
+  {
+    type: 'procedure',
+    get label() {
+      return t('存储过程')
+    }
+  },
+  {
+    type: 'function',
+    get label() {
+      return t('函数')
+    }
+  },
+  {
+    type: 'trigger',
+    get label() {
+      return t('触发器')
+    }
+  },
+  {
+    type: 'event',
+    get label() {
+      return t('事件')
+    }
+  }
 ]
 
 export const CONTENT_MODES = ['all', 'structure', 'data']

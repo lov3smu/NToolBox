@@ -12,7 +12,10 @@ import {
   transformImageHostSecrets
 } from '../../shared/secrets.js'
 import { validateConfig, normalizeShortcuts } from './configValidation'
-import { VALID_THEMES, VALID_THEME_STYLES, VALID_FONT_SIZES } from '../constants'
+import { CONFIG_VERSION, migrateConfig, mergeConfig } from './configMigrations'
+import { t } from './i18n'
+import { VALID_CLOSE_ACTIONS, VALID_THEMES, VALID_THEME_STYLES, VALID_FONT_SIZES } from '../constants'
+import { normalizeLocale } from '../../shared/i18n.js'
 import { normalizeImageHostConfig } from '../../shared/imageHosts.js'
 import { normalizeDatabaseEditorConfig } from '../../shared/databaseEditor.js'
 import { normalizeMcpServers } from '../../shared/mcp.js'
@@ -66,6 +69,10 @@ export function getPublicConfig() {
   return maskConfigForRenderer(config)
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
 function decryptAiApiKeys(keys) {
   if (!keys || typeof keys !== 'object') return
   for (const [name, value] of Object.entries(keys)) {
@@ -78,17 +85,6 @@ function encryptAiApiKeys(keys) {
   for (const [name, value] of Object.entries(keys)) {
     if (typeof value === 'string' && value && !isEncrypted(value)) keys[name] = encrypt(value)
   }
-}
-
-function normalizeAiAgentConfig(target) {
-  target.ai_agent_max_iterations = normalizeAiAgentMaxIterations(target.ai_agent_max_iterations)
-  target.ai_agent_timeout_min = normalizeAiAgentTimeoutMin(target.ai_agent_timeout_min)
-  target.ai_agent_plan_steps = normalizeAiAgentPlanSteps(target.ai_agent_plan_steps)
-  target.ai_agent_parallel_tools = normalizeAiAgentParallelTools(target.ai_agent_parallel_tools)
-  target.ai_tool_result_max_kb = normalizeAiToolResultMaxKb(target.ai_tool_result_max_kb)
-  target.ai_tool_result_run_kb = normalizeAiToolResultRunKb(target.ai_tool_result_run_kb)
-  target.ai_tool_result_retention_days = normalizeAiToolResultRetentionDays(target.ai_tool_result_retention_days)
-  return target
 }
 
 const LEGACY_MODEL_NAMES = {
@@ -220,104 +216,335 @@ function normalizeAuditRules(raw) {
 function getDefaultConfigContent() {
   const defaultBasePath = path.join(getInstallDir(), 'Develop', '11 - Database Script')
   return {
-    base_path: defaultBasePath,
-    developer_ch_name: '张三',
-    developer_en_name: 'zhangsan',
-    text_edit_app: '',
-    auto_update: true,
-    auto_start: true,
-    first_launch_done: false,
-    close_action: 'ask',
-    update_check_interval: normalizeUpdateCheckInterval(),
-    recent_tools_limit: normalizeRecentToolsLimit(),
-    theme: 'system',
-    theme_style: 'sapphire',
-    font_size: 'medium',
-    memory_auto_capture: true,
-    database_safe_mode: true,
-    database_page_size: normalizeDatabasePageSize(),
-    database_refresh_interval: normalizeDatabaseRefreshInterval(),
-    database_transfer_batch_size: normalizeDatabaseTransferBatchSize(),
-    database_history_limit: normalizeDatabaseHistoryLimit(),
-    database_audit_enabled: false,
-    database_audit_strict: false,
-    database_audit_rules: { ...DEFAULT_SQL_AUDIT_RULES },
-    database_operation_log_enabled: true,
-    db_backup_tasks: [],
-    ai_provider: 'bailian',
-    ai_api_keys: {
-      bailian: '',
-      moonshot: '',
-      zhipu: '',
-      minimax: '',
-      minimax_group_id: '',
-      volcengine: '',
-      volcengine_endpoint_id: '',
-      deepseek: '',
-      mimo: '',
-      opencode: '',
-      opencode_go: '',
-      openai: '',
-      google: '',
-      anthropic: ''
+    config_version: CONFIG_VERSION,
+    app: {
+      base_path: defaultBasePath,
+      developer: {
+        ch_name: '张三',
+        en_name: 'zhangsan'
+      },
+      text_edit_app: '',
+      auto_start: true,
+      first_launch_done: false,
+      close_action: 'ask',
+      recent_tools_limit: normalizeRecentToolsLimit(),
+      shortcuts: {
+        settings: 'CmdOrCtrl+,'
+      }
     },
-    ai_base_urls: {},
-    ai_models: {},
-    ai_fallback_enabled: true,
-    ai_fallback_models: [],
-    ai_persona: '',
-    ai_temperature: null,
-    ai_timeout: normalizeAiTimeout(),
-    ai_compress_threshold: normalizeAiCompressThreshold(),
-    ai_compress_keep_recent: normalizeAiCompressKeepRecent(),
-    ai_max_attachments: normalizeAiMaxAttachments(),
-    ai_max_image_mb: normalizeAiMaxImageMb(),
-    ai_max_text_kb: normalizeAiMaxTextKb(),
-    ai_agent_max_iterations: normalizeAiAgentMaxIterations(),
-    ai_agent_timeout_min: normalizeAiAgentTimeoutMin(),
-    ai_agent_plan_steps: normalizeAiAgentPlanSteps(),
-    ai_agent_parallel_tools: normalizeAiAgentParallelTools(),
-    ai_tool_result_max_kb: normalizeAiToolResultMaxKb(),
-    ai_tool_result_run_kb: normalizeAiToolResultRunKb(),
-    ai_tool_result_retention_days: normalizeAiToolResultRetentionDays(),
-    ai_scenario_models: normalizeScenarioModels(),
-    ai_tool_policy: normalizeToolPolicy('all'),
-    databases: [
-      'order_db',
-      'product_db',
-      'community_db',
-      'content_db',
-      'device_db',
-      'main_db',
-      'promotion_db',
-      'ota_db',
-      'payment_db',
-      'pmp_db',
-      'report_db',
-      'report_data_db',
-      'sharespace_db',
-      'user_db',
-      'workbench_db',
-      'worktask_db',
-      'data_warehouse_db'
-    ],
-    script_types: [
-      { name: 'DDL', description: 'Data Definition Language (CREATE, ALTER, DROP)' },
-      { name: 'DML', description: 'Data Manipulation Language (INSERT, UPDATE, DELETE)' },
-      { name: 'DQL', description: 'Data Query Language (SELECT)' }
-    ],
-    shortcuts: {
-      settings: 'CmdOrCtrl+,'
+    appearance: {
+      theme: 'system',
+      theme_style: 'sapphire',
+      font_size: 'medium',
+      language: 'zh-CN'
     },
-    database_editor: normalizeDatabaseEditorConfig(),
+    update: {
+      auto_update: true,
+      check_interval: normalizeUpdateCheckInterval()
+    },
+    network: {
+      ...normalizeNetworkConfig(),
+      market_sources: normalizeMarketSources()
+    },
+    database: {
+      safe_mode: true,
+      page_size: normalizeDatabasePageSize(),
+      refresh_interval: normalizeDatabaseRefreshInterval(),
+      transfer_batch_size: normalizeDatabaseTransferBatchSize(),
+      history_limit: normalizeDatabaseHistoryLimit(),
+      audit: {
+        enabled: false,
+        strict: false,
+        rules: { ...DEFAULT_SQL_AUDIT_RULES }
+      },
+      operation_log_enabled: true,
+      backup_tasks: [],
+      transfer_tasks: [],
+      connections: [],
+      connection_groups: [],
+      editor: normalizeDatabaseEditorConfig()
+    },
+    sql_generator: {
+      databases: [
+        'order_db',
+        'product_db',
+        'community_db',
+        'content_db',
+        'device_db',
+        'main_db',
+        'promotion_db',
+        'ota_db',
+        'payment_db',
+        'pmp_db',
+        'report_db',
+        'report_data_db',
+        'sharespace_db',
+        'user_db',
+        'workbench_db',
+        'worktask_db',
+        'data_warehouse_db'
+      ],
+      script_types: [
+        { name: 'DDL', description: 'Data Definition Language (CREATE, ALTER, DROP)' },
+        { name: 'DML', description: 'Data Manipulation Language (INSERT, UPDATE, DELETE)' },
+        { name: 'DQL', description: 'Data Query Language (SELECT)' }
+      ]
+    },
+    ai: {
+      provider: 'bailian',
+      keys: {
+        bailian: '',
+        moonshot: '',
+        zhipu: '',
+        minimax: '',
+        minimax_group_id: '',
+        volcengine: '',
+        volcengine_endpoint_id: '',
+        deepseek: '',
+        mimo: '',
+        opencode: '',
+        opencode_go: '',
+        openai: '',
+        google: '',
+        anthropic: ''
+      },
+      base_urls: {},
+      models: {},
+      fallback: {
+        enabled: true,
+        models: []
+      },
+      persona: '',
+      temperature: null,
+      timeout: normalizeAiTimeout(),
+      connection_timeout: 10,
+      context: {
+        compress_threshold: normalizeAiCompressThreshold(),
+        keep_recent: normalizeAiCompressKeepRecent()
+      },
+      attachments: {
+        max_count: normalizeAiMaxAttachments(),
+        max_image_mb: normalizeAiMaxImageMb(),
+        max_text_kb: normalizeAiMaxTextKb()
+      },
+      agent: {
+        max_iterations: normalizeAiAgentMaxIterations(),
+        timeout_min: normalizeAiAgentTimeoutMin(),
+        max_plan_steps: normalizeAiAgentPlanSteps(),
+        max_parallel_tools: normalizeAiAgentParallelTools(),
+        scenario_models: normalizeScenarioModels(),
+        tool_policy: normalizeToolPolicy('all')
+      },
+      tool_result: {
+        max_kb: normalizeAiToolResultMaxKb(),
+        run_kb: normalizeAiToolResultRunKb(),
+        retention_days: normalizeAiToolResultRetentionDays()
+      }
+    },
+    memory: {
+      auto_capture: true
+    },
     image_hosting: normalizeImageHostConfig(),
-    mcp_servers: [],
-    disabled_skills: [],
-    skill_overrides: {},
-    network: normalizeNetworkConfig(),
-    market_sources: normalizeMarketSources(),
+    extensions: {
+      mcp_servers: [],
+      disabled_skills: [],
+      skill_overrides: {}
+    },
     notifications: normalizeNotificationConfig(),
     clipboard_history: normalizeClipboardHistoryConfig()
+  }
+}
+
+function normalizeAppConfig(raw, defaults) {
+  const source = isPlainObject(raw) ? raw : {}
+  const appConfig = {
+    base_path: typeof source.base_path === 'string' ? source.base_path : defaults.base_path,
+    developer: {
+      ch_name: typeof source.developer?.ch_name === 'string' ? source.developer.ch_name : defaults.developer.ch_name,
+      en_name: typeof source.developer?.en_name === 'string' ? source.developer.en_name : defaults.developer.en_name
+    },
+    text_edit_app: typeof source.text_edit_app === 'string' ? source.text_edit_app : defaults.text_edit_app,
+    auto_start: typeof source.auto_start === 'boolean' ? source.auto_start : defaults.auto_start,
+    first_launch_done:
+      typeof source.first_launch_done === 'boolean' ? source.first_launch_done : defaults.first_launch_done,
+    close_action: VALID_CLOSE_ACTIONS.includes(source.close_action) ? source.close_action : defaults.close_action,
+    recent_tools_limit: normalizeRecentToolsLimit(source.recent_tools_limit),
+    shortcuts: normalizeShortcuts(source.shortcuts, defaults.shortcuts)
+  }
+  return appConfig
+}
+
+function normalizeDatabaseConfig(raw, defaults) {
+  const source = isPlainObject(raw) ? raw : {}
+  const audit = isPlainObject(source.audit) ? source.audit : {}
+  const connections = Array.isArray(source.connections)
+    ? source.connections.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+    : []
+  let connectionGroups = Array.isArray(source.connection_groups)
+    ? source.connection_groups.filter((name) => typeof name === 'string' && name.trim()).map((name) => name.trim())
+    : []
+  connectionGroups = [...new Set(connectionGroups)]
+  return {
+    safe_mode: typeof source.safe_mode === 'boolean' ? source.safe_mode : defaults.safe_mode,
+    page_size: normalizeDatabasePageSize(source.page_size),
+    refresh_interval: normalizeDatabaseRefreshInterval(source.refresh_interval),
+    transfer_batch_size: normalizeDatabaseTransferBatchSize(source.transfer_batch_size),
+    history_limit: normalizeDatabaseHistoryLimit(source.history_limit),
+    audit: {
+      enabled: typeof audit.enabled === 'boolean' ? audit.enabled : defaults.audit.enabled,
+      strict: typeof audit.strict === 'boolean' ? audit.strict : defaults.audit.strict,
+      rules: normalizeAuditRules(audit.rules)
+    },
+    operation_log_enabled:
+      typeof source.operation_log_enabled === 'boolean' ? source.operation_log_enabled : defaults.operation_log_enabled,
+    backup_tasks: Array.isArray(source.backup_tasks)
+      ? source.backup_tasks.map(normalizeBackupTask).filter((task) => task.id)
+      : [],
+    transfer_tasks: Array.isArray(source.transfer_tasks) ? source.transfer_tasks : [],
+    connections,
+    connection_groups: connectionGroups,
+    editor: normalizeDatabaseEditorConfig(source.editor)
+  }
+}
+
+function normalizeSqlGeneratorConfig(raw, defaults) {
+  const source = isPlainObject(raw) ? raw : {}
+  const databases = Array.isArray(source.databases)
+    ? source.databases.filter((name) => typeof name === 'string')
+    : defaults.databases
+  const scriptTypes = Array.isArray(source.script_types)
+    ? source.script_types
+        .filter((item) => item && typeof item === 'object' && typeof item.name === 'string')
+        .map((item) => ({
+          name: item.name,
+          description: typeof item.description === 'string' ? item.description : ''
+        }))
+    : defaults.script_types
+  return { databases, script_types: scriptTypes }
+}
+
+function normalizeAiConfig(raw, defaults) {
+  const source = isPlainObject(raw) ? raw : {}
+  const keys = {
+    ...defaults.keys,
+    ...(isPlainObject(source.keys) ? source.keys : {})
+  }
+  const fallback = isPlainObject(source.fallback) ? source.fallback : {}
+  const context = isPlainObject(source.context) ? source.context : {}
+  const attachments = isPlainObject(source.attachments) ? source.attachments : {}
+  const agent = isPlainObject(source.agent) ? source.agent : {}
+  const toolResult = isPlainObject(source.tool_result) ? source.tool_result : {}
+  const connectionTimeout = normalizePositiveInt(source.connection_timeout)
+  return {
+    provider: typeof source.provider === 'string' && source.provider ? source.provider : defaults.provider,
+    keys,
+    base_urls: normalizeBaseUrls(source.base_urls),
+    models: normalizeAiModels(source.models),
+    fallback: {
+      enabled: typeof fallback.enabled === 'boolean' ? fallback.enabled : defaults.fallback.enabled,
+      models: normalizeFallbackModels(fallback.models)
+    },
+    persona: normalizeAiPersona(source.persona),
+    temperature: normalizeAiTemperature(source.temperature),
+    timeout: normalizeAiTimeout(source.timeout),
+    connection_timeout: connectionTimeout || defaults.connection_timeout,
+    context: {
+      compress_threshold: normalizeAiCompressThreshold(context.compress_threshold),
+      keep_recent: normalizeAiCompressKeepRecent(context.keep_recent)
+    },
+    attachments: {
+      max_count: normalizeAiMaxAttachments(attachments.max_count),
+      max_image_mb: normalizeAiMaxImageMb(attachments.max_image_mb),
+      max_text_kb: normalizeAiMaxTextKb(attachments.max_text_kb)
+    },
+    agent: {
+      max_iterations: normalizeAiAgentMaxIterations(agent.max_iterations),
+      timeout_min: normalizeAiAgentTimeoutMin(agent.timeout_min),
+      max_plan_steps: normalizeAiAgentPlanSteps(agent.max_plan_steps),
+      max_parallel_tools: normalizeAiAgentParallelTools(agent.max_parallel_tools),
+      scenario_models: normalizeScenarioModels(agent.scenario_models),
+      tool_policy: normalizeToolPolicy(agent.tool_policy)
+    },
+    tool_result: {
+      max_kb: normalizeAiToolResultMaxKb(toolResult.max_kb),
+      run_kb: normalizeAiToolResultRunKb(toolResult.run_kb),
+      retention_days: normalizeAiToolResultRetentionDays(toolResult.retention_days)
+    }
+  }
+}
+
+function normalizeConfig(raw) {
+  const defaults = getDefaultConfigContent()
+  const merged = mergeConfig(defaults, isPlainObject(raw) ? raw : {})
+  const appearance = isPlainObject(merged.appearance) ? merged.appearance : {}
+  const update = isPlainObject(merged.update) ? merged.update : {}
+  const network = normalizeNetworkConfig(merged.network)
+  network.market_sources = normalizeMarketSources(merged.network?.market_sources ?? defaults.network.market_sources)
+  const memory = isPlainObject(merged.memory) ? merged.memory : {}
+  const extensions = isPlainObject(merged.extensions) ? merged.extensions : {}
+
+  return {
+    config_version: CONFIG_VERSION,
+    app: normalizeAppConfig(merged.app, defaults.app),
+    appearance: {
+      theme: VALID_THEMES.includes(appearance.theme) ? appearance.theme : defaults.appearance.theme,
+      theme_style: VALID_THEME_STYLES.includes(appearance.theme_style)
+        ? appearance.theme_style
+        : defaults.appearance.theme_style,
+      font_size: VALID_FONT_SIZES.includes(appearance.font_size) ? appearance.font_size : defaults.appearance.font_size,
+      language: normalizeLocale(appearance.language)
+    },
+    update: {
+      auto_update: typeof update.auto_update === 'boolean' ? update.auto_update : defaults.update.auto_update,
+      check_interval: normalizeUpdateCheckInterval(update.check_interval)
+    },
+    network,
+    database: normalizeDatabaseConfig(merged.database, defaults.database),
+    sql_generator: normalizeSqlGeneratorConfig(merged.sql_generator, defaults.sql_generator),
+    ai: normalizeAiConfig(merged.ai, defaults.ai),
+    memory: {
+      auto_capture: typeof memory.auto_capture === 'boolean' ? memory.auto_capture : defaults.memory.auto_capture
+    },
+    image_hosting: normalizeImageHostConfig(merged.image_hosting),
+    extensions: {
+      mcp_servers: normalizeMcpServers(extensions.mcp_servers),
+      disabled_skills: normalizeDisabledSkills(extensions.disabled_skills),
+      skill_overrides: normalizeSkillOverrides(extensions.skill_overrides)
+    },
+    notifications: normalizeNotificationConfig(merged.notifications),
+    clipboard_history: normalizeClipboardHistoryConfig(merged.clipboard_history)
+  }
+}
+
+function decryptSecrets(target) {
+  decryptAiApiKeys(target.ai?.keys)
+  if (Array.isArray(target.database?.connections)) {
+    for (const conn of target.database.connections) {
+      if (conn.password) conn.password = decryptDbPassword(conn.password)
+    }
+  }
+  transformImageHostSecrets(target.image_hosting, (value) => (isEncrypted(value) ? decrypt(value) : value))
+}
+
+async function persistConfig(source) {
+  const configPath = getConfigPath()
+  const configToSave = JSON.parse(JSON.stringify(source))
+  if (Array.isArray(configToSave.database?.connections)) {
+    for (const conn of configToSave.database.connections) {
+      if (conn.password && conn.savePassword) {
+        conn.password = encryptDbPassword(conn.password)
+      } else if (conn.password && !conn.savePassword) {
+        conn.password = ''
+      }
+    }
+  }
+  encryptAiApiKeys(configToSave.ai?.keys)
+  transformImageHostSecrets(configToSave.image_hosting, (value) => (isEncrypted(value) ? value : encrypt(value)))
+  await writeFileAtomic(configPath, JSON.stringify(configToSave, null, 2), 'utf8')
+  try {
+    await fs.promises.copyFile(configPath, `${configPath}.bak`)
+  } catch (error) {
+    log.error('备份配置文件失败:', error)
   }
 }
 
@@ -352,99 +579,27 @@ export async function loadConfig() {
     }
     if (parsed.recovered) log.warn('配置文件解析失败，已使用 .bak 备份恢复')
 
-    const loadedConfig = parsed.data
-    const defaultConfig = getDefaultConfigContent()
+    const migration = migrateConfig(parsed.data)
+    config = normalizeConfig(migration.config)
+    decryptSecrets(config)
 
-    config = { ...defaultConfig, ...loadedConfig }
-
-    if (config.auto_update === undefined) config.auto_update = true
-    if (config.auto_start === undefined) config.auto_start = true
-    if (config.first_launch_done === undefined) config.first_launch_done = false
-    if (config.close_action === undefined) config.close_action = 'ask'
-    if (!VALID_THEMES.includes(config.theme)) config.theme = 'system'
-    if (!VALID_THEME_STYLES.includes(config.theme_style)) config.theme_style = 'sapphire'
-    if (!VALID_FONT_SIZES.includes(config.font_size)) config.font_size = 'medium'
-    if (typeof config.memory_auto_capture !== 'boolean') config.memory_auto_capture = true
-    config.update_check_interval = normalizeUpdateCheckInterval(config.update_check_interval)
-    config.recent_tools_limit = normalizeRecentToolsLimit(config.recent_tools_limit)
-    if (typeof config.database_safe_mode !== 'boolean') config.database_safe_mode = true
-    config.database_page_size = normalizeDatabasePageSize(config.database_page_size)
-    config.database_refresh_interval = normalizeDatabaseRefreshInterval(config.database_refresh_interval)
-    config.database_transfer_batch_size = normalizeDatabaseTransferBatchSize(config.database_transfer_batch_size)
-    config.database_history_limit = normalizeDatabaseHistoryLimit(config.database_history_limit)
-    if (typeof config.database_audit_enabled !== 'boolean') config.database_audit_enabled = false
-    if (typeof config.database_audit_strict !== 'boolean') config.database_audit_strict = false
-    config.database_audit_rules = normalizeAuditRules(config.database_audit_rules)
-    if (typeof config.database_operation_log_enabled !== 'boolean') config.database_operation_log_enabled = true
-    config.db_backup_tasks = Array.isArray(config.db_backup_tasks)
-      ? config.db_backup_tasks.map(normalizeBackupTask).filter((task) => task.id)
-      : []
-    if (config.ai_provider === undefined) config.ai_provider = 'bailian'
-
-    if (!config.ai_api_keys || typeof config.ai_api_keys !== 'object') {
-      config.ai_api_keys = { ...defaultConfig.ai_api_keys }
-    } else {
-      config.ai_api_keys = { ...defaultConfig.ai_api_keys, ...config.ai_api_keys }
+    if (migration.migrated) {
+      await persistConfig(config)
+      log.info(`配置文件已迁移到版本 ${CONFIG_VERSION}`)
     }
-
-    config.ai_models = normalizeAiModels(config.ai_models)
-    config.ai_base_urls = normalizeBaseUrls(config.ai_base_urls)
-    if (typeof config.ai_fallback_enabled !== 'boolean') config.ai_fallback_enabled = true
-    config.ai_fallback_models = normalizeFallbackModels(config.ai_fallback_models)
-    config.ai_persona = normalizeAiPersona(config.ai_persona)
-    config.ai_temperature = normalizeAiTemperature(config.ai_temperature)
-    config.ai_timeout = normalizeAiTimeout(config.ai_timeout)
-    config.ai_compress_threshold = normalizeAiCompressThreshold(config.ai_compress_threshold)
-    config.ai_compress_keep_recent = normalizeAiCompressKeepRecent(config.ai_compress_keep_recent)
-    config.ai_max_attachments = normalizeAiMaxAttachments(config.ai_max_attachments)
-    config.ai_max_image_mb = normalizeAiMaxImageMb(config.ai_max_image_mb)
-    config.ai_max_text_kb = normalizeAiMaxTextKb(config.ai_max_text_kb)
-    // 旧版本把默认值一并写入配置文件，10 轮为历史默认；升级一次到 20 轮，之后用户自选值不再改动
-    if (config.ai_agent_iterations_upgraded !== true) {
-      if (normalizeAiAgentMaxIterations(config.ai_agent_max_iterations) === 10) config.ai_agent_max_iterations = 20
-      config.ai_agent_iterations_upgraded = true
-    }
-    normalizeAiAgentConfig(config)
-    config.ai_scenario_models = normalizeScenarioModels(config.ai_scenario_models)
-    config.ai_tool_policy = normalizeToolPolicy(config.ai_tool_policy)
-    config.database_editor = normalizeDatabaseEditorConfig(config.database_editor)
-    config.image_hosting = normalizeImageHostConfig(config.image_hosting)
-    config.mcp_servers = normalizeMcpServers(config.mcp_servers)
-    // Older configs predate extension toggles; defaulting here keeps them loadable.
-    config.disabled_skills = normalizeDisabledSkills(config.disabled_skills)
-    config.skill_overrides = normalizeSkillOverrides(config.skill_overrides)
-    config.network = normalizeNetworkConfig(config.network)
-    config.market_sources = normalizeMarketSources(config.market_sources)
-    config.notifications = normalizeNotificationConfig(config.notifications)
-    config.clipboard_history = normalizeClipboardHistoryConfig(config.clipboard_history)
-
-    if (loadedConfig.bailian_api_key && !config.ai_api_keys.bailian) {
-      config.ai_api_keys.bailian = loadedConfig.bailian_api_key
-      delete config.bailian_api_key
-    }
-
-    config.shortcuts = normalizeShortcuts(config.shortcuts, defaultConfig.shortcuts)
-
-    if (Array.isArray(config.dbConnections)) {
-      for (const conn of config.dbConnections) {
-        if (conn.password) {
-          conn.password = decryptDbPassword(conn.password)
-        }
-      }
-    }
-
-    decryptAiApiKeys(config.ai_api_keys)
-    transformImageHostSecrets(config.image_hosting, (value) => (isEncrypted(value) ? decrypt(value) : value))
 
     log.info('配置文件加载成功')
     return config
   } catch (error) {
     if (error instanceof SyntaxError) {
       log.error('配置文件 JSON 格式错误:', error)
-      dialog.showErrorBox('配置错误', `配置文件 config.json 格式错误，请检查 JSON 语法：\n${error.message}`)
+      dialog.showErrorBox(
+        t('配置错误'),
+        t('配置文件 config.json 格式错误，请检查 JSON 语法：\n{error}', { error: error.message })
+      )
     } else {
       log.error('加载配置文件失败:', error)
-      dialog.showErrorBox('配置错误', `无法加载配置文件 config.json：\n${error.message}`)
+      dialog.showErrorBox(t('配置错误'), t('无法加载配置文件 config.json：\n{error}', { error: error.message }))
     }
     app.isQuitting = true
     app.quit()
@@ -454,95 +609,21 @@ export async function loadConfig() {
 
 async function saveConfigNow(newConfig) {
   try {
-    // 与现有配置合并，避免局部保存（如设置页不提交 first_launch_done、dbConnections）丢字段
-    const mergedConfig = { ...config, ...newConfig }
-    mergedConfig.ai_api_keys = restoreMaskedAiApiKeys(mergedConfig.ai_api_keys, config.ai_api_keys)
+    const mergedConfig = mergeConfig(config, newConfig)
+    mergedConfig.ai = {
+      ...mergedConfig.ai,
+      keys: restoreMaskedAiApiKeys(mergedConfig.ai?.keys, config.ai?.keys)
+    }
     mergedConfig.image_hosting = restoreMaskedImageHostSettings(mergedConfig.image_hosting, config.image_hosting)
-    mergedConfig.image_hosting = normalizeImageHostConfig(mergedConfig.image_hosting)
-    mergedConfig.update_check_interval = normalizeUpdateCheckInterval(mergedConfig.update_check_interval)
-    mergedConfig.recent_tools_limit = normalizeRecentToolsLimit(mergedConfig.recent_tools_limit)
-    mergedConfig.database_page_size = normalizeDatabasePageSize(mergedConfig.database_page_size)
-    mergedConfig.database_refresh_interval = normalizeDatabaseRefreshInterval(mergedConfig.database_refresh_interval)
-    mergedConfig.database_transfer_batch_size = normalizeDatabaseTransferBatchSize(
-      mergedConfig.database_transfer_batch_size
-    )
-    mergedConfig.database_history_limit = normalizeDatabaseHistoryLimit(mergedConfig.database_history_limit)
-    mergedConfig.ai_timeout = normalizeAiTimeout(mergedConfig.ai_timeout)
-    mergedConfig.ai_compress_threshold = normalizeAiCompressThreshold(mergedConfig.ai_compress_threshold)
-    mergedConfig.ai_compress_keep_recent = normalizeAiCompressKeepRecent(mergedConfig.ai_compress_keep_recent)
-    mergedConfig.ai_max_attachments = normalizeAiMaxAttachments(mergedConfig.ai_max_attachments)
-    mergedConfig.ai_max_image_mb = normalizeAiMaxImageMb(mergedConfig.ai_max_image_mb)
-    mergedConfig.ai_max_text_kb = normalizeAiMaxTextKb(mergedConfig.ai_max_text_kb)
-    normalizeAiAgentConfig(mergedConfig)
     const error = validateConfig(mergedConfig)
     if (error) {
       log.error('配置校验失败:', error)
       return false
     }
 
-    const configToSave = JSON.parse(JSON.stringify(mergedConfig))
-    configToSave.ai_models = normalizeAiModels(configToSave.ai_models)
-    configToSave.ai_base_urls = normalizeBaseUrls(configToSave.ai_base_urls)
-    configToSave.ai_fallback_models = normalizeFallbackModels(configToSave.ai_fallback_models)
-    configToSave.ai_persona = normalizeAiPersona(configToSave.ai_persona)
-    configToSave.ai_temperature = normalizeAiTemperature(configToSave.ai_temperature)
-    configToSave.ai_scenario_models = normalizeScenarioModels(configToSave.ai_scenario_models)
-    configToSave.ai_tool_policy = normalizeToolPolicy(configToSave.ai_tool_policy)
-    configToSave.database_editor = normalizeDatabaseEditorConfig(configToSave.database_editor)
-    configToSave.database_audit_rules = normalizeAuditRules(configToSave.database_audit_rules)
-    configToSave.db_backup_tasks = Array.isArray(configToSave.db_backup_tasks)
-      ? configToSave.db_backup_tasks.map(normalizeBackupTask).filter((task) => task.id)
-      : []
-    configToSave.image_hosting = normalizeImageHostConfig(configToSave.image_hosting)
-    configToSave.mcp_servers = normalizeMcpServers(configToSave.mcp_servers)
-    configToSave.disabled_skills = normalizeDisabledSkills(configToSave.disabled_skills)
-    configToSave.skill_overrides = normalizeSkillOverrides(configToSave.skill_overrides)
-    configToSave.network = normalizeNetworkConfig(configToSave.network)
-    configToSave.market_sources = normalizeMarketSources(configToSave.market_sources)
-    configToSave.notifications = normalizeNotificationConfig(configToSave.notifications)
-    configToSave.clipboard_history = normalizeClipboardHistoryConfig(configToSave.clipboard_history)
-
-    if (Array.isArray(configToSave.dbConnections)) {
-      for (const conn of configToSave.dbConnections) {
-        if (conn.password && conn.savePassword) {
-          conn.password = encryptDbPassword(conn.password)
-        } else if (conn.password && !conn.savePassword) {
-          conn.password = ''
-        }
-      }
-    }
-
-    encryptAiApiKeys(configToSave.ai_api_keys)
-    transformImageHostSecrets(configToSave.image_hosting, (value) => (isEncrypted(value) ? value : encrypt(value)))
-
-    const configPath = getConfigPath()
-    await writeFileAtomic(configPath, JSON.stringify(configToSave, null, 2), 'utf8')
-    try {
-      await fs.promises.copyFile(configPath, `${configPath}.bak`)
-    } catch (error) {
-      log.error('备份配置文件失败:', error)
-    }
-    config = {
-      ...mergedConfig,
-      ai_models: configToSave.ai_models,
-      ai_base_urls: configToSave.ai_base_urls,
-      ai_fallback_models: configToSave.ai_fallback_models,
-      ai_persona: configToSave.ai_persona,
-      ai_temperature: configToSave.ai_temperature,
-      ai_scenario_models: configToSave.ai_scenario_models,
-      ai_tool_policy: configToSave.ai_tool_policy,
-      database_editor: configToSave.database_editor,
-      database_audit_rules: configToSave.database_audit_rules,
-      db_backup_tasks: configToSave.db_backup_tasks,
-      image_hosting: mergedConfig.image_hosting,
-      mcp_servers: configToSave.mcp_servers,
-      disabled_skills: configToSave.disabled_skills,
-      skill_overrides: configToSave.skill_overrides,
-      network: configToSave.network,
-      market_sources: configToSave.market_sources,
-      notifications: configToSave.notifications,
-      clipboard_history: configToSave.clipboard_history
-    }
+    const normalized = normalizeConfig(mergedConfig)
+    await persistConfig(normalized)
+    config = normalized
     log.info('配置保存成功')
     return true
   } catch (error) {

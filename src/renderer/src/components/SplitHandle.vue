@@ -18,7 +18,7 @@ defineProps({
   resizing: Boolean,
   label: {
     type: String,
-    default: '拖动调整分栏大小'
+    default: ''
   }
 })
 </script>

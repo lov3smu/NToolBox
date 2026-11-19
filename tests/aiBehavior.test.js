@@ -209,18 +209,18 @@ describe('agent runtime limits', () => {
     const optionValues = (options) => options.map((option) => option.value)
     for (const preset of AI_PRESETS) {
       const values = preset.values
-      expect(optionValues(AI_AGENT_MAX_ITERATIONS_OPTIONS)).toContain(values.ai_agent_max_iterations)
-      expect(optionValues(AI_AGENT_TIMEOUT_MIN_OPTIONS)).toContain(values.ai_agent_timeout_min)
-      expect(optionValues(AI_AGENT_PLAN_STEPS_OPTIONS)).toContain(values.ai_agent_plan_steps)
-      expect(optionValues(AI_AGENT_PARALLEL_TOOLS_OPTIONS)).toContain(values.ai_agent_parallel_tools)
-      expect(optionValues(AI_TOOL_RESULT_MAX_KB_OPTIONS)).toContain(values.ai_tool_result_max_kb)
-      expect(optionValues(AI_TOOL_RESULT_RUN_KB_OPTIONS)).toContain(values.ai_tool_result_run_kb)
-      expect(optionValues(AI_TOOL_RESULT_RETENTION_OPTIONS)).toContain(values.ai_tool_result_retention_days)
-      expect(normalizeAiCompressThreshold(values.ai_compress_threshold)).toBe(values.ai_compress_threshold)
-      expect(normalizeAiCompressKeepRecent(values.ai_compress_keep_recent)).toBe(values.ai_compress_keep_recent)
+      expect(optionValues(AI_AGENT_MAX_ITERATIONS_OPTIONS)).toContain(values.agent.max_iterations)
+      expect(optionValues(AI_AGENT_TIMEOUT_MIN_OPTIONS)).toContain(values.agent.timeout_min)
+      expect(optionValues(AI_AGENT_PLAN_STEPS_OPTIONS)).toContain(values.agent.max_plan_steps)
+      expect(optionValues(AI_AGENT_PARALLEL_TOOLS_OPTIONS)).toContain(values.agent.max_parallel_tools)
+      expect(optionValues(AI_TOOL_RESULT_MAX_KB_OPTIONS)).toContain(values.tool_result.max_kb)
+      expect(optionValues(AI_TOOL_RESULT_RUN_KB_OPTIONS)).toContain(values.tool_result.run_kb)
+      expect(optionValues(AI_TOOL_RESULT_RETENTION_OPTIONS)).toContain(values.tool_result.retention_days)
+      expect(normalizeAiCompressThreshold(values.context.compress_threshold)).toBe(values.context.compress_threshold)
+      expect(normalizeAiCompressKeepRecent(values.context.keep_recent)).toBe(values.context.keep_recent)
     }
     const strict = AI_PRESETS.find((preset) => preset.id === 'strict')
-    expect(strict.values.ai_tool_policy).toBe('all')
+    expect(strict.values.agent.tool_policy).toBe('all')
   })
 })
 

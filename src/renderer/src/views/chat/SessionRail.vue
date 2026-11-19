@@ -6,7 +6,7 @@
         <line x1="12" y1="8.5" x2="12" y2="15.5" />
         <line x1="8.5" y1="12" x2="15.5" y2="12" />
       </svg>
-      <span>新会话</span>
+      <span>{{ t('新会话') }}</span>
     </button>
 
     <nav class="rail-nav">
@@ -16,7 +16,7 @@
           <path d="M12 5a3 3 0 0 1 6 0 3 3 0 0 1 1 5.8 3.5 3.5 0 0 1-3 5.7V18a3 3 0 0 1-4 2.8" />
           <path d="M12 5v16" />
         </svg>
-        <span>记忆与知识库</span>
+        <span>{{ t('记忆与知识库') }}</span>
       </button>
       <button class="rail-nav-item" @click="$emit('open-market')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -25,7 +25,7 @@
           <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
           <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
         </svg>
-        <span>扩展</span>
+        <span>{{ t('扩展') }}</span>
       </button>
     </nav>
 
@@ -34,10 +34,10 @@
         <button
           class="rail-section-title-btn"
           :aria-expanded="workspaceOpen"
-          title="收起/展开工作区列表"
+          :title="t('收起/展开工作区列表')"
           @click="$emit('toggle-workspace')"
         >
-          <span class="rail-section-title">工作区</span>
+          <span class="rail-section-title">{{ t('工作区') }}</span>
           <svg class="rail-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9" />
           </svg>
@@ -46,7 +46,7 @@
           <button
             class="rail-icon-btn"
             :class="{ active: searchOpen }"
-            title="搜索会话"
+            :title="t('搜索会话')"
             @click="$emit('toggle-search')"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -54,7 +54,7 @@
               <line x1="20" y1="20" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <button class="rail-icon-btn" title="添加工作区" @click="$emit('add-workspace')">
+          <button class="rail-icon-btn" :title="t('添加工作区')" @click="$emit('add-workspace')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -68,8 +68,8 @@
           <circle cx="11" cy="11" r="7" />
           <line x1="20" y1="20" x2="16.65" y2="16.65" />
         </svg>
-        <input ref="searchInput" v-model="searchModel" type="text" placeholder="搜索会话" spellcheck="false" />
-        <button v-if="search" title="清空搜索" @click="searchModel = ''">
+        <input ref="searchInput" v-model="searchModel" type="text" :placeholder="t('搜索会话')" spellcheck="false" />
+        <button v-if="search" :title="t('清空搜索')" @click="searchModel = ''">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -87,36 +87,48 @@
           <div
             class="rail-group-head"
             :class="{ 'menu-open': workspaceMenu?.path === group.path }"
-            :title="groupTitle(group)"
             :aria-expanded="!collapsedGroups[group.key]"
           >
-            <button class="rail-group-toggle" @click="$emit('toggle-group', group.key)">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                :class="{ 'is-default': !group.path }"
-                :style="group.color ? { color: group.color } : null"
-              >
-                <path v-if="group.icon" :d="iconPath(group.icon)" />
-                <path
-                  v-else-if="!group.path"
-                  d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                />
-                <path v-else d="M12 22s8-3.5 8-10V5.5L12 2 4 5.5V12c0 6.5 8 10 8 10z" />
-              </svg>
-              <span class="rail-group-name">{{ group.label }}</span>
-              <svg class="rail-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            <div class="rail-group-meta">
-              <span class="rail-group-count">{{ group.sessions.length }}</span>
-              <div v-if="group.hasMeta" class="rail-group-actions">
+            <WorkspaceHoverCard
+              class="rail-group-anchor"
+              :name="t(group.label)"
+              :path="group.path"
+              :description="group.description"
+              :icon="group.icon || (group.path ? 'shield' : 'folder')"
+              :color="group.color"
+              :count="group.sessions.length"
+              :delay="1500"
+              placement="right"
+              boundary=".chat-rail"
+              :disabled="!group.path"
+            >
+              <button class="rail-group-toggle" @click="$emit('toggle-group', group.key)">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  :class="{ 'is-default': !group.path }"
+                  :style="group.color ? { color: group.color } : null"
+                >
+                  <path v-if="group.icon" :d="iconPath(group.icon)" />
+                  <path
+                    v-else-if="!group.path"
+                    d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                  />
+                  <path v-else d="M12 22s8-3.5 8-10V5.5L12 2 4 5.5V12c0 6.5 8 10 8 10z" />
+                </svg>
+                <span class="rail-group-name">{{ t(group.label) }}</span>
+                <svg class="rail-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </WorkspaceHoverCard>
+            <div v-if="group.hasMeta" class="rail-group-meta">
+              <div class="rail-group-actions">
                 <button
                   class="rail-group-action"
-                  title="工作区操作"
+                  :title="t('工作区操作')"
                   @click.stop="$emit('workspace-menu', group.path, $event)"
                 >
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
@@ -127,7 +139,7 @@
                 </button>
                 <button
                   class="rail-group-action"
-                  title="新建会话"
+                  :title="t('新建会话')"
                   @click.stop="$emit('workspace-new-chat', group.path)"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -162,7 +174,7 @@
                     <path d="M12 17v5" />
                     <path d="M9 10.8V4h6v6.8l2 2.7V16H7v-2.5z" />
                   </svg>
-                  <span class="session-title-text">{{ session.title || '新会话' }}</span>
+                  <span class="session-title-text">{{ session.title || t('新会话') }}</span>
                 </div>
                 <input
                   v-else
@@ -177,7 +189,11 @@
                 </span>
               </div>
               <div class="session-actions">
-                <button class="session-more" title="会话操作" @click.stop="$emit('session-menu', session.id, $event)">
+                <button
+                  class="session-more"
+                  :title="t('会话操作')"
+                  @click.stop="$emit('session-menu', session.id, $event)"
+                >
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
                     <circle cx="5" cy="12" r="1.5" />
                     <circle cx="12" cy="12" r="1.5" />
@@ -192,8 +208,10 @@
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <p>{{ search ? '没有匹配的会话' : '暂无会话' }}</p>
-          <p class="hint">{{ search ? '换个关键词试试' : '点击上方 新会话 开始' }}</p>
+          <p>{{ search ? t('没有匹配的会话') : t('暂无会话') }}</p>
+          <p class="hint">
+            {{ search ? t('换个关键词试试') : t('点击上方 新会话 开始') }}
+          </p>
         </div>
       </div>
     </div>
@@ -206,16 +224,16 @@
             <circle cx="12" cy="12" r="1.5" />
             <circle cx="19" cy="12" r="1.5" />
           </svg>
-          <span>更多</span>
+          <span>{{ t('更多') }}</span>
         </button>
-        <div v-if="railMoreOpen" class="rail-more-menu" @click.stop>
-          <button @click="$emit('rail-more', 'memory')">记忆与知识库</button>
+        <div v-if="railMoreOpen" v-clamp-viewport class="rail-more-menu" @click.stop>
+          <button @click="$emit('rail-more', 'memory')">{{ t('记忆与知识库') }}</button>
           <button @click="$emit('rail-more', 'archived')">
-            {{ showArchived ? '隐藏已归档会话' : '显示已归档会话' }}
+            {{ showArchived ? t('隐藏已归档会话') : t('显示已归档会话') }}
           </button>
         </div>
       </div>
-      <button class="rail-icon-btn rail-collapse" title="收起侧栏" @click="$emit('collapse')">
+      <button class="rail-icon-btn rail-collapse" :title="t('收起侧栏')" @click="$emit('collapse')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="4" width="18" height="16" rx="2" />
           <line x1="9" y1="4" x2="9" y2="20" />
@@ -228,7 +246,9 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
+import { t } from '@/i18n'
 import { WORKSPACE_ICONS } from '@/utils/workspaceIcons'
+import WorkspaceHoverCard from '@/components/WorkspaceHoverCard.vue'
 
 const props = defineProps({
   width: { type: Number, default: 260 },
@@ -244,8 +264,7 @@ const props = defineProps({
   workspaceOpen: { type: Boolean, default: true },
   railMoreOpen: { type: Boolean, default: false },
   showArchived: { type: Boolean, default: false },
-  formatTime: { type: Function, required: true },
-  groupTitle: { type: Function, required: true }
+  formatTime: { type: Function, required: true }
 })
 
 const emit = defineEmits([

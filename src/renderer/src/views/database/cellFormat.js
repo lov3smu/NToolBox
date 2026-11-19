@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 const BINARY_COLUMN_PATTERN = /blob|binary|\bbit\b|geometry|point|linestring|polygon/i
 const DATE_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}/
 const JSON_PREVIEW_LIMIT = 160
@@ -62,7 +63,7 @@ function safeJson(value) {
 }
 
 export function formatBinaryPreview(value) {
-  return `[二进制 ${formatBytes(binaryByteLength(value))}]`
+  return t('[二进制 {p0}]', { p0: formatBytes(binaryByteLength(value)) })
 }
 
 export function formatJsonPreview(value, maxLength = JSON_PREVIEW_LIMIT) {
@@ -96,7 +97,7 @@ export function formatCellInput(value) {
 
 export function formatBinaryDump(value, maxBytes = BINARY_DUMP_LIMIT) {
   const bytes = toByteArray(value)
-  if (!bytes.length) return '(空二进制)'
+  if (!bytes.length) return t('(空二进制)')
   const limit = Math.min(bytes.length, maxBytes)
   const lines = []
   for (let offset = 0; offset < limit; offset += 16) {
@@ -108,7 +109,7 @@ export function formatBinaryDump(value, maxBytes = BINARY_DUMP_LIMIT) {
     lines.push(`${offset.toString(16).padStart(8, '0')}  ${hex}  |${ascii}|`)
   }
   if (bytes.length > limit) {
-    lines.push(`… 已截断，共 ${formatBytes(bytes.length)}`)
+    lines.push(t('… 已截断，共 {p0}', { p0: formatBytes(bytes.length) }))
   }
   return lines.join('\n')
 }

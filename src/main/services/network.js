@@ -1,5 +1,6 @@
 import http from 'node:http'
 import https from 'node:https'
+import { t } from './i18n.js'
 import { normalizeNetworkConfig, isHttpUrl } from '../../shared/network.js'
 
 const NET_PARTITION = 'ntb-net'
@@ -128,7 +129,7 @@ export function createRequest(protocol, options, onResponse) {
 export async function testNetwork(url, { timeoutMs = 10000 } = {}) {
   const started = Date.now()
   if (typeof url !== 'string' || !isHttpUrl(url.trim())) {
-    return { ok: false, status: 0, elapsedMs: 0, error: '请输入有效的 http(s) 地址' }
+    return { ok: false, status: 0, elapsedMs: 0, error: t('请输入有效的 http(s) 地址') }
   }
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -145,7 +146,9 @@ export async function testNetwork(url, { timeoutMs = 10000 } = {}) {
       ok: false,
       status: 0,
       elapsedMs: Date.now() - started,
-      error: aborted ? `请求超时（${Math.round(timeoutMs / 1000)}s）` : error?.message || '网络请求失败'
+      error: aborted
+        ? t('请求超时（{p0}s）', { p0: Math.round(timeoutMs / 1000) })
+        : error?.message || t('网络请求失败')
     }
   } finally {
     clearTimeout(timer)

@@ -641,7 +641,7 @@
   .filter-value:focus {
     outline: none;
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+    box-shadow: var(--shadow-glow);
   }
 
   .filter-field {
@@ -1071,7 +1071,7 @@
     background: var(--panel-strong);
     color: var(--text-primary);
     font-family: inherit;
-    font-size: var(--font-size-dense);
+    font-size: var(--font-size-sm);
     cursor: pointer;
   }
 

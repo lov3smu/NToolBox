@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { t } from './i18n.js'
 import { log } from '../utils'
 import { getConfigPath } from '../utils/path'
 import { isPathWithinBase } from '../utils/sanitize'
@@ -80,7 +81,7 @@ async function readSkillManifest(skillDirectory) {
   const definition = JSON.parse(content)
   const name = typeof definition?.name === 'string' ? definition.name.trim() : ''
   if (!SKILL_NAME_PATTERN.test(name)) {
-    throw new Error(`技能包 ${manifestPath} 的 name 字段无效`)
+    throw new Error(t('技能包 {p0} 的 name 字段无效', { p0: manifestPath }))
   }
   return {
     name,
@@ -102,9 +103,8 @@ export { getPluginDirectory }
 export async function getInstalledPlugins() {
   const records = await readRegistry()
   const skillNames = new Set(getSkills().map((skill) => skill.name))
-  const configured = new Set(
-    (Array.isArray(getConfig()?.mcp_servers) ? getConfig().mcp_servers : []).map((server) => server?.name)
-  )
+  const mcpServers = getConfig().extensions?.mcp_servers
+  const configured = new Set((Array.isArray(mcpServers) ? mcpServers : []).map((server) => server?.name))
 
   return records
     .map((record) => ({
@@ -123,10 +123,10 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
     root = path.resolve(pluginDirectory)
     const stat = await fs.promises.stat(root)
     if (!stat.isDirectory()) {
-      return { success: false, error: '插件路径必须是一个目录' }
+      return { success: false, error: t('插件路径必须是一个目录') }
     }
   } catch {
-    return { success: false, error: `插件目录不存在：${pluginDirectory}` }
+    return { success: false, error: t('插件目录不存在：{p0}', { p0: pluginDirectory }) }
   }
 
   let manifest
@@ -137,10 +137,10 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
     manifest = result.manifest
   } catch (error) {
     if (error?.code === 'ENOENT') {
-      return { success: false, error: '插件目录缺少 plugin.json 定义文件' }
+      return { success: false, error: t('插件目录缺少 plugin.json 定义文件') }
     }
     if (error instanceof SyntaxError) {
-      return { success: false, error: 'plugin.json 无法解析' }
+      return { success: false, error: t('plugin.json 无法解析') }
     }
     return { success: false, error: error.message }
   }
@@ -149,12 +149,12 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
 
   const records = await readRegistry()
   if (records.some((record) => record.name === manifest.name)) {
-    return { success: false, error: `插件 ${manifest.name} 已安装，请先卸载` }
+    return { success: false, error: t('插件 {p0} 已安装，请先卸载', { p0: manifest.name }) }
   }
 
   const bundleTarget = path.join(getPluginDirectory(), manifest.name)
   if (fs.existsSync(bundleTarget)) {
-    return { success: false, error: `插件目录已存在：${bundleTarget}` }
+    return { success: false, error: t('插件目录已存在：{p0}', { p0: bundleTarget }) }
   }
 
   const existingSkills = new Map(getSkills().map((skill) => [skill.name, skill]))
@@ -162,15 +162,15 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
   for (const relativePath of manifest.skills) {
     const skillDirectory = path.resolve(root, relativePath)
     if (!isPathWithinBase(skillDirectory, root)) {
-      return { success: false, error: `插件技能路径越界：${relativePath}` }
+      return { success: false, error: t('插件技能路径越界：{p0}', { p0: relativePath }) }
     }
     try {
       const stat = await fs.promises.stat(skillDirectory)
       if (!stat.isDirectory()) {
-        return { success: false, error: `插件技能路径不是目录：${relativePath}` }
+        return { success: false, error: t('插件技能路径不是目录：{p0}', { p0: relativePath }) }
       }
     } catch {
-      return { success: false, error: `插件技能目录不存在：${relativePath}` }
+      return { success: false, error: t('插件技能目录不存在：{p0}', { p0: relativePath }) }
     }
     try {
       skills.push(await readSkillManifest(skillDirectory))
@@ -181,29 +181,32 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
   const skillNameSet = new Set()
   for (const skill of skills) {
     if (skillNameSet.has(skill.name)) {
-      return { success: false, error: `插件内技能名称重复：${skill.name}` }
+      return { success: false, error: t('插件内技能名称重复：{p0}', { p0: skill.name }) }
     }
     skillNameSet.add(skill.name)
     const existing = existingSkills.get(skill.name)
     if (existing) {
       return {
         success: false,
-        error: existing.type === 'builtin' ? `技能 ${skill.name} 与内置技能冲突` : `技能 ${skill.name} 已存在，请先卸载`
+        error:
+          existing.type === 'builtin'
+            ? t('技能 {p0} 与内置技能冲突', { p0: skill.name })
+            : t('技能 {p0} 已存在，请先卸载', { p0: skill.name })
       }
     }
   }
 
   const currentConfig = getConfig()
-  const currentServers = Array.isArray(currentConfig?.mcp_servers) ? currentConfig.mcp_servers : []
+  const currentServers = Array.isArray(currentConfig?.extensions?.mcp_servers) ? currentConfig.mcp_servers : []
   const currentNames = new Set(currentServers.map((server) => server?.name))
   for (const connector of manifest.connectors) {
     if (currentNames.has(connector.name)) {
-      return { success: false, error: `连接器 ${connector.name} 已存在，请先重命名或删除` }
+      return { success: false, error: t('连接器 {p0} 已存在，请先重命名或删除', { p0: connector.name }) }
     }
     currentNames.add(connector.name)
   }
   if (currentServers.length + manifest.connectors.length > MAX_MCP_SERVERS) {
-    return { success: false, error: `连接器总数不能超过 ${MAX_MCP_SERVERS} 个` }
+    return { success: false, error: t('连接器总数不能超过 {p0} 个', { p0: MAX_MCP_SERVERS }) }
   }
 
   const installedSkills = []
@@ -213,14 +216,14 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
     for (const skill of manifest.skills) {
       const result = await installSkill(path.join(bundleTarget, skill), { overwrite: false })
       if (!result.success) {
-        throw new Error(result.error || `安装技能 ${skill} 失败`)
+        throw new Error(result.error || t('安装技能 {p0} 失败', { p0: skill }))
       }
       installedSkills.push(result.name)
     }
 
     if (manifest.connectors.length) {
-      const saved = await saveConfig({ mcp_servers: [...currentServers, ...manifest.connectors] })
-      if (!saved) throw new Error('保存连接器配置失败')
+      const saved = await saveConfig({ extensions: { mcp_servers: [...currentServers, ...manifest.connectors] } })
+      if (!saved) throw new Error(t('保存连接器配置失败'))
       configSaved = true
     }
 
@@ -253,7 +256,7 @@ export async function installPluginBundle(pluginDirectory, { source = 'local' } 
       await uninstallSkill(name).catch(() => {})
     }
     if (configSaved) {
-      await saveConfig({ mcp_servers: currentServers }).catch(() => {})
+      await saveConfig({ extensions: { mcp_servers: currentServers } }).catch(() => {})
       await refreshMcpQuietly()
     }
     await fs.promises.rm(bundleTarget, { recursive: true, force: true }).catch(() => {})
@@ -266,7 +269,7 @@ export async function uninstallPlugin(name) {
   const records = await readRegistry()
   const record = records.find((item) => item.name === name)
   if (!record) {
-    return { success: false, error: `插件 ${name} 不存在` }
+    return { success: false, error: t('插件 {p0} 不存在', { p0: name }) }
   }
 
   const removedSkills = []
@@ -277,16 +280,16 @@ export async function uninstallPlugin(name) {
     else failedSkills.push(skillName)
   }
 
-  const currentServers = Array.isArray(getConfig()?.mcp_servers) ? getConfig().mcp_servers : []
+  const currentServers = Array.isArray(getConfig().extensions?.mcp_servers) ? getConfig().extensions?.mcp_servers : []
   const removedConnectors = currentServers
     .filter((server) => record.connectors.includes(server?.name))
     .map((server) => server.name)
   if (removedConnectors.length) {
     const saved = await saveConfig({
-      mcp_servers: currentServers.filter((server) => !record.connectors.includes(server?.name))
+      extensions: { mcp_servers: currentServers.filter((server) => !record.connectors.includes(server?.name)) }
     })
     if (!saved) {
-      return { success: false, error: '移除连接器配置失败' }
+      return { success: false, error: t('移除连接器配置失败') }
     }
     await refreshMcpQuietly()
   }

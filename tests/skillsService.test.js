@@ -24,7 +24,11 @@ vi.mock('../src/main/utils/index.js', () => ({
 }))
 
 vi.mock('../src/main/services/config', () => ({
-  getConfig: vi.fn(() => ({ ai_provider: 'bailian', base_path: testFileBase }))
+  getConfig: vi.fn(() => ({
+    ai: { provider: 'bailian' },
+    app: { base_path: testFileBase },
+    extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} }
+  }))
 }))
 
 vi.mock('../src/main/services/ai/index.js', () => ({

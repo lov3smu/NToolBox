@@ -1,11 +1,11 @@
 <template>
   <header class="app-titlebar" :class="`platform-${platform}`" @dblclick="onTitlebarDoubleClick">
-    <div class="titlebar-nav no-drag" role="group" aria-label="导航">
+    <div class="titlebar-nav no-drag" role="group" :aria-label="t('导航')">
       <button
         type="button"
         class="titlebar-tool"
-        :title="collapsed ? '展开侧边栏' : '收起侧边栏'"
-        :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
+        :title="collapsed ? t('展开侧边栏') : t('收起侧边栏')"
+        :aria-label="collapsed ? t('展开侧边栏') : t('收起侧边栏')"
         @click="toggleSidebar"
       >
         <svg
@@ -26,8 +26,8 @@
       <button
         type="button"
         class="titlebar-tool"
-        title="返回上一页"
-        aria-label="返回上一页"
+        :title="t('返回上一页')"
+        :aria-label="t('返回上一页')"
         :disabled="!canGoBack"
         @click="goBack"
       >
@@ -46,8 +46,8 @@
       <button
         type="button"
         class="titlebar-tool"
-        title="前进下一页"
-        aria-label="前进下一页"
+        :title="t('前进下一页')"
+        :aria-label="t('前进下一页')"
         :disabled="!canGoForward"
         @click="goForward"
       >
@@ -81,7 +81,7 @@
         </button>
 
         <Transition name="menu-pop">
-          <div v-if="openMenu === menu.key" class="menu-popup" role="menu">
+          <div v-if="openMenu === menu.key" v-clamp-viewport class="menu-popup" role="menu">
             <template v-for="(item, index) in menu.items" :key="index">
               <div v-if="item.type === 'separator'" class="menu-separator" role="separator" />
               <button
@@ -132,6 +132,7 @@ import {
 } from '@/api'
 import { openUpdateCenter } from '@/composables'
 import { useSidebar } from '@/composables/useSidebar'
+import { t } from '@/i18n'
 import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '@shared/tools'
 import WindowControls from '@/components/WindowControls.vue'
 
@@ -168,7 +169,7 @@ let removeFullscreenListener = null
 async function loadShortcuts() {
   try {
     const config = await getConfig()
-    shortcuts.value = config?.shortcuts || {}
+    shortcuts.value = config?.app.shortcuts || {}
   } catch {
     shortcuts.value = {}
   }
@@ -297,46 +298,46 @@ const menus = computed(() => {
     ...(settingsTool
       ? [
           {
-            label: settingsTool.name,
+            label: t(settingsTool.name),
             action: 'open-settings',
             shortcut: formatAccelerator(getToolAccelerator(settingsTool, shortcuts.value))
           },
           { type: 'separator' }
         ]
       : []),
-    { label: '隐藏窗口', action: 'hide-window', shortcut: isMac ? '⌘H' : '' },
-    { label: '关闭窗口', action: 'close-window', shortcut: isMac ? '⌘W' : 'Alt+F4' }
+    { label: t('隐藏窗口'), action: 'hide-window', shortcut: isMac ? '⌘H' : '' },
+    { label: t('关闭窗口'), action: 'close-window', shortcut: isMac ? '⌘W' : 'Alt+F4' }
   ]
 
   const editItems = [
-    { label: '撤销', action: 'edit-undo', shortcut: formatAccelerator('CmdOrCtrl+Z') },
-    { label: '重做', action: 'edit-redo', shortcut: formatAccelerator('Shift+CmdOrCtrl+Z') },
+    { label: t('撤销'), action: 'edit-undo', shortcut: formatAccelerator('CmdOrCtrl+Z') },
+    { label: t('重做'), action: 'edit-redo', shortcut: formatAccelerator('Shift+CmdOrCtrl+Z') },
     { type: 'separator' },
-    { label: '剪切', action: 'edit-cut', shortcut: formatAccelerator('CmdOrCtrl+X') },
-    { label: '复制', action: 'edit-copy', shortcut: formatAccelerator('CmdOrCtrl+C') },
-    { label: '粘贴', action: 'edit-paste', shortcut: formatAccelerator('CmdOrCtrl+V') },
-    { label: '全选', action: 'select-all', shortcut: formatAccelerator('CmdOrCtrl+A') }
+    { label: t('剪切'), action: 'edit-cut', shortcut: formatAccelerator('CmdOrCtrl+X') },
+    { label: t('复制'), action: 'edit-copy', shortcut: formatAccelerator('CmdOrCtrl+C') },
+    { label: t('粘贴'), action: 'edit-paste', shortcut: formatAccelerator('CmdOrCtrl+V') },
+    { label: t('全选'), action: 'select-all', shortcut: formatAccelerator('CmdOrCtrl+A') }
   ]
 
   const viewItems = [
-    { label: '重新载入', action: 'reload', shortcut: formatAccelerator('CmdOrCtrl+R') },
-    { label: '强制重新载入', action: 'force-reload', shortcut: formatAccelerator('Shift+CmdOrCtrl+R') },
+    { label: t('重新载入'), action: 'reload', shortcut: formatAccelerator('CmdOrCtrl+R') },
+    { label: t('强制重新载入'), action: 'force-reload', shortcut: formatAccelerator('Shift+CmdOrCtrl+R') },
     { type: 'separator' },
-    { label: '实际大小', action: 'reset-zoom', shortcut: formatAccelerator('CmdOrCtrl+0') },
-    { label: '放大', action: 'zoom-in', shortcut: formatAccelerator('CmdOrCtrl+=') },
-    { label: '缩小', action: 'zoom-out', shortcut: formatAccelerator('CmdOrCtrl+-') },
+    { label: t('实际大小'), action: 'reset-zoom', shortcut: formatAccelerator('CmdOrCtrl+0') },
+    { label: t('放大'), action: 'zoom-in', shortcut: formatAccelerator('CmdOrCtrl+=') },
+    { label: t('缩小'), action: 'zoom-out', shortcut: formatAccelerator('CmdOrCtrl+-') },
     { type: 'separator' },
-    { label: '切换全屏', action: 'toggle-fullscreen', shortcut: isMac ? '⌃⌘F' : 'F11' }
+    { label: t('切换全屏'), action: 'toggle-fullscreen', shortcut: isMac ? '⌃⌘F' : 'F11' }
   ]
 
   const helpItems = [
-    { label: '检查更新', action: 'check-updates' },
-    { label: '关于软件', action: 'about' },
+    { label: t('检查更新'), action: 'check-updates' },
+    { label: t('关于软件'), action: 'about' },
     ...(isDev
       ? [
           { type: 'separator' },
           {
-            label: '开发者工具',
+            label: t('开发者工具'),
             action: 'toggle-devtools',
             shortcut: isMac ? '⌥⌘I' : 'F12'
           }
@@ -345,10 +346,10 @@ const menus = computed(() => {
   ]
 
   return [
-    { key: 'file', label: '文件', items: fileItems },
-    { key: 'edit', label: '编辑', items: editItems },
-    { key: 'view', label: '视图', items: viewItems },
-    { key: 'help', label: '帮助', items: helpItems }
+    { key: 'file', label: t('文件'), items: fileItems },
+    { key: 'edit', label: t('编辑'), items: editItems },
+    { key: 'view', label: t('视图'), items: viewItems },
+    { key: 'help', label: t('帮助'), items: helpItems }
   ]
 })
 

@@ -175,8 +175,8 @@ class SkillsManager {
 
   getSkills() {
     const config = getConfig()
-    const disabled = new Set(normalizeDisabledSkills(config.disabled_skills))
-    const overrides = normalizeSkillOverrides(config.skill_overrides)
+    const disabled = new Set(normalizeDisabledSkills(config.extensions?.disabled_skills))
+    const overrides = normalizeSkillOverrides(config.extensions?.skill_overrides)
 
     return Array.from(this.skills.values()).map((skill) => {
       const override = overrides[skill.name]
@@ -209,7 +209,7 @@ class SkillsManager {
   }
 
   getToolDefinitions() {
-    const disabled = new Set(normalizeDisabledSkills(getConfig().disabled_skills))
+    const disabled = new Set(normalizeDisabledSkills(getConfig().extensions.disabled_skills))
     const definitions = Array.from(this.skills.values())
       .filter((skill) => !disabled.has(skill.name))
       .map((skill) => ({
@@ -235,7 +235,7 @@ class SkillsManager {
       return { success: false, error: `Skill ${name} 不存在` }
     }
 
-    if (normalizeDisabledSkills(getConfig().disabled_skills).includes(name)) {
+    if (normalizeDisabledSkills(getConfig().extensions.disabled_skills).includes(name)) {
       return { success: false, error: `Skill ${name} 已停用，请先在扩展管理中启用` }
     }
 
@@ -328,7 +328,7 @@ class SkillsManager {
 
     if (!provider) {
       const config = getConfig()
-      const providerType = config.ai_provider || 'bailian'
+      const providerType = config.ai?.provider || 'bailian'
       const providerConfig = resolveProviderRuntimeConfig(providerType, config)
       provider = getProvider(providerType, providerConfig)
 
@@ -669,7 +669,7 @@ class SkillsManager {
       try {
         const items = await fetchClawHubMarket({
           limit: REMOTE_MARKET_LIMIT,
-          base: getClawhubBase(getConfig().market_sources)
+          base: getClawhubBase(getConfig().network?.market_sources)
         })
         this.remoteMarket = items
         this.remoteMarketFetchedAt = Date.now()
@@ -794,7 +794,7 @@ class SkillsManager {
     try {
       const results = await searchClawHubSkills(normalized, {
         limit: 10,
-        base: getClawhubBase(getConfig().market_sources)
+        base: getClawhubBase(getConfig().network?.market_sources)
       })
       const found = results.find((skill) => skill.name === normalized) || results.find((skill) => skill.slug === name)
       if (!found) return null
@@ -816,7 +816,7 @@ class SkillsManager {
     const detail = await fetchClawHubSkillDetail({
       ownerHandle: entry.ownerHandle,
       slug: entry.slug,
-      base: getClawhubBase(getConfig().market_sources)
+      base: getClawhubBase(getConfig().network?.market_sources)
     })
     const version = detail.version || entry.version || '1.0.0'
     const check = this._checkMarketInstall(name, detail.version || entry.version)

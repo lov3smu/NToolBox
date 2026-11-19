@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { computed, onUnmounted } from 'vue'
 import { dbGetSessionInfo, dbKillSession } from '@/api'
 
@@ -60,7 +61,7 @@ export function createSessions(state, api) {
     if (sessionDialog.value.autoRefresh) {
       stopAutoRefresh()
     } else if ((refreshInterval?.value ?? 0) <= 0) {
-      api.showMessage('自动刷新已在「设置 > 数据库客户端」中关闭', 'warning')
+      api.showMessage(t('自动刷新已在「设置 > 数据库客户端」中关闭'), 'warning')
     } else {
       startAutoRefresh()
     }
@@ -69,11 +70,11 @@ export function createSessions(state, api) {
   function openSessionDialog() {
     const connection = selectedConnection.value
     if (!connection) {
-      api.showMessage('请先在左侧选择连接', 'warning')
+      api.showMessage(t('请先在左侧选择连接'), 'warning')
       return
     }
     if (!connection.active) {
-      api.showMessage('请先连接数据库', 'warning')
+      api.showMessage(t('请先连接数据库'), 'warning')
       return
     }
     sessionDialog.value = {
@@ -111,7 +112,7 @@ export function createSessions(state, api) {
     try {
       const result = await dbGetSessionInfo(dialog.connectionName)
       if (!result.success) {
-        dialog.error = result.error || '读取会话信息失败'
+        dialog.error = result.error || t('读取会话信息失败')
         return
       }
       dialog.selfId = result.selfId || 0
@@ -122,7 +123,7 @@ export function createSessions(state, api) {
       dialog.waits = result.waits || []
       dialog.deadlockText = result.deadlockText || ''
     } catch (error) {
-      dialog.error = '读取会话信息失败: ' + error.message
+      dialog.error = t('读取会话信息失败: {p0}', { p0: error.message })
     } finally {
       dialog.loading = false
     }
@@ -130,21 +131,21 @@ export function createSessions(state, api) {
 
   async function killSessionById(session, mode) {
     if (!session || session.isSelf) return
-    const action = mode === 'query' ? '取消该会话正在执行的查询' : '终止该会话'
-    const confirmed = await api.showConfirm(`确定${action}吗？会话 ID: ${session.id}`)
+    const action = mode === 'query' ? t('取消该会话正在执行的查询') : t('终止该会话')
+    const confirmed = await api.showConfirm(t('确定{p0}吗？会话 ID: {p1}', { p0: action, p1: session.id }))
     if (!confirmed) return
 
     sessionDialog.value.killingId = session.id
     try {
       const result = await dbKillSession(sessionDialog.value.connectionName, session.id, mode)
       if (!result.success) {
-        await api.showMessage(result.error || '操作会话失败', 'error')
+        await api.showMessage(result.error || t('操作会话失败'), 'error')
         return
       }
-      await api.showMessage(result.message || '操作成功', 'success')
+      await api.showMessage(result.message || t('操作成功'), 'success')
       await loadSessions()
     } catch (error) {
-      await api.showMessage('操作会话失败: ' + error.message, 'error')
+      await api.showMessage(t('操作会话失败: ') + error.message, 'error')
     } finally {
       sessionDialog.value.killingId = 0
     }

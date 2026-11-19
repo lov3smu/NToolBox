@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { watch } from 'vue'
 import {
   chat,
@@ -117,7 +118,7 @@ export function createAdvanced(state, api, options = {}) {
   }
 
   function openSqlPreview(title, sql) {
-    sqlPreviewDialog.value = { show: true, title: title || '待执行的 SQL', sql }
+    sqlPreviewDialog.value = { show: true, title: title || t('待执行的 SQL'), sql }
   }
 
   function closeSqlPreview() {
@@ -128,9 +129,9 @@ export function createAdvanced(state, api, options = {}) {
     if (!sql) return
     try {
       await navigator.clipboard.writeText(sql)
-      await api.showMessage('已复制到剪贴板', 'success')
+      await api.showMessage(t('已复制到剪贴板'), 'success')
     } catch (error) {
-      await api.showMessage('复制失败: ' + error.message, 'error')
+      await api.showMessage(t('复制失败: ') + error.message, 'error')
     }
   }
 
@@ -173,7 +174,7 @@ export function createAdvanced(state, api, options = {}) {
 
   async function clearHistory() {
     if (!queryHistory.value.length) return
-    const confirmed = await api.showConfirm('确定清空全部查询历史吗？')
+    const confirmed = await api.showConfirm(t('确定清空全部查询历史吗？'))
     if (!confirmed) return
     queryHistory.value = []
     persistHistory()
@@ -190,11 +191,11 @@ export function createAdvanced(state, api, options = {}) {
   function openUserDialog() {
     const connection = selectedConnection.value
     if (!connection) {
-      api.showMessage('请先在左侧选择连接', 'warning')
+      api.showMessage(t('请先在左侧选择连接'), 'warning')
       return
     }
     if (!connection.active) {
-      api.showMessage('请先连接数据库', 'warning')
+      api.showMessage(t('请先连接数据库'), 'warning')
       return
     }
     userDialog.value = {
@@ -226,7 +227,7 @@ export function createAdvanced(state, api, options = {}) {
       const result = await dbQueryUsers(dialog.connectionName)
       if (!result.success) {
         dialog.users = []
-        dialog.error = result.error || '查询用户失败'
+        dialog.error = result.error || t('查询用户失败')
         return
       }
       dialog.users = result.users || []
@@ -247,7 +248,7 @@ export function createAdvanced(state, api, options = {}) {
       }
     } catch (error) {
       dialog.users = []
-      dialog.error = '查询用户失败: ' + error.message
+      dialog.error = t('查询用户失败: {p0}', { p0: error.message })
     } finally {
       dialog.loading = false
     }
@@ -282,13 +283,13 @@ export function createAdvanced(state, api, options = {}) {
       const result = await dbGetUserGrants(dialog.connectionName, dialog.selected.user, dialog.selected.host)
       if (!result.success) {
         dialog.grants = []
-        dialog.grantsError = result.error || '读取权限失败'
+        dialog.grantsError = result.error || t('读取权限失败')
         return
       }
       dialog.grants = result.grants || []
     } catch (error) {
       dialog.grants = []
-      dialog.grantsError = '读取权限失败: ' + error.message
+      dialog.grantsError = t('读取权限失败: ') + error.message
     } finally {
       dialog.grantsLoading = false
     }
@@ -324,16 +325,16 @@ export function createAdvanced(state, api, options = {}) {
 
   function validateUserForm(form) {
     if (form.mode === 'create') {
-      if (!form.user.trim()) return '请输入用户名'
-      if (!form.password) return '请输入密码'
+      if (!form.user.trim()) return t('请输入用户名')
+      if (!form.password) return t('请输入密码')
     }
     if (form.mode === 'password' && !form.password) {
-      return '请输入新密码'
+      return t('请输入新密码')
     }
     if (form.mode === 'grant') {
-      if (form.scope !== 'global' && !form.database.trim()) return '请选择数据库'
-      if (form.scope === 'table' && !form.table.trim()) return '请输入表名'
-      if (!form.privileges.length) return '请至少选择一个权限'
+      if (form.scope !== 'global' && !form.database.trim()) return t('请选择数据库')
+      if (form.scope === 'table' && !form.table.trim()) return t('请输入表名')
+      if (!form.privileges.length) return t('请至少选择一个权限')
     }
     return ''
   }
@@ -373,14 +374,14 @@ export function createAdvanced(state, api, options = {}) {
       }
 
       if (!result.success) {
-        await api.showMessage(result.error || '操作失败', 'error')
+        await api.showMessage(result.error || t('操作失败'), 'error')
         return
       }
-      await api.showMessage(result.message || '操作成功', 'success')
+      await api.showMessage(result.message || t('操作成功'), 'success')
       closeUserForm()
       await loadUsers()
     } catch (error) {
-      await api.showMessage('操作失败: ' + error.message, 'error')
+      await api.showMessage(t('操作失败: ') + error.message, 'error')
     } finally {
       dialog.actionLoading = false
     }
@@ -390,23 +391,23 @@ export function createAdvanced(state, api, options = {}) {
     const dialog = userDialog.value
     if (!dialog.selected || dialog.actionLoading) return
     const account = `${dialog.selected.user}@${dialog.selected.host}`
-    const confirmed = await api.showConfirm(`确定删除用户 ${account} 吗？该操作不可撤销。`)
+    const confirmed = await api.showConfirm(t('确定删除用户 {p0} 吗？该操作不可撤销。', { p0: account }))
     if (!confirmed) return
 
     dialog.actionLoading = true
     try {
       const result = await dbDropUser(dialog.connectionName, dialog.selected.user, dialog.selected.host)
       if (!result.success) {
-        await api.showMessage(result.error || '删除用户失败', 'error')
+        await api.showMessage(result.error || t('删除用户失败'), 'error')
         return
       }
-      await api.showMessage(result.message || '用户已删除', 'success')
+      await api.showMessage(result.message || t('用户已删除'), 'success')
       dialog.selected = null
       dialog.grants = []
       closeUserForm()
       await loadUsers()
     } catch (error) {
-      await api.showMessage('删除用户失败: ' + error.message, 'error')
+      await api.showMessage(t('删除用户失败: ') + error.message, 'error')
     } finally {
       dialog.actionLoading = false
     }
@@ -415,7 +416,7 @@ export function createAdvanced(state, api, options = {}) {
   async function saveSnippetFromTab(tab) {
     const sql = tab?.sqlQuery?.trim()
     if (!sql) {
-      await api.showMessage('编辑器中没有 SQL', 'warning')
+      await api.showMessage(t('编辑器中没有 SQL'), 'warning')
       return
     }
     const name = await api.showPrompt('请输入片段名称：', '')
@@ -430,7 +431,7 @@ export function createAdvanced(state, api, options = {}) {
       createdAt: Date.now()
     })
     persistSnippets()
-    await api.showMessage('SQL 片段已保存', 'success')
+    await api.showMessage(t('SQL 片段已保存'), 'success')
   }
 
   async function saveSnippetSql(sql) {
@@ -446,7 +447,7 @@ export function createAdvanced(state, api, options = {}) {
       createdAt: Date.now()
     })
     persistSnippets()
-    await api.showMessage('SQL 片段已保存', 'success')
+    await api.showMessage(t('SQL 片段已保存'), 'success')
   }
 
   async function deleteSnippet(id) {
@@ -475,7 +476,7 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const result = await dbGetTableMeta(tab.connectionName, tab.database, tab.tableName)
       if (!result.success) {
-        await api.showMessage(result.error || '读取表结构失败', 'error')
+        await api.showMessage(result.error || t('读取表结构失败'), 'error')
         return
       }
       structureDialog.value.meta = result
@@ -506,20 +507,20 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const result = await dbAlterTable(tab.connectionName, tab.database, tab.tableName, operations)
       if (!result.success) {
-        await api.showMessage(result.error || '结构变更失败', 'error')
+        await api.showMessage(result.error || t('结构变更失败'), 'error')
         return false
       }
       if (result.renamedTo) {
         tab.tableName = result.renamedTo
-        tab.name = `${result.renamedTo}@${tab.database}（${tab.connectionName}）-表`
+        tab.name = result.renamedTo
       }
       await loadStructureMeta(tab)
       await api.executeTableQuery(tab, 1)
       await api.loadDatabaseObjects(tab.connectionName, tab.database, { force: true })
-      await api.showMessage('表结构已更新', 'success')
+      await api.showMessage(t('表结构已更新'), 'success')
       return true
     } catch (error) {
-      await api.showMessage('结构变更失败: ' + error.message, 'error')
+      await api.showMessage(t('结构变更失败: ') + error.message, 'error')
       return false
     }
   }
@@ -529,7 +530,7 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const result = await dbGetTableMeta(tab.connectionName, tab.database, tab.tableName)
       if (!result.success) {
-        tableDesignerDialog.value.error = result.error || '读取表结构失败'
+        tableDesignerDialog.value.error = result.error || t('读取表结构失败')
         return
       }
       tableDesignerDialog.value.meta = result
@@ -577,7 +578,7 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const result = await dbPreviewAlterTable(tab.connectionName, tab.database, tab.tableName, operations)
       if (!result.success) {
-        await api.showMessage(result.error || '生成 SQL 失败', 'error')
+        await api.showMessage(result.error || t('生成 SQL 失败'), 'error')
         return null
       }
       tableDesignerDialog.value.sql = result.sql
@@ -593,7 +594,7 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const result = await dbAlterTable(tab.connectionName, tab.database, tab.tableName, operations)
       if (!result.success) {
-        await api.showMessage(result.error || '结构变更失败', 'error')
+        await api.showMessage(result.error || t('结构变更失败'), 'error')
         return false
       }
       if (structureDialog.value.show && structureDialog.value.tab === tab) {
@@ -608,11 +609,11 @@ export function createAdvanced(state, api, options = {}) {
       )
       if (liveTab) await api.executeTableQuery(liveTab, 1)
       await api.loadDatabaseObjects(tab.connectionName, tab.database, { force: true })
-      await api.showMessage('表结构已更新', 'success')
+      await api.showMessage(t('表结构已更新'), 'success')
       closeTableDesigner()
       return true
     } catch (error) {
-      await api.showMessage('结构变更失败: ' + error.message, 'error')
+      await api.showMessage(t('结构变更失败: ') + error.message, 'error')
       return false
     } finally {
       tableDesignerDialog.value.applying = false
@@ -625,7 +626,7 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const result = await dbGetErData(tab.connectionName, tab.database)
       if (!result.success) {
-        await api.showMessage(result.error || '读取 ER 数据失败', 'error')
+        await api.showMessage(result.error || t('读取 ER 数据失败'), 'error')
         return
       }
       erDialog.value.data = result
@@ -697,7 +698,7 @@ export function createAdvanced(state, api, options = {}) {
     const dialog = aiDialog.value
     if (!tab) return
     if (!dialog.prompt.trim()) {
-      dialog.error = '请描述要生成的 SQL 需求'
+      dialog.error = t('请描述要生成的 SQL 需求')
       return
     }
 
@@ -708,8 +709,8 @@ export function createAdvanced(state, api, options = {}) {
     try {
       const schema = await buildSchemaContext(tab)
       const content = [
-        '你是一位资深 MySQL 工程师，请根据数据库结构和需求生成可直接执行的 SQL。',
-        '要求：只输出 SQL，使用 MySQL 语法，不要输出解释性文字；多条语句用英文分号分隔。',
+        t('你是一位资深 MySQL 工程师，请根据数据库结构和需求生成可直接执行的 SQL。'),
+        t('要求：只输出 SQL，使用 MySQL 语法，不要输出解释性文字；多条语句用英文分号分隔。'),
         schema ? `数据库结构:\n${schema}` : '',
         tab.sqlQuery ? `当前编辑器中的 SQL:\n${tab.sqlQuery}` : '',
         `需求: ${dialog.prompt}`
@@ -719,15 +720,15 @@ export function createAdvanced(state, api, options = {}) {
 
       const result = await chat([{ role: 'user', content }], { toolsEnabled: false })
       if (!result.success) {
-        dialog.error = result.error || 'AI 生成失败'
+        dialog.error = result.error || t('AI 生成失败')
         return
       }
       dialog.result = extractSql(result.content)
       if (!dialog.result) {
-        dialog.error = 'AI 未返回有效内容'
+        dialog.error = t('AI 未返回有效内容')
       }
     } catch (error) {
-      dialog.error = 'AI 生成失败: ' + error.message
+      dialog.error = t('AI 生成失败: {message}', { message: error.message })
     } finally {
       dialog.loading = false
     }

@@ -24,7 +24,7 @@ vi.mock('../src/main/utils/index.js', () => ({
 }))
 
 vi.mock('../src/main/services/config.js', () => ({
-  getConfig: vi.fn(() => ({}))
+  getConfig: vi.fn(() => ({ network: { market_sources: {} }, update: {} }))
 }))
 
 import { getUpdateReleases } from '../src/main/services/updater.js'

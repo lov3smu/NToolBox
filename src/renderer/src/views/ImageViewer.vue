@@ -7,38 +7,40 @@
           <circle cx="8.5" cy="8.5" r="1.5" />
           <path d="m21 15-5-5L5 21" />
         </svg>
-        打开图片
+        {{ t('打开图片') }}
       </button>
       <button class="btn btn-secondary btn-sm" @click="pickFolder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
         </svg>
-        打开文件夹
+        {{ t('打开文件夹') }}
       </button>
 
       <span class="toolbar-sep" />
 
-      <button class="btn-icon btn-sm" title="缩小（-）" :disabled="!current" @click="zoomBy(1 / 1.25)">
+      <button class="btn-icon btn-sm" :title="t('缩小（-）')" :disabled="!current" @click="zoomBy(1 / 1.25)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5M8 11h6" />
         </svg>
       </button>
-      <button class="zoom-value" :disabled="!current" title="点击恢复 100%" @click="setZoom(1)">
+      <button class="zoom-value" :disabled="!current" :title="t('点击恢复 100%')" @click="setZoom(1)">
         {{ zoomLabel }}
       </button>
-      <button class="btn-icon btn-sm" title="放大（+）" :disabled="!current" @click="zoomBy(1.25)">
+      <button class="btn-icon btn-sm" :title="t('放大（+）')" :disabled="!current" @click="zoomBy(1.25)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5M8 11h6M11 8v6" />
         </svg>
       </button>
 
-      <button class="btn btn-secondary btn-sm" title="适应窗口（0）" :disabled="!current" @click="fit">适应窗口</button>
-      <button class="btn btn-secondary btn-sm" title="实际大小（1）" :disabled="!current" @click="setZoom(1)">
+      <button class="btn btn-secondary btn-sm" :title="t('适应窗口（0）')" :disabled="!current" @click="fit">
+        {{ t('适应窗口') }}
+      </button>
+      <button class="btn btn-secondary btn-sm" :title="t('实际大小（1）')" :disabled="!current" @click="setZoom(1)">
         1:1
       </button>
-      <button class="btn-icon btn-sm" title="顺时针旋转 90°（R）" :disabled="!current" @click="rotate">
+      <button class="btn-icon btn-sm" :title="t('顺时针旋转 90°（R）')" :disabled="!current" @click="rotate">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12a9 9 0 1 1-2.64-6.36" />
           <path d="M21 3v6h-6" />
@@ -77,7 +79,7 @@
         v-if="files.length && !isNarrow"
         orientation="vertical"
         :resizing="railResizing"
-        label="拖动调整缩略图栏宽度"
+        :label="t('拖动调整缩略图栏宽度')"
         @pointerdown="startRailResize"
         @keydown="onRailKeydown"
       />
@@ -111,8 +113,8 @@
               class="stage-nav-btn prev"
               :class="{ 'is-at-end': !canPrev }"
               :aria-disabled="!canPrev"
-              title="上一张（←）"
-              aria-label="上一张"
+              :title="t('上一张（←）')"
+              :aria-label="t('上一张')"
               @pointerdown.stop
               @dblclick.stop
               @click.stop="step(-1)"
@@ -126,8 +128,8 @@
               class="stage-nav-btn next"
               :class="{ 'is-at-end': !canNext }"
               :aria-disabled="!canNext"
-              title="下一张（→）"
-              aria-label="下一张"
+              :title="t('下一张（→）')"
+              :aria-label="t('下一张')"
               @pointerdown.stop
               @dblclick.stop
               @click.stop="step(1)"
@@ -146,18 +148,18 @@
                 <path d="m21 15-5-5L5 21" />
               </svg>
             </span>
-            <p class="empty-state-title">{{ errorText || '打开图片开始浏览' }}</p>
+            <p class="empty-state-title">{{ errorText || t('打开图片开始浏览') }}</p>
             <p class="empty-state-hint">
-              支持 PNG / JPEG / GIF / WebP / BMP / SVG / ICO / AVIF，也可以直接把图片或文件夹拖入窗口
+              {{ t('支持 PNG / JPEG / GIF / WebP / BMP / SVG / ICO / AVIF，也可以直接把图片或文件夹拖入窗口') }}
             </p>
             <div class="empty-state-actions">
-              <button class="btn btn-primary btn-sm" @click="pickFile">打开图片</button>
-              <button class="btn btn-secondary btn-sm" @click="pickFolder">打开文件夹</button>
+              <button class="btn btn-primary btn-sm" @click="pickFile">{{ t('打开图片') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="pickFolder">{{ t('打开文件夹') }}</button>
             </div>
           </div>
 
           <Transition name="fade">
-            <div v-if="dragActive" class="drop-overlay">松开以打开图片</div>
+            <div v-if="dragActive" class="drop-overlay">{{ t('松开以打开图片') }}</div>
           </Transition>
 
           <div v-if="loading" class="stage-loading">
@@ -171,7 +173,7 @@
           <span class="info-meta">{{ formatFileSize(current.size) }}</span>
           <span class="info-meta">{{ modifiedText }}</span>
           <span class="info-path" :title="current.path">{{ current.path }}</span>
-          <button class="btn-icon btn-sm" title="复制路径" @click.stop="copyPath">
+          <button class="btn-icon btn-sm" :title="t('复制路径')" @click.stop="copyPath">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="12" height="12" rx="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -195,6 +197,7 @@ import { usePaneResize } from '@/composables/usePaneResize'
 import { formatDateTime, formatFileSize } from '@/utils/format'
 import { copyToClipboard as copyText } from '@/utils/clipboard'
 import { getPathForFile, imageAcceptDropped, imageListDir, imageOpenDialog, imageOpenFolder, imageRead } from '@/api'
+import { t } from '@/i18n'
 
 const MIN_SCALE = 0.02
 const MAX_SCALE = 32
@@ -307,7 +310,7 @@ async function loadImage(filePath) {
   try {
     const res = await imageRead(filePath)
     if (token !== loadToken) return
-    if (!res?.success) throw new Error(res?.error || '读取图片失败')
+    if (!res?.success) throw new Error(res?.error || t('读取图片失败'))
 
     const url = URL.createObjectURL(new Blob([res.data], { type: res.mime || 'application/octet-stream' }))
     revokeObjectUrl()
@@ -316,7 +319,7 @@ async function loadImage(filePath) {
   } catch (error) {
     if (token !== loadToken) return
     clearImage()
-    errorText.value = error.message || '读取图片失败'
+    errorText.value = error.message || t('读取图片失败')
     showToast(errorText.value, 'error')
   } finally {
     if (token === loadToken) loading.value = false
@@ -339,7 +342,7 @@ async function select(filePath) {
 function step(delta) {
   const index = currentIndex.value + delta
   if (index < 0 || index >= files.value.length) {
-    showToast('没有更多图片了', 'info')
+    showToast(t('没有更多图片了'), 'info')
     return
   }
   select(files.value[index].path)
@@ -408,7 +411,7 @@ function onImageLoad(event) {
 
 function onImageError() {
   clearImage()
-  errorText.value = '图片解码失败'
+  errorText.value = t('图片解码失败')
   showToast(errorText.value, 'error')
 }
 
@@ -475,7 +478,7 @@ async function onDrop(event) {
 
   const res = await imageAcceptDropped(paths)
   if (!res?.success || !res.dir) {
-    showToast(res?.error || '未找到可打开的图片', 'error')
+    showToast(res?.error || t('未找到可打开的图片'), 'error')
     return
   }
   await openDirectory(res.dir, res.filePath)
@@ -484,7 +487,7 @@ async function onDrop(event) {
 async function openDirectory(dirPath, selectPath) {
   const res = await imageListDir(dirPath)
   if (!res?.success) {
-    showToast(res?.error || '读取文件夹失败', 'error')
+    showToast(res?.error || t('读取文件夹失败'), 'error')
     return
   }
 
@@ -494,7 +497,7 @@ async function openDirectory(dirPath, selectPath) {
   if (!files.value.length) {
     currentPath.value = ''
     clearImage()
-    errorText.value = '该文件夹中没有图片'
+    errorText.value = t('该文件夹中没有图片')
     return
   }
 
@@ -526,7 +529,7 @@ async function pickFolder() {
 async function copyPath() {
   if (!current.value) return
   const success = await copyText(current.value.path)
-  showToast(success ? '路径已复制' : '复制路径失败', success ? 'success' : 'error')
+  showToast(success ? t('路径已复制') : t('复制路径失败'), success ? 'success' : 'error')
 }
 
 function onKeydown(event) {

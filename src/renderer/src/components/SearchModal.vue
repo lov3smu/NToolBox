@@ -13,7 +13,7 @@
               v-model="searchQuery"
               type="text"
               class="search-input"
-              placeholder="搜索工具..."
+              :placeholder="t('搜索工具...')"
               @keydown.down="navigateDown"
               @keydown.up="navigateUp"
               @keydown.enter="selectCurrent($event)"
@@ -22,13 +22,13 @@
             <span class="search-shortcut">ESC</span>
           </div>
           <div v-if="recentTools.length > 0 && !searchQuery.trim()" class="recent-section">
-            <div class="section-title">最近使用</div>
+            <div class="section-title">{{ t('最近使用') }}</div>
             <div class="recent-tools">
               <div
                 v-for="tool in recentTools"
                 :key="tool.path"
                 class="recent-tool-item"
-                :title="tool.name"
+                :title="t(tool.name)"
                 @click="selectTool(tool)"
               >
                 <div class="tool-icon" v-html="tool.icon" />
@@ -36,7 +36,7 @@
             </div>
           </div>
           <div v-if="!searchQuery.trim()" class="all-tools-section">
-            <div class="section-title">所有工具</div>
+            <div class="section-title">{{ t('所有工具') }}</div>
             <div ref="resultsRef" class="search-results">
               <div
                 v-for="(tool, index) in tools"
@@ -49,10 +49,10 @@
                 <div class="tool-icon" v-html="tool.icon" />
                 <div class="tool-info">
                   <div class="tool-name">
-                    {{ tool.name }}
+                    {{ t(tool.name) }}
                   </div>
                   <div class="tool-desc">
-                    {{ tool.description }}
+                    {{ t(tool.description) }}
                   </div>
                 </div>
               </div>
@@ -70,16 +70,16 @@
               <div class="tool-icon" v-html="tool.icon" />
               <div class="tool-info">
                 <div class="tool-name">
-                  {{ tool.name }}
+                  {{ t(tool.name) }}
                 </div>
                 <div class="tool-desc">
-                  {{ tool.description }}
+                  {{ t(tool.description) }}
                 </div>
               </div>
             </div>
           </div>
           <div v-else-if="searchQuery" class="search-empty">
-            <span>未找到匹配的工具</span>
+            <span>{{ t('未找到匹配的工具') }}</span>
           </div>
         </div>
       </div>
@@ -91,7 +91,8 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { openSettings } from '@/api'
-import { tools, getRecentTools, addToRecent, searchTools, SETTINGS_PATH } from '@shared/tools'
+import { t } from '@/i18n'
+import { tools, visibleTools, getRecentTools, addToRecent, SETTINGS_PATH } from '@shared/tools'
 
 const props = defineProps({
   visible: {
@@ -110,7 +111,14 @@ const activeIndex = ref(0)
 
 const recentTools = computed(() => getRecentTools())
 
-const filteredTools = computed(() => searchTools(searchQuery.value))
+const filteredTools = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return visibleTools
+  return visibleTools.filter((tool) => {
+    const haystack = `${tool.name} ${t(tool.name)} ${tool.description} ${t(tool.description)}`.toLowerCase()
+    return haystack.includes(query)
+  })
+})
 
 watch(
   () => props.visible,

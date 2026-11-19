@@ -11,7 +11,7 @@
           :aria-selected="tab === item.key"
           @click="tab = item.key"
         >
-          {{ item.label }}
+          {{ t(item.label) }}
           <span class="memory-tab-count">{{ counts[item.key] }}</span>
         </button>
       </div>
@@ -19,22 +19,22 @@
         <button
           v-if="tab === 'project'"
           class="memory-workspace"
-          :title="workspacePath || '选择项目目录'"
+          :title="workspacePath || t('选择项目目录')"
           @click="pickWorkspace"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           </svg>
-          <span>{{ workspacePath ? workspaceName : '选择项目目录' }}</span>
+          <span>{{ workspacePath ? workspaceName : t('选择项目目录') }}</span>
         </button>
         <button
           class="memory-auto"
           :class="{ active: autoCapture }"
-          :title="autoCapture ? 'AI 可主动保存稳定偏好与项目决策' : '仅在你明确要求时保存记忆'"
+          :title="autoCapture ? t('AI 可主动保存稳定偏好与项目决策') : t('仅在你明确要求时保存记忆')"
           @click="toggleAutoCapture"
         >
           <span class="memory-auto-dot" />
-          自动记忆
+          {{ t('自动记忆') }}
         </button>
       </div>
     </template>
@@ -42,13 +42,13 @@
     <div class="memory-body" :class="{ 'is-single-column': tab !== 'knowledge' }">
       <section v-if="tab === 'knowledge'" class="panel memory-editor">
         <div class="panel-header">
-          <span class="panel-title">添加知识来源</span>
-          <span class="panel-hint">目录或文本文件</span>
+          <span class="panel-title">{{ t('添加知识来源') }}</span>
+          <span class="panel-hint">{{ t('目录或文本文件') }}</span>
         </div>
 
         <div class="panel-body memory-editor-body">
           <p class="memory-note">
-            导入本地目录或文本文件作为外挂知识库，AI 会在回答相关问题时按关键词检索，并注明来源路径。
+            {{ t('导入本地目录或文本文件作为外挂知识库，AI 会在回答相关问题时按关键词检索，并注明来源路径。') }}
           </p>
           <button class="memory-source-action" @click="addDirectory">
             <span class="memory-source-icon">
@@ -57,8 +57,8 @@
               </svg>
             </span>
             <span class="memory-source-copy">
-              <strong>添加目录</strong>
-              <small>递归索引目录内的文本与代码文件</small>
+              <strong>{{ t('添加目录') }}</strong>
+              <small>{{ t('递归索引目录内的文本与代码文件') }}</small>
             </span>
           </button>
           <button class="memory-source-action" @click="addFiles">
@@ -69,14 +69,14 @@
               </svg>
             </span>
             <span class="memory-source-copy">
-              <strong>添加文件</strong>
-              <small>支持 Markdown、文本、代码与配置等格式</small>
+              <strong>{{ t('添加文件') }}</strong>
+              <small>{{ t('支持 Markdown、文本、代码与配置等格式') }}</small>
             </span>
           </button>
           <ul class="memory-note-list">
-            <li>单个文件不超过 512 KB，自动跳过二进制文件</li>
-            <li>知识内容仅在本机建立索引，检索结果会作为上下文发送给所选 AI 服务商</li>
-            <li>可在右侧关闭来源并实时测试检索效果</li>
+            <li>{{ t('单个文件不超过 512 KB，自动跳过二进制文件') }}</li>
+            <li>{{ t('知识内容仅在本机建立索引，检索结果会作为上下文发送给所选 AI 服务商') }}</li>
+            <li>{{ t('可在右侧关闭来源并实时测试检索效果') }}</li>
           </ul>
         </div>
       </section>
@@ -85,21 +85,23 @@
         <div class="panel-header">
           <span class="panel-title">{{ listTitle }}</span>
           <div v-if="tab !== 'knowledge'" class="panel-actions">
-            <span class="memory-count">{{ entries.length }} 条</span>
-            <button v-if="entries.length" class="btn btn-ghost btn-sm" @click="requestClearEntries">清空</button>
+            <span class="memory-count">{{ t('{count} 条', { count: entries.length }) }}</span>
+            <button v-if="entries.length" class="btn btn-ghost btn-sm" @click="requestClearEntries">
+              {{ t('清空') }}
+            </button>
           </div>
           <div v-else class="panel-actions">
-            <span class="memory-count">{{ sources.length }} 个来源</span>
+            <span class="memory-count">{{ t('{count} 个来源', { count: sources.length }) }}</span>
           </div>
         </div>
 
         <div class="panel-body memory-list-body">
-          <div v-if="loading" class="memory-empty">正在读取记忆...</div>
+          <div v-if="loading" class="memory-empty">{{ t('正在读取记忆...') }}</div>
 
           <template v-else-if="tab !== 'knowledge'">
             <div v-if="tab === 'project' && !workspacePath" class="memory-empty">
-              <p>尚未绑定工作区</p>
-              <span>选择项目目录后可查看该工作区的记忆</span>
+              <p>{{ t('尚未绑定工作区') }}</p>
+              <span>{{ t('选择项目目录后可查看该工作区的记忆') }}</span>
             </div>
             <div v-else-if="entries.length === 0" class="memory-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -107,22 +109,22 @@
                 <path d="M12 5a3 3 0 0 1 6 0 3 3 0 0 1 1 5.8 3.5 3.5 0 0 1-3 5.7V18a3 3 0 0 1-4 2.8" />
                 <path d="M12 5v16" />
               </svg>
-              <p>暂无记忆</p>
-              <span>记忆会在对话中自动生成，并持续更新与升级</span>
+              <p>{{ t('暂无记忆') }}</p>
+              <span>{{ t('记忆会在对话中自动生成，并持续更新与升级') }}</span>
             </div>
             <template v-else>
               <article v-for="entry in entries" :key="entry.id" class="memory-entry">
                 <div class="memory-entry-head">
                   <span v-for="tag in entry.tags" :key="tag" class="memory-tag">{{ tag }}</span>
                   <span class="memory-entry-source" :class="{ ai: entry.source === 'ai' }">
-                    {{ entry.source === 'ai' ? 'AI 保存' : '手动保存' }}
+                    {{ entry.source === 'ai' ? t('AI 保存') : t('手动保存') }}
                   </span>
                   <span class="memory-entry-time">{{ formatTime(entry.updatedAt) }}</span>
                   <button
                     class="btn btn-ghost btn-xs memory-danger memory-entry-delete"
                     @click="requestRemoveEntry(entry)"
                   >
-                    删除
+                    {{ t('删除') }}
                   </button>
                 </div>
                 <p class="memory-entry-content">{{ entry.content }}</p>
@@ -136,7 +138,7 @@
                 <input
                   v-model="searchQuery"
                   class="input-field"
-                  placeholder="输入关键词测试检索，例如：部署流程"
+                  :placeholder="t('输入关键词测试检索，例如：部署流程')"
                   @keyup.enter="runSearch"
                 />
                 <button
@@ -144,14 +146,14 @@
                   :disabled="searching || !searchQuery.trim()"
                   @click="runSearch"
                 >
-                  {{ searching ? '检索中' : '检索' }}
+                  {{ searching ? t('检索中') : t('检索') }}
                 </button>
               </div>
               <div v-if="searchMeta" class="knowledge-search-meta">
-                扫描 {{ searchMeta.searchedFiles || 0 }} 个文件
-                <template v-if="searchMeta.truncated"> · 已截断</template>
+                {{ t('扫描 {count} 个文件', { count: searchMeta.searchedFiles || 0 }) }}
+                <template v-if="searchMeta.truncated"> · {{ t('已截断') }}</template>
                 <template v-if="searchMeta.missingSources">
-                  · {{ searchMeta.missingSources }} 个来源路径不存在</template
+                  · {{ t('{count} 个来源路径不存在', { count: searchMeta.missingSources }) }}</template
                 >
               </div>
             </div>
@@ -161,8 +163,8 @@
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
-              <p>暂无知识来源</p>
-              <span>从左侧添加目录或文件，AI 就能引用这些资料</span>
+              <p>{{ t('暂无知识来源') }}</p>
+              <span>{{ t('从左侧添加目录或文件，AI 就能引用这些资料') }}</span>
             </div>
 
             <div v-else class="knowledge-sources">
@@ -191,17 +193,21 @@
                   <span class="knowledge-source-name">{{ source.label }}</span>
                   <span class="knowledge-source-path" :title="source.path">{{ source.path }}</span>
                 </span>
-                <span class="knowledge-badge">{{ source.type === 'directory' ? '目录' : '文件' }}</span>
-                <span v-if="!source.available" class="knowledge-missing">路径不存在</span>
+                <span class="knowledge-badge">{{ source.type === 'directory' ? t('目录') : t('文件') }}</span>
+                <span v-if="!source.available" class="knowledge-missing">{{ t('路径不存在') }}</span>
                 <button
                   class="knowledge-toggle"
                   :class="{ active: source.enabled }"
-                  :title="source.enabled ? '已启用，点击停用' : '已停用，点击启用'"
+                  :title="source.enabled ? t('已启用，点击停用') : t('已停用，点击启用')"
                   @click="toggleSource(source)"
                 >
                   <span />
                 </button>
-                <button class="btn-icon btn-icon-danger btn-sm" title="移除来源" @click="requestRemoveSource(source)">
+                <button
+                  class="btn-icon btn-icon-danger btn-sm"
+                  :title="t('移除来源')"
+                  @click="requestRemoveSource(source)"
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -213,8 +219,8 @@
 
             <div v-if="searchResults.length" class="knowledge-results">
               <div class="knowledge-results-head">
-                检索结果
-                <span>{{ searchResults.length }} 条</span>
+                {{ t('检索结果') }}
+                <span>{{ t('{count} 条', { count: searchResults.length }) }}</span>
               </div>
               <article v-for="item in searchResults" :key="`${item.sourceId}:${item.path}`" class="knowledge-result">
                 <div class="knowledge-result-head">
@@ -226,7 +232,7 @@
               </article>
             </div>
             <div v-else-if="searchMeta && !searching" class="memory-empty knowledge-no-result">
-              {{ searchMeta.message || '没有匹配的文档，换个关键词试试' }}
+              {{ searchMeta.message || t('没有匹配的文档，换个关键词试试') }}
             </div>
           </template>
         </div>
@@ -265,11 +271,27 @@ import { useConfig, useToast } from '@/composables'
 import PageLayout from '@/layouts/PageLayout.vue'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
+import { t } from '@/i18n'
 
 const TABS = [
-  { key: 'global', label: '全局记忆' },
-  { key: 'project', label: '项目记忆' },
-  { key: 'knowledge', label: '外挂知识库' }
+  {
+    key: 'global',
+    get label() {
+      return t('全局记忆')
+    }
+  },
+  {
+    key: 'project',
+    get label() {
+      return t('项目记忆')
+    }
+  },
+  {
+    key: 'knowledge',
+    get label() {
+      return t('外挂知识库')
+    }
+  }
 ]
 const WORKSPACE_KEY = 'memory_workspace'
 
@@ -292,9 +314,9 @@ const pendingConfirm = ref(null)
 const confirmVisible = computed(() => Boolean(pendingConfirm.value))
 const confirmTitle = computed(() => {
   const kind = pendingConfirm.value?.kind
-  if (kind === 'entry') return '删除记忆'
-  if (kind === 'clear') return '清空记忆'
-  return '移除知识来源'
+  if (kind === 'entry') return t('删除记忆')
+  if (kind === 'clear') return t('清空记忆')
+  return t('移除知识来源')
 })
 const confirmMessage = computed(() => pendingConfirm.value?.message || '')
 
@@ -310,8 +332,8 @@ const entries = computed(() => {
 const sources = computed(() => overview.value?.knowledge || [])
 const workspaceName = computed(() => baseName(workspacePath.value))
 const listTitle = computed(() => {
-  if (tab.value === 'knowledge') return '知识来源与检索'
-  return tab.value === 'project' ? '项目记忆' : '全局记忆'
+  if (tab.value === 'knowledge') return t('知识来源与检索')
+  return tab.value === 'project' ? t('项目记忆') : t('全局记忆')
 })
 
 function resolveInitialWorkspace() {
@@ -359,7 +381,7 @@ function requestRemoveEntry(entry) {
   pendingConfirm.value = {
     kind: 'entry',
     id: entry.id,
-    message: '确定删除这条记忆吗？此操作无法撤销。'
+    message: t('确定删除这条记忆吗？此操作无法撤销。')
   }
 }
 
@@ -370,27 +392,27 @@ async function removeEntry(id) {
     id
   })
   if (!result?.success) {
-    showError(result?.error || '删除失败')
+    showError(result?.error || t('删除失败'))
     return
   }
-  showSuccess('记忆已删除')
+  showSuccess(t('记忆已删除'))
   await loadOverview()
 }
 
 function requestClearEntries() {
   pendingConfirm.value = {
     kind: 'clear',
-    message: `确定清空${tab.value === 'project' ? '项目' : '全局'}记忆吗？此操作无法撤销。`
+    message: t('确定清空{scope}记忆吗？此操作无法撤销。', { scope: tab.value === 'project' ? t('项目') : t('全局') })
   }
 }
 
 async function clearEntries() {
   const result = await memoryClear({ scope: tab.value, workspacePath: workspacePath.value })
   if (!result?.success) {
-    showError(result?.error || '清空失败')
+    showError(result?.error || t('清空失败'))
     return
   }
-  showSuccess('记忆已清空')
+  showSuccess(t('记忆已清空'))
   await loadOverview()
 }
 
@@ -399,10 +421,10 @@ async function addDirectory() {
   if (!directory) return
   const result = await memoryKnowledgeAdd({ type: 'directory', targetPath: directory })
   if (!result?.success) {
-    showError(result?.error || '添加目录失败')
+    showError(result?.error || t('添加目录失败'))
     return
   }
-  showSuccess(result.duplicated ? '该目录已在知识库中' : '目录已加入知识库')
+  showSuccess(result.duplicated ? t('该目录已在知识库中') : t('目录已加入知识库'))
   searchResults.value = []
   searchMeta.value = null
   await loadOverview()
@@ -421,9 +443,9 @@ async function addFiles() {
       errors.push(result.error)
     }
   }
-  if (added > 0) showSuccess(`已添加 ${added} 个文件到知识库`)
+  if (added > 0) showSuccess(t('已添加 {count} 个文件到知识库', { count: added }))
   if (errors.length > 0) showError(errors[0])
-  if (added === 0 && errors.length === 0) showError('没有新增文件（可能已在知识库中）')
+  if (added === 0 && errors.length === 0) showError(t('没有新增文件（可能已在知识库中）'))
   searchResults.value = []
   searchMeta.value = null
   await loadOverview()
@@ -432,7 +454,7 @@ async function addFiles() {
 async function toggleSource(source) {
   const result = await memoryKnowledgeToggle(source.id, !source.enabled)
   if (!result?.success) {
-    showError(result?.error || '操作失败')
+    showError(result?.error || t('操作失败'))
     return
   }
   source.enabled = !source.enabled
@@ -445,10 +467,10 @@ async function toggleSource(source) {
 async function removeSource(id) {
   const result = await memoryKnowledgeRemove(id)
   if (!result?.success) {
-    showError(result?.error || '移除失败')
+    showError(result?.error || t('移除失败'))
     return
   }
-  showSuccess('知识来源已移除')
+  showSuccess(t('知识来源已移除'))
   searchResults.value = []
   searchMeta.value = null
   await loadOverview()
@@ -458,7 +480,7 @@ function requestRemoveSource(source) {
   pendingConfirm.value = {
     kind: 'source',
     id: source.id,
-    message: `确定从知识库移除「${source.label}」吗？`
+    message: t('确定从知识库移除「{label}」吗？', { label: source.label })
   }
 }
 
@@ -480,8 +502,8 @@ async function runSearch() {
   const result = await memoryKnowledgeSearch({ query, topK: 8 })
   searching.value = false
   if (!result?.success) {
-    searchMeta.value = { message: result?.error || '检索失败' }
-    showError(result?.error || '检索失败')
+    searchMeta.value = { message: result?.error || t('检索失败') }
+    showError(result?.error || t('检索失败'))
     return
   }
   searchResults.value = result.results || []
@@ -490,17 +512,17 @@ async function runSearch() {
 
 async function toggleAutoCapture() {
   const next = !autoCapture.value
-  const saved = await patchConfig({ memory_auto_capture: next })
+  const saved = await patchConfig({ memory: { auto_capture: next } })
   if (!saved) {
-    showError('设置保存失败')
+    showError(t('设置保存失败'))
     return
   }
   autoCapture.value = next
-  showSuccess(next ? '自动记忆已开启' : '自动记忆已关闭')
+  showSuccess(next ? t('自动记忆已开启') : t('自动记忆已关闭'))
 }
 
 watch(config, (value) => {
-  if (value) autoCapture.value = value.memory_auto_capture !== false
+  if (value) autoCapture.value = value.memory?.auto_capture !== false
 })
 
 watch(workspacePath, (value) => {
@@ -517,7 +539,7 @@ watch(tab, () => {
 })
 
 onMounted(() => {
-  autoCapture.value = config.value?.memory_auto_capture !== false
+  autoCapture.value = config.value?.memory.auto_capture !== false
   loadOverview()
 })
 </script>

@@ -1,5 +1,6 @@
 import { TextDecoder } from 'util'
 import { log } from '../../../utils'
+import { t } from '../../i18n.js'
 import { createRequest } from '../../network.js'
 import {
   RETRY_DEFAULTS,
@@ -87,7 +88,7 @@ class BaseProvider {
 
   validateConfig() {
     if (!this.apiKey || this.apiKey.trim() === '') {
-      return { valid: false, error: 'API Key 未配置' }
+      return { valid: false, error: t('API Key 未配置') }
     }
     return { valid: true }
   }
@@ -250,12 +251,17 @@ class BaseProvider {
       if (typeof onChunk === 'function') {
         onChunk({
           kind: 'status',
-          text: `模型请求失败（${result.error || '未知错误'}），${Math.round(delay / 1000)} 秒后重试（${attempt + 1}/${retries}）`
+          text: t('模型请求失败（{p0}），{p1} 秒后重试（{p2}/{p3}）', {
+            p0: result.error || t('未知错误'),
+            p1: Math.round(delay / 1000),
+            p2: attempt + 1,
+            p3: retries
+          })
         })
       }
       const canContinue = await waitForDelay(delay, shouldStop)
       if (!canContinue) {
-        return { ...result, success: false, cancelled: true, error: '已停止' }
+        return { ...result, success: false, cancelled: true, error: t('已停止') }
       }
     }
   }
@@ -265,7 +271,7 @@ class BaseProvider {
       const shouldStop = typeof options.shouldStop === 'function' ? options.shouldStop : () => false
 
       if (shouldStop()) {
-        resolve({ success: false, cancelled: true, content: '', thinking: '', error: '已停止' })
+        resolve({ success: false, cancelled: true, content: '', thinking: '', error: t('已停止') })
         return
       }
 
@@ -313,7 +319,7 @@ class BaseProvider {
           content: fullContent,
           thinking: fullThinking,
           usage: streamUsage,
-          error: '已停止'
+          error: t('已停止')
         })
         req?.cancel()
       }
@@ -332,14 +338,18 @@ class BaseProvider {
 
           streamTimeout = setTimeout(() => {
             log.error(`${this.name} 流式响应超时（无数据传输）`)
-            fail({ success: false, error: `响应超时（${this.timeout / 1000}秒），请稍后重试`, retryable: true })
+            fail({
+              success: false,
+              error: t('响应超时（{p0}秒），请稍后重试', { p0: this.timeout / 1000 }),
+              retryable: true
+            })
             req.cancel()
           }, this.timeout)
 
           keepAliveCheck = setInterval(() => {
             if (Date.now() - lastDataTime > this.timeout) {
               log.error(`${this.name} 流式连接中断`)
-              fail({ success: false, error: `连接中断，请稍后重试`, retryable: true })
+              fail({ success: false, error: t('连接中断，请稍后重试'), retryable: true })
               req.cancel()
             }
           }, 5000)
@@ -353,7 +363,9 @@ class BaseProvider {
             res.on('end', () => {
               const text = errorBody.trim()
               const message =
-                extractErrorMessage(parseJsonSafe(text)) || text.slice(0, 300) || `请求失败: ${res.statusCode}`
+                extractErrorMessage(parseJsonSafe(text)) ||
+                text.slice(0, 300) ||
+                t('请求失败: {p0}', { p0: res.statusCode })
               log.error(`${this.name} 流式请求失败: ${res.statusCode} ${message}`)
               fail({
                 success: false,
@@ -452,13 +464,13 @@ class BaseProvider {
 
         log.error(`${this.name} 流式请求网络错误:`, e)
 
-        let errorMessage = `网络请求失败: ${e.message}`
+        let errorMessage = t('网络请求失败: {p0}', { p0: e.message })
         if (e.code === 'ENOTFOUND') {
-          errorMessage = `无法连接到服务器 (${this.hostname})，请检查网络连接`
+          errorMessage = t('无法连接到服务器 ({p0})，请检查网络连接', { p0: this.hostname })
         } else if (e.code === 'ECONNREFUSED') {
-          errorMessage = `连接被拒绝，服务器可能不可用`
+          errorMessage = t('连接被拒绝，服务器可能不可用')
         } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
-          errorMessage = `连接超时，请检查网络或稍后重试`
+          errorMessage = t('连接超时，请检查网络或稍后重试')
         }
 
         fail({ success: false, error: errorMessage, code: e.code, retryable: isRetryableNetworkCode(e.code) })
@@ -495,10 +507,10 @@ class BaseProvider {
 
   async listRemoteModels(apiKey = this.apiKey) {
     if (!apiKey || !apiKey.trim()) {
-      return { success: false, models: [], error: 'API Key 未配置' }
+      return { success: false, models: [], error: t('API Key 未配置') }
     }
     if (!this.modelsPath) {
-      return { success: false, models: [], error: `${this.name} 不支持在线获取模型列表` }
+      return { success: false, models: [], error: t('{p0} 不支持在线获取模型列表', { p0: this.name }) }
     }
 
     const result = await this.requestModels(apiKey.trim())
@@ -506,7 +518,7 @@ class BaseProvider {
 
     const models = parseModelList(result.data)
     if (models.length === 0) {
-      return { success: false, models: [], error: '服务商未返回可用的对话模型' }
+      return { success: false, models: [], error: t('服务商未返回可用的对话模型') }
     }
     return { success: true, models, error: null }
   }
@@ -539,14 +551,14 @@ class BaseProvider {
             }
 
             if (res.statusCode !== 200) {
-              const error = extractErrorMessage(payload) || `请求失败: ${res.statusCode}`
+              const error = extractErrorMessage(payload) || t('请求失败: {p0}', { p0: res.statusCode })
               log.warn(`${this.name} 模型列表请求失败: ${res.statusCode} ${error}`)
               resolve({ success: false, error, status: res.statusCode })
               return
             }
 
             if (!payload) {
-              resolve({ success: false, error: '解析模型列表失败', status: res.statusCode })
+              resolve({ success: false, error: t('解析模型列表失败'), status: res.statusCode })
               return
             }
 
@@ -557,14 +569,14 @@ class BaseProvider {
 
       const timer = setTimeout(() => {
         req.cancel()
-        resolve({ success: false, error: '获取模型列表超时', status: 0 })
+        resolve({ success: false, error: t('获取模型列表超时'), status: 0 })
       }, this.connectionTimeout)
 
       req.on('error', (e) => {
         clearTimeout(timer)
-        let errorMessage = `网络请求失败: ${e.message}`
-        if (e.code === 'ENOTFOUND') errorMessage = `无法连接到服务器 (${this.hostname})，请检查网络连接`
-        if (e.code === 'ECONNREFUSED') errorMessage = '连接被拒绝，服务器可能不可用'
+        let errorMessage = t('网络请求失败: {p0}', { p0: e.message })
+        if (e.code === 'ENOTFOUND') errorMessage = t('无法连接到服务器 ({p0})，请检查网络连接', { p0: this.hostname })
+        if (e.code === 'ECONNREFUSED') errorMessage = t('连接被拒绝，服务器可能不可用')
         resolve({ success: false, error: errorMessage, status: 0 })
       })
       req.end()
@@ -604,7 +616,8 @@ class BaseProvider {
             const responseData = parseJsonSafe(data)
             if (res.statusCode !== 200) {
               const text = data.trim()
-              const message = extractErrorMessage(responseData) || text.slice(0, 300) || `请求失败: ${res.statusCode}`
+              const message =
+                extractErrorMessage(responseData) || text.slice(0, 300) || t('请求失败: {p0}', { p0: res.statusCode })
               log.error(`${this.name} API 错误: ${res.statusCode} ${message}`)
               resolve({
                 success: false,
@@ -617,7 +630,7 @@ class BaseProvider {
             }
             if (!responseData) {
               log.error('解析响应失败:', data.slice(0, 200))
-              resolve({ success: false, error: '解析响应失败', status: res.statusCode })
+              resolve({ success: false, error: t('解析响应失败'), status: res.statusCode })
               return
             }
             resolve({ success: true, data: responseData })
@@ -630,7 +643,7 @@ class BaseProvider {
         log.error(`${this.name} API 请求超时`)
         resolve({
           success: false,
-          error: `请求超时（${this.timeout / 1000}秒），请检查网络连接或稍后重试`,
+          error: t('请求超时（{p0}秒），请检查网络连接或稍后重试', { p0: this.timeout / 1000 }),
           retryable: true
         })
       }, this.timeout)
@@ -639,13 +652,13 @@ class BaseProvider {
         clearTimeout(timeoutTimer)
         log.error(`${this.name} API 请求失败:`, e)
 
-        let errorMessage = `网络请求失败: ${e.message}`
+        let errorMessage = t('网络请求失败: {p0}', { p0: e.message })
         if (e.code === 'ENOTFOUND') {
-          errorMessage = `无法连接到服务器 (${hostname})，请检查网络连接`
+          errorMessage = t('无法连接到服务器 ({p0})，请检查网络连接', { p0: hostname })
         } else if (e.code === 'ECONNREFUSED') {
-          errorMessage = `连接被拒绝，服务器可能不可用`
+          errorMessage = t('连接被拒绝，服务器可能不可用')
         } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
-          errorMessage = `连接超时，请检查网络或稍后重试`
+          errorMessage = t('连接超时，请检查网络或稍后重试')
         }
 
         resolve({ success: false, error: errorMessage, retryable: isRetryableNetworkCode(e.code) })

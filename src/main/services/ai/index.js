@@ -7,6 +7,7 @@ import {
   getContextWindow
 } from './registry.js'
 import { supportsThinking } from './thinking.js'
+import { t } from '../i18n.js'
 import { log } from '../../utils'
 
 export { PROVIDER_TYPES, PROVIDER_INFO, AUTO_PRIORITY, getContextWindow }
@@ -47,17 +48,17 @@ export function getProviderEnvApiKey(type) {
 }
 
 export function resolveProviderRuntimeConfig(type, config = {}) {
-  const apiKeys = config.ai_api_keys || {}
-  const baseUrls = config.ai_base_urls || {}
+  const apiKeys = config.ai?.keys || {}
+  const baseUrls = config.ai?.base_urls || {}
   const endpointId = type === PROVIDER_TYPES.VOLCENGINE ? apiKeys.volcengine_endpoint_id || '' : ''
   const storedKey = typeof apiKeys[type] === 'string' ? apiKeys[type].trim() : ''
   const runtime = {
     apiKey: storedKey || getProviderEnvApiKey(type),
     baseUrl: typeof baseUrls[type] === 'string' ? baseUrls[type].trim() : '',
-    timeout: config.ai_timeout ? config.ai_timeout * 1000 : 60000,
-    connectionTimeout: config.ai_connection_timeout ? config.ai_connection_timeout * 1000 : 10000,
-    models: resolveProviderModels(type, config.ai_models),
-    defaultModel: resolveProviderDefaultModel(type, config.ai_models, endpointId)
+    timeout: config.ai?.timeout ? config.ai?.timeout * 1000 : 60000,
+    connectionTimeout: config.ai?.connection_timeout ? config.ai?.connection_timeout * 1000 : 10000,
+    models: resolveProviderModels(type, config.ai?.models),
+    defaultModel: resolveProviderDefaultModel(type, config.ai?.models, endpointId)
   }
   if (type === PROVIDER_TYPES.MINIMAX) runtime.groupId = apiKeys.minimax_group_id || ''
   if (type === PROVIDER_TYPES.VOLCENGINE) runtime.endpointId = endpointId
@@ -111,16 +112,16 @@ export function resolveProviderDefaultModel(type, aiModels = {}, fallbackModel =
 export async function fetchProviderModels(type, config = {}) {
   const provider = createProvider(type, config)
   if (!provider) {
-    return { success: false, models: [], error: `未知的 AI Provider: ${type}` }
+    return { success: false, models: [], error: t('未知的 AI Provider: {p0}', { p0: type }) }
   }
   return provider.listRemoteModels(config.apiKey)
 }
 
 export function getAvailableProviders(config = null) {
-  const apiKeys = config?.ai_api_keys || {}
-  const baseUrls = config?.ai_base_urls || {}
+  const apiKeys = config?.ai?.keys || {}
+  const baseUrls = config?.ai?.base_urls || {}
   return Object.entries(PROVIDER_INFO).map(([key, info]) => {
-    const models = config ? resolveProviderModels(key, config.ai_models) : getDefaultProviderModels(key)
+    const models = config ? resolveProviderModels(key, config.ai?.models) : getDefaultProviderModels(key)
     const envKey = info.envKey || ''
     const hasEnvKey = Boolean(envKey && String(process.env[envKey] || '').trim())
     const storedKey = typeof apiKeys[key] === 'string' ? apiKeys[key].trim() : ''
@@ -140,7 +141,7 @@ export function getAvailableProviders(config = null) {
         thinking: supportsThinking(key, model.id),
         contextWindow: model.contextWindow || getContextWindow(key)
       })),
-      defaultModel: config ? resolveProviderDefaultModel(key, config.ai_models) : models[0]?.id || '',
+      defaultModel: config ? resolveProviderDefaultModel(key, config.ai?.models) : models[0]?.id || '',
       hasApiKey: Boolean(storedKey || hasEnvKey)
     }
   })

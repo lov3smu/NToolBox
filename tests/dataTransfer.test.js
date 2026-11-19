@@ -348,15 +348,17 @@ describe('data transfer', () => {
     expect(api.showPrompt).toHaveBeenCalled()
     expect(apiMock.patchConfig).toHaveBeenCalledWith(
       expect.objectContaining({
-        dbTransferTasks: [
-          expect.objectContaining({
-            name: '任务A',
-            sourceDatabase: 'demo',
-            targetDatabase: 'archive',
-            contentMode: 'structure',
-            selectedObjects: ['table:orders']
-          })
-        ]
+        database: expect.objectContaining({
+          transfer_tasks: [
+            expect.objectContaining({
+              name: '任务A',
+              sourceDatabase: 'demo',
+              targetDatabase: 'archive',
+              contentMode: 'structure',
+              selectedObjects: ['table:orders']
+            })
+          ]
+        })
       })
     )
     expect(state.dataTransferDialog.value.tasks).toHaveLength(1)

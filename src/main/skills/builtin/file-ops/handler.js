@@ -19,7 +19,7 @@ function resolveBasePath(context) {
   }
 
   const config = typeof context.getConfig === 'function' ? context.getConfig() : context.config
-  const basePath = typeof config?.base_path === 'string' ? config.base_path.trim() : ''
+  const basePath = typeof config?.app?.base_path === 'string' ? config.app.base_path.trim() : ''
 
   if (!basePath) {
     return { error: '未配置工作区或脚本基础目录（base_path），请先选择工作区或在设置中配置' }

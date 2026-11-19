@@ -2,7 +2,7 @@
   <PageLayout tool-path="/database" page-class="database-page">
     <template #actions>
       <div class="header-shortcuts">
-        <div class="shortcut-item" title="新建连接" @click="showAddConnectionModal">
+        <div class="shortcut-item" :title="t('新建连接')" @click="showAddConnectionModal">
           <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
             <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
@@ -10,11 +10,11 @@
             <line x1="6" y1="18" x2="6.01" y2="18" />
             <line x1="12" y1="12" x2="12" y2="12.01" />
           </svg>
-          <span class="shortcut-text">新建连接</span>
+          <span class="shortcut-text">{{ t('新建连接') }}</span>
         </div>
         <div
           class="shortcut-item"
-          title="新建查询"
+          :title="t('新建查询')"
           @click="createQueryTab(selectedConnection?.name || '', selectedDatabase || '')"
         >
           <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -23,22 +23,22 @@
             <line x1="16" y1="13" x2="8" y2="13" />
             <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
-          <span class="shortcut-text">新建查询</span>
+          <span class="shortcut-text">{{ t('新建查询') }}</span>
         </div>
-        <div class="shortcut-item" title="数据传输" @click="openDataTransferDialog">
+        <div class="shortcut-item" :title="t('数据传输')" @click="openDataTransferDialog">
           <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 7h13" />
             <path d="m14 4 3 3-3 3" />
             <path d="M20 17H7" />
             <path d="m10 20-3-3 3-3" />
           </svg>
-          <span class="shortcut-text">数据传输</span>
+          <span class="shortcut-text">{{ t('数据传输') }}</span>
         </div>
         <div class="header-ops" :class="{ open: headerOpsOpen }">
           <div
             class="shortcut-item"
             :class="{ active: headerOpsOpen }"
-            title="运维与诊断"
+            :title="t('运维与诊断')"
             @click.stop="headerOpsOpen = !headerOpsOpen"
           >
             <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -46,23 +46,23 @@
                 d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
               />
             </svg>
-            <span class="shortcut-text">运维</span>
+            <span class="shortcut-text">{{ t('运维') }}</span>
             <svg class="shortcut-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </div>
-          <div v-if="headerOpsOpen" class="header-ops-menu" @click.stop>
+          <div v-if="headerOpsOpen" v-clamp-viewport class="header-ops-menu" @click.stop>
             <div class="header-ops-item" @click="runHeaderAction(openSessionDialog)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
-              <span>会话与锁</span>
+              <span>{{ t('会话与锁') }}</span>
             </div>
             <div class="header-ops-item" @click="runHeaderAction(openServerStatusDialog)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 12h4l2-6 4 12 2-6h6" />
               </svg>
-              <span>实例状态</span>
+              <span>{{ t('实例状态') }}</span>
             </div>
             <div class="header-ops-item" @click="runHeaderAction(openHealthDialog)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -70,7 +70,7 @@
                 <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
                 <path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
               </svg>
-              <span>容量与健康检查</span>
+              <span>{{ t('容量与健康检查') }}</span>
             </div>
             <div class="header-ops-item" @click="runHeaderAction(openBackupDialog)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -78,7 +78,7 @@
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>定时备份与导出</span>
+              <span>{{ t('定时备份与导出') }}</span>
             </div>
             <div class="header-ops-item" @click="runHeaderAction(openOperationLog)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -89,7 +89,7 @@
                 <line x1="3" y1="12" x2="3.01" y2="12" />
                 <line x1="3" y1="18" x2="3.01" y2="18" />
               </svg>
-              <span>数据库操作日志</span>
+              <span>{{ t('数据库操作日志') }}</span>
             </div>
             <div class="header-ops-divider" />
             <div class="header-ops-item" @click="runHeaderAction(openUserDialog)">
@@ -97,7 +97,7 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              <span>用户与权限</span>
+              <span>{{ t('用户与权限') }}</span>
             </div>
           </div>
         </div>
@@ -193,6 +193,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { useConfig } from '@/composables'
@@ -254,7 +255,7 @@ const { config: appConfig } = useConfig()
 const databaseStore = useDatabase(appConfig)
 provide('database', databaseStore)
 
-const databaseEditor = computed(() => normalizeDatabaseEditorConfig(appConfig.value?.database_editor))
+const databaseEditor = computed(() => normalizeDatabaseEditorConfig(appConfig.value?.database?.editor))
 provide('databaseEditor', databaseEditor)
 
 const {

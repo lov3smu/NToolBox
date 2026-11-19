@@ -4,16 +4,16 @@ export const IMAGE_HOST_MAX_FILE_SIZE = 30 * 1024 * 1024
 export const IMAGE_HOST_HISTORY_LIMIT_OPTIONS = Object.freeze(
   [50, 100, 200, 500].map((value) => ({
     value,
-    label: `${value} 条${value === IMAGE_HOST_HISTORY_LIMIT ? '（默认）' : ''}`,
-    hint: `最多保留最近 ${value} 条上传记录`
+    label: value === IMAGE_HOST_HISTORY_LIMIT ? '{p0} 条（默认）' : '{p0} 条',
+    hint: '最多保留最近 {p0} 条上传记录'
   }))
 )
 
 export const IMAGE_HOST_MAX_FILE_MB_OPTIONS = Object.freeze(
   [10, 20, 30, 50].map((value) => ({
     value,
-    label: `${value} MB${value === 30 ? '（默认）' : ''}`,
-    hint: `单张图片超过 ${value} MB 时拒绝上传`
+    label: value === 30 ? '{p0} MB（默认）' : '{p0} MB',
+    hint: '单张图片超过 {p0} MB 时拒绝上传'
   }))
 )
 

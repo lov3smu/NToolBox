@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 import { reactive } from 'vue'
 import {
   cancelUpdateDownload,
@@ -76,7 +78,7 @@ export async function loadUpdateReleases(force = false) {
     updateCenter.history = Array.isArray(result.releases) ? result.releases : []
   } else {
     historyRequested = false
-    updateCenter.historyError = result?.error || '获取历史版本失败'
+    updateCenter.historyError = result?.error || t('获取历史版本失败')
   }
 }
 

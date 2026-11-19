@@ -40,7 +40,10 @@ export function maskConfigForRenderer(config) {
   if (!config || typeof config !== 'object') return config
   return {
     ...config,
-    ai_api_keys: maskAiApiKeys(config.ai_api_keys),
+    ai: {
+      ...config.ai,
+      keys: maskAiApiKeys(config.ai?.keys)
+    },
     image_hosting: maskImageHostSettings(config.image_hosting)
   }
 }

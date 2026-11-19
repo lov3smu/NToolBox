@@ -6,6 +6,7 @@ import { getConfig, saveConfig } from './config'
 import { backupTaskDue, normalizeBackupTask, sanitizeFileSegment } from '../../shared/backupTasks.js'
 import { createConnection, closeConnection, isConnectionActive, exportTableData, exportDatabaseData } from './database'
 import { notify } from './notifications.js'
+import { t } from './i18n.js'
 
 const CHECK_INTERVAL = 60 * 1000
 const runningTasks = new Set()
@@ -23,15 +24,15 @@ function formatTimestamp(date = new Date()) {
 }
 
 function getTasks() {
-  return Array.isArray(getConfig().db_backup_tasks) ? getConfig().db_backup_tasks : []
+  return Array.isArray(getConfig().database.backup_tasks) ? getConfig().database.backup_tasks : []
 }
 
 function resolveBackupDirectory(directory) {
   const fallback = path.join(app.getPath('documents'), 'NToolBox Backups')
   const value = String(directory || '').trim() || fallback
-  if (!path.isAbsolute(value)) throw new Error('备份目录必须是绝对路径')
+  if (!path.isAbsolute(value)) throw new Error(t('备份目录必须是绝对路径'))
   const resolved = path.resolve(value)
-  if (path.dirname(resolved) === resolved) throw new Error('备份目录不能是磁盘根目录')
+  if (path.dirname(resolved) === resolved) throw new Error(t('备份目录不能是磁盘根目录'))
   return resolved
 }
 
@@ -51,26 +52,26 @@ function buildConnectionConfig(conn) {
 
 async function updateTaskStatus(id, patch) {
   const tasks = getTasks().map((task) => (task.id === id ? normalizeBackupTask({ ...task, ...patch }) : task))
-  await saveConfig({ db_backup_tasks: tasks })
+  await saveConfig({ database: { backup_tasks: tasks } })
 }
 
 async function executeBackupTask(task, notifyOnFinish = true) {
-  if (runningTasks.has(task.id)) return { success: false, error: '任务正在执行中' }
+  if (runningTasks.has(task.id)) return { success: false, error: t('任务正在执行中') }
   runningTasks.add(task.id)
   let temporaryConnection = false
   try {
-    const conn = (getConfig().dbConnections || []).find((item) => item.name === task.connection)
-    if (!conn) throw new Error(`连接不存在: ${task.connection}`)
-    if (!task.database) throw new Error('请选择要备份的数据库')
+    const conn = (getConfig().database.connections || []).find((item) => item.name === task.connection)
+    if (!conn) throw new Error(t('连接不存在：{name}', { name: task.connection }))
+    if (!task.database) throw new Error(t('请选择要备份的数据库'))
 
     const directory = resolveBackupDirectory(task.directory)
 
     if (!isConnectionActive(task.connection)) {
       if (!conn.savePassword && !conn.password) {
-        throw new Error('连接未保存密码，请先连接该数据库或开启保存密码')
+        throw new Error(t('连接未保存密码，请先连接该数据库或开启保存密码'))
       }
       const created = await createConnection(task.connection, buildConnectionConfig(conn))
-      if (!created.success) throw new Error(created.error || '创建连接失败')
+      if (!created.success) throw new Error(created.error || t('创建连接失败'))
       temporaryConnection = true
     }
 
@@ -85,7 +86,7 @@ async function executeBackupTask(task, notifyOnFinish = true) {
           maxRows: task.maxRows
         })
 
-    if (!exported.success) throw new Error(exported.error || '导出数据失败')
+    if (!exported.success) throw new Error(exported.error || t('导出数据失败'))
 
     await fs.promises.mkdir(directory, { recursive: true })
     const baseName = `${sanitizeFileSegment(task.name || task.database)}_${formatTimestamp()}`
@@ -112,8 +113,8 @@ async function executeBackupTask(task, notifyOnFinish = true) {
     log.info(`备份任务执行成功: ${task.name} -> ${target}`)
     if (notifyOnFinish) {
       void notify('backup_done', {
-        title: '数据库备份完成',
-        body: `${task.name} 已备份到 ${target}`
+        title: t('数据库备份完成'),
+        body: t('{name} 已备份到 {file}', { name: task.name, file: target })
       })
     }
     return {
@@ -128,15 +129,15 @@ async function executeBackupTask(task, notifyOnFinish = true) {
     await updateTaskStatus(task.id, {
       lastRunAt: Date.now(),
       lastStatus: 'error',
-      lastError: error.message || '备份失败'
+      lastError: error.message || t('备份失败')
     })
     if (notifyOnFinish) {
       void notify('backup_done', {
-        title: '数据库备份失败',
-        body: `${task.name}：${error.message || '备份失败'}`
+        title: t('数据库备份失败'),
+        body: t('{name}：{error}', { name: task.name, error: error.message || t('备份失败') })
       })
     }
-    return { success: false, error: error.message || '备份失败' }
+    return { success: false, error: error.message || t('备份失败') }
   } finally {
     if (temporaryConnection) {
       try {
@@ -196,25 +197,25 @@ export async function saveBackupTask(raw) {
     lastFile: current?.lastFile || ''
   })
 
-  if (!task.name) return { success: false, error: '请输入任务名称' }
-  if (!task.connection) return { success: false, error: '请选择连接' }
-  if (!task.database) return { success: false, error: '请选择数据库' }
+  if (!task.name) return { success: false, error: t('请输入任务名称') }
+  if (!task.connection) return { success: false, error: t('请选择连接') }
+  if (!task.database) return { success: false, error: t('请选择数据库') }
 
   const tasks = current ? existing.map((item) => (item.id === task.id ? task : item)) : [...existing, task]
-  const saved = await saveConfig({ db_backup_tasks: tasks })
-  if (!saved) return { success: false, error: '保存备份任务失败' }
+  const saved = await saveConfig({ database: { backup_tasks: tasks } })
+  if (!saved) return { success: false, error: t('保存备份任务失败') }
   return { success: true, tasks: getTasks() }
 }
 
 export async function deleteBackupTask(id) {
   const tasks = getTasks().filter((task) => task.id !== id)
-  const saved = await saveConfig({ db_backup_tasks: tasks })
-  if (!saved) return { success: false, error: '删除备份任务失败' }
+  const saved = await saveConfig({ database: { backup_tasks: tasks } })
+  if (!saved) return { success: false, error: t('删除备份任务失败') }
   return { success: true, tasks: getTasks() }
 }
 
 export async function runBackupTaskNow(id) {
   const task = getTasks().find((item) => item.id === id)
-  if (!task) return { success: false, error: '备份任务不存在' }
+  if (!task) return { success: false, error: t('备份任务不存在') }
   return executeBackupTask(task, false)
 }

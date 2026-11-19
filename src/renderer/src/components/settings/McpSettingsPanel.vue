@@ -2,9 +2,9 @@
   <div class="mcp-panel">
     <header class="mcp-panel-head">
       <div class="mcp-panel-title">
-        <strong>{{ t('ext.connector.title') }}</strong>
+        <strong>{{ t('MCP 连接器') }}</strong>
         <span class="mcp-panel-tag" :class="{ configured: enabledCount > 0 }">
-          {{ enabledCount }} 个启用 · {{ servers.length }} 个已配置
+          {{ t('{enabled} 个启用 · {total} 个已配置', { enabled: enabledCount, total: servers.length }) }}
         </span>
       </div>
       <div class="mcp-panel-actions">
@@ -14,83 +14,85 @@
           :disabled="loading || refreshing || busy"
           @click="refreshStatus"
         >
-          {{ loading || refreshing ? '检查中…' : '刷新状态' }}
+          {{ loading || refreshing ? t('检查中…') : t('刷新状态') }}
         </button>
         <button
           type="button"
           class="btn btn-secondary"
           :disabled="loading || refreshing || busy"
-          title="按已保存的配置重启连接器"
+          :title="t('按已保存的配置重启连接器')"
           @click="restart"
         >
-          重启服务
+          {{ t('重启服务') }}
         </button>
         <button type="button" class="btn btn-primary" :disabled="busy" @click="saveAll">
-          {{ busy ? '保存中…' : '保存连接器' }}
+          {{ busy ? t('保存中…') : t('保存连接器') }}
         </button>
       </div>
     </header>
 
     <p class="mcp-panel-hint">
-      通过 stdio 启动 MCP 服务，工具以 mcp__服务名__工具名 注册给 AI 助手；调用需审批，返回内容按不可信数据标记。
+      {{
+        t('通过 stdio 启动 MCP 服务，工具以 mcp__服务名__工具名 注册给 AI 助手；调用需审批，返回内容按不可信数据标记。')
+      }}
     </p>
 
-    <div v-if="loading" class="mcp-empty">正在读取连接器配置…</div>
+    <div v-if="loading" class="mcp-empty">{{ t('正在读取连接器配置…') }}</div>
     <div v-else-if="servers.length === 0" class="mcp-empty">
-      <p>{{ t('ext.connector.empty') }}</p>
-      <span>例如：npx -y @modelcontextprotocol/server-filesystem /path/to/dir</span>
+      <p>{{ t('尚未配置任何 MCP 连接器') }}</p>
+      <span>{{ t('例如：npx -y @modelcontextprotocol/server-filesystem /path/to/dir') }}</span>
     </div>
 
-    <div v-for="(server, index) in servers" :key="server.key" class="mcp-server">
+    <article v-for="(server, index) in servers" :key="server.key" class="mcp-server">
       <div class="mcp-server-head">
-        <input
-          v-model="server.name"
-          class="input-field mcp-name"
-          :placeholder="t('ext.connector.name')"
-          spellcheck="false"
-        />
+        <span class="mcp-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22v-5" />
+            <path d="M9 8V2" />
+            <path d="M15 8V2" />
+            <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+          </svg>
+        </span>
+        <div class="mcp-server-title">
+          <input v-model="server.name" class="input-field mcp-name" :placeholder="t('连接器名称')" spellcheck="false" />
+          <span v-if="server.status" class="mcp-status" :class="`is-${server.status}`">
+            {{ statusLabel(server) }}
+          </span>
+        </div>
         <label class="mcp-toggle">
           <input v-model="server.enabled" type="checkbox" class="switch" />
-          <span>{{ server.enabled ? '启用' : '停用' }}</span>
+          <span>{{ server.enabled ? t('启用') : t('停用') }}</span>
         </label>
-        <span v-if="server.status" class="mcp-status" :class="`is-${server.status}`">
-          {{ statusLabel(server) }}
-        </span>
-        <div class="mcp-server-actions">
-          <button type="button" class="btn btn-secondary" :disabled="Boolean(testingKey)" @click="testServer(server)">
-            {{ testingKey === server.key ? t('ext.connector.testing') : t('ext.connector.test') }}
-          </button>
-          <button type="button" class="btn btn-danger" @click="removeServer(index)">删除</button>
-        </div>
       </div>
-      <input
-        v-model="server.command"
-        class="input-field"
-        :placeholder="t('ext.connector.command')"
-        spellcheck="false"
-      />
+      <input v-model="server.command" class="input-field" :placeholder="t('启动命令，如 npx')" spellcheck="false" />
       <textarea
         v-model="server.argsText"
         class="input-field mcp-input"
         rows="2"
         spellcheck="false"
-        :placeholder="t('ext.connector.args')"
+        :placeholder="t('参数，每行一个')"
       ></textarea>
       <textarea
         v-model="server.envText"
         class="input-field mcp-input"
         rows="2"
         spellcheck="false"
-        :placeholder="t('ext.connector.env')"
+        :placeholder="t('环境变量，每行一个 KEY=VALUE')"
       ></textarea>
       <p v-if="server.error" class="mcp-error">{{ server.error }}</p>
       <p v-if="server.testMessage" class="mcp-test-result" :class="{ success: server.testSuccess }">
         {{ server.testMessage }}
       </p>
-    </div>
+      <div class="mcp-server-actions">
+        <button type="button" class="btn btn-secondary" :disabled="Boolean(testingKey)" @click="testServer(server)">
+          {{ testingKey === server.key ? t('测试中…') : t('测试') }}
+        </button>
+        <button type="button" class="btn btn-danger" @click="removeServer(index)">{{ t('删除') }}</button>
+      </div>
+    </article>
 
     <button type="button" class="mcp-add" :disabled="servers.length >= 16" @click="addServer">
-      {{ t('ext.connector.add') }}
+      {{ t('+ 添加连接器') }}
     </button>
 
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
@@ -136,11 +138,11 @@ function createServer(server = {}) {
 }
 
 function statusLabel(server) {
-  if (server.status === 'ready') return `已连接 · ${server.toolCount} 个工具`
-  if (server.status === 'starting') return '连接中'
-  if (server.status === 'disabled') return '未启用'
-  if (server.status === 'error') return '连接失败'
-  return '未连接'
+  if (server.status === 'ready') return t('已连接 · {count} 个工具', { count: server.toolCount })
+  if (server.status === 'starting') return t('连接中')
+  if (server.status === 'disabled') return t('未启用')
+  if (server.status === 'error') return t('连接失败')
+  return t('未连接')
 }
 
 function applyStatus(list) {
@@ -156,7 +158,7 @@ async function load() {
   loading.value = true
   try {
     const config = await getConfig()
-    servers.value = normalizeMcpServers(config?.mcp_servers).map((server) => createServer(server))
+    servers.value = normalizeMcpServers(config?.extensions.mcp_servers).map((server) => createServer(server))
   } finally {
     loading.value = false
   }
@@ -177,8 +179,8 @@ async function restart() {
   busy.value = true
   try {
     const result = await mcpReload()
-    if (result?.success) showSuccess('MCP 服务已重载')
-    else showError('部分连接器连接失败，请查看状态')
+    if (result?.success) showSuccess(t('MCP 服务已重载'))
+    else showError(t('部分连接器连接失败，请查看状态'))
   } finally {
     busy.value = false
   }
@@ -187,7 +189,7 @@ async function restart() {
 
 function addServer() {
   if (servers.value.length >= 16) {
-    showError('最多配置 16 个 MCP 连接器')
+    showError(t('最多配置 16 个 MCP 连接器'))
     return
   }
   servers.value.push(createServer())
@@ -203,15 +205,15 @@ function serializeServer(server) {
   if (!name && !command) return { skip: true }
 
   if (!MCP_SERVER_NAME_PATTERN.test(name)) {
-    return { error: `连接器名称「${server.name}」无效：仅允许小写字母、数字和连字符` }
+    return { error: t('连接器名称「{name}」无效：仅允许小写字母、数字和连字符', { name: server.name }) }
   }
-  if (!command) return { error: `连接器 ${name} 缺少启动命令` }
+  if (!command) return { error: t('连接器 {name} 缺少启动命令', { name }) }
 
   const args = server.argsText
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-  if (args.length > 64) return { error: `连接器 ${name} 的参数过多（最多 64 个）` }
+  if (args.length > 64) return { error: t('连接器 {name} 的参数过多（最多 64 个）', { name }) }
 
   const env = {}
   for (const line of server.envText.split(/\r?\n/)) {
@@ -220,7 +222,7 @@ function serializeServer(server) {
     const separator = text.indexOf('=')
     const key = separator > 0 ? text.slice(0, separator).trim() : ''
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
-      return { error: `连接器 ${name} 的环境变量格式无效：${text}（应为 KEY=VALUE）` }
+      return { error: t('连接器 {name} 的环境变量格式无效：{text}（应为 KEY=VALUE）', { name, text }) }
     }
     env[key] = text.slice(separator + 1).trim()
   }
@@ -240,7 +242,7 @@ async function saveAll() {
     }
     if (result.skip) continue
     if (seen.has(result.value.name)) {
-      showError(`连接器名称重复：${result.value.name}`)
+      showError(t('连接器名称重复：{name}', { name: result.value.name }))
       return
     }
     seen.add(result.value.name)
@@ -249,14 +251,14 @@ async function saveAll() {
 
   busy.value = true
   try {
-    const ok = await patchConfig({ mcp_servers: payload })
+    const ok = await patchConfig({ extensions: { mcp_servers: payload } })
     if (!ok) {
-      showError('保存连接器配置失败')
+      showError(t('保存连接器配置失败'))
       return
     }
     const reloaded = await mcpReload()
-    if (reloaded?.success) showSuccess('连接器配置已保存并重载')
-    else showError('配置已保存，但部分连接器连接失败')
+    if (reloaded?.success) showSuccess(t('连接器配置已保存并重载'))
+    else showError(t('配置已保存，但部分连接器连接失败'))
     await refreshStatus()
   } finally {
     busy.value = false
@@ -273,7 +275,7 @@ async function testServer(server) {
   }
   if (result.skip) {
     server.testSuccess = false
-    server.testMessage = '请先填写服务名与启动命令'
+    server.testMessage = t('请先填写服务名与启动命令')
     return
   }
 
@@ -283,11 +285,11 @@ async function testServer(server) {
     const response = await mcpTest({ ...result.value, enabled: true })
     server.testSuccess = response?.success === true
     server.testMessage = response?.success
-      ? t('ext.connector.testOk', { count: response.toolCount ?? 0 })
-      : t('ext.connector.testFail', { error: response?.error || '未知错误' })
+      ? t('连接成功，发现 {count} 个工具', { count: response.toolCount ?? 0 })
+      : t('连接失败：{error}', { error: response?.error || t('未知错误') })
   } catch (error) {
     server.testSuccess = false
-    server.testMessage = t('ext.connector.testFail', { error: error?.message || '未知错误' })
+    server.testMessage = t('连接失败：{error}', { error: error?.message || t('未知错误') })
   } finally {
     testingKey.value = ''
   }
@@ -372,14 +374,46 @@ onMounted(load)
 .mcp-server {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 16px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface);
+  transition: var(--transition-fast);
+}
+
+.mcp-server:hover {
+  border-color: rgba(var(--accent-rgb), 0.35);
+  box-shadow: var(--shadow-md);
 }
 
 .mcp-server-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mcp-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--accent-color);
+}
+
+.mcp-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mcp-server-title {
+  flex: 1;
+  min-width: 200px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -422,9 +456,12 @@ onMounted(load)
 }
 
 .mcp-server-actions {
-  margin-left: auto;
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
 }
 
 .mcp-input {

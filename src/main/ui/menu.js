@@ -5,6 +5,7 @@ import { destroyTray } from './tray'
 import { toggleDevTools } from '../windows'
 import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '../../shared/tools'
 import { IPC_EVENTS } from '../../shared/ipc'
+import { t } from '../services/i18n.js'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const isMac = process.platform === 'darwin'
@@ -92,7 +93,7 @@ function openTool(mainWindow, tool, createSettingsWindowFn) {
 function buildToolMenuItem(mainWindow, tool, shortcuts, createSettingsWindowFn) {
   const accelerator = getToolAccelerator(tool, shortcuts)
   return {
-    label: tool.name,
+    label: t(tool.name),
     ...(accelerator ? { accelerator } : {}),
     click: () => openTool(mainWindow, tool, createSettingsWindowFn)
   }
@@ -100,7 +101,7 @@ function buildToolMenuItem(mainWindow, tool, shortcuts, createSettingsWindowFn) 
 
 export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindowFn) {
   const config = getConfig()
-  const shortcuts = config.shortcuts || {}
+  const shortcuts = config.app.shortcuts || {}
   const settingsTool = getToolByPath(SETTINGS_PATH)
 
   const template = [
@@ -109,16 +110,16 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
           {
             label: app.name,
             submenu: [
-              { label: `关于 ${app.name}`, click: () => showAboutDialog(mainWindow) },
+              { label: t('关于 {name}', { name: app.name }), click: () => showAboutDialog(mainWindow) },
               { type: 'separator' },
-              { label: '服务', role: 'services' },
+              { label: t('服务'), role: 'services' },
               { type: 'separator' },
-              { label: `隐藏 ${app.name}`, accelerator: 'Command+H', role: 'hide' },
-              { label: '隐藏其他', accelerator: 'Command+Alt+H', role: 'hideOthers' },
-              { label: '显示全部', role: 'unhide' },
+              { label: t('隐藏 {name}', { name: app.name }), accelerator: 'Command+H', role: 'hide' },
+              { label: t('隐藏其他'), accelerator: 'Command+Alt+H', role: 'hideOthers' },
+              { label: t('显示全部'), role: 'unhide' },
               { type: 'separator' },
               {
-                label: '退出',
+                label: t('退出'),
                 accelerator: 'Command+Q',
                 click: () => {
                   app.isQuitting = true
@@ -131,20 +132,20 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
         ]
       : []),
     {
-      label: '文件',
+      label: t('文件'),
       submenu: [
         ...(settingsTool
           ? [buildToolMenuItem(mainWindow, settingsTool, shortcuts, createSettingsWindowFn), { type: 'separator' }]
           : []),
         {
-          label: '隐藏窗口',
+          label: t('隐藏窗口'),
           click: () => {
             if (mainWindow) mainWindow.hide()
           }
         },
         { type: 'separator' },
         {
-          label: '关闭窗口',
+          label: t('关闭窗口'),
           accelerator: isMac ? 'Command+W' : 'Alt+F4',
           click: () => {
             const target = BrowserWindow.getFocusedWindow() || mainWindow
@@ -154,35 +155,35 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
       ]
     },
     {
-      label: '编辑',
+      label: t('编辑'),
       submenu: [
-        { label: '撤销', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
-        { label: '重做', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+        { label: t('撤销'), accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: t('重做'), accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
         { type: 'separator' },
-        { label: '剪切', accelerator: 'CmdOrCtrl+X', role: 'cut' },
-        { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
-        { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
-        { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+        { label: t('剪切'), accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: t('复制'), accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: t('粘贴'), accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: t('全选'), accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
       ]
     },
     {
-      label: '视图',
+      label: t('视图'),
       submenu: [
-        { label: '重新载入', accelerator: 'CmdOrCtrl+R', role: 'reload' },
-        { label: '强制重新载入', accelerator: 'Shift+CmdOrCtrl+R', role: 'forceReload' },
+        { label: t('重新载入'), accelerator: 'CmdOrCtrl+R', role: 'reload' },
+        { label: t('强制重新载入'), accelerator: 'Shift+CmdOrCtrl+R', role: 'forceReload' },
         { type: 'separator' },
-        { label: '实际大小', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
-        { label: '放大', accelerator: 'CmdOrCtrl+=', role: 'zoomIn' },
-        { label: '缩小', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+        { label: t('实际大小'), accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+        { label: t('放大'), accelerator: 'CmdOrCtrl+=', role: 'zoomIn' },
+        { label: t('缩小'), accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
         { type: 'separator' },
-        { label: '切换全屏', accelerator: isMac ? 'Ctrl+Command+F' : 'F11', role: 'togglefullscreen' }
+        { label: t('切换全屏'), accelerator: isMac ? 'Ctrl+Command+F' : 'F11', role: 'togglefullscreen' }
       ]
     },
     {
-      label: '帮助',
+      label: t('帮助'),
       submenu: [
         {
-          label: '检查更新',
+          label: t('检查更新'),
           click: () => {
             if (checkForUpdatesFn && mainWindow) {
               checkForUpdatesFn(true, mainWindow)
@@ -194,7 +195,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
           : [
               { type: 'separator' },
               {
-                label: '关于软件',
+                label: t('关于软件'),
                 click: () => showAboutDialog(mainWindow)
               }
             ]),
@@ -202,7 +203,7 @@ export function createAppMenu(mainWindow, checkForUpdatesFn, createSettingsWindo
           ? [
               { type: 'separator' },
               {
-                label: '开发者工具',
+                label: t('开发者工具'),
                 accelerator: isMac ? 'Alt+Command+I' : 'F12',
                 click: () => {
                   toggleDevTools(mainWindow)

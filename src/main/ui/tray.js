@@ -3,6 +3,7 @@ import fs from 'fs'
 import { log, getIconPath } from '../utils'
 import { SETTINGS_PATH, getToolByPath } from '../../shared/tools'
 import { IPC_EVENTS } from '../../shared/ipc'
+import { t } from '../services/i18n.js'
 
 let tray = null
 let mainWindow = null
@@ -40,7 +41,7 @@ function openTool(tool, createSettingsWindowFn) {
 
 function buildTrayToolItem(tool, createSettingsWindowFn) {
   return {
-    label: tool.name,
+    label: t(tool.name),
     click: () => openTool(tool, createSettingsWindowFn)
   }
 }
@@ -59,7 +60,7 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '打开',
+      label: t('打开'),
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.show()
@@ -71,12 +72,12 @@ export function createTray(window, checkForUpdatesFn, createSettingsWindowFn) {
     { type: 'separator' },
     ...(settingsTool ? [buildTrayToolItem(settingsTool, createSettingsWindowFn), { type: 'separator' }] : []),
     {
-      label: '检查更新',
+      label: t('检查更新'),
       click: () => checkForUpdatesFn(true, mainWindow)
     },
     { type: 'separator' },
     {
-      label: '退出',
+      label: t('退出'),
       click: () => {
         app.isQuitting = true
         destroyTray()

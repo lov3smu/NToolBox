@@ -9,6 +9,7 @@ import { closeAllSshTunnels } from './services/sshTunnel.js'
 import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler.js'
 import { initMcp, stopMcp } from './services/mcp.js'
 import { applyNetworkConfig } from './services/network.js'
+import { setLocale } from './services/i18n.js'
 import { setupIPCHandlers } from './ipc'
 import { initWindows, getMainWindow, refreshWindowTheme } from './windows'
 import { createTray, destroyTray, createAppMenu } from './ui'
@@ -87,7 +88,8 @@ app.whenReady().then(async () => {
     return
   }
 
-  nativeTheme.themeSource = loadedConfig.theme || 'system'
+  setLocale(loadedConfig.appearance?.language)
+  nativeTheme.themeSource = loadedConfig.appearance?.theme || 'system'
   nativeTheme.on('updated', refreshWindowTheme)
 
   try {

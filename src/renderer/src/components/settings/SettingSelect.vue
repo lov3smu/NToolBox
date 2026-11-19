@@ -9,8 +9,8 @@
       @click="toggle"
       @keydown="onTriggerKeydown"
     >
-      <span class="setting-select-value" :class="{ placeholder: !selectedLabel }">
-        {{ selectedLabel || placeholder }}
+      <span class="setting-select-value" :class="{ placeholder: !selectedOption }">
+        {{ selectedOption ? t(selectedOption.label, { p0: selectedOption.value }) : t(placeholder) }}
       </span>
       <svg
         class="setting-select-chevron"
@@ -47,8 +47,10 @@
           @mousemove="highlighted = index"
         >
           <span class="setting-select-option-main">
-            <span class="setting-select-option-label">{{ option.label }}</span>
-            <span v-if="option.hint" class="setting-select-option-hint">{{ option.hint }}</span>
+            <span class="setting-select-option-label">{{ t(option.label, { p0: option.value }) }}</span>
+            <span v-if="option.hint" class="setting-select-option-hint">
+              {{ t(option.hint, { p0: option.value }) }}
+            </span>
           </span>
           <svg
             v-if="option.value === modelValue"
@@ -70,11 +72,17 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
+import { t } from '@/i18n'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
   options: { type: Array, default: () => [] },
-  placeholder: { type: String, default: '请选择' },
+  placeholder: {
+    type: String,
+    get default() {
+      return t('请选择')
+    }
+  },
   disabled: { type: Boolean, default: false }
 })
 
@@ -86,7 +94,7 @@ const open = ref(false)
 const highlighted = ref(-1)
 const panelStyle = ref({})
 
-const selectedLabel = computed(() => props.options.find((option) => option.value === props.modelValue)?.label || '')
+const selectedOption = computed(() => props.options.find((option) => option.value === props.modelValue))
 
 function measure() {
   const trigger = rootRef.value?.getBoundingClientRect()

@@ -126,6 +126,6 @@ export async function openWorkspaceItem(rootPath, targetPath) {
     return { success: false, error: '目标不存在' }
   }
 
-  const opened = stat.isDirectory() ? await openFolder(target) : await openFile(target, getConfig().text_edit_app)
+  const opened = stat.isDirectory() ? await openFolder(target) : await openFile(target, getConfig().app.text_edit_app)
   return { success: Boolean(opened), error: opened ? '' : '无法打开目标' }
 }

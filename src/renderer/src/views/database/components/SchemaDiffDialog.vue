@@ -2,8 +2,8 @@
   <div v-if="schemaDiffDialog.show" class="dialog-overlay" @click.self="closeSchemaDiffDialog">
     <div class="dialog dialog-wide schema-diff-dialog">
       <div class="dialog-header">
-        <h3>结构对比</h3>
-        <button class="btn-icon btn-sm" title="关闭" @click="closeSchemaDiffDialog">
+        <h3>{{ t('结构对比') }}</h3>
+        <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeSchemaDiffDialog">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -14,16 +14,16 @@
         <div class="schema-diff-form">
           <div class="schema-diff-side">
             <div class="form-group">
-              <label>源连接</label>
+              <label>{{ t('源连接') }}</label>
               <select v-model="schemaDiffDialog.connectionName" class="select-field" @change="onSourceConnectionChange">
-                <option value="">请选择</option>
+                <option value="">{{ t('请选择') }}</option>
                 <option v-for="conn in connections" :key="conn.name" :value="conn.name">{{ conn.name }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label>源数据库（以此为准）</label>
+              <label>{{ t('源数据库（以此为准）') }}</label>
               <select v-model="schemaDiffDialog.database" class="select-field">
-                <option value="">请选择</option>
+                <option value="">{{ t('请选择') }}</option>
                 <option v-for="db in sourceDatabases" :key="db" :value="db">{{ db }}</option>
               </select>
             </div>
@@ -31,20 +31,20 @@
           <div class="schema-diff-arrow">→</div>
           <div class="schema-diff-side">
             <div class="form-group">
-              <label>目标连接</label>
+              <label>{{ t('目标连接') }}</label>
               <select
                 v-model="schemaDiffDialog.targetConnectionName"
                 class="select-field"
                 @change="onTargetConnectionChange"
               >
-                <option value="">请选择</option>
+                <option value="">{{ t('请选择') }}</option>
                 <option v-for="conn in connections" :key="conn.name" :value="conn.name">{{ conn.name }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label>目标数据库（待同步）</label>
+              <label>{{ t('目标数据库（待同步）') }}</label>
               <select v-model="schemaDiffDialog.targetDatabase" class="select-field">
-                <option value="">请选择</option>
+                <option value="">{{ t('请选择') }}</option>
                 <option v-for="db in targetDatabases" :key="db" :value="db">{{ db }}</option>
               </select>
             </div>
@@ -53,10 +53,10 @@
 
         <div class="schema-diff-actions">
           <button class="btn btn-primary" :disabled="schemaDiffDialog.loading" @click="compareSchemaDiff">
-            {{ schemaDiffDialog.loading ? '对比中...' : '开始对比' }}
+            {{ schemaDiffDialog.loading ? t('对比中...') : t('开始对比') }}
           </button>
           <span v-if="schemaDiffDialog.result" class="schema-diff-hint">
-            对比完成，生成 {{ schemaDiffDialog.result.statements.length }} 条同步语句
+            {{ t('对比完成，生成') }} {{ schemaDiffDialog.result.statements.length }} {{ t('条同步语句') }}
           </span>
         </div>
 
@@ -64,12 +64,16 @@
 
         <template v-if="schemaDiffDialog.result">
           <div class="schema-diff-summary">
-            <span class="schema-diff-chip">源表 {{ schemaDiffDialog.result.summary.baseTables }}</span>
-            <span class="schema-diff-chip">目标表 {{ schemaDiffDialog.result.summary.targetTables }}</span>
-            <span class="schema-diff-chip danger">缺表 {{ schemaDiffDialog.result.summary.missingTables }}</span>
-            <span class="schema-diff-chip warning">表差异 {{ schemaDiffDialog.result.summary.changedTables }}</span>
+            <span class="schema-diff-chip">{{ t('源表') }} {{ schemaDiffDialog.result.summary.baseTables }}</span>
+            <span class="schema-diff-chip">{{ t('目标表') }} {{ schemaDiffDialog.result.summary.targetTables }}</span>
+            <span class="schema-diff-chip danger"
+              >{{ t('缺表') }} {{ schemaDiffDialog.result.summary.missingTables }}</span
+            >
+            <span class="schema-diff-chip warning"
+              >{{ t('表差异') }} {{ schemaDiffDialog.result.summary.changedTables }}</span
+            >
             <span class="schema-diff-chip warning">
-              字段差异
+              {{ t('字段差异') }}
               {{
                 schemaDiffDialog.result.summary.missingColumns +
                 schemaDiffDialog.result.summary.changedColumns +
@@ -77,7 +81,7 @@
               }}
             </span>
             <span class="schema-diff-chip warning">
-              索引差异
+              {{ t('索引差异') }}
               {{
                 schemaDiffDialog.result.summary.missingIndexes +
                 schemaDiffDialog.result.summary.changedIndexes +
@@ -102,20 +106,22 @@
               </div>
               <div v-if="table.columns.length" class="schema-diff-details">
                 <span v-for="column in table.columns" :key="`c-${column.name}`" class="schema-diff-detail">
-                  字段 {{ column.name }} · {{ statusLabel(column.status) }}
+                  {{ t('字段') }} {{ column.name }} · {{ statusLabel(column.status) }}
                 </span>
               </div>
               <div v-if="table.indexes.length" class="schema-diff-details">
                 <span v-for="index in table.indexes" :key="`i-${index.name}`" class="schema-diff-detail">
-                  索引 {{ index.name }} · {{ statusLabel(index.status) }}
+                  {{ t('索引') }} {{ index.name }} · {{ statusLabel(index.status) }}
                 </span>
               </div>
             </div>
-            <div v-if="!schemaDiffDialog.result.tables.length" class="schema-diff-empty">两个数据库结构一致</div>
+            <div v-if="!schemaDiffDialog.result.tables.length" class="schema-diff-empty">
+              {{ t('两个数据库结构一致') }}
+            </div>
           </div>
 
           <div v-if="schemaDiffDialog.result.statements.length" class="form-group">
-            <label>同步 SQL（在目标库执行）</label>
+            <label>{{ t('同步 SQL（在目标库执行）') }}</label>
             <pre class="schema-diff-sql">{{ statementsText }}</pre>
           </div>
         </template>
@@ -126,15 +132,16 @@
           :disabled="!schemaDiffDialog.result?.statements.length"
           @click="copySchemaDiffSql"
         >
-          复制 SQL
+          {{ t('复制 SQL') }}
         </button>
-        <button class="btn btn-primary" @click="closeSchemaDiffDialog">关闭</button>
+        <button class="btn btn-primary" @click="closeSchemaDiffDialog">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject, watch } from 'vue'
 
 const databaseStore = inject('database')
@@ -155,11 +162,11 @@ const statementsText = computed(() =>
 )
 
 const STATUS_LABELS = {
-  missing: '缺失',
-  extra: '多余',
-  changed: '有差异',
-  different: '有差异',
-  same: '一致'
+  missing: t('缺失'),
+  extra: t('多余'),
+  changed: t('有差异'),
+  different: t('有差异'),
+  same: t('一致')
 }
 
 function statusLabel(status) {

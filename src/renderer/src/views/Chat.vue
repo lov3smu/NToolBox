@@ -17,7 +17,6 @@
         :rail-more-open="railMoreOpen"
         :show-archived="showArchived"
         :format-time="formatTime"
-        :group-title="workspaceGroupTitle"
         @new-chat="createNewChat"
         @open-memory="openMemoryPage"
         @open-market="router.push('/market')"
@@ -40,24 +39,31 @@
         v-if="!chatSidebarCollapsed"
         orientation="vertical"
         :resizing="chatSidebarResizing"
-        label="拖动调整会话列表宽度"
+        :label="t('拖动调整会话列表宽度')"
         @pointerdown="startChatSidebarResize"
         @keydown="onChatSidebarKeydown"
       />
       <main class="chat-main">
         <div v-if="showKeyWarning" class="api-key-banner">
-          <span>{{ currentProvider?.name || '当前服务商' }} 尚未配置 API Key，AI 助手暂不可用</span>
-          <button class="btn btn-secondary btn-sm" @click="openSettings('api')">去设置</button>
+          <span>{{
+            t('{provider} 尚未配置 API Key，AI 助手暂不可用', { provider: currentProvider?.name || t('当前服务商') })
+          }}</span>
+          <button class="btn btn-secondary btn-sm" @click="openSettings('api')">{{ t('去设置') }}</button>
         </div>
         <div class="chat-header">
-          <button v-if="chatSidebarCollapsed" class="rail-restore" title="展开会话侧栏" @click="expandChatSidebar">
+          <button
+            v-if="chatSidebarCollapsed"
+            class="rail-restore"
+            :title="t('展开会话侧栏')"
+            @click="expandChatSidebar"
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <line x1="15" y1="4" x2="15" y2="20" />
               <polyline points="9.5 10 12 12 9.5 14" />
             </svg>
           </button>
-          <div class="chat-view-tabs" role="tablist" aria-label="聊天视图切换">
+          <div class="chat-view-tabs" role="tablist" :aria-label="t('聊天视图切换')">
             <button
               type="button"
               role="tab"
@@ -66,11 +72,11 @@
               :aria-selected="chatTab === 'chat'"
               @click="switchChatTab('chat')"
             >
-              对话
+              {{ t('对话') }}
               <span
                 v-if="pendingApprovals.length"
                 class="chat-tab-dot"
-                :title="`${pendingApprovals.length} 个操作等待授权`"
+                :title="t('{count} 个操作等待授权', { count: pendingApprovals.length })"
               />
             </button>
             <button
@@ -81,13 +87,13 @@
               :aria-selected="chatTab === 'traces'"
               @click="switchChatTab('traces')"
             >
-              轨迹
+              {{ t('轨迹') }}
             </button>
           </div>
           <button
             class="header-icon-btn"
             :class="{ active: contextPanelOpen }"
-            :title="contextPanelOpen ? '收起上下文面板' : '展开上下文面板'"
+            :title="contextPanelOpen ? t('收起上下文面板') : t('展开上下文面板')"
             @click="toggleContextPanel"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -137,8 +143,8 @@
               class="scroll-latest"
               :class="{ active: !atBottom }"
               :disabled="atBottom"
-              title="滚到最后"
-              aria-label="滚到最后"
+              :title="t('滚到最后')"
+              :aria-label="t('滚到最后')"
               @click="scrollToLatest"
             >
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -154,7 +160,7 @@
             v-if="chatTab === 'chat' && pendingApprovals.length"
             class="approval-dock"
             role="alertdialog"
-            aria-label="等待授权的操作"
+            :aria-label="t('等待授权的操作')"
           >
             <div class="approval-dock-head">
               <span class="approval-dock-badge">
@@ -163,11 +169,15 @@
                   <path d="M12 17h.01" />
                   <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
                 </svg>
-                等待授权
+                {{ t('等待授权') }}
               </span>
               <span class="approval-dock-copy">
-                AI 需要确认 {{ pendingApprovals.length }} 个
-                {{ pendingApprovals[0]?.risk === 'destructive' ? '高危' : '写' }}操作后才能继续
+                {{
+                  t('AI 需要确认 {count} 个{risk}操作后才能继续', {
+                    count: pendingApprovals.length,
+                    risk: pendingApprovals[0]?.risk === 'destructive' ? t('高危') : t('写')
+                  })
+                }}
               </span>
             </div>
             <div class="approval-dock-list">
@@ -199,14 +209,14 @@
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
                 <span class="attachment-name">{{ att.name }}</span>
-                <button class="attachment-remove" title="移除" @click="removeAttachment(att.id)">×</button>
+                <button class="attachment-remove" :title="t('移除')" @click="removeAttachment(att.id)">×</button>
               </div>
             </div>
             <textarea
               ref="inputRef"
               v-model="inputText"
               class="composer-input"
-              placeholder="Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件"
+              :placeholder="t('Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件')"
               :disabled="!hasCurrentApiKey"
               @input="resizeInput"
               @keydown.enter.exact="sendMessage"
@@ -216,7 +226,7 @@
                 <div class="plus-wrap">
                   <button
                     class="composer-icon-btn plus-btn"
-                    title="添加附件"
+                    :title="t('添加附件')"
                     @click.stop="plusMenuOpen = !plusMenuOpen"
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -224,34 +234,34 @@
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                   </button>
-                  <div v-if="plusMenuOpen" class="plus-menu">
+                  <div v-if="plusMenuOpen" v-clamp-viewport class="plus-menu">
                     <button
                       :disabled="!modelSupportsImage"
-                      :title="modelSupportsImage ? '添加图片' : '当前模型未启用图片输入'"
+                      :title="modelSupportsImage ? t('添加图片') : t('当前模型未启用图片输入')"
                       @click="chooseImages"
                     >
-                      添加图片
+                      {{ t('添加图片') }}
                     </button>
-                    <button @click="chooseFiles">添加文件</button>
+                    <button @click="chooseFiles">{{ t('添加文件') }}</button>
                   </div>
                 </div>
-                <button class="composer-icon-btn" title="添加文件" @click="chooseFiles">
+                <button class="composer-icon-btn" :title="t('添加文件')" @click="chooseFiles">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <path
                       d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
                     />
                   </svg>
                 </button>
-                <label class="composer-select" title="工具审批模式">
+                <label class="composer-select" :title="t('工具审批模式')">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="9" />
                     <polyline points="8 12 11 15 16 9" />
                   </svg>
                   <select v-model="approvalMode">
-                    <option value="all">写操作前询问</option>
-                    <option value="high-risk">仅高危操作询问</option>
-                    <option value="auto">自动执行</option>
-                    <option value="chat">仅对话</option>
+                    <option value="all">{{ t('写操作前询问') }}</option>
+                    <option value="high-risk">{{ t('仅高危操作询问') }}</option>
+                    <option value="auto">{{ t('自动执行') }}</option>
+                    <option value="chat">{{ t('仅对话') }}</option>
                   </select>
                   <svg
                     class="chevron"
@@ -273,10 +283,10 @@
                     type="button"
                     class="model-chip"
                     :class="{ open: modelMenuOpen }"
-                    title="选择模型与推理等级"
+                    :title="t('选择模型与推理等级')"
                     @click.stop="toggleModelMenu"
                   >
-                    <span class="model-chip-name">{{ selectedModelInfo?.name || selectedModel || '选择模型' }}</span>
+                    <span class="model-chip-name">{{ selectedModelInfo?.name || selectedModel || t('选择模型') }}</span>
                     <span v-if="modelSupportsThinking" class="model-chip-level">{{ reasoningLevelLabel }}</span>
                     <svg
                       class="chevron"
@@ -291,19 +301,19 @@
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
-                  <span v-else class="model-chip disabled" title="请先在设置 > 模型中配置 API Key 与模型">
+                  <span v-else class="model-chip disabled" :title="t('请先在设置 > 模型中配置 API Key 与模型')">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="6" y="6" width="12" height="12" rx="2" />
                       <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
                     </svg>
-                    未配置模型
+                    {{ t('未配置模型') }}
                   </span>
-                  <div v-if="modelMenuOpen" class="model-menu" @click.stop>
+                  <div v-if="modelMenuOpen" v-clamp-viewport class="model-menu" @click.stop>
                     <template v-if="modelMenuView === 'root'">
                       <button type="button" class="model-menu-row" @click="modelMenuView = 'models'">
-                        <span class="model-menu-key">模型</span>
+                        <span class="model-menu-key">{{ t('模型') }}</span>
                         <span class="model-menu-value">
-                          <span class="model-menu-value-text">{{ selectedModelInfo?.name || '未选择' }}</span>
+                          <span class="model-menu-value-text">{{ selectedModelInfo?.name || t('未选择') }}</span>
                           <svg
                             viewBox="0 0 24 24"
                             width="12"
@@ -322,7 +332,7 @@
                         class="model-menu-row"
                         @click="modelMenuView = 'levels'"
                       >
-                        <span class="model-menu-key">推理等级</span>
+                        <span class="model-menu-key">{{ t('推理等级') }}</span>
                         <span class="model-menu-value">
                           <span class="model-menu-value-text">{{ reasoningLevelLabel }}</span>
                           <svg
@@ -340,7 +350,12 @@
                     </template>
                     <template v-else-if="modelMenuView === 'models'">
                       <div class="model-menu-head">
-                        <button type="button" class="model-menu-back" title="返回" @click="modelMenuView = 'root'">
+                        <button
+                          type="button"
+                          class="model-menu-back"
+                          :title="t('返回')"
+                          @click="modelMenuView = 'root'"
+                        >
                           <svg
                             viewBox="0 0 24 24"
                             width="14"
@@ -352,11 +367,11 @@
                             <polyline points="15 18 9 12 15 6" />
                           </svg>
                         </button>
-                        <span>选择模型</span>
+                        <span>{{ t('选择模型') }}</span>
                       </div>
                       <div class="model-menu-list">
                         <div v-for="provider in selectableProviders" :key="provider.type" class="model-menu-group">
-                          <div class="model-menu-group-title">{{ provider.name }}</div>
+                          <div class="model-menu-group-title">{{ t(provider.name) }}</div>
                           <button
                             v-for="model in provider.models || []"
                             :key="`${provider.type}::${model.id}`"
@@ -371,8 +386,8 @@
                             <span
                               v-if="provider.type === selectedProvider && model.id === selectedModel"
                               class="model-menu-dot"
-                              title="当前选中"
-                              aria-label="当前选中"
+                              :title="t('当前选中')"
+                              :aria-label="t('当前选中')"
                             />
                           </button>
                         </div>
@@ -380,7 +395,12 @@
                     </template>
                     <template v-else>
                       <div class="model-menu-head">
-                        <button type="button" class="model-menu-back" title="返回" @click="modelMenuView = 'root'">
+                        <button
+                          type="button"
+                          class="model-menu-back"
+                          :title="t('返回')"
+                          @click="modelMenuView = 'root'"
+                        >
                           <svg
                             viewBox="0 0 24 24"
                             width="14"
@@ -392,7 +412,7 @@
                             <polyline points="15 18 9 12 15 6" />
                           </svg>
                         </button>
-                        <span>推理等级</span>
+                        <span>{{ t('推理等级') }}</span>
                       </div>
                       <div class="model-menu-list">
                         <button
@@ -404,8 +424,8 @@
                           @click="chooseReasoningLevel(level.value)"
                         >
                           <span class="model-menu-option-name">
-                            {{ level.label }}
-                            <span class="model-menu-option-hint">{{ level.hint }}</span>
+                            {{ t(level.label) }}
+                            <span class="model-menu-option-hint">{{ t(level.hint) }}</span>
                           </span>
                           <svg
                             v-if="thinkingMode === level.value"
@@ -427,7 +447,7 @@
                 <button
                   class="composer-icon-btn"
                   :class="{ recording: isRecording }"
-                  :title="isRecording ? '停止语音输入' : '语音输入'"
+                  :title="isRecording ? t('停止语音输入') : t('语音输入')"
                   @click="toggleVoiceInput"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -436,13 +456,19 @@
                     <line x1="12" y1="19" x2="12" y2="22" />
                   </svg>
                 </button>
-                <button v-if="!loading" class="send-circle" :disabled="!canSend" title="发送" @click="sendMessage">
+                <button
+                  v-if="!loading"
+                  class="send-circle"
+                  :disabled="!canSend"
+                  :title="t('发送')"
+                  @click="sendMessage"
+                >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
                     <line x1="12" y1="19" x2="12" y2="5" />
                     <polyline points="6 11 12 5 18 11" />
                   </svg>
                 </button>
-                <button v-else class="send-circle stop" title="停止" @click="stopResponse">
+                <button v-else class="send-circle stop" :title="t('停止')" @click="stopResponse">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                     <rect x="6" y="6" width="12" height="12" rx="2" />
                   </svg>
@@ -456,7 +482,7 @@
                 v-if="!currentSession?.workspace"
                 type="button"
                 class="composer-workspace-pick"
-                title="为当前会话绑定工作区，绑定后不可更换"
+                :title="t('为当前会话绑定工作区，绑定后不可更换')"
                 @click="pickWorkspace"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -464,32 +490,42 @@
                   <line x1="12" y1="10.5" x2="12" y2="15.5" />
                   <line x1="9.5" y1="13" x2="14.5" y2="13" />
                 </svg>
-                <span>选择工作区</span>
+                <span>{{ t('选择工作区') }}</span>
               </button>
-              <span v-else class="composer-workspace-bound" :title="workspaceTooltip(currentSession.workspace)">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  :style="
-                    workspaceIconColor(currentSession.workspace)
-                      ? { color: workspaceIconColor(currentSession.workspace) }
-                      : null
-                  "
-                >
-                  <path :d="workspaceIconPath(currentSession.workspace)" />
-                </svg>
-                <span class="composer-workspace-name">{{ workspaceLabel(currentSession.workspace) }}</span>
-                <span class="composer-workspace-tag">已绑定</span>
-              </span>
+              <WorkspaceHoverCard
+                v-else
+                inline
+                :name="workspaceLabel(currentSession.workspace)"
+                :path="currentSession.workspace"
+                :description="workspaceDescription(currentSession.workspace)"
+                :icon="workspaceIconId(currentSession.workspace)"
+                :color="workspaceIconColor(currentSession.workspace)"
+              >
+                <span class="composer-workspace-bound">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    :style="
+                      workspaceIconColor(currentSession.workspace)
+                        ? { color: workspaceIconColor(currentSession.workspace) }
+                        : null
+                    "
+                  >
+                    <path :d="workspaceIconPath(currentSession.workspace)" />
+                  </svg>
+                  <span class="composer-workspace-name">{{ workspaceLabel(currentSession.workspace) }}</span>
+                  <span class="composer-workspace-tag">{{ t('已绑定') }}</span>
+                </span>
+              </WorkspaceHoverCard>
             </div>
             <div v-if="currentMessages.length" class="chat-stats">
               <button
                 class="stat-chip"
                 :class="{ open: usageDetail === 'context' }"
                 :aria-expanded="usageDetail === 'context'"
-                title="点击查看上下文详情"
+                :title="t('点击查看上下文详情')"
                 @click.stop="toggleUsageDetail('context')"
               >
                 <span class="stat-ring" :class="contextState" aria-hidden="true">
@@ -499,7 +535,7 @@
                   </svg>
                 </span>
                 <span class="stat-text"
-                  >上下文 <b>{{ contextPercent }}%</b></span
+                  >{{ t('上下文') }} <b>{{ contextPercent }}%</b></span
                 >
               </button>
               <button
@@ -507,11 +543,11 @@
                 :class="{ open: usageDetail === 'rate' }"
                 :disabled="!hasRateData"
                 :aria-expanded="usageDetail === 'rate'"
-                :title="hasRateData ? '点击查看速率详情' : '暂无速率数据'"
+                :title="hasRateData ? t('点击查看速率详情') : t('暂无速率数据')"
                 @click.stop="toggleUsageDetail('rate')"
               >
                 <span class="stat-text"
-                  >速率 <b>{{ rateDisplay }}</b></span
+                  >{{ t('速率') }} <b>{{ rateDisplay }}</b></span
                 >
               </button>
               <button
@@ -519,11 +555,11 @@
                 :class="{ open: usageDetail === 'total' }"
                 :disabled="!hasUsageData"
                 :aria-expanded="usageDetail === 'total'"
-                :title="hasUsageData ? '点击查看 token 用量详情' : '暂无用量数据'"
+                :title="hasUsageData ? t('点击查看 token 用量详情') : t('暂无用量数据')"
                 @click.stop="toggleUsageDetail('total')"
               >
                 <span class="stat-text"
-                  >累计 <b>{{ totalDisplay }}</b></span
+                  >{{ t('累计') }} <b>{{ totalDisplay }}</b></span
                 >
               </button>
               <button
@@ -531,56 +567,67 @@
                 :class="{ open: usageDetail === 'cache' }"
                 :disabled="!hasCacheData"
                 :aria-expanded="usageDetail === 'cache'"
-                :title="hasCacheData ? '点击查看缓存命中详情' : '暂无缓存数据'"
+                :title="hasCacheData ? t('点击查看缓存命中详情') : t('暂无缓存数据')"
                 @click.stop="toggleUsageDetail('cache')"
               >
                 <span class="stat-text"
-                  >缓存命中 <b>{{ cacheDisplay }}</b></span
+                  >{{ t('缓存命中') }} <b>{{ cacheDisplay }}</b></span
                 >
               </button>
 
-              <div v-if="usageDetail" class="usage-pop" @click.stop>
+              <div v-if="usageDetail" v-clamp-viewport class="usage-pop" @click.stop>
                 <template v-if="usageDetail === 'context'">
-                  <div class="usage-pop-title">上下文使用</div>
+                  <div class="usage-pop-title">{{ t('上下文使用') }}</div>
                   <div class="usage-pop-grid">
-                    <span>窗口大小</span><b>{{ formatTokens(contextWindowSize) }} tokens</b> <span>已用</span
-                    ><b>{{ formatTokens(contextTokens) }} tokens</b> <span>剩余</span
-                    ><b>{{ formatTokens(remainingContextTokens) }} tokens</b> <span>占比</span
+                    <span>{{ t('窗口大小') }}</span
+                    ><b>{{ formatTokens(contextWindowSize) }} tokens</b> <span>{{ t('已用') }}</span
+                    ><b>{{ formatTokens(contextTokens) }} tokens</b> <span>{{ t('剩余') }}</span
+                    ><b>{{ formatTokens(remainingContextTokens) }} tokens</b> <span>{{ t('占比') }}</span
                     ><b :class="contextState">{{ contextPercent }}%</b>
                   </div>
                   <div v-if="currentSession?.context" class="usage-pop-note">
-                    已压缩 {{ formatTokens(currentSession.context.beforeTokens) }} →
-                    {{ formatTokens(currentSession.context.afterTokens) }} tokens
+                    {{
+                      t('已压缩 {before} → {after} tokens', {
+                        before: formatTokens(currentSession.context.beforeTokens),
+                        after: formatTokens(currentSession.context.afterTokens)
+                      })
+                    }}
                   </div>
                 </template>
                 <template v-else-if="usageDetail === 'rate'">
-                  <div class="usage-pop-title">Token 速率</div>
+                  <div class="usage-pop-title">{{ t('Token 速率') }}</div>
                   <div class="usage-pop-grid">
-                    <span>生成速率</span><b>{{ sessionTokenRate }} t/s</b> <span>输出 tokens</span
-                    ><b>{{ formatTokens(sessionCompletionTokens) }}</b> <span>生成耗时</span
-                    ><b>{{ generationMs ? formatDuration(generationMs) : '--' }}</b> <span>请求次数</span
-                    ><b>{{ sessionCallCount }} 次</b>
+                    <span>{{ t('生成速率') }}</span
+                    ><b>{{ sessionTokenRate }} t/s</b> <span>{{ t('输出 tokens') }}</span
+                    ><b>{{ formatTokens(sessionCompletionTokens) }}</b> <span>{{ t('生成耗时') }}</span
+                    ><b>{{ generationMs ? formatDuration(generationMs) : '--' }}</b> <span>{{ t('请求次数') }}</span
+                    ><b>{{ t('{count} 次', { count: sessionCallCount }) }}</b>
                   </div>
-                  <div v-if="!generationMs" class="usage-pop-note">旧会话缺少计时数据，速率从下一条回复开始统计</div>
+                  <div v-if="!generationMs" class="usage-pop-note">
+                    {{ t('旧会话缺少计时数据，速率从下一条回复开始统计') }}
+                  </div>
                 </template>
                 <template v-else-if="usageDetail === 'total'">
-                  <div class="usage-pop-title">Token 用量</div>
+                  <div class="usage-pop-title">{{ t('Token 用量') }}</div>
                   <div class="usage-pop-grid">
-                    <span>输入</span><b>{{ formatTokens(sessionPromptTokens) }}</b> <span>输出</span
-                    ><b>{{ formatTokens(sessionCompletionTokens) }}</b> <span>合计</span
-                    ><b>{{ formatTokens(sessionTokenTotal) }}</b> <span>请求次数</span><b>{{ sessionCallCount }} 次</b>
+                    <span>{{ t('输入') }}</span
+                    ><b>{{ formatTokens(sessionPromptTokens) }}</b> <span>{{ t('输出') }}</span
+                    ><b>{{ formatTokens(sessionCompletionTokens) }}</b> <span>{{ t('合计') }}</span
+                    ><b>{{ formatTokens(sessionTokenTotal) }}</b> <span>{{ t('请求次数') }}</span
+                    ><b>{{ t('{count} 次', { count: sessionCallCount }) }}</b>
                   </div>
-                  <div v-if="sessionUsageEstimated" class="usage-pop-note">部分用量为本地估算值</div>
+                  <div v-if="sessionUsageEstimated" class="usage-pop-note">{{ t('部分用量为本地估算值') }}</div>
                 </template>
                 <template v-else>
-                  <div class="usage-pop-title">缓存命中</div>
+                  <div class="usage-pop-title">{{ t('缓存命中') }}</div>
                   <div class="usage-pop-grid">
-                    <span>命中率</span><b>{{ cacheHitPercent }}%</b> <span>命中 tokens</span
-                    ><b>{{ formatTokens(sessionCachedTokens) }}</b> <span>提示 tokens</span
-                    ><b>{{ formatTokens(sessionPromptTokens) }}</b> <span>未命中</span
+                    <span>{{ t('命中率') }}</span
+                    ><b>{{ cacheHitPercent }}%</b> <span>{{ t('命中 tokens') }}</span
+                    ><b>{{ formatTokens(sessionCachedTokens) }}</b> <span>{{ t('提示 tokens') }}</span
+                    ><b>{{ formatTokens(sessionPromptTokens) }}</b> <span>{{ t('未命中') }}</span
                     ><b>{{ formatTokens(unCachedTokens) }}</b>
                   </div>
-                  <div class="usage-pop-note">命中率基于服务商返回的缓存用量，未返回时显示 0%</div>
+                  <div class="usage-pop-note">{{ t('命中率基于服务商返回的缓存用量，未返回时显示 0%') }}</div>
                 </template>
               </div>
             </div>
@@ -602,9 +649,9 @@
                   <circle cx="15" cy="19" r="2" />
                 </svg>
               </span>
-              <span>上下文</span>
+              <span>{{ t('上下文') }}</span>
             </div>
-            <button class="context-close" title="收起面板" @click="toggleContextPanel">
+            <button class="context-close" :title="t('收起面板')" @click="toggleContextPanel">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -617,28 +664,28 @@
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <line x1="15" y1="4" x2="15" y2="20" />
             </svg>
-            <p>创建会话后查看上下文</p>
+            <p>{{ t('创建会话后查看上下文') }}</p>
           </div>
 
           <div v-else class="context-scroll">
             <section class="ctx-overview">
               <div class="ctx-updated">
                 <span class="ctx-live-dot" :class="{ active: loading }" />
-                更新于 {{ formatDateTime(currentSession.updatedAt) }}
+                {{ t('更新于 {time}', { time: formatDateTime(currentSession.updatedAt) }) }}
               </div>
-              <div class="ctx-overview-title">{{ currentSession.title || '新会话' }}</div>
+              <div class="ctx-overview-title">{{ currentSession.title || t('新会话') }}</div>
               <div class="ctx-overview-desc">
-                {{ currentSession.workspace ? '工作区协作会话' : '尚未绑定工作区' }} ·
-                {{ currentProvider?.name || '未选择服务商' }}
+                {{ currentSession.workspace ? t('工作区协作会话') : t('尚未绑定工作区') }} ·
+                {{ currentProvider?.name || t('未选择服务商') }}
               </div>
               <div class="ctx-metrics">
                 <div>
                   <strong>{{ turnCount }}</strong>
-                  <span>轮对话</span>
+                  <span>{{ t('轮对话') }}</span>
                 </div>
                 <div>
                   <strong>{{ sessionToolRuns.length }}</strong>
-                  <span>次工具</span>
+                  <span>{{ t('次工具') }}</span>
                 </div>
                 <div>
                   <strong>{{ formatTokens(sessionTokenTotal) }}</strong>
@@ -649,50 +696,50 @@
 
             <section class="ctx-section">
               <div class="ctx-section-head">
-                <span class="ctx-section-title">环境信息</span>
-                <span v-if="currentSession.workspace" class="ctx-link is-static">已绑定</span>
+                <span class="ctx-section-title">{{ t('环境信息') }}</span>
+                <span v-if="currentSession.workspace" class="ctx-link is-static">{{ t('已绑定') }}</span>
               </div>
               <div v-if="!currentSession.workspace" class="ctx-empty-row">
-                <span>未绑定工作区，可在输入框下方选择</span>
+                <span>{{ t('未绑定工作区，可在输入框下方选择') }}</span>
               </div>
               <div v-else class="ctx-env">
                 <div class="env-row">
-                  <span class="env-key">工作区</span>
+                  <span class="env-key">{{ t('工作区') }}</span>
                   <button class="env-value link" :title="currentSession.workspace" @click="openWorkspaceRoot">
                     {{ workspaceLabel(currentSession.workspace) }}
                   </button>
                 </div>
                 <div v-if="workspaceDescription(currentSession.workspace)" class="env-row">
-                  <span class="env-key">描述</span>
+                  <span class="env-key">{{ t('描述') }}</span>
                   <span class="env-value">{{ workspaceDescription(currentSession.workspace) }}</span>
                 </div>
                 <div class="env-row">
-                  <span class="env-key">目录</span>
+                  <span class="env-key">{{ t('目录') }}</span>
                   <span class="env-value mono" :title="currentSession.workspace">{{ currentSession.workspace }}</span>
                 </div>
                 <div class="env-row">
-                  <span class="env-key">版本</span>
+                  <span class="env-key">{{ t('版本') }}</span>
                   <span class="env-value">
                     <template v-if="workspaceInfo?.isGit">
                       <span class="env-branch">{{ workspaceInfo.branch || 'detached' }}</span>
                       <span v-if="workspaceInfo.ahead" class="env-ahead">↑{{ workspaceInfo.ahead }}</span>
                       <span v-if="workspaceInfo.behind" class="env-behind">↓{{ workspaceInfo.behind }}</span>
                     </template>
-                    <span v-else class="env-muted">{{ workspaceInfoLoading ? '读取中...' : '非 Git 仓库' }}</span>
+                    <span v-else class="env-muted">{{ workspaceInfoLoading ? t('读取中...') : t('非 Git 仓库') }}</span>
                   </span>
                 </div>
                 <div class="env-row">
-                  <span class="env-key">变更</span>
+                  <span class="env-key">{{ t('变更') }}</span>
                   <span class="env-value">
                     <span v-if="workspaceInfo && workspaceInfo.isGit" class="env-change">
                       <span :class="['env-change-dot', { clean: !workspaceInfo.changes }]" />
-                      {{ workspaceInfo.changes ? `${workspaceInfo.changes} 个文件` : '无变更' }}
+                      {{ workspaceInfo.changes ? t('{count} 个文件', { count: workspaceInfo.changes }) : t('无变更') }}
                     </span>
                     <span v-else class="env-muted">--</span>
                   </span>
                 </div>
                 <div v-if="workspaceInfo?.lastCommit" class="env-row">
-                  <span class="env-key">提交</span>
+                  <span class="env-key">{{ t('提交') }}</span>
                   <span class="env-value" :title="workspaceInfo.lastCommit.subject">
                     {{ workspaceInfo.lastCommit.subject }}
                   </span>
@@ -703,23 +750,23 @@
 
             <section class="ctx-section">
               <div class="ctx-section-head">
-                <span class="ctx-section-title">记忆</span>
-                <button class="ctx-link" @click="openMemoryPage">管理</button>
+                <span class="ctx-section-title">{{ t('记忆') }}</span>
+                <button class="ctx-link" @click="openMemoryPage">{{ t('管理') }}</button>
               </div>
-              <div v-if="memoryLoading && !memoryOverview" class="ctx-empty-row">读取中...</div>
+              <div v-if="memoryLoading && !memoryOverview" class="ctx-empty-row">{{ t('读取中...') }}</div>
               <template v-else>
                 <div class="ctx-memory-grid">
                   <div class="ctx-memory-stat">
                     <strong>{{ memoryTotals.global }}</strong>
-                    <span>全局</span>
+                    <span>{{ t('全局') }}</span>
                   </div>
                   <div class="ctx-memory-stat">
                     <strong>{{ memoryTotals.project }}</strong>
-                    <span>项目</span>
+                    <span>{{ t('项目') }}</span>
                   </div>
                   <div class="ctx-memory-stat">
                     <strong>{{ memoryTotals.knowledge }}</strong>
-                    <span>知识库</span>
+                    <span>{{ t('知识库') }}</span>
                   </div>
                 </div>
                 <div v-if="memoryRecent.length" class="ctx-memory-list">
@@ -730,20 +777,20 @@
                     :title="item.content"
                     @click="openMemoryPage"
                   >
-                    <span class="ctx-memory-scope" :class="item.scopeKey">{{ item.scopeLabel }}</span>
+                    <span class="ctx-memory-scope" :class="item.scopeKey">{{ t(item.scopeLabel) }}</span>
                     <span class="ctx-memory-text">{{ item.content }}</span>
                   </button>
                 </div>
-                <div v-else class="ctx-empty-row">AI 会在对话中记住你的偏好与项目约定</div>
+                <div v-else class="ctx-empty-row">{{ t('AI 会在对话中记住你的偏好与项目约定') }}</div>
               </template>
             </section>
 
             <section class="ctx-section">
               <div class="ctx-section-head">
-                <span class="ctx-section-title">后台进程</span>
+                <span class="ctx-section-title">{{ t('后台进程') }}</span>
                 <span class="ctx-count">{{ sessionToolRuns.length }}</span>
               </div>
-              <div v-if="sessionToolRuns.length === 0" class="ctx-empty-row">暂无工具执行记录</div>
+              <div v-if="sessionToolRuns.length === 0" class="ctx-empty-row">{{ t('暂无工具执行记录') }}</div>
               <div v-else class="ctx-list">
                 <div
                   v-for="run in visibleItems(sessionToolRuns, 'runs', 4)"
@@ -760,17 +807,19 @@
                   </div>
                 </div>
                 <button v-if="sessionToolRuns.length > 4" class="ctx-more" @click="toggleSection('runs')">
-                  {{ expandedSections.runs ? '收起' : `查看更多 (${sessionToolRuns.length - 4})` }}
+                  {{
+                    expandedSections.runs ? t('收起') : t('查看更多 ({count})', { count: sessionToolRuns.length - 4 })
+                  }}
                 </button>
               </div>
             </section>
 
             <section class="ctx-section">
               <div class="ctx-section-head">
-                <span class="ctx-section-title">产出</span>
+                <span class="ctx-section-title">{{ t('产出') }}</span>
                 <span class="ctx-count">{{ sessionArtifacts.length }}</span>
               </div>
-              <div v-if="sessionArtifacts.length === 0" class="ctx-empty-row">AI 写入的文件会显示在这里</div>
+              <div v-if="sessionArtifacts.length === 0" class="ctx-empty-row">{{ t('AI 写入的文件会显示在这里') }}</div>
               <div v-else class="ctx-list">
                 <button
                   v-for="item in visibleItems(sessionArtifacts, 'artifacts', 4)"
@@ -791,17 +840,21 @@
                   </span>
                 </button>
                 <button v-if="sessionArtifacts.length > 4" class="ctx-more" @click="toggleSection('artifacts')">
-                  {{ expandedSections.artifacts ? '收起' : `查看更多 (${sessionArtifacts.length - 4})` }}
+                  {{
+                    expandedSections.artifacts
+                      ? t('收起')
+                      : t('查看更多 ({count})', { count: sessionArtifacts.length - 4 })
+                  }}
                 </button>
               </div>
             </section>
 
             <section class="ctx-section">
               <div class="ctx-section-head">
-                <span class="ctx-section-title">网页查阅</span>
+                <span class="ctx-section-title">{{ t('网页查阅') }}</span>
                 <span class="ctx-count">{{ sessionWebPages.length }}</span>
               </div>
-              <div v-if="sessionWebPages.length === 0" class="ctx-empty-row">AI 阅读的网页会显示在这里</div>
+              <div v-if="sessionWebPages.length === 0" class="ctx-empty-row">{{ t('AI 阅读的网页会显示在这里') }}</div>
               <div v-else class="ctx-list">
                 <button
                   v-for="item in visibleItems(sessionWebPages, 'web', 4)"
@@ -824,17 +877,19 @@
                   </span>
                 </button>
                 <button v-if="sessionWebPages.length > 4" class="ctx-more" @click="toggleSection('web')">
-                  {{ expandedSections.web ? '收起' : `查看更多 (${sessionWebPages.length - 4})` }}
+                  {{
+                    expandedSections.web ? t('收起') : t('查看更多 ({count})', { count: sessionWebPages.length - 4 })
+                  }}
                 </button>
               </div>
             </section>
 
             <section class="ctx-section">
               <div class="ctx-section-head">
-                <span class="ctx-section-title">来源</span>
+                <span class="ctx-section-title">{{ t('来源') }}</span>
                 <span class="ctx-count">{{ sessionSources.length }}</span>
               </div>
-              <div v-if="sessionSources.length === 0" class="ctx-empty-row">暂无引用来源</div>
+              <div v-if="sessionSources.length === 0" class="ctx-empty-row">{{ t('暂无引用来源') }}</div>
               <div v-else class="ctx-list">
                 <button
                   v-for="item in visibleItems(sessionSources, 'sources', 5)"
@@ -851,19 +906,22 @@
                   </span>
                 </button>
                 <button v-if="sessionSources.length > 5" class="ctx-more" @click="toggleSection('sources')">
-                  {{ expandedSections.sources ? '收起' : `查看更多 (${sessionSources.length - 5})` }}
+                  {{
+                    expandedSections.sources ? t('收起') : t('查看更多 ({count})', { count: sessionSources.length - 5 })
+                  }}
                 </button>
               </div>
             </section>
           </div>
 
-          <div class="context-foot">上下文仅保存在本机</div>
+          <div class="context-foot">{{ t('上下文仅保存在本机') }}</div>
         </aside>
       </template>
     </div>
     <Teleport to="body">
       <div
         v-if="sessionMenu"
+        v-clamp-viewport
         class="session-menu"
         :style="{ left: `${sessionMenu.x}px`, top: `${sessionMenu.y}px` }"
         @click.stop
@@ -873,14 +931,14 @@
             <path d="M12 17v5" />
             <path d="M9 10.8V4h6v6.8l2 2.7V16H7v-2.5z" />
           </svg>
-          <span>{{ menuSession?.pinned ? '取消置顶' : '置顶会话' }}</span>
+          <span>{{ menuSession?.pinned ? t('取消置顶') : t('置顶会话') }}</span>
         </button>
         <button @click="handleSessionAction('rename')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
-          <span>重命名</span>
+          <span>{{ t('重命名') }}</span>
         </button>
         <button @click="handleSessionAction('fork')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -889,7 +947,7 @@
             <circle cx="6" cy="18" r="3" />
             <path d="M18 9a9 9 0 0 1-9 9" />
           </svg>
-          <span>分叉会话</span>
+          <span>{{ t('分叉会话') }}</span>
         </button>
         <div class="session-menu-divider" />
         <button @click="handleSessionAction('copyId')">
@@ -897,17 +955,17 @@
             <rect x="9" y="9" width="13" height="13" rx="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
-          <span>复制 Session ID</span>
+          <span>{{ t('复制 Session ID') }}</span>
         </button>
         <button
           :disabled="!menuSession?.workspace"
-          :title="menuSession?.workspace ? '在文件夹显示' : '当前会话未关联工作区'"
+          :title="menuSession?.workspace ? t('在文件夹显示') : t('当前会话未关联工作区')"
           @click="handleSessionAction('reveal')"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           </svg>
-          <span>在文件夹显示</span>
+          <span>{{ t('在文件夹显示') }}</span>
         </button>
         <div class="session-menu-divider" />
         <button @click="handleSessionAction('archive')">
@@ -916,17 +974,18 @@
             <rect x="1" y="3" width="22" height="5" />
             <line x1="10" y1="12" x2="14" y2="12" />
           </svg>
-          <span>{{ menuSession?.archived ? '取消归档' : '归档会话' }}</span>
+          <span>{{ menuSession?.archived ? t('取消归档') : t('归档会话') }}</span>
         </button>
         <button class="danger" @click="handleSessionAction('delete')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
-          <span>删除会话</span>
+          <span>{{ t('删除会话') }}</span>
         </button>
       </div>
       <div
         v-if="workspaceMenu"
+        v-clamp-viewport
         class="session-menu"
         :style="{ left: `${workspaceMenu.x}px`, top: `${workspaceMenu.y}px` }"
         @click.stop
@@ -936,14 +995,14 @@
             <path d="M12 17v5" />
             <path d="M9 10.8V4h6v6.8l2 2.7V16H7v-2.5z" />
           </svg>
-          <span>{{ workspaceMenuMeta?.pinned ? '取消置顶' : '置顶工作区' }}</span>
+          <span>{{ workspaceMenuMeta?.pinned ? t('取消置顶') : t('置顶工作区') }}</span>
         </button>
         <button @click="handleWorkspaceAction('edit')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
-          <span>修改工作区</span>
+          <span>{{ t('修改工作区') }}</span>
         </button>
         <div class="session-menu-divider" />
         <button @click="handleWorkspaceAction('archive')">
@@ -952,13 +1011,13 @@
             <rect x="1" y="3" width="22" height="5" />
             <line x1="10" y1="12" x2="14" y2="12" />
           </svg>
-          <span>{{ workspaceMenuMeta?.archived ? '取消归档' : '归档工作区' }}</span>
+          <span>{{ workspaceMenuMeta?.archived ? t('取消归档') : t('归档工作区') }}</span>
         </button>
         <button class="danger" @click="handleWorkspaceAction('delete')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
-          <span>删除工作区</span>
+          <span>{{ t('删除工作区') }}</span>
         </button>
       </div>
     </Teleport>
@@ -966,8 +1025,8 @@
     <MessageDialog
       :visible="Boolean(deleteTarget)"
       type="confirm"
-      title="删除会话"
-      :message="`确定删除「${deleteTarget?.title || '新会话'}」吗？该操作无法撤销。`"
+      :title="t('删除会话')"
+      :message="t('确定删除「{name}」吗？该操作无法撤销。', { name: deleteTarget?.title || t('新会话') })"
       @confirm="confirmDeleteSession"
       @cancel="deleteTarget = null"
       @close="deleteTarget = null"
@@ -975,8 +1034,12 @@
     <MessageDialog
       :visible="Boolean(workspaceDeleteTarget)"
       type="confirm"
-      title="删除工作区"
-      :message="`确定删除「${workspaceDeleteTarget?.name || '工作区'}」吗？其中的会话会移至「未指定工作区」。`"
+      :title="t('删除工作区')"
+      :message="
+        t('确定删除「{name}」吗？其中的会话会移至「未指定工作区」。', {
+          name: workspaceDeleteTarget?.name || t('工作区')
+        })
+      "
       @confirm="confirmDeleteWorkspace"
       @cancel="workspaceDeleteTarget = null"
       @close="workspaceDeleteTarget = null"
@@ -984,8 +1047,12 @@
     <MessageDialog
       :visible="Boolean(rollbackTarget)"
       type="confirm"
-      title="撤销本次修改"
-      :message="`将把本次运行的 ${rollbackTarget?.fileChanges?.length || 0} 个文件恢复到修改前的状态，确定继续吗？`"
+      :title="t('撤销本次修改')"
+      :message="
+        t('将把本次运行的 {count} 个文件恢复到修改前的状态，确定继续吗？', {
+          count: rollbackTarget?.fileChanges?.length || 0
+        })
+      "
       @confirm="confirmRollback"
       @cancel="rollbackTarget = null"
       @close="rollbackTarget = null"
@@ -996,11 +1063,11 @@
           class="workspace-dialog"
           role="dialog"
           aria-modal="true"
-          :aria-label="workspaceEditPath ? '修改工作区' : '添加工作区'"
+          :aria-label="workspaceEditPath ? t('修改工作区') : t('添加工作区')"
         >
           <div class="workspace-dialog-head">
-            <span class="workspace-dialog-title">{{ workspaceEditPath ? '修改工作区' : '添加工作区' }}</span>
-            <button class="workspace-dialog-close" title="关闭" @click="closeWorkspaceDialog">
+            <span class="workspace-dialog-title">{{ workspaceEditPath ? t('修改工作区') : t('添加工作区') }}</span>
+            <button class="workspace-dialog-close" :title="t('关闭')" @click="closeWorkspaceDialog">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -1009,13 +1076,13 @@
           </div>
           <div class="workspace-dialog-body">
             <div class="workspace-field">
-              <span class="workspace-field-label">项目目录 <span class="workspace-required">*</span></span>
+              <span class="workspace-field-label">{{ t('项目目录') }} <span class="workspace-required">*</span></span>
               <div class="workspace-dir-row">
                 <input
                   class="input-field workspace-dir-input"
                   :value="workspaceForm.path"
                   readonly
-                  placeholder="选择工作区对应的项目目录"
+                  :placeholder="t('选择工作区对应的项目目录')"
                 />
                 <button
                   v-if="!workspaceEditPath"
@@ -1023,32 +1090,32 @@
                   class="btn btn-secondary btn-sm"
                   @click="chooseWorkspaceDirectory"
                 >
-                  选择目录
+                  {{ t('选择目录') }}
                 </button>
               </div>
             </div>
             <div class="workspace-field">
-              <span class="workspace-field-label">工作区名称 <span class="workspace-required">*</span></span>
+              <span class="workspace-field-label">{{ t('工作区名称') }} <span class="workspace-required">*</span></span>
               <input
                 v-model="workspaceForm.name"
                 class="input-field"
                 maxlength="40"
-                placeholder="例如：订单服务"
+                :placeholder="t('例如：订单服务')"
                 spellcheck="false"
               />
             </div>
             <div class="workspace-field">
-              <span class="workspace-field-label">工作区描述</span>
+              <span class="workspace-field-label">{{ t('工作区描述') }}</span>
               <textarea
                 v-model="workspaceForm.description"
                 class="input-field workspace-desc"
                 rows="2"
                 maxlength="120"
-                placeholder="一句话说明这个工作区的用途（可选）"
+                :placeholder="t('一句话说明这个工作区的用途（可选）')"
               ></textarea>
             </div>
             <div class="workspace-field">
-              <span class="workspace-field-label">图标</span>
+              <span class="workspace-field-label">{{ t('图标') }}</span>
               <div class="workspace-icon-grid">
                 <button
                   v-for="icon in WORKSPACE_ICONS"
@@ -1066,7 +1133,7 @@
               </div>
             </div>
             <div class="workspace-field">
-              <span class="workspace-field-label">图标颜色</span>
+              <span class="workspace-field-label">{{ t('图标颜色') }}</span>
               <div class="workspace-color-row">
                 <button
                   v-for="color in WORKSPACE_COLORS"
@@ -1083,9 +1150,9 @@
             <p v-if="workspaceFormError" class="workspace-form-error">{{ workspaceFormError }}</p>
           </div>
           <div class="workspace-dialog-actions">
-            <button type="button" class="btn btn-secondary" @click="closeWorkspaceDialog">取消</button>
+            <button type="button" class="btn btn-secondary" @click="closeWorkspaceDialog">{{ t('取消') }}</button>
             <button type="button" class="btn btn-primary" @click="submitWorkspace">
-              {{ workspaceEditPath ? '保存' : '创建' }}
+              {{ workspaceEditPath ? t('保存') : t('创建') }}
             </button>
           </div>
         </div>
@@ -1110,6 +1177,7 @@ import {
 } from '@/api'
 import { useChatSessions, useChatStream, useChatUsage, useConfig, usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
+import { t } from '@/i18n'
 import { joinPath } from '@/utils/path'
 import { WORKSPACE_ICONS } from '@/utils/workspaceIcons'
 import {
@@ -1123,6 +1191,7 @@ import {
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import ChatApprovalCard from '@/components/ChatApprovalCard.vue'
+import WorkspaceHoverCard from '@/components/WorkspaceHoverCard.vue'
 import RunTracePanel from '@/components/RunTracePanel.vue'
 import SessionRail from './chat/SessionRail.vue'
 import MessageList from './chat/MessageList.vue'
@@ -1153,11 +1222,13 @@ const WORKSPACE_COLORS = [
 ]
 
 const { config } = useConfig()
-const compressThreshold = computed(() => normalizeAiCompressThreshold(config.value?.ai_compress_threshold) / 100)
-const compressKeepRecent = computed(() => normalizeAiCompressKeepRecent(config.value?.ai_compress_keep_recent))
-const maxAttachments = computed(() => normalizeAiMaxAttachments(config.value?.ai_max_attachments))
-const maxImageBytes = computed(() => normalizeAiMaxImageMb(config.value?.ai_max_image_mb) * 1024 * 1024)
-const maxTextFileBytes = computed(() => normalizeAiMaxTextKb(config.value?.ai_max_text_kb) * 1024)
+const compressThreshold = computed(
+  () => normalizeAiCompressThreshold(config.value?.ai.context.compress_threshold) / 100
+)
+const compressKeepRecent = computed(() => normalizeAiCompressKeepRecent(config.value?.ai.context.keep_recent))
+const maxAttachments = computed(() => normalizeAiMaxAttachments(config.value?.ai.attachments.max_count))
+const maxImageBytes = computed(() => normalizeAiMaxImageMb(config.value?.ai.attachments.max_image_mb) * 1024 * 1024)
+const maxTextFileBytes = computed(() => normalizeAiMaxTextKb(config.value?.ai.attachments.max_text_kb) * 1024)
 const route = useRoute()
 const router = useRouter()
 const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
@@ -1216,28 +1287,52 @@ const memoryLoading = ref(false)
 let memoryRequest = 0
 const starterPrompts = [
   {
-    title: '梳理工作区',
-    hint: '查看目录结构与关键文件',
+    get title() {
+      return t('梳理工作区')
+    },
+    get hint() {
+      return t('查看目录结构与关键文件')
+    },
     icon: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
-    prompt: '请先查看当前工作区的目录结构和关键文件，概括项目用途、技术栈与主要模块。'
+    get prompt() {
+      return t('请先查看当前工作区的目录结构和关键文件，概括项目用途、技术栈与主要模块。')
+    }
   },
   {
-    title: '解释代码',
-    hint: '逐段说明实现逻辑',
+    get title() {
+      return t('解释代码')
+    },
+    get hint() {
+      return t('逐段说明实现逻辑')
+    },
     icon: 'M8 6l-5 6 5 6M16 6l5 6-5 6',
-    prompt: '请解释我接下来粘贴的代码，讲清整体流程、关键函数和潜在问题。'
+    get prompt() {
+      return t('请解释我接下来粘贴的代码，讲清整体流程、关键函数和潜在问题。')
+    }
   },
   {
-    title: '生成文件',
-    hint: '直接写入工作区',
+    get title() {
+      return t('生成文件')
+    },
+    get hint() {
+      return t('直接写入工作区')
+    },
     icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6',
-    prompt: '请在工作区创建 examples/demo.md，写入一份结构清晰的示例文档。'
+    get prompt() {
+      return t('请在工作区创建 examples/demo.md，写入一份结构清晰的示例文档。')
+    }
   },
   {
-    title: '查阅网页',
-    hint: '读取链接并整理要点',
+    get title() {
+      return t('查阅网页')
+    },
+    get hint() {
+      return t('读取链接并整理要点')
+    },
     icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9S14.5 18.5 12 21',
-    prompt: '请查阅一个与我问题相关的最新官方文档链接，并总结关键要点。'
+    get prompt() {
+      return t('请查阅一个与我问题相关的最新官方文档链接，并总结关键要点。')
+    }
   }
 ]
 const attachments = ref([])
@@ -1247,9 +1342,33 @@ const modelMenuView = ref('root')
 const approvalMode = ref('all')
 const thinkingMode = ref('auto')
 const reasoningLevels = [
-  { value: 'auto', label: '自动', hint: '由模型决定' },
-  { value: 'on', label: '高', hint: '深度思考' },
-  { value: 'off', label: '低', hint: '快速响应' }
+  {
+    value: 'auto',
+    get label() {
+      return t('自动')
+    },
+    get hint() {
+      return t('由模型决定')
+    }
+  },
+  {
+    value: 'on',
+    get label() {
+      return t('高')
+    },
+    get hint() {
+      return t('深度思考')
+    }
+  },
+  {
+    value: 'off',
+    get label() {
+      return t('低')
+    },
+    get hint() {
+      return t('快速响应')
+    }
+  }
 ]
 const thinkingPrefs = ref(loadThinkingPrefs())
 const isRecording = ref(false)
@@ -1377,7 +1496,7 @@ const workspaceGroups = computed(() => {
   }
   for (const group of groups.values()) {
     const meta = group.path ? workspaceMeta.value[group.path] : null
-    group.label = meta?.name || (group.path ? workspaceName(group.path) : '未指定工作区')
+    group.label = meta?.name || (group.path ? workspaceName(group.path) : t('未指定工作区'))
     group.description = meta?.description || ''
     group.icon = meta?.icon || ''
     group.color = meta?.color || ''
@@ -1406,7 +1525,7 @@ const sessionToolRuns = computed(() => {
         ...step,
         key: `${messageIndex}-${step.id || stepIndex}`,
         statusText:
-          step.statusText || (step.status === 'running' ? '执行中' : step.status === 'error' ? '失败' : '完成')
+          step.statusText || (step.status === 'running' ? t('执行中') : step.status === 'error' ? t('失败') : t('完成'))
       })
     }
   })
@@ -1476,8 +1595,8 @@ const sessionSources = computed(() => {
       sources.push({
         key,
         type: 'attachment',
-        label: attachment.name || '附件',
-        detail: attachment.kind === 'image' ? '图片附件' : '文本附件',
+        label: attachment.name || t('附件'),
+        detail: attachment.kind === 'image' ? t('图片附件') : t('文本附件'),
         target: ''
       })
     }
@@ -1496,12 +1615,12 @@ const memoryRecent = computed(() => {
   const project = (overview.project || []).slice(0, 2).map((entry) => ({
     ...entry,
     scopeKey: 'project',
-    scopeLabel: '项目'
+    scopeLabel: t('项目')
   }))
   const global = (overview.global || []).slice(0, 2).map((entry) => ({
     ...entry,
     scopeKey: 'global',
-    scopeLabel: '全局'
+    scopeLabel: t('全局')
   }))
   return [...project, ...global].slice(0, 3)
 })
@@ -1511,8 +1630,8 @@ const selectableProviders = computed(() =>
   providers.value.filter((provider) => provider.hasApiKey && (provider.models || []).length > 0)
 )
 const selectedModelInfo = computed(() => models.value.find((model) => model.id === selectedModel.value))
-const reasoningLevelLabel = computed(
-  () => reasoningLevels.find((level) => level.value === thinkingMode.value)?.label || '自动'
+const reasoningLevelLabel = computed(() =>
+  t(reasoningLevels.find((level) => level.value === thinkingMode.value)?.label || t('自动'))
 )
 const modelSupportsImage = computed(() => {
   const inputTypes = selectedModelInfo.value?.inputTypes
@@ -1630,7 +1749,7 @@ async function loadProviders() {
   }
 
   const usable = providers.value.filter((p) => p.hasApiKey && (p.models || []).length > 0)
-  const defaultType = config.value?.ai_provider || ''
+  const defaultType = config.value?.ai.provider || ''
   const requestedType = selectedProvider.value || currentSession.value?.provider || ''
   const pool = usable.length > 0 ? usable : providers.value
   const provider = pool.find((p) => p.type === requestedType) || pool.find((p) => p.type === defaultType) || pool[0]
@@ -1676,9 +1795,9 @@ function formatTime(timestamp) {
   const date = new Date(timestamp)
   const now = new Date()
   const diff = now - date
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+  if (diff < 60000) return t('刚刚')
+  if (diff < 3600000) return t('{count}分钟前', { count: Math.floor(diff / 60000) })
+  if (diff < 86400000) return t('{count}小时前', { count: Math.floor(diff / 3600000) })
   return date.toLocaleDateString()
 }
 
@@ -1707,27 +1826,20 @@ function workspaceLabel(value) {
   return workspaceMetaOf(value)?.name || workspaceName(value)
 }
 
+function workspaceIconId(value) {
+  return workspaceMetaOf(value)?.icon || DEFAULT_WORKSPACE_ICON
+}
+
 function workspaceIconPath(value) {
-  const icon = workspaceMetaOf(value)?.icon || DEFAULT_WORKSPACE_ICON
-  return WORKSPACE_ICONS.find((item) => item.id === icon)?.d || ''
+  return WORKSPACE_ICONS.find((item) => item.id === workspaceIconId(value))?.d || ''
 }
 
 function workspaceIconColor(value) {
   return workspaceMetaOf(value)?.color || ''
 }
 
-function workspaceGroupTitle(group) {
-  const path = group.path || '未指定工作区'
-  return group.description ? `${group.description}（${path}）` : path
-}
-
 function workspaceDescription(value) {
   return workspaceMetaOf(value)?.description || ''
-}
-
-function workspaceTooltip(value) {
-  const description = workspaceDescription(value)
-  return description ? `${description}（${value}）` : value
 }
 
 function hostnameOf(url) {
@@ -1750,10 +1862,10 @@ function parseToolArgs(value) {
 }
 
 function sourceTypeLabel(type) {
-  if (type === 'web') return '网页'
-  if (type === 'file') return '文件'
-  if (type === 'attachment') return '附件'
-  return '来源'
+  if (type === 'web') return t('网页')
+  if (type === 'file') return t('文件')
+  if (type === 'attachment') return t('附件')
+  return t('来源')
 }
 
 function visibleItems(list, key, limit) {
@@ -1787,7 +1899,7 @@ async function refreshWorkspaceInfo() {
         success: false,
         path: workspace,
         name: workspaceName(workspace),
-        error: info?.error || '无法读取工作区信息'
+        error: info?.error || t('无法读取工作区信息')
       }
 }
 
@@ -1823,7 +1935,7 @@ async function pickWorkspace() {
   saveSessions()
   persistViewState()
   await refreshWorkspaceInfo()
-  showSuccess(`已绑定工作区 ${workspaceLabel(directory)}`)
+  showSuccess(t('已绑定工作区 {name}', { name: workspaceLabel(directory) }))
 }
 
 function loadWorkspaceMeta() {
@@ -1854,7 +1966,7 @@ function persistWorkspaceMeta() {
   try {
     localStorage.setItem(WORKSPACE_META_KEY, JSON.stringify(workspaceMeta.value))
   } catch {
-    showError('工作区信息保存失败')
+    showError(t('工作区信息保存失败'))
   }
 }
 
@@ -1907,7 +2019,7 @@ function toggleWorkspacePin(path) {
   const meta = workspaceMeta.value[path]
   if (!meta) return
   updateWorkspaceMeta(path, { pinned: !meta.pinned })
-  showSuccess(meta.pinned ? '已取消置顶' : '工作区已置顶')
+  showSuccess(meta.pinned ? t('已取消置顶') : t('工作区已置顶'))
 }
 
 function toggleWorkspaceArchive(path) {
@@ -1925,7 +2037,7 @@ function toggleWorkspaceArchive(path) {
       persistViewState()
     }
   }
-  showSuccess(archiving ? '工作区已归档' : '已取消归档')
+  showSuccess(archiving ? t('工作区已归档') : t('已取消归档'))
 }
 
 function editWorkspace(path) {
@@ -1965,7 +2077,7 @@ function confirmDeleteWorkspace() {
     }
   }
   if (changed) saveSessions()
-  showSuccess(`已删除工作区 ${target.name}`)
+  showSuccess(t('已删除工作区 {name}', { name: target.name }))
 }
 
 function handleWorkspaceAction(action) {
@@ -1997,17 +2109,17 @@ function submitWorkspace() {
   const path = workspaceForm.value.path.trim()
   const name = workspaceForm.value.name.trim()
   if (!path) {
-    workspaceFormError.value = '请选择项目目录'
+    workspaceFormError.value = t('请选择项目目录')
     return
   }
   if (!name) {
-    workspaceFormError.value = '请填写工作区名称'
+    workspaceFormError.value = t('请填写工作区名称')
     return
   }
   const editing = Boolean(workspaceEditPath.value)
   const existing = editing ? workspaceMeta.value[path] : null
   if (!editing && workspaceMeta.value[path]) {
-    workspaceFormError.value = '该目录已添加为工作区'
+    workspaceFormError.value = t('该目录已添加为工作区')
     return
   }
   workspaceMeta.value = {
@@ -2026,14 +2138,14 @@ function submitWorkspace() {
   workspaceDialogOpen.value = false
   workspaceEditPath.value = ''
   if (editing) {
-    showSuccess(`工作区 ${name} 已更新`)
+    showSuccess(t('工作区 {name} 已更新', { name }))
     return
   }
   createNewChat(path)
   if (collapsedGroups.value[path]) {
     collapsedGroups.value = { ...collapsedGroups.value, [path]: false }
   }
-  showSuccess(`已添加工作区 ${name}，并创建了新会话`)
+  showSuccess(t('已添加工作区 {name}，并创建了新会话', { name }))
 }
 
 function onWorkspaceDialogKey(event) {
@@ -2052,20 +2164,20 @@ async function openWorkspaceRoot() {
     return
   }
   const result = await openWorkspacePath(workspace, workspace)
-  if (result && result.success === false) showError(result.error || '无法打开工作区')
+  if (result && result.success === false) showError(result.error || t('无法打开工作区'))
 }
 
 async function openSource(item) {
   if (!item?.target) return
   if (item.type === 'web') {
     const opened = await openExternal(item.target)
-    if (!opened) showError('无法打开链接')
+    if (!opened) showError(t('无法打开链接'))
     return
   }
   const workspace = currentSession.value?.workspace || ''
   if (!workspace || item.type !== 'file') return
   const result = await openWorkspacePath(workspace, item.target)
-  if (result && result.success === false) showError(result.error || '无法打开文件')
+  if (result && result.success === false) showError(result.error || t('无法打开文件'))
 }
 
 function useStarter(prompt) {
@@ -2116,9 +2228,13 @@ function questionText(message) {
   const text = (message.content || '').trim()
   if (text) return text
   const attachments = message.attachments || []
-  if (attachments.length === 0) return '空消息'
+  if (attachments.length === 0) return t('空消息')
   return attachments
-    .map((attachment) => (attachment.kind === 'image' ? `[图片] ${attachment.name}` : `[文件] ${attachment.name}`))
+    .map((attachment) =>
+      attachment.kind === 'image'
+        ? t('[图片] {name}', { name: attachment.name })
+        : t('[文件] {name}', { name: attachment.name })
+    )
     .join('\n')
 }
 
@@ -2166,9 +2282,9 @@ function formatDuration(ms) {
 async function copyMessage(content) {
   const success = await copyToClipboard(content)
   if (success) {
-    showSuccess('已复制到剪贴板')
+    showSuccess(t('已复制到剪贴板'))
   } else {
-    showError('复制失败')
+    showError(t('复制失败'))
   }
 }
 
@@ -2209,7 +2325,7 @@ function readAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
-    reader.onerror = () => reject(reader.error || new Error('读取失败'))
+    reader.onerror = () => reject(reader.error || new Error(t('读取失败')))
     reader.readAsDataURL(file)
   })
 }
@@ -2246,36 +2362,38 @@ async function addFiles(files, kindHint) {
   const textLimit = maxTextFileBytes.value
   for (const file of files) {
     if (attachments.value.length >= attachmentLimit) {
-      showError(`最多添加 ${attachmentLimit} 个附件`)
+      showError(t('最多添加 {count} 个附件', { count: attachmentLimit }))
       break
     }
 
     const isImage = kindHint === 'image' || file.type.startsWith('image/')
     if (isImage) {
       if (!modelSupportsImage.value) {
-        showError(`${selectedModelInfo.value?.name || '当前模型'} 未启用图片输入，可在设置 > 模型中开启`)
+        showError(
+          t('{model} 未启用图片输入，可在设置 > 模型中开启', { model: selectedModelInfo.value?.name || t('当前模型') })
+        )
         continue
       }
       if (file.size > imageLimit) {
-        showError(`${file.name} 超过 ${Math.round(imageLimit / 1024 / 1024)}MB，已跳过`)
+        showError(t('{name} 超过 {size}MB，已跳过', { name: file.name, size: Math.round(imageLimit / 1024 / 1024) }))
         continue
       }
       try {
         const dataUrl = await prepareImage(file)
         attachments.value.push({ id: generateId(), kind: 'image', name: file.name, size: file.size, dataUrl })
       } catch {
-        showError(`无法读取图片 ${file.name}`)
+        showError(t('无法读取图片 {name}', { name: file.name }))
       }
     } else {
       if (file.size > textLimit) {
-        showError(`${file.name} 超过 ${Math.round(textLimit / 1024)}KB，已跳过`)
+        showError(t('{name} 超过 {size}KB，已跳过', { name: file.name, size: Math.round(textLimit / 1024) }))
         continue
       }
       try {
         const content = await file.text()
         attachments.value.push({ id: generateId(), kind: 'file', name: file.name, size: file.size, content })
       } catch {
-        showError(`无法读取文件 ${file.name}`)
+        showError(t('无法读取文件 {name}', { name: file.name }))
       }
     }
   }
@@ -2291,7 +2409,7 @@ function toggleVoiceInput() {
 
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!Recognition) {
-    showError('当前环境不支持语音输入')
+    showError(t('当前环境不支持语音输入'))
     return
   }
 
@@ -2310,7 +2428,7 @@ function toggleVoiceInput() {
   }
   instance.onerror = (event) => {
     if (event.error !== 'aborted' && event.error !== 'no-speech') {
-      showError(`语音识别失败: ${event.error}`)
+      showError(t('语音识别失败: {error}', { error: event.error }))
     }
   }
   instance.onend = () => {
@@ -2323,7 +2441,7 @@ function toggleVoiceInput() {
     recognition = instance
     isRecording.value = true
   } catch (error) {
-    showError(`无法启动语音识别: ${error.message}`)
+    showError(t('无法启动语音识别: {message}', { message: error.message }))
   }
 }
 
@@ -2403,7 +2521,7 @@ watch(
 )
 
 watch(
-  () => [config.value?.ai_provider, config.value?.ai_api_keys, config.value?.ai_models],
+  () => [config.value?.ai.provider, config.value?.ai.keys, config.value?.ai.models],
   () => loadProviders(),
   { deep: true }
 )
@@ -2423,7 +2541,7 @@ watch(thinkingMode, (mode) => {
 })
 
 watch(
-  () => config.value?.ai_tool_policy,
+  () => config.value?.ai.agent.tool_policy,
   (value) => {
     if (value !== undefined) approvalMode.value = normalizeToolPolicy(value)
   },

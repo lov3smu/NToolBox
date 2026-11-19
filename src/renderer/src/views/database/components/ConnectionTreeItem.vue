@@ -38,8 +38,11 @@
         <line x1="6" y1="18" x2="6.01" y2="18" />
       </svg>
       <span class="connection-name">{{ conn.name }}</span>
-      <span v-if="conn.readOnly" class="connection-readonly-badge" title="只读连接">只读</span>
-      <span :class="['connection-status-dot', { active: conn.active }]" :title="conn.active ? '已连接' : '未连接'" />
+      <span v-if="conn.readOnly" class="connection-readonly-badge" :title="t('只读连接')">{{ t('只读') }}</span>
+      <span
+        :class="['connection-status-dot', { active: conn.active }]"
+        :title="conn.active ? t('已连接') : t('未连接')"
+      />
     </div>
     <div v-if="conn.active && (expandedConnections.includes(conn.name) || filtering)" class="connection-databases">
       <div v-for="db in visibleDatabases" :key="db" class="database-wrapper">
@@ -84,7 +87,7 @@
             <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
           </svg>
           <span class="db-name">{{ db }}</span>
-          <span v-if="openedDatabases.includes(`${conn.name}_${db}`)" class="db-status-dot" title="已打开" />
+          <span v-if="openedDatabases.includes(`${conn.name}_${db}`)" class="db-status-dot" :title="t('已打开')" />
         </div>
         <div v-if="filtering || expandedDatabases.includes(`${conn.name}_${db}`)" class="database-objects">
           <div v-if="!filtering || tablesFor(db).length" class="object-category">
@@ -117,14 +120,14 @@
                 <line x1="3" y1="9" x2="21" y2="9" />
                 <line x1="9" y1="21" x2="9" y2="9" />
               </svg>
-              <span class="category-name">表</span>
+              <span class="category-name">{{ t('表') }}</span>
               <span class="category-count">{{ categoryCount(db, 'tables') }}</span>
             </div>
             <div
               v-show="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_tables`)"
               class="category-items"
             >
-              <div v-if="isCategoryLoading(db, 'tables')" class="category-loading">加载中…</div>
+              <div v-if="isCategoryLoading(db, 'tables')" class="category-loading">{{ t('加载中…') }}</div>
               <div
                 v-for="table in displayItems(db, 'tables')"
                 :key="table"
@@ -158,7 +161,7 @@
                 <span class="object-name">{{ table }}</span>
               </div>
               <div v-if="remainingFor(db, 'tables')" class="object-more" @click.stop="loadMore(db, 'tables')">
-                还有 {{ remainingFor(db, 'tables') }} 项，点击加载
+                {{ t('还有') }} {{ remainingFor(db, 'tables') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
@@ -191,14 +194,14 @@
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-              <span class="category-name">视图</span>
+              <span class="category-name">{{ t('视图') }}</span>
               <span class="category-count">{{ categoryCount(db, 'views') }}</span>
             </div>
             <div
               v-show="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_views`)"
               class="category-items"
             >
-              <div v-if="isCategoryLoading(db, 'views')" class="category-loading">加载中…</div>
+              <div v-if="isCategoryLoading(db, 'views')" class="category-loading">{{ t('加载中…') }}</div>
               <div
                 v-for="view in displayItems(db, 'views')"
                 :key="view"
@@ -224,7 +227,7 @@
                 <span class="object-name">{{ view }}</span>
               </div>
               <div v-if="remainingFor(db, 'views')" class="object-more" @click.stop="loadMore(db, 'views')">
-                还有 {{ remainingFor(db, 'views') }} 项，点击加载
+                {{ t('还有') }} {{ remainingFor(db, 'views') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
@@ -257,11 +260,11 @@
                 <text x="0" y="14" font-size="12" font-style="italic" font-weight="600">f</text>
                 <text x="14" y="17" font-size="8">(x)</text>
               </svg>
-              <span class="category-name">函数</span>
+              <span class="category-name">{{ t('函数') }}</span>
               <span class="category-count">{{ categoryCount(db, 'functions') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_functions`)" class="category-items">
-              <div v-if="isCategoryLoading(db, 'functions')" class="category-loading">加载中…</div>
+              <div v-if="isCategoryLoading(db, 'functions')" class="category-loading">{{ t('加载中…') }}</div>
               <div
                 v-for="func in displayItems(db, 'functions')"
                 :key="func"
@@ -280,7 +283,7 @@
                 <span class="object-name">{{ func }}</span>
               </div>
               <div v-if="remainingFor(db, 'functions')" class="object-more" @click.stop="loadMore(db, 'functions')">
-                还有 {{ remainingFor(db, 'functions') }} 项，点击加载
+                {{ t('还有') }} {{ remainingFor(db, 'functions') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
@@ -319,11 +322,11 @@
                 <rect x="3" y="4" width="18" height="16" rx="2" />
                 <polygon points="10 9 15 12 10 15" />
               </svg>
-              <span class="category-name">存储过程</span>
+              <span class="category-name">{{ t('存储过程') }}</span>
               <span class="category-count">{{ categoryCount(db, 'procedures') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_procedures`)" class="category-items">
-              <div v-if="isCategoryLoading(db, 'procedures')" class="category-loading">加载中…</div>
+              <div v-if="isCategoryLoading(db, 'procedures')" class="category-loading">{{ t('加载中…') }}</div>
               <div
                 v-for="proc in displayItems(db, 'procedures')"
                 :key="proc"
@@ -349,7 +352,7 @@
                 <span class="object-name">{{ proc }}</span>
               </div>
               <div v-if="remainingFor(db, 'procedures')" class="object-more" @click.stop="loadMore(db, 'procedures')">
-                还有 {{ remainingFor(db, 'procedures') }} 项，点击加载
+                {{ t('还有') }} {{ remainingFor(db, 'procedures') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
@@ -387,11 +390,11 @@
               >
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <span class="category-name">触发器</span>
+              <span class="category-name">{{ t('触发器') }}</span>
               <span class="category-count">{{ categoryCount(db, 'triggers') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_triggers`)" class="category-items">
-              <div v-if="isCategoryLoading(db, 'triggers')" class="category-loading">加载中…</div>
+              <div v-if="isCategoryLoading(db, 'triggers')" class="category-loading">{{ t('加载中…') }}</div>
               <div
                 v-for="trigger in displayItems(db, 'triggers')"
                 :key="trigger"
@@ -415,7 +418,7 @@
                 <span class="object-name">{{ trigger }}</span>
               </div>
               <div v-if="remainingFor(db, 'triggers')" class="object-more" @click.stop="loadMore(db, 'triggers')">
-                还有 {{ remainingFor(db, 'triggers') }} 项，点击加载
+                {{ t('还有') }} {{ remainingFor(db, 'triggers') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
@@ -454,11 +457,11 @@
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              <span class="category-name">事件</span>
+              <span class="category-name">{{ t('事件') }}</span>
               <span class="category-count">{{ categoryCount(db, 'events') }}</span>
             </div>
             <div v-show="expandedObjectCategories.includes(`${conn.name}_${db}_events`)" class="category-items">
-              <div v-if="isCategoryLoading(db, 'events')" class="category-loading">加载中…</div>
+              <div v-if="isCategoryLoading(db, 'events')" class="category-loading">{{ t('加载中…') }}</div>
               <div
                 v-for="event in displayItems(db, 'events')"
                 :key="event"
@@ -484,7 +487,7 @@
                 <span class="object-name">{{ event }}</span>
               </div>
               <div v-if="remainingFor(db, 'events')" class="object-more" @click.stop="loadMore(db, 'events')">
-                还有 {{ remainingFor(db, 'events') }} 项，点击加载
+                {{ t('还有') }} {{ remainingFor(db, 'events') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
@@ -495,6 +498,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject, ref } from 'vue'
 
 const databaseStore = inject('database')

@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain, dialog, clipboard, shell, nativeTheme, nativeIm
 import path from 'path'
 import fs from 'fs'
 import { log, getProjectRoot } from '../utils'
+import { t } from '../services/i18n.js'
 import {
   getConfig,
   getPublicConfig,
@@ -78,7 +79,8 @@ import {
   setClipboardPaused
 } from '../services/clipboard.js'
 import { getMainWindow, getSettingsWindow, createSettingsWindow, refreshWindowTheme } from '../windows'
-import { createAppMenu, handleMenuAction } from '../ui'
+import { createAppMenu, createTray, handleMenuAction } from '../ui'
+import { syncLocaleFromConfig } from '../services/i18n.js'
 import {
   testConnection,
   createConnection,
@@ -131,6 +133,17 @@ import {
   uploadImagePaths
 } from '../services/imageHost/index.js'
 import { buildClipboardFileName } from '../services/imageHost/utils.js'
+import {
+  getPasswordVaultState,
+  setPasswordVaultMasterPassword,
+  unlockPasswordVault,
+  lockPasswordVault,
+  savePasswordGroup,
+  deletePasswordGroup,
+  savePasswordEntry,
+  deletePasswordEntry,
+  revealPasswordEntry
+} from '../services/passwordVault.js'
 import { IMAGE_HOST_EXTENSIONS } from '../../shared/imageHosts.js'
 import {
   normalizeAiToolResultMaxKb,
@@ -197,28 +210,34 @@ export function registerIPCHandlers(ipc = ipcMain) {
   }))
 
   function notifyConfigSaved(previousMcp) {
-    nativeTheme.themeSource = getConfig().theme || 'system'
+    const config = getConfig()
+    const localeChanged = syncLocaleFromConfig(config)
+    nativeTheme.themeSource = config.appearance.theme || 'system'
     refreshWindowTheme()
     const mainWindow = getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send(IPC_EVENTS.configChanged)
     }
+    if (localeChanged && mainWindow && !mainWindow.isDestroyed()) {
+      createAppMenu(mainWindow, checkForUpdates, createSettingsWindow)
+      createTray(mainWindow, checkForUpdates, createSettingsWindow)
+    }
     startAutoUpdateCheck(mainWindow)
-    if (JSON.stringify(getConfig().mcp_servers || []) !== previousMcp) {
+    if (JSON.stringify(getConfig().extensions?.mcp_servers || []) !== previousMcp) {
       reloadMcpFromConfig().catch((error) => log.warn('重载 MCP 服务失败:', error.message))
     }
     applyNetworkConfig(getConfig()).catch((error) => log.warn('应用网络配置失败:', error.message))
   }
 
   handle(IPC_CHANNELS.saveConfig, async (_event, newConfig) => {
-    const previousMcp = JSON.stringify(getConfig().mcp_servers || [])
+    const previousMcp = JSON.stringify(getConfig().extensions?.mcp_servers || [])
     const success = await saveConfig(newConfig)
     if (success) notifyConfigSaved(previousMcp)
     return success
   })
 
   handle(IPC_CHANNELS.patchConfig, async (_event, partial) => {
-    const previousMcp = JSON.stringify(getConfig().mcp_servers || [])
+    const previousMcp = JSON.stringify(getConfig().extensions?.mcp_servers || [])
     const success = await patchConfig(partial)
     if (success) notifyConfigSaved(previousMcp)
     return success
@@ -229,17 +248,17 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.openFile, async (_event, filePath) => {
     if (!filePath || typeof filePath !== 'string') return false
     const config = getConfig()
-    if (config.base_path && !isPathWithinBase(filePath, config.base_path)) {
+    if (config.app.base_path && !isPathWithinBase(filePath, config.app.base_path)) {
       log.warn('拒绝打开 base_path 外的文件:', filePath)
       return false
     }
-    return await openFile(filePath, config.text_edit_app)
+    return await openFile(filePath, config.app.text_edit_app)
   })
 
   handle(IPC_CHANNELS.openFolder, async (_event, folderPath) => {
     if (!folderPath || typeof folderPath !== 'string') return false
     const config = getConfig()
-    if (config.base_path && !isPathWithinBase(folderPath, config.base_path)) {
+    if (config.app.base_path && !isPathWithinBase(folderPath, config.app.base_path)) {
       log.warn('拒绝打开 base_path 外的文件夹:', folderPath)
       return false
     }
@@ -263,15 +282,15 @@ export function registerIPCHandlers(ipc = ipcMain) {
     const filters = []
 
     if (platform === 'win32') {
-      filters.push({ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] })
-      filters.push({ name: '所有文件', extensions: ['*'] })
+      filters.push({ name: t('可执行文件'), extensions: ['exe', 'bat', 'cmd'] })
+      filters.push({ name: t('所有文件'), extensions: ['*'] })
     } else if (platform === 'darwin') {
-      filters.push({ name: '应用程序', extensions: ['app'] })
-      filters.push({ name: '可执行文件', extensions: ['sh', 'command'] })
-      filters.push({ name: '所有文件', extensions: ['*'] })
+      filters.push({ name: t('应用程序'), extensions: ['app'] })
+      filters.push({ name: t('可执行文件'), extensions: ['sh', 'command'] })
+      filters.push({ name: t('所有文件'), extensions: ['*'] })
     } else {
-      filters.push({ name: '可执行文件', extensions: ['sh', 'bin'] })
-      filters.push({ name: '所有文件', extensions: ['*'] })
+      filters.push({ name: t('可执行文件'), extensions: ['sh', 'bin'] })
+      filters.push({ name: t('所有文件'), extensions: ['*'] })
     }
 
     const result = await dialog.showOpenDialog(parentWindow, {
@@ -288,8 +307,8 @@ export function registerIPCHandlers(ipc = ipcMain) {
     const result = await dialog.showOpenDialog(parentWindow, {
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: '文本与文档', extensions: KNOWLEDGE_FILE_EXTENSIONS },
-        { name: '所有文件', extensions: ['*'] }
+        { name: t('文本与文档'), extensions: KNOWLEDGE_FILE_EXTENSIONS },
+        { name: t('所有文件'), extensions: ['*'] }
       ]
     })
     return { canceled: result.canceled, paths: result.filePaths || [] }
@@ -419,7 +438,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.readDirectory, async (_event, dirPath, options = {}) => {
     try {
       const config = getConfig()
-      const basePath = config.base_path
+      const basePath = config.app.base_path
 
       if (!dirPath || typeof dirPath !== 'string') {
         return { success: false, error: '路径无效' }
@@ -471,7 +490,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.searchDirectory, async (_event, rootPath, keyword, options = {}) => {
     try {
       const config = getConfig()
-      const basePath = config.base_path
+      const basePath = config.app.base_path
 
       if (!rootPath || typeof rootPath !== 'string') {
         return { success: false, error: '路径无效' }
@@ -552,7 +571,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.copyToClipboard, async (_event, itemPath, recursive = false) => {
     try {
       const config = getConfig()
-      const basePath = config.base_path
+      const basePath = config.app.base_path
 
       if (!itemPath || typeof itemPath !== 'string') {
         return false
@@ -619,7 +638,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.getItemInfo, async (_event, itemPath) => {
     try {
       const config = getConfig()
-      const basePath = config.base_path
+      const basePath = config.app.base_path
 
       if (!itemPath || typeof itemPath !== 'string') {
         return { success: false, error: '路径无效' }
@@ -678,9 +697,9 @@ export function registerIPCHandlers(ipc = ipcMain) {
     const snapshots = createSnapshotStore(requestId)
     const budgetConfig = getConfig()
     const toolResults = createToolResultStore(requestId, {
-      maxResultChars: normalizeAiToolResultMaxKb(budgetConfig.ai_tool_result_max_kb) * 1024,
-      maxRunChars: normalizeAiToolResultRunKb(budgetConfig.ai_tool_result_run_kb) * 1024,
-      retentionMs: normalizeAiToolResultRetentionDays(budgetConfig.ai_tool_result_retention_days) * 24 * 60 * 60 * 1000
+      maxResultChars: normalizeAiToolResultMaxKb(budgetConfig.ai.tool_result.max_kb) * 1024,
+      maxRunChars: normalizeAiToolResultRunKb(budgetConfig.ai.tool_result.run_kb) * 1024,
+      retentionMs: normalizeAiToolResultRetentionDays(budgetConfig.ai.tool_result.retention_days) * 24 * 60 * 60 * 1000
     })
     const trace = createRunTrace(requestId, {
       provider: options.provider,
@@ -816,18 +835,18 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.exportRunTrace, async (_event, runId) => {
     if (!runId || typeof runId !== 'string') {
-      return { canceled: false, success: false, error: '缺少运行标识' }
+      return { canceled: false, success: false, error: t('缺少运行标识') }
     }
     const trace = await readRunTrace(runId)
     if (!trace.success) {
       return { canceled: false, success: false, error: trace.error }
     }
     const result = await dialog.showSaveDialog(getDialogParentWindow(), {
-      title: '导出运行轨迹',
+      title: t('导出运行轨迹'),
       defaultPath: `agent-run-${runId}.json`,
       filters: [
-        { name: 'JSON 文件', extensions: ['json'] },
-        { name: '所有文件', extensions: ['*'] }
+        { name: t('JSON 文件'), extensions: ['json'] },
+        { name: t('所有文件'), extensions: ['*'] }
       ]
     })
     if (result.canceled || !result.filePath) {
@@ -1076,7 +1095,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.dbSelectBackupDirectory, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '选择备份目录',
+      title: t('选择备份目录'),
       properties: ['openDirectory', 'createDirectory']
     })
     if (result.canceled || !result.filePaths[0]) {
@@ -1096,11 +1115,13 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.dbSelectImportFile, async (_event, format) => {
     const parentWindow = getDialogParentWindow()
     const filters =
-      format === 'json' ? [{ name: 'JSON 文件', extensions: ['json'] }] : [{ name: 'CSV 文件', extensions: ['csv'] }]
-    filters.push({ name: '所有文件', extensions: ['*'] })
+      format === 'json'
+        ? [{ name: t('JSON 文件'), extensions: ['json'] }]
+        : [{ name: t('CSV 文件'), extensions: ['csv'] }]
+    filters.push({ name: t('所有文件'), extensions: ['*'] })
 
     const result = await dialog.showOpenDialog(parentWindow, {
-      title: '选择导入文件',
+      title: t('选择导入文件'),
       filters,
       properties: ['openFile']
     })
@@ -1124,12 +1145,12 @@ export function registerIPCHandlers(ipc = ipcMain) {
     const extensionMap = { csv: 'csv', json: 'json', sql: 'sql', markdown: 'md', md: 'md' }
     const extension = extensionMap[format] || 'txt'
     const filters = [
-      { name: `${extension.toUpperCase()} 文件`, extensions: [extension] },
-      { name: '所有文件', extensions: ['*'] }
+      { name: t('{ext} 文件', { ext: extension.toUpperCase() }), extensions: [extension] },
+      { name: t('所有文件'), extensions: ['*'] }
     ]
 
     const result = await dialog.showSaveDialog(parentWindow, {
-      title: '导出数据',
+      title: t('导出数据'),
       defaultPath: defaultName || `export.${extension}`,
       filters
     })
@@ -1145,10 +1166,10 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.dbSelectConnectionFile, async () => {
     const parentWindow = getDialogParentWindow()
     const result = await dialog.showOpenDialog(parentWindow, {
-      title: '导入连接配置',
+      title: t('导入连接配置'),
       filters: [
-        { name: 'JSON 文件', extensions: ['json'] },
-        { name: '所有文件', extensions: ['*'] }
+        { name: t('JSON 文件'), extensions: ['json'] },
+        { name: t('所有文件'), extensions: ['*'] }
       ],
       properties: ['openFile']
     })
@@ -1164,11 +1185,11 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.dbSaveConnectionFile, async (_event, defaultName, content) => {
     const parentWindow = getDialogParentWindow()
     const result = await dialog.showSaveDialog(parentWindow, {
-      title: '导出连接配置',
+      title: t('导出连接配置'),
       defaultPath: defaultName || 'connections.json',
       filters: [
-        { name: 'JSON 文件', extensions: ['json'] },
-        { name: '所有文件', extensions: ['*'] }
+        { name: t('JSON 文件'), extensions: ['json'] },
+        { name: t('所有文件'), extensions: ['*'] }
       ]
     })
 
@@ -1185,8 +1206,8 @@ export function registerIPCHandlers(ipc = ipcMain) {
     const settingsWindow = getSettingsWindow()
     const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
     const result = await dialog.showOpenDialog(parentWindow, {
-      title: '选择SQL文件',
-      filters: [{ name: 'SQL文件', extensions: ['sql'] }],
+      title: t('选择SQL文件'),
+      filters: [{ name: t('SQL文件'), extensions: ['sql'] }],
       properties: ['openFile']
     })
     if (!result.canceled) {
@@ -1223,13 +1244,13 @@ export function registerIPCHandlers(ipc = ipcMain) {
     typeof targetPath === 'string' && [...imageRoots].some((root) => isPathWithinBase(targetPath, root))
 
   const imageDialogFilters = [
-    { name: '图片文件', extensions: IMAGE_EXTENSIONS },
-    { name: '所有文件', extensions: ['*'] }
+    { name: t('图片文件'), extensions: IMAGE_EXTENSIONS },
+    { name: t('所有文件'), extensions: ['*'] }
   ]
 
   handle(IPC_CHANNELS.imageOpenDialog, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '打开图片',
+      title: t('打开图片'),
       properties: ['openFile'],
       filters: imageDialogFilters
     })
@@ -1244,7 +1265,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.imageOpenFolder, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '打开图片文件夹',
+      title: t('打开图片文件夹'),
       properties: ['openDirectory']
     })
     if (result.canceled || !result.filePaths[0]) return { canceled: true }
@@ -1361,11 +1382,11 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.imageHostSelectFiles, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '选择要上传的图片',
+      title: t('选择要上传的图片'),
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: '图片文件', extensions: IMAGE_HOST_EXTENSIONS },
-        { name: '所有文件', extensions: ['*'] }
+        { name: t('图片文件'), extensions: IMAGE_HOST_EXTENSIONS },
+        { name: t('所有文件'), extensions: ['*'] }
       ]
     })
     return { canceled: result.canceled, paths: result.canceled ? [] : result.filePaths }
@@ -1398,14 +1419,34 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.imageHostRemoveHistory, async (_event, id) => removeImageHostHistory(id))
 
+  handle(IPC_CHANNELS.passwordVaultState, async () => getPasswordVaultState())
+
+  handle(IPC_CHANNELS.passwordVaultSetMasterPassword, async (_event, password) =>
+    setPasswordVaultMasterPassword(password)
+  )
+
+  handle(IPC_CHANNELS.passwordVaultUnlock, async (_event, password) => unlockPasswordVault(password))
+
+  handle(IPC_CHANNELS.passwordVaultLock, async () => lockPasswordVault())
+
+  handle(IPC_CHANNELS.passwordGroupSave, async (_event, input) => savePasswordGroup(input))
+
+  handle(IPC_CHANNELS.passwordGroupDelete, async (_event, id) => deletePasswordGroup(id))
+
+  handle(IPC_CHANNELS.passwordEntrySave, async (_event, input) => savePasswordEntry(input))
+
+  handle(IPC_CHANNELS.passwordEntryDelete, async (_event, id) => deletePasswordEntry(id))
+
+  handle(IPC_CHANNELS.passwordEntryReveal, async (_event, id) => revealPasswordEntry(id))
+
   handle(IPC_CHANNELS.saveSqlFile, async (_event, defaultPath) => {
     const mainWindow = getMainWindow()
     const settingsWindow = getSettingsWindow()
     const parentWindow = settingsWindow && !settingsWindow.isDestroyed() ? settingsWindow : mainWindow
     const result = await dialog.showSaveDialog(parentWindow, {
-      title: '保存SQL转储文件',
+      title: t('保存SQL转储文件'),
       defaultPath: defaultPath || 'dump.sql',
-      filters: [{ name: 'SQL文件', extensions: ['sql'] }]
+      filters: [{ name: t('SQL文件'), extensions: ['sql'] }]
     })
     if (!result.canceled && result.filePath) grantFilePath(result.filePath)
     return result
@@ -1464,9 +1505,9 @@ export function registerIPCHandlers(ipc = ipcMain) {
     if (!bundle.success) return bundle
 
     const result = await dialog.showSaveDialog(getDialogParentWindow(), {
-      title: '导出技能',
+      title: t('导出技能'),
       defaultPath: bundle.fileName,
-      filters: [{ name: 'NToolBox 技能包', extensions: ['json'] }]
+      filters: [{ name: t('NToolBox 技能包'), extensions: ['json'] }]
     })
     if (result.canceled || !result.filePath) return { success: false, canceled: true }
 
@@ -1481,8 +1522,8 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.skillsImport, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '导入技能',
-      filters: [{ name: 'NToolBox 技能包', extensions: ['json'] }],
+      title: t('导入技能'),
+      filters: [{ name: t('NToolBox 技能包'), extensions: ['json'] }],
       properties: ['openFile']
     })
     if (result.canceled || !result.filePaths[0]) return { success: false, canceled: true }
@@ -1514,7 +1555,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return await fetchMcpRegistryServers({
       search: options?.search,
       maxPages: options?.maxPages,
-      base: getMcpRegistryBase(getConfig().market_sources)
+      base: getMcpRegistryBase(getConfig().network?.market_sources)
     })
   })
 
@@ -1532,7 +1573,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.extensionsInstallFromFolder, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '选择技能扩展目录',
+      title: t('选择技能扩展目录'),
       properties: ['openDirectory']
     })
 
@@ -1571,7 +1612,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.pluginsInstallFromFolder, async () => {
     const result = await dialog.showOpenDialog(getDialogParentWindow(), {
-      title: '选择插件目录（需包含 plugin.json）',
+      title: t('选择插件目录（需包含 plugin.json）'),
       properties: ['openDirectory']
     })
 

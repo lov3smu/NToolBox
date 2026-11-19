@@ -339,7 +339,7 @@ export async function getMemoryOverview(workspacePath = '') {
     projectPath: record?.path || (key ? path.resolve(workspacePath.trim()) : ''),
     knowledge,
     knowledgeEnabled: knowledge.filter((source) => source.enabled).length,
-    autoCapture: config?.memory_auto_capture !== false
+    autoCapture: config?.memory?.auto_capture !== false
   }
 }
 
@@ -775,7 +775,7 @@ export async function buildMemoryPrompt(workspacePath = '', toolsEnabled = true)
   const project = key ? projects[key] : null
   const projectEntries = sortEntries(project?.entries || [])
   const sources = readSources(knowledgeStore).filter((source) => source.enabled)
-  const autoCapture = getConfig()?.memory_auto_capture !== false
+  const autoCapture = getConfig().memory?.auto_capture !== false
 
   const lines = []
   if (global.length || projectEntries.length) {

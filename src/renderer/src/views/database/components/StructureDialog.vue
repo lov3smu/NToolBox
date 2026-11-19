@@ -2,12 +2,12 @@
   <div v-if="structureDialog.show" class="dialog-overlay" @click.self="closeStructureDialog">
     <div class="dialog dialog-structure">
       <div class="dialog-header">
-        <h3>表结构 · {{ structureDialog.tab?.tableName }}</h3>
+        <h3>{{ t('表结构 ·') }} {{ structureDialog.tab?.tableName }}</h3>
         <div class="structure-header-actions">
           <button v-if="!structureDialog.meta?.isView" class="btn btn-sm btn-secondary" @click="renameTable">
-            重命名表
+            {{ t('重命名表') }}
           </button>
-          <button class="btn-icon btn-sm" title="关闭" @click="closeStructureDialog">
+          <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeStructureDialog">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -26,21 +26,21 @@
         </div>
       </div>
       <div class="dialog-content structure-content">
-        <div v-if="structureDialog.loading" class="structure-loading">加载中...</div>
+        <div v-if="structureDialog.loading" class="structure-loading">{{ t('加载中...') }}</div>
         <template v-else-if="structureDialog.meta">
           <template v-if="structureDialog.section === 'columns'">
             <div class="structure-scroll">
               <table class="result-table structure-table">
                 <thead>
                   <tr>
-                    <th>字段</th>
-                    <th>类型</th>
-                    <th>允许空</th>
-                    <th>键</th>
-                    <th>默认值</th>
-                    <th>额外</th>
-                    <th>注释</th>
-                    <th>操作</th>
+                    <th>{{ t('字段') }}</th>
+                    <th>{{ t('类型') }}</th>
+                    <th>{{ t('允许空') }}</th>
+                    <th>{{ t('键') }}</th>
+                    <th>{{ t('默认值') }}</th>
+                    <th>{{ t('额外') }}</th>
+                    <th>{{ t('注释') }}</th>
+                    <th>{{ t('操作') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -54,8 +54,12 @@
                     <td>{{ column.comment || '-' }}</td>
                     <td class="structure-actions">
                       <template v-if="!structureDialog.meta.isView">
-                        <button class="btn btn-xs btn-secondary" @click="startEditColumn(column)">修改</button>
-                        <button class="btn btn-xs btn-secondary danger" @click="dropColumn(column)">删除</button>
+                        <button class="btn btn-xs btn-secondary" @click="startEditColumn(column)">
+                          {{ t('修改') }}
+                        </button>
+                        <button class="btn btn-xs btn-secondary danger" @click="dropColumn(column)">
+                          {{ t('删除') }}
+                        </button>
                       </template>
                       <span v-else class="structure-muted">-</span>
                     </td>
@@ -65,60 +69,60 @@
             </div>
 
             <div v-if="!structureDialog.meta.isView && editingColumn" class="structure-form">
-              <div class="structure-form-title">修改字段 {{ editingColumn.name }}</div>
+              <div class="structure-form-title">{{ t('修改字段') }} {{ editingColumn.name }}</div>
               <div class="structure-form-grid">
                 <label class="structure-field">
-                  <span>类型</span>
-                  <input v-model="editingColumn.type" class="input-field" placeholder="如 VARCHAR(255)" />
+                  <span>{{ t('类型') }}</span>
+                  <input v-model="editingColumn.type" class="input-field" :placeholder="t('如 VARCHAR(255)')" />
                 </label>
                 <label class="structure-field">
-                  <span>默认值</span>
-                  <input v-model="editingColumn.defaultValue" class="input-field" placeholder="留空表示不设置" />
+                  <span>{{ t('默认值') }}</span>
+                  <input v-model="editingColumn.defaultValue" class="input-field" :placeholder="t('留空表示不设置')" />
                 </label>
                 <label class="structure-field">
-                  <span>注释</span>
+                  <span>{{ t('注释') }}</span>
                   <input v-model="editingColumn.comment" class="input-field" />
                 </label>
                 <div class="structure-checkboxes">
                   <label class="checkbox-label-inline">
                     <input v-model="editingColumn.nullable" type="checkbox" />
-                    <span>允许空</span>
+                    <span>{{ t('允许空') }}</span>
                   </label>
                   <label class="checkbox-label-inline">
                     <input v-model="editingColumn.autoIncrement" type="checkbox" />
-                    <span>自增</span>
+                    <span>{{ t('自增') }}</span>
                   </label>
                 </div>
               </div>
               <div class="structure-form-actions">
-                <button class="btn btn-sm btn-secondary" @click="editingColumn = null">取消</button>
-                <button class="btn btn-sm btn-primary" @click="submitEditColumn">保存修改</button>
+                <button class="btn btn-sm btn-secondary" @click="editingColumn = null">{{ t('取消') }}</button>
+                <button class="btn btn-sm btn-primary" @click="submitEditColumn">{{ t('保存修改') }}</button>
               </div>
             </div>
 
             <div v-else-if="!structureDialog.meta.isView" class="structure-form">
-              <div class="structure-form-title">新增字段</div>
+              <div class="structure-form-title">{{ t('新增字段') }}</div>
               <div class="structure-form-grid">
                 <label class="structure-field">
-                  <span>字段名</span>
-                  <input v-model="newColumn.name" class="input-field" placeholder="字段名" />
+                  <span>{{ t('字段名') }}</span>
+                  <input v-model="newColumn.name" class="input-field" :placeholder="t('字段名')" />
                 </label>
                 <label class="structure-field">
-                  <span>类型</span>
-                  <input v-model="newColumn.type" class="input-field" placeholder="如 INT / VARCHAR(255)" />
+                  <span>{{ t('类型') }}</span>
+                  <input v-model="newColumn.type" class="input-field" :placeholder="t('如 INT / VARCHAR(255)')" />
                 </label>
                 <label class="structure-field">
-                  <span>默认值</span>
-                  <input v-model="newColumn.defaultValue" class="input-field" placeholder="留空表示不设置" />
+                  <span>{{ t('默认值') }}</span>
+                  <input v-model="newColumn.defaultValue" class="input-field" :placeholder="t('留空表示不设置')" />
                 </label>
                 <label class="structure-field">
-                  <span>注释</span>
+                  <span>{{ t('注释') }}</span>
                   <input v-model="newColumn.comment" class="input-field" />
                 </label>
                 <label class="structure-field">
-                  <span>位于字段之后</span>
+                  <span>{{ t('位于字段之后') }}</span>
                   <select v-model="newColumn.after" class="filter-select">
-                    <option value="">末尾</option>
+                    <option value="">{{ t('末尾') }}</option>
                     <option v-for="column in structureDialog.meta.columns" :key="column.name" :value="column.name">
                       {{ column.name }}
                     </option>
@@ -127,16 +131,16 @@
                 <div class="structure-checkboxes">
                   <label class="checkbox-label-inline">
                     <input v-model="newColumn.nullable" type="checkbox" />
-                    <span>允许空</span>
+                    <span>{{ t('允许空') }}</span>
                   </label>
                   <label class="checkbox-label-inline">
                     <input v-model="newColumn.autoIncrement" type="checkbox" />
-                    <span>自增</span>
+                    <span>{{ t('自增') }}</span>
                   </label>
                 </div>
               </div>
               <div class="structure-form-actions">
-                <button class="btn btn-sm btn-primary" @click="submitAddColumn">添加字段</button>
+                <button class="btn btn-sm btn-primary" @click="submitAddColumn">{{ t('添加字段') }}</button>
               </div>
             </div>
           </template>
@@ -146,12 +150,12 @@
               <table class="result-table structure-table">
                 <thead>
                   <tr>
-                    <th>索引名</th>
-                    <th>类型</th>
-                    <th>唯一</th>
-                    <th>字段</th>
-                    <th>基数</th>
-                    <th>操作</th>
+                    <th>{{ t('索引名') }}</th>
+                    <th>{{ t('类型') }}</th>
+                    <th>{{ t('唯一') }}</th>
+                    <th>{{ t('字段') }}</th>
+                    <th>{{ t('基数') }}</th>
+                    <th>{{ t('操作') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,7 +167,7 @@
                     <td>{{ index.cardinality ?? '-' }}</td>
                     <td class="structure-actions">
                       <button v-if="!index.primary" class="btn btn-xs btn-secondary danger" @click="dropIndex(index)">
-                        删除
+                        {{ t('删除') }}
                       </button>
                       <span v-else class="structure-muted">-</span>
                     </td>
@@ -172,16 +176,16 @@
               </table>
             </div>
             <div v-if="!structureDialog.meta.isView" class="structure-form">
-              <div class="structure-form-title">新增索引</div>
+              <div class="structure-form-title">{{ t('新增索引') }}</div>
               <div class="structure-form-grid">
                 <label class="structure-field">
-                  <span>索引名</span>
-                  <input v-model="newIndex.name" class="input-field" placeholder="留空自动生成" />
+                  <span>{{ t('索引名') }}</span>
+                  <input v-model="newIndex.name" class="input-field" :placeholder="t('留空自动生成')" />
                 </label>
                 <div class="structure-checkboxes">
                   <label class="checkbox-label-inline">
                     <input v-model="newIndex.unique" type="checkbox" />
-                    <span>唯一索引</span>
+                    <span>{{ t('唯一索引') }}</span>
                   </label>
                 </div>
               </div>
@@ -201,7 +205,7 @@
                   :disabled="newIndex.columns.length === 0"
                   @click="submitAddIndex"
                 >
-                  添加索引
+                  {{ t('添加索引') }}
                 </button>
               </div>
             </div>
@@ -212,12 +216,12 @@
               <table class="result-table structure-table">
                 <thead>
                   <tr>
-                    <th>约束名</th>
-                    <th>字段</th>
-                    <th>引用表</th>
-                    <th>引用字段</th>
-                    <th>更新规则</th>
-                    <th>删除规则</th>
+                    <th>{{ t('约束名') }}</th>
+                    <th>{{ t('字段') }}</th>
+                    <th>{{ t('引用表') }}</th>
+                    <th>{{ t('引用字段') }}</th>
+                    <th>{{ t('更新规则') }}</th>
+                    <th>{{ t('删除规则') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -230,7 +234,7 @@
                     <td>{{ foreignKey.deleteRule || '-' }}</td>
                   </tr>
                   <tr v-if="structureDialog.meta.foreignKeys.length === 0">
-                    <td colspan="6" class="structure-muted">没有外键</td>
+                    <td colspan="6" class="structure-muted">{{ t('没有外键') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -242,10 +246,10 @@
               <table class="result-table structure-table">
                 <thead>
                   <tr>
-                    <th>触发器</th>
-                    <th>时机</th>
-                    <th>事件</th>
-                    <th>语句</th>
+                    <th>{{ t('触发器') }}</th>
+                    <th>{{ t('时机') }}</th>
+                    <th>{{ t('事件') }}</th>
+                    <th>{{ t('语句') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,7 +260,7 @@
                     <td class="structure-statement" :title="trigger.statement">{{ trigger.statement }}</td>
                   </tr>
                   <tr v-if="structureDialog.meta.triggers.length === 0">
-                    <td colspan="4" class="structure-muted">没有触发器</td>
+                    <td colspan="4" class="structure-muted">{{ t('没有触发器') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -265,23 +269,26 @@
 
           <template v-else>
             <div class="structure-ddl-actions">
-              <button class="btn btn-sm btn-secondary" @click="copySql(structureDialog.meta.ddl)">复制 DDL</button>
+              <button class="btn btn-sm btn-secondary" @click="copySql(structureDialog.meta.ddl)">
+                {{ t('复制 DDL') }}
+              </button>
             </div>
-            <SqlHighlight class="sql-preview-block" :code="structureDialog.meta.ddl" placeholder="无法获取 DDL" />
+            <SqlHighlight class="sql-preview-block" :code="structureDialog.meta.ddl" :placeholder="t('无法获取 DDL')" />
           </template>
         </template>
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-left">
-          <button class="btn btn-secondary" @click="refreshMeta">刷新</button>
+          <button class="btn btn-secondary" @click="refreshMeta">{{ t('刷新') }}</button>
         </div>
-        <button class="btn btn-primary" @click="closeStructureDialog">关闭</button>
+        <button class="btn btn-primary" @click="closeStructureDialog">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { inject, ref, watch } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
@@ -298,10 +305,10 @@ const {
 } = databaseStore
 
 const sections = [
-  { key: 'columns', label: '字段' },
-  { key: 'indexes', label: '索引' },
-  { key: 'foreignKeys', label: '外键' },
-  { key: 'triggers', label: '触发器' },
+  { key: 'columns', label: t('字段') },
+  { key: 'indexes', label: t('索引') },
+  { key: 'foreignKeys', label: t('外键') },
+  { key: 'triggers', label: t('触发器') },
   { key: 'ddl', label: 'DDL' }
 ]
 
@@ -359,11 +366,11 @@ function startEditColumn(column) {
 async function submitAddColumn() {
   const tab = structureDialog.value.tab
   if (!newColumn.value.name.trim()) {
-    await showMessage('请输入字段名', 'warning')
+    await showMessage(t('请输入字段名'), 'warning')
     return
   }
   if (!newColumn.value.type.trim()) {
-    await showMessage('请输入字段类型', 'warning')
+    await showMessage(t('请输入字段类型'), 'warning')
     return
   }
   const ok = await applyStructureChanges(tab, { addColumns: [buildColumnPayload(newColumn.value)] })
@@ -377,7 +384,7 @@ async function submitEditColumn() {
 }
 
 async function dropColumn(column) {
-  const confirmed = await showConfirm(`确定删除字段 "${column.name}" 吗？此操作可能丢失数据。`)
+  const confirmed = await showConfirm(t('确定删除字段 "{p0}" 吗？此操作可能丢失数据。', { p0: column.name }))
   if (!confirmed) return
   await applyStructureChanges(structureDialog.value.tab, { dropColumns: [column.name] })
 }
@@ -407,7 +414,7 @@ async function submitAddIndex() {
 }
 
 async function dropIndex(index) {
-  const confirmed = await showConfirm(`确定删除索引 "${index.name}" 吗？`)
+  const confirmed = await showConfirm(t('确定删除索引 "{p0}" 吗？', { p0: index.name }))
   if (!confirmed) return
   await applyStructureChanges(structureDialog.value.tab, { dropIndexes: [index.name] })
 }

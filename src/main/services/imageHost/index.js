@@ -16,6 +16,7 @@ import { getImageMime } from './utils.js'
 import { testProvider, uploadToProvider } from './providers.js'
 import { restoreMaskedImageHostSettings } from '../../../shared/secrets.js'
 import { notify } from '../notifications.js'
+import { t, getLocale } from '../i18n.js'
 
 const MAX_BATCH_SIZE = 20
 const MAX_CONCURRENCY = 3
@@ -39,7 +40,7 @@ export async function saveImageHostSettings(input) {
   const settings = normalizeImageHostSettings(restoreMaskedImageHostSettings(input, current))
   const next = { ...settings, history: current.history }
   const saved = await saveConfig({ image_hosting: next })
-  if (!saved) throw new Error('保存图床配置失败')
+  if (!saved) throw new Error(t('保存图床配置失败'))
 
   const state = getImageHostState()
   return { success: true, settings: state.settings, history: state.history }
@@ -52,7 +53,7 @@ function enqueueHistoryUpdate(mutator) {
     const saved = await saveConfig({
       image_hosting: { ...normalizeImageHostSettings(config), history }
     })
-    if (!saved) throw new Error('保存上传记录失败')
+    if (!saved) throw new Error(t('保存上传记录失败'))
     return history
   })
   historyQueue = task.catch(() => {})
@@ -62,12 +63,17 @@ function enqueueHistoryUpdate(mutator) {
 function resolveUploadContext() {
   const { settings, history } = getImageHostState()
   const meta = getProviderMeta(settings.active)
-  if (!meta) throw new Error('当前图床类型无效，请重新选择')
+  if (!meta) throw new Error(t('当前图床类型无效，请重新选择'))
 
   const providerSettings = settings.providers[settings.active]
   const missing = getMissingRequiredFields(settings.active, providerSettings)
   if (missing.length) {
-    throw new Error(`请先完善 ${meta.name} 配置：${missing.map((field) => field.label).join('、')}`)
+    throw new Error(
+      t('请先完善 {name} 配置：{fields}', {
+        name: meta.name,
+        fields: missing.map((field) => field.label).join(getLocale() === 'en-US' ? ', ' : '、')
+      })
+    )
   }
 
   return {
@@ -79,16 +85,18 @@ function resolveUploadContext() {
 }
 
 async function prepareFile(filePath, maxBytes) {
-  if (typeof filePath !== 'string' || !filePath.trim()) throw new Error('无效的图片路径')
+  if (typeof filePath !== 'string' || !filePath.trim()) throw new Error(t('无效的图片路径'))
 
   const resolvedPath = path.resolve(filePath)
   const mime = getImageMime(resolvedPath)
-  if (!mime) throw new Error('不支持的图片格式')
+  if (!mime) throw new Error(t('不支持的图片格式'))
 
   const stat = await fs.promises.stat(resolvedPath)
-  if (!stat.isFile()) throw new Error('不是有效的图片文件')
-  if (stat.size <= 0) throw new Error('图片内容为空')
-  if (stat.size > maxBytes) throw new Error(`图片超过 ${Math.round(maxBytes / 1024 / 1024)}MB，暂不支持上传`)
+  if (!stat.isFile()) throw new Error(t('不是有效的图片文件'))
+  if (stat.size <= 0) throw new Error(t('图片内容为空'))
+  if (stat.size > maxBytes) {
+    throw new Error(t('图片超过 {size}MB，暂不支持上传', { size: Math.round(maxBytes / 1024 / 1024) }))
+  }
 
   return {
     filePath: resolvedPath,
@@ -163,7 +171,9 @@ export async function uploadImagePaths(paths) {
   const candidates = Array.isArray(paths)
     ? [...new Set(paths.filter((item) => typeof item === 'string' && item.trim()))].slice(0, MAX_BATCH_SIZE)
     : []
-  if (!candidates.length) return { success: false, results: [], error: '未选择图片', history: currentConfig().history }
+  if (!candidates.length) {
+    return { success: false, results: [], error: t('未选择图片'), history: currentConfig().history }
+  }
 
   let context
   try {
@@ -182,7 +192,7 @@ export async function uploadImagePaths(paths) {
           success: false,
           name: path.basename(String(filePath)),
           sourcePath: filePath,
-          error: error?.message || '上传失败'
+          error: error?.message || t('上传失败')
         },
         record: null
       }
@@ -197,8 +207,11 @@ export async function uploadImagePaths(paths) {
 
   if (results.length > 0) {
     void notify('upload_done', {
-      title: failedCount > 0 ? '图床上传部分失败' : '图床上传完成',
-      body: failedCount > 0 ? `${successCount} 张成功，${failedCount} 张失败` : `${successCount} 张图片已上传`
+      title: failedCount > 0 ? t('图床上传部分失败') : t('图床上传完成'),
+      body:
+        failedCount > 0
+          ? t('{success} 张成功，{failed} 张失败', { success: successCount, failed: failedCount })
+          : t('{count} 张图片已上传', { count: successCount })
     })
   }
 
@@ -206,21 +219,21 @@ export async function uploadImagePaths(paths) {
     success: successCount > 0,
     results,
     history,
-    error: successCount > 0 ? '' : results[0]?.error || '上传失败'
+    error: successCount > 0 ? '' : results[0]?.error || t('上传失败')
   }
 }
 
 export async function uploadImageBuffer({ buffer, name, mime }) {
   const data = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || [])
   if (!data.length) {
-    return { success: false, results: [], error: '剪贴板中没有图片', history: currentConfig().history }
+    return { success: false, results: [], error: t('剪贴板中没有图片'), history: currentConfig().history }
   }
   const maxBytes = getImageHostMaxFileSize(currentConfig())
   if (data.length > maxBytes) {
     return {
       success: false,
       results: [],
-      error: `图片超过 ${Math.round(maxBytes / 1024 / 1024)}MB，暂不支持上传`,
+      error: t('图片超过 {size}MB，暂不支持上传', { size: Math.round(maxBytes / 1024 / 1024) }),
       history: currentConfig().history
     }
   }
@@ -228,7 +241,7 @@ export async function uploadImageBuffer({ buffer, name, mime }) {
   const fileName = path.basename(name || 'clipboard.png')
   const fileMime = mime || getImageMime(fileName)
   if (!fileMime || !String(fileMime).startsWith('image/')) {
-    return { success: false, results: [], error: '不支持的图片格式', history: currentConfig().history }
+    return { success: false, results: [], error: t('不支持的图片格式'), history: currentConfig().history }
   }
 
   let context
@@ -242,21 +255,21 @@ export async function uploadImageBuffer({ buffer, name, mime }) {
     const file = { filePath: fileName, name: fileName, mime: fileMime, size: data.length, buffer: data }
     const { result, record } = await uploadPreparedFile(file, context)
     const history = await commitHistory([record], context.history, context.settings.historyLimit)
-    void notify('upload_done', { title: '图床上传完成', body: '图片已上传到图床' })
+    void notify('upload_done', { title: t('上传完成'), body: t('图片已上传到图床') })
     return { success: true, results: [result], history, error: '' }
   } catch (error) {
     return {
       success: false,
-      results: [{ success: false, name: fileName, error: error?.message || '上传失败' }],
+      results: [{ success: false, name: fileName, error: error?.message || t('上传失败') }],
       history: context.history,
-      error: error?.message || '上传失败'
+      error: error?.message || t('上传失败')
     }
   }
 }
 
 export async function testImageHostProvider(providerId, rawSettings) {
   const meta = getProviderMeta(providerId)
-  if (!meta) return { success: false, message: '不支持的图床类型' }
+  if (!meta) return { success: false, message: t('不支持的图床类型') }
 
   const settings = normalizeProviderSettings(
     providerId,
@@ -264,13 +277,18 @@ export async function testImageHostProvider(providerId, rawSettings) {
   )
   const missing = getMissingRequiredFields(providerId, settings)
   if (missing.length) {
-    return { success: false, message: `请先填写：${missing.map((field) => field.label).join('、')}` }
+    return {
+      success: false,
+      message: t('请先填写：{fields}', {
+        fields: missing.map((field) => field.label).join(getLocale() === 'en-US' ? ', ' : '、')
+      })
+    }
   }
 
   try {
     return await testProvider({ providerId, settings })
   } catch (error) {
-    return { success: false, message: error?.message || '连接测试失败' }
+    return { success: false, message: error?.message || t('连接测试失败') }
   }
 }
 

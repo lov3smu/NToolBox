@@ -7,11 +7,11 @@
             <path d="M4 7h13l-3-3" />
             <path d="M20 17H7l3 3" />
           </svg>
-          数据传输
+          {{ t('数据传输') }}
         </h3>
         <button
           class="btn-icon btn-sm"
-          title="关闭"
+          :title="t('关闭')"
           :disabled="dataTransferDialog.transferring"
           @click="closeDataTransferDialog"
         >
@@ -25,11 +25,11 @@
       <div class="transfer-shell">
         <aside class="transfer-tasks">
           <div class="transfer-tasks-head">
-            <span>传输任务</span>
+            <span>{{ t('传输任务') }}</span>
             <div class="transfer-tasks-actions">
               <button
                 class="btn-icon btn-sm"
-                title="新建任务"
+                :title="t('新建任务')"
                 :disabled="dataTransferDialog.transferring"
                 @click="openDataTransferDialog"
               >
@@ -40,7 +40,7 @@
               </button>
               <button
                 class="btn-icon btn-sm"
-                title="从配置重新加载任务"
+                :title="t('从配置重新加载任务')"
                 :disabled="dataTransferDialog.transferring"
                 @click="refreshTransferTasks"
               >
@@ -54,7 +54,7 @@
           <input
             v-model="dataTransferDialog.taskKeyword"
             class="input-field transfer-task-search"
-            placeholder="搜索任务..."
+            :placeholder="t('搜索任务...')"
           />
 
           <div class="transfer-task-list">
@@ -63,7 +63,7 @@
                 <path d="M4 7h13l-3-3" />
                 <path d="M20 17H7l3 3" />
               </svg>
-              <span>{{ dataTransferDialog.tasks.length ? '没有匹配的任务' : '暂无已保存的传输任务' }}</span>
+              <span>{{ dataTransferDialog.tasks.length ? t('没有匹配的任务') : t('暂无已保存的传输任务') }}</span>
             </div>
             <template v-else>
               <div
@@ -79,7 +79,7 @@
                 </div>
                 <button
                   class="btn-icon btn-sm transfer-task-delete"
-                  title="删除任务"
+                  :title="t('删除任务')"
                   :disabled="dataTransferDialog.transferring"
                   @click.stop="deleteTransferTask(task)"
                 >
@@ -97,23 +97,23 @@
         <div class="transfer-main">
           <div class="transfer-sides">
             <section class="transfer-side">
-              <div class="transfer-side-title transfer-side-title-source">源</div>
+              <div class="transfer-side-title transfer-side-title-source">{{ t('源') }}</div>
               <label class="transfer-field">
-                <span>源连接</span>
+                <span>{{ t('源连接') }}</span>
                 <select
                   v-model="dataTransferDialog.sourceConnection"
                   class="input-field"
                   :disabled="dataTransferDialog.transferring"
                   @change="loadTransferDatabases('source')"
                 >
-                  <option value="">选择连接</option>
+                  <option value="">{{ t('选择连接') }}</option>
                   <option v-for="conn in activeConnections" :key="conn.name" :value="conn.name">
                     {{ conn.name }}
                   </option>
                 </select>
               </label>
               <label class="transfer-field">
-                <span>源数据库</span>
+                <span>{{ t('源数据库') }}</span>
                 <select
                   v-model="dataTransferDialog.sourceDatabase"
                   class="input-field"
@@ -124,7 +124,7 @@
                   "
                   @change="loadTransferObjects"
                 >
-                  <option value="">选择数据库</option>
+                  <option value="">{{ t('选择数据库') }}</option>
                   <option v-for="db in dataTransferDialog.sourceDatabases" :key="db" :value="db">
                     {{ db }}
                   </option>
@@ -134,7 +134,7 @@
 
             <button
               class="btn-icon transfer-swap"
-              title="交换源和目标"
+              :title="t('交换源和目标')"
               :disabled="dataTransferDialog.transferring"
               @click="swapTransferSides"
             >
@@ -147,23 +147,23 @@
             </button>
 
             <section class="transfer-side">
-              <div class="transfer-side-title transfer-side-title-target">目标</div>
+              <div class="transfer-side-title transfer-side-title-target">{{ t('目标') }}</div>
               <label class="transfer-field">
-                <span>目标连接</span>
+                <span>{{ t('目标连接') }}</span>
                 <select
                   v-model="dataTransferDialog.targetConnection"
                   class="input-field"
                   :disabled="dataTransferDialog.transferring"
                   @change="loadTransferDatabases('target')"
                 >
-                  <option value="">选择连接</option>
+                  <option value="">{{ t('选择连接') }}</option>
                   <option v-for="conn in activeConnections" :key="conn.name" :value="conn.name">
                     {{ conn.name }}
                   </option>
                 </select>
               </label>
               <label class="transfer-field">
-                <span>目标数据库</span>
+                <span>{{ t('目标数据库') }}</span>
                 <select
                   v-model="dataTransferDialog.targetDatabase"
                   class="input-field"
@@ -173,7 +173,7 @@
                     dataTransferDialog.loadingDatabases
                   "
                 >
-                  <option value="">选择数据库</option>
+                  <option value="">{{ t('选择数据库') }}</option>
                   <option v-for="db in dataTransferDialog.targetDatabases" :key="db" :value="db">
                     {{ db }}
                   </option>
@@ -184,7 +184,7 @@
 
           <section class="transfer-objects">
             <div class="transfer-section-head">
-              <span>传输对象</span>
+              <span>{{ t('传输对象') }}</span>
               <span v-if="dataTransferDialog.objects.length" class="transfer-count">
                 {{ selectedCount }}/{{ dataTransferDialog.objects.length }}
               </span>
@@ -194,14 +194,14 @@
               v-if="!dataTransferDialog.sourceConnection || !dataTransferDialog.sourceDatabase"
               class="transfer-object-hint"
             >
-              请先选择源连接和数据库
+              {{ t('请先选择源连接和数据库') }}
             </div>
             <template v-else>
               <div class="transfer-object-toolbar">
                 <input
                   v-model="dataTransferDialog.objectKeyword"
                   class="input-field"
-                  placeholder="搜索对象名..."
+                  :placeholder="t('搜索对象名...')"
                   :disabled="dataTransferDialog.transferring"
                 />
                 <button
@@ -209,14 +209,14 @@
                   :disabled="dataTransferDialog.transferring"
                   @click="dataTransferDialog.bulkOpen = !dataTransferDialog.bulkOpen"
                 >
-                  批量录入
+                  {{ t('批量录入') }}
                 </button>
                 <button
                   class="transfer-link"
                   :disabled="dataTransferDialog.transferring || !dataTransferDialog.objects.length"
                   @click="toggleAllTransferObjects"
                 >
-                  {{ allSelected ? '取消全选' : '全选' }}
+                  {{ allSelected ? t('取消全选') : t('全选') }}
                 </button>
               </div>
 
@@ -224,7 +224,7 @@
                 <textarea
                   v-model="dataTransferDialog.bulkText"
                   class="transfer-bulk-input"
-                  placeholder="输入对象名称，每行一个；可用 table:orders 指定类型"
+                  :placeholder="t('输入对象名称，每行一个；可用 table:orders 指定类型')"
                   :disabled="dataTransferDialog.transferring"
                 />
                 <div class="transfer-bulk-actions">
@@ -233,21 +233,23 @@
                     :disabled="dataTransferDialog.transferring"
                     @click="dataTransferDialog.bulkOpen = false"
                   >
-                    取消
+                    {{ t('取消') }}
                   </button>
                   <button
                     class="btn btn-sm btn-primary"
                     :disabled="dataTransferDialog.transferring"
                     @click="applyBulkTransferObjects"
                   >
-                    应用
+                    {{ t('应用') }}
                   </button>
                 </div>
               </div>
 
-              <div v-if="dataTransferDialog.loadingObjects" class="transfer-object-empty">正在读取对象...</div>
+              <div v-if="dataTransferDialog.loadingObjects" class="transfer-object-empty">
+                {{ t('正在读取对象...') }}
+              </div>
               <div v-else-if="!filteredObjects.length" class="transfer-object-empty">
-                {{ dataTransferDialog.objects.length ? '没有匹配的对象' : '暂无对象' }}
+                {{ dataTransferDialog.objects.length ? t('没有匹配的对象') : t('暂无对象') }}
               </div>
               <div v-else class="transfer-object-list">
                 <div v-for="group in objectGroups" :key="group.type" class="transfer-object-group">
@@ -286,63 +288,65 @@
 
           <div class="transfer-options">
             <div class="transfer-option-block">
-              <div class="transfer-option-title">传输内容</div>
-              <label v-for="mode in contentModes" :key="mode.value" class="transfer-radio">
-                <input
-                  v-model="dataTransferDialog.contentMode"
-                  type="radio"
-                  :value="mode.value"
-                  :disabled="dataTransferDialog.transferring"
-                />
+              <div class="transfer-option-title">{{ t('传输内容') }}</div>
+              <RadioOption
+                v-for="mode in contentModes"
+                :key="mode.value"
+                v-model="dataTransferDialog.contentMode"
+                class="transfer-radio"
+                name="transfer-content"
+                :value="mode.value"
+                :disabled="dataTransferDialog.transferring"
+              >
                 <span class="transfer-radio-label">{{ mode.label }}</span>
                 <span v-if="mode.hint" class="transfer-radio-hint">{{ mode.hint }}</span>
-              </label>
+              </RadioOption>
             </div>
 
             <div class="transfer-option-grid">
               <label class="transfer-field">
-                <span>目标表处理方式</span>
+                <span>{{ t('目标表处理方式') }}</span>
                 <select
                   v-model="dataTransferDialog.targetMode"
                   class="input-field"
                   :disabled="dataTransferDialog.transferring"
                 >
-                  <option value="append">追加（INSERT）</option>
-                  <option value="truncate">清空后写入（TRUNCATE）</option>
-                  <option value="skip">跳过已存在</option>
+                  <option value="append">{{ t('追加（INSERT）') }}</option>
+                  <option value="truncate">{{ t('清空后写入（TRUNCATE）') }}</option>
+                  <option value="skip">{{ t('跳过已存在') }}</option>
                 </select>
               </label>
               <p class="transfer-option-hint transfer-option-full">
-                目标对象不存在时自动创建；已存在的视图、存储过程等对象在非跳过模式下会重建。
+                {{ t('目标对象不存在时自动创建；已存在的视图、存储过程等对象在非跳过模式下会重建。') }}
               </p>
 
               <label class="transfer-field">
-                <span>目标表名大小写</span>
+                <span>{{ t('目标表名大小写') }}</span>
                 <select
                   v-model="dataTransferDialog.tableNameCase"
                   class="input-field"
                   :disabled="dataTransferDialog.transferring"
                 >
-                  <option value="keep">保持原样</option>
-                  <option value="lower">转为小写</option>
-                  <option value="upper">转为大写</option>
+                  <option value="keep">{{ t('保持原样') }}</option>
+                  <option value="lower">{{ t('转为小写') }}</option>
+                  <option value="upper">{{ t('转为大写') }}</option>
                 </select>
               </label>
               <label class="transfer-field">
-                <span>目标字段名大小写</span>
+                <span>{{ t('目标字段名大小写') }}</span>
                 <select
                   v-model="dataTransferDialog.columnNameCase"
                   class="input-field"
                   :disabled="dataTransferDialog.transferring"
                 >
-                  <option value="keep">保持原样</option>
-                  <option value="lower">转为小写</option>
-                  <option value="upper">转为大写</option>
+                  <option value="keep">{{ t('保持原样') }}</option>
+                  <option value="lower">{{ t('转为小写') }}</option>
+                  <option value="upper">{{ t('转为大写') }}</option>
                 </select>
               </label>
 
               <label class="transfer-field">
-                <span>每批行数</span>
+                <span>{{ t('每批行数') }}</span>
                 <input
                   v-model.number="dataTransferDialog.batchSize"
                   class="input-field"
@@ -353,17 +357,17 @@
                 />
               </label>
               <label class="transfer-field">
-                <span>操作超时（秒）</span>
+                <span>{{ t('操作超时（秒）') }}</span>
                 <select
                   v-model="dataTransferDialog.timeoutMode"
                   class="input-field"
                   :disabled="dataTransferDialog.transferring"
                 >
-                  <option value="inherit">继承连接</option>
-                  <option value="30">30 秒</option>
-                  <option value="60">60 秒</option>
-                  <option value="120">120 秒</option>
-                  <option value="300">300 秒</option>
+                  <option value="inherit">{{ t('继承连接') }}</option>
+                  <option value="30">{{ t('30 秒') }}</option>
+                  <option value="60">{{ t('60 秒') }}</option>
+                  <option value="120">{{ t('120 秒') }}</option>
+                  <option value="300">{{ t('300 秒') }}</option>
                 </select>
               </label>
               <p class="transfer-option-hint transfer-option-full">{{ timeoutHint }}</p>
@@ -375,12 +379,13 @@
 
           <div v-if="dataTransferDialog.summary" class="data-transfer-summary">
             <p>
-              成功 {{ summary.transferred.length }} 个对象，跳过 {{ summary.skipped.length }}，失败
+              {{ t('成功') }} {{ summary.transferred.length }} {{ t('个对象，跳过') }} {{ summary.skipped.length
+              }}{{ t('，失败') }}
               {{ summary.failed.length }}
             </p>
             <p v-for="item in summary.failed" :key="'failed-' + summaryKey(item)" class="data-transfer-failure">
               {{ summaryLabel(item) }}：{{ item.error
-              }}<template v-if="item.rows">（已写入 {{ item.rows }} 行）</template>
+              }}<template v-if="item.rows">{{ t('（已写入') }} {{ item.rows }} {{ t('行）') }}</template>
             </p>
             <p v-for="item in summary.skipped" :key="'skipped-' + summaryKey(item)">
               {{ summaryLabel(item) }}：{{ item.reason }}
@@ -391,21 +396,21 @@
 
       <div class="dialog-footer">
         <button class="btn btn-secondary" :disabled="dataTransferDialog.transferring" @click="closeDataTransferDialog">
-          取消
+          {{ t('取消') }}
         </button>
         <button
           class="btn btn-secondary"
           :disabled="!canSaveTask || dataTransferDialog.transferring"
           @click="saveTransferTask"
         >
-          保存为任务
+          {{ t('保存为任务') }}
         </button>
         <button
           class="btn btn-primary"
           :disabled="!canTransfer || dataTransferDialog.transferring"
           @click="executeDataTransfer"
         >
-          {{ dataTransferDialog.transferring ? '传输中...' : '开始传输' }}
+          {{ dataTransferDialog.transferring ? t('传输中...') : t('开始传输') }}
         </button>
       </div>
     </div>
@@ -413,7 +418,9 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject } from 'vue'
+import RadioOption from '@/components/RadioOption.vue'
 import { filterTransferObjects, getTransferTypeLabel, groupTransferObjects, transferObjectKey } from '../transferPlan'
 
 const databaseStore = inject('database')
@@ -438,9 +445,9 @@ const {
 } = databaseStore
 
 const contentModes = [
-  { value: 'all', label: '结构和数据' },
-  { value: 'structure', label: '仅结构', hint: '仅创建表和对象结构，不复制数据' },
-  { value: 'data', label: '仅数据', hint: '仅复制数据到已存在的目标表' }
+  { value: 'all', label: t('结构和数据') },
+  { value: 'structure', label: t('仅结构'), hint: t('仅创建表和对象结构，不复制数据') },
+  { value: 'data', label: t('仅数据'), hint: t('仅复制数据到已存在的目标表') }
 ]
 
 const filteredTasks = computed(() => {
@@ -489,14 +496,14 @@ const canSaveTask = computed(() => {
 const timeoutHint = computed(() => {
   const dialog = dataTransferDialog.value
   if (dialog.timeoutMode !== 'inherit') {
-    return `本次任务单条语句超时 ${dialog.timeoutMode} 秒，整个传输任务不限制总时长。`
+    return t('本次任务单条语句超时 {p0} 秒，整个传输任务不限制总时长。', { p0: dialog.timeoutMode })
   }
 
   const source = connections.value.find((conn) => conn.name === dialog.sourceConnection)
   const target = connections.value.find((conn) => conn.name === dialog.targetConnection)
-  const read = source?.enableReadTimeout === false ? '不限制' : `${source?.readTimeout || 30} 秒`
-  const write = target?.enableWriteTimeout === false ? '不限制' : `${target?.writeTimeout || 30} 秒`
-  return `源连接：${read}；目标连接：${write}。整个传输任务不限制总时长。`
+  const read = source?.enableReadTimeout === false ? t('不限制') : t('{p0} 秒', { p0: source?.readTimeout || 30 })
+  const write = target?.enableWriteTimeout === false ? t('不限制') : t('{p0} 秒', { p0: target?.writeTimeout || 30 })
+  return t('源连接：{p0}；目标连接：{p1}。整个传输任务不限制总时长。', { p0: read, p1: write })
 })
 
 function isSelected(item) {

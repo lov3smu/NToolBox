@@ -49,14 +49,6 @@
   box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.1);
 }
 
-.rule-option input[type='radio'] {
-  width: var(--icon-size-xs);
-  height: var(--icon-size-xs);
-  margin-right: 12px;
-  accent-color: var(--accent-color);
-  cursor: pointer;
-}
-
 .option-text {
   flex: 1;
   font-size: var(--font-size-base);
@@ -70,43 +62,6 @@
 
 .option-text span {
   color: var(--text-secondary);
-}
-
-.inline-input {
-  min-width: 80px;
-  max-width: 120px;
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: var(--font-size-base);
-  text-align: center;
-  color: var(--text-primary);
-  background: var(--glass-bg);
-}
-
-.inline-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  background: var(--glass-bg-hover);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
-}
-
-.inline-select {
-  min-width: 80px;
-  max-width: 120px;
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  background: var(--glass-bg);
-  cursor: pointer;
-}
-
-.inline-select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 /* 周选项特殊样式 */
@@ -250,7 +205,7 @@
 .year-specific-input:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+  box-shadow: var(--shadow-glow);
 }
 
 /* ---------- 底部区域 ---------- */
@@ -334,7 +289,7 @@
 .expression-input:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+  box-shadow: var(--shadow-glow);
 }
 
 .expression-desc {

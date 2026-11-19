@@ -1,17 +1,17 @@
 <template>
   <div class="image-host-settings">
-    <div v-if="loading" class="ihs-empty">正在读取图床配置…</div>
+    <div v-if="loading" class="ihs-empty">{{ t('正在读取图床配置…') }}</div>
     <template v-else>
       <section class="setting-section">
         <div class="setting-section-head">
-          <h3 class="setting-section-title">上传设置</h3>
-          <span class="setting-section-desc">上传图片时使用的图床服务与全局限制；选择后自动保存</span>
+          <h3 class="setting-section-title">{{ t('上传设置') }}</h3>
+          <span class="setting-section-desc">{{ t('上传图片时使用的图床服务与全局限制；选择后自动保存') }}</span>
         </div>
         <div class="setting-section-body">
           <div class="setting-row">
             <div class="setting-row-text">
-              <span class="setting-row-label">当前图床</span>
-              <span class="setting-row-desc">上传图片时使用该服务；需先在下方卡片中完成必填项</span>
+              <span class="setting-row-label">{{ t('当前图床') }}</span>
+              <span class="setting-row-desc">{{ t('上传图片时使用该服务；需先在下方卡片中完成必填项') }}</span>
             </div>
             <div class="setting-row-control">
               <SettingSelect
@@ -24,8 +24,8 @@
           </div>
           <div class="setting-row">
             <div class="setting-row-text">
-              <span class="setting-row-label">单文件上限</span>
-              <span class="setting-row-desc">单张图片超过该大小时拒绝上传</span>
+              <span class="setting-row-label">{{ t('单文件上限') }}</span>
+              <span class="setting-row-desc">{{ t('单张图片超过该大小时拒绝上传') }}</span>
             </div>
             <div class="setting-row-control">
               <SettingSelect
@@ -38,8 +38,8 @@
           </div>
           <div class="setting-row">
             <div class="setting-row-text">
-              <span class="setting-row-label">历史保留条数</span>
-              <span class="setting-row-desc">超出后自动清理最早的上传记录</span>
+              <span class="setting-row-label">{{ t('历史保留条数') }}</span>
+              <span class="setting-row-desc">{{ t('超出后自动清理最早的上传记录') }}</span>
             </div>
             <div class="setting-row-control">
               <SettingSelect
@@ -68,17 +68,17 @@
             @keydown.enter.prevent="toggleExpanded(provider.id)"
           >
             <div class="provider-title">
-              <span class="provider-name">{{ provider.name }}</span>
+              <span class="provider-name">{{ t(provider.name) }}</span>
               <span class="provider-id">{{ provider.id }}</span>
               <span class="provider-tag" :class="{ configured: isConfigured(provider.id) }">
-                {{ isConfigured(provider.id) ? '已配置' : '未配置' }}
+                {{ isConfigured(provider.id) ? t('已配置') : t('未配置') }}
               </span>
-              <span v-if="provider.id === settings.active" class="provider-tag default-chat">当前图床</span>
-              <span v-if="isProviderDirty(provider.id)" class="provider-tag custom">未保存</span>
+              <span v-if="provider.id === settings.active" class="provider-tag default-chat">{{ t('当前图床') }}</span>
+              <span v-if="isProviderDirty(provider.id)" class="provider-tag custom">{{ t('未保存') }}</span>
             </div>
             <div class="provider-header-actions">
               <button v-if="provider.docsUrl" type="button" class="link-btn" @click.stop="openDocs(provider)">
-                {{ provider.docsLabel || '查看文档' }}
+                {{ provider.docsLabel ? t(provider.docsLabel) : t('查看文档') }}
               </button>
               <button
                 type="button"
@@ -86,7 +86,7 @@
                 :aria-expanded="isExpanded(provider.id)"
                 @click.stop="toggleExpanded(provider.id)"
               >
-                {{ isExpanded(provider.id) ? '收起' : '编辑' }}
+                {{ isExpanded(provider.id) ? t('收起') : t('编辑') }}
                 <svg
                   class="provider-chevron"
                   :class="{ rotated: isExpanded(provider.id) }"
@@ -112,16 +112,16 @@
           >
             <div class="provider-collapse-inner">
               <div class="provider-card-body">
-                <p class="provider-desc">{{ provider.description }}</p>
+                <p class="provider-desc">{{ t(provider.description) }}</p>
 
                 <div class="provider-field">
                   <div v-for="field in provider.fields" :key="field.key" class="setting-row">
                     <div class="setting-row-text">
                       <span class="setting-row-label">
-                        {{ field.label }}
+                        {{ t(field.label) }}
                         <span v-if="field.required" class="ihs-required">*</span>
                       </span>
-                      <span v-if="field.hint" class="setting-row-desc">{{ field.hint }}</span>
+                      <span v-if="field.hint" class="setting-row-desc">{{ t(field.hint) }}</span>
                     </div>
                     <div class="setting-row-control">
                       <SettingSelect
@@ -132,7 +132,7 @@
 
                       <label v-else-if="field.type === 'switch'" class="ihs-switch">
                         <input v-model="settings.providers[provider.id][field.key]" type="checkbox" class="switch" />
-                        <span>{{ settings.providers[provider.id][field.key] ? '已开启' : '已关闭' }}</span>
+                        <span>{{ settings.providers[provider.id][field.key] ? t('已开启') : t('已关闭') }}</span>
                       </label>
 
                       <div v-else-if="field.type === 'password'" class="api-key-input-group">
@@ -140,11 +140,11 @@
                           v-model="settings.providers[provider.id][field.key]"
                           class="input-field"
                           :type="secretsVisible[provider.id] ? 'text' : 'password'"
-                          :placeholder="field.placeholder || ''"
+                          :placeholder="t(field.placeholder || '')"
                           spellcheck="false"
                         />
                         <button type="button" class="btn btn-secondary" @click="toggleSecrets(provider.id)">
-                          {{ secretsVisible[provider.id] ? '隐藏' : '显示' }}
+                          {{ secretsVisible[provider.id] ? t('隐藏') : t('显示') }}
                         </button>
                       </div>
 
@@ -152,7 +152,7 @@
                         v-else-if="field.type === 'textarea'"
                         v-model="settings.providers[provider.id][field.key]"
                         class="input-field ihs-textarea"
-                        :placeholder="field.placeholder || ''"
+                        :placeholder="t(field.placeholder || '')"
                         rows="3"
                         spellcheck="false"
                       />
@@ -161,7 +161,7 @@
                         v-else
                         v-model="settings.providers[provider.id][field.key]"
                         class="input-field"
-                        :placeholder="field.placeholder || ''"
+                        :placeholder="t(field.placeholder || '')"
                         spellcheck="false"
                       />
                     </div>
@@ -169,7 +169,7 @@
                 </div>
 
                 <p v-if="missingLabels(provider.id)" class="ihs-missing">
-                  还需要填写：{{ missingLabels(provider.id) }}
+                  {{ t('还需要填写：{fields}', { fields: missingLabels(provider.id) }) }}
                 </p>
                 <p
                   v-if="testResults[provider.id]"
@@ -186,7 +186,7 @@
                     :disabled="testing[provider.id]"
                     @click="testConnection(provider)"
                   >
-                    {{ testing[provider.id] ? '测试中…' : '测试连通性' }}
+                    {{ testing[provider.id] ? t('测试中…') : t('测试连通性') }}
                   </button>
                   <button
                     type="button"
@@ -194,7 +194,7 @@
                     :disabled="!isProviderDirty(provider.id)"
                     @click="revertProvider(provider)"
                   >
-                    还原
+                    {{ t('还原') }}
                   </button>
                   <button
                     type="button"
@@ -202,7 +202,7 @@
                     :disabled="Boolean(savingProvider) || !isProviderDirty(provider.id)"
                     @click="saveProvider(provider)"
                   >
-                    {{ savingProvider === provider.id ? '保存中…' : '保存' }}
+                    {{ savingProvider === provider.id ? t('保存中…') : t('保存') }}
                   </button>
                 </div>
               </div>
@@ -255,8 +255,10 @@ let saveQueue = Promise.resolve()
 const providerOptions = computed(() =>
   providers.map((provider) => ({
     value: provider.id,
-    label: provider.name,
-    hint: isConfigured(provider.id) ? provider.description : `${provider.description}（未配置）`
+    label: t(provider.name),
+    hint: isConfigured(provider.id)
+      ? provider.description
+      : t('{description}（未配置）', { description: provider.description })
   }))
 )
 
@@ -270,8 +272,8 @@ function isConfigured(providerId) {
 
 function missingLabels(providerId) {
   return getMissingRequiredFields(providerId, settings.value.providers[providerId])
-    .map((field) => field.label)
-    .join('、')
+    .map((field) => t(field.label))
+    .join(t('、'))
 }
 
 function isProviderDirty(providerId) {
@@ -318,7 +320,7 @@ function runSave(mutator) {
 async function persistWith(mutator) {
   const payload = mutator(clone(savedSettings.value))
   const response = await imageHostSaveSettings(payload)
-  if (!response?.success) throw new Error('保存图床配置失败')
+  if (!response?.success) throw new Error(t('保存图床配置失败'))
   savedSettings.value = normalizeImageHostSettings(response.settings)
 }
 
@@ -335,7 +337,7 @@ async function savePrefs() {
     syncPrefsFromSaved()
   } catch (error) {
     syncPrefsFromSaved()
-    showError(error?.message || '保存图床配置失败')
+    showError(error?.message || t('保存图床配置失败'))
   } finally {
     savingPrefs.value = false
   }
@@ -379,9 +381,9 @@ async function saveProvider(provider) {
     }))
     syncProviderFromSaved(providerId)
     syncPrefsFromSaved()
-    showSuccess(t('settings.imageHosting.saved'))
+    showSuccess(t('图床配置已保存'))
   } catch (error) {
-    showError(error?.message || '保存图床配置失败')
+    showError(error?.message || t('保存图床配置失败'))
   } finally {
     savingProvider.value = ''
   }
@@ -393,7 +395,7 @@ async function testConnection(provider) {
   testing.value = { ...testing.value, [providerId]: true }
   testResults.value = {
     ...testResults.value,
-    [providerId]: { success: false, message: t('settings.imageHosting.testing') }
+    [providerId]: { success: false, message: t('正在测试连接…') }
   }
   try {
     const response = await imageHostTest(providerId, clone(settings.value.providers[providerId]))
@@ -401,13 +403,13 @@ async function testConnection(provider) {
       ...testResults.value,
       [providerId]: {
         success: response?.success === true,
-        message: response?.success ? response.message || '连接正常' : response?.message || '连接测试失败'
+        message: response?.success ? response.message || t('连接正常') : response?.message || t('连接测试失败')
       }
     }
   } catch (error) {
     testResults.value = {
       ...testResults.value,
-      [providerId]: { success: false, message: error?.message || '连接测试失败' }
+      [providerId]: { success: false, message: error?.message || t('连接测试失败') }
     }
   } finally {
     testing.value = { ...testing.value, [providerId]: false }

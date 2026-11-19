@@ -147,8 +147,10 @@ describe('fallback targets', () => {
 
   it('uses configured fallback models and skips the primary model', () => {
     const config = {
-      ai_fallback_models: ['deepseek:deepseek-chat', 'bailian:qwen-max'],
-      ai_api_keys: {}
+      ai: {
+        fallback: { models: ['deepseek:deepseek-chat', 'bailian:qwen-max'] },
+        keys: {}
+      }
     }
     expect(resolveFallbackTargets(config, 'bailian', 'qwen-max')).toEqual([
       { provider: 'deepseek', model: 'deepseek-chat' }
@@ -157,9 +159,11 @@ describe('fallback targets', () => {
 
   it('derives fallbacks from other configured providers when the list is empty', () => {
     const config = {
-      ai_fallback_models: [],
-      ai_api_keys: { deepseek: 'k' },
-      ai_models: { deepseek: { default: 'deepseek-chat' } }
+      ai: {
+        fallback: { models: [] },
+        keys: { deepseek: 'k' },
+        models: { deepseek: { default: 'deepseek-chat' } }
+      }
     }
     const targets = resolveFallbackTargets(config, 'bailian', 'qwen-max')
     expect(targets[0]).toEqual({ provider: 'deepseek', model: 'deepseek-chat' })
@@ -167,9 +171,10 @@ describe('fallback targets', () => {
 
   it('can be disabled', () => {
     const config = {
-      ai_fallback_enabled: false,
-      ai_fallback_models: ['deepseek:deepseek-chat'],
-      ai_api_keys: { deepseek: 'k' }
+      ai: {
+        fallback: { enabled: false, models: ['deepseek:deepseek-chat'] },
+        keys: { deepseek: 'k' }
+      }
     }
     expect(resolveFallbackTargets(config, 'bailian', 'qwen-max')).toEqual([])
     expect(createFallbackProviders(config, 'bailian', 'qwen-max')).toEqual([])
@@ -177,8 +182,10 @@ describe('fallback targets', () => {
 
   it('creates providers only for configured credentials', () => {
     const config = {
-      ai_fallback_models: ['deepseek:deepseek-chat', 'openai:gpt-4o'],
-      ai_api_keys: { deepseek: 'k', openai: '' }
+      ai: {
+        fallback: { models: ['deepseek:deepseek-chat', 'openai:gpt-4o'] },
+        keys: { deepseek: 'k', openai: '' }
+      }
     }
     const providers = createFallbackProviders(config, 'bailian', 'qwen-max')
     expect(providers).toHaveLength(1)

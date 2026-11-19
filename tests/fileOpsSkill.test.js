@@ -8,8 +8,8 @@ import { isPathWithinBase } from '../src/main/utils/sanitize.js'
 const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ntoolbox-file-ops-'))
 const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ntoolbox-file-ops-outside-'))
 const context = {
-  config: { base_path: baseDir },
-  getConfig: () => ({ base_path: baseDir }),
+  config: { app: { base_path: baseDir } },
+  getConfig: () => ({ app: { base_path: baseDir } }),
   isPathWithinBase,
   log: { debug: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }

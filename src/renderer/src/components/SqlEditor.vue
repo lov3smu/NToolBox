@@ -3,6 +3,7 @@
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import {
   EditorView,
@@ -203,21 +204,33 @@ const customFunctions = [
 
 const SQL_SNIPPETS = [
   snippetCompletion('SELECT ${columns}\nFROM ${table}\nWHERE ${condition};', {
-    label: 'SELECT 查询',
+    get label() {
+      return t('SELECT 查询')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 85
   }),
   snippetCompletion('SELECT ${columns}, COUNT(*) AS total\nFROM ${table}\nGROUP BY ${columns};', {
-    label: 'SELECT COUNT 统计',
+    get label() {
+      return t('SELECT COUNT 统计')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 82
   }),
   snippetCompletion('INSERT INTO ${table} (${columns})\nVALUES (${values});', {
-    label: 'INSERT 插入',
+    get label() {
+      return t('INSERT 插入')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 85
   }),
   snippetCompletion(
@@ -225,74 +238,120 @@ const SQL_SNIPPETS = [
     {
       label: 'INSERT ON DUPLICATE',
       type: 'keyword',
-      detail: '代码片段',
+      get detail() {
+        return t('代码片段')
+      },
       boost: 80
     }
   ),
   snippetCompletion('UPDATE ${table}\nSET ${column} = ${value}\nWHERE ${condition};', {
-    label: 'UPDATE 更新',
+    get label() {
+      return t('UPDATE 更新')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 85
   }),
   snippetCompletion('DELETE FROM ${table}\nWHERE ${condition};', {
-    label: 'DELETE 删除',
+    get label() {
+      return t('DELETE 删除')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 85
   }),
   snippetCompletion('JOIN ${table} ON ${condition}', {
-    label: 'JOIN 联表',
+    get label() {
+      return t('JOIN 联表')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 72
   }),
   snippetCompletion('LEFT JOIN ${table} ON ${condition}', {
-    label: 'LEFT JOIN 左连接',
+    get label() {
+      return t('LEFT JOIN 左连接')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 72
   }),
   snippetCompletion('GROUP BY ${columns}', {
-    label: 'GROUP BY 分组',
+    get label() {
+      return t('GROUP BY 分组')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 70
   }),
   snippetCompletion('ORDER BY ${columns} ${direction}', {
-    label: 'ORDER BY 排序',
+    get label() {
+      return t('ORDER BY 排序')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 70
   }),
   snippetCompletion('LIMIT ${count} OFFSET ${offset}', {
-    label: 'LIMIT 分页',
+    get label() {
+      return t('LIMIT 分页')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 70
   }),
   snippetCompletion('CASE\n  WHEN ${condition} THEN ${result}\n  ELSE ${result}\nEND', {
-    label: 'CASE WHEN 条件',
+    get label() {
+      return t('CASE WHEN 条件')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 70
   }),
   snippetCompletion('WITH ${name} AS (\n  ${query}\n)\nSELECT *\nFROM ${name};', {
-    label: 'WITH CTE 公共表',
+    get label() {
+      return t('WITH CTE 公共表')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 70
   }),
   snippetCompletion('CREATE TABLE ${table} (\n  ${column} ${type}\n);', {
-    label: 'CREATE TABLE 建表',
+    get label() {
+      return t('CREATE TABLE 建表')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 65
   }),
   snippetCompletion('ALTER TABLE ${table}\n  ADD COLUMN ${column} ${type};', {
-    label: 'ALTER TABLE 改表',
+    get label() {
+      return t('ALTER TABLE 改表')
+    },
     type: 'keyword',
-    detail: '代码片段',
+    get detail() {
+      return t('代码片段')
+    },
     boost: 65
   })
 ]
@@ -308,7 +367,11 @@ function schemaColumns(tableName) {
 function tableInfo(tableName) {
   const columns = schemaColumns(tableName)
   if (columns.length === 0) return undefined
-  return `${columns.length} 列：${columns.slice(0, 8).join(', ')}${columns.length > 8 ? ' …' : ''}`
+  return t('{p0} 列：{p1}{p2}', {
+    p0: columns.length,
+    p1: columns.slice(0, 8).join(', '),
+    p2: columns.length > 8 ? ' …' : ''
+  })
 }
 
 const completionOptions = computed(() => [
@@ -316,14 +379,25 @@ const completionOptions = computed(() => [
   ...customFunctions.map((name) => ({
     label: name.replace('()', ''),
     type: 'function',
-    detail: 'MySQL 函数',
+    get detail() {
+      return t('MySQL 函数')
+    },
     boost: 75
   })),
-  ...props.databases.map((name) => ({ label: name, type: 'constant', detail: '数据库', boost: 68 })),
+  ...props.databases.map((name) => ({
+    label: name,
+    type: 'constant',
+    get detail() {
+      return t('数据库')
+    },
+    boost: 68
+  })),
   ...props.tables.map((name) => ({
     label: name,
     type: 'class',
-    detail: '表',
+    get detail() {
+      return t('表')
+    },
     info: tableInfo(name),
     boost: 60
   }))
@@ -765,8 +839,8 @@ class RunStatementMarker extends GutterMarker {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'cm-run-stmt-btn'
-    button.title = '执行该语句'
-    button.setAttribute('aria-label', '执行该语句')
+    button.title = t('执行该语句')
+    button.setAttribute('aria-label', t('执行该语句'))
     button.textContent = '▶'
     button.addEventListener('mousedown', (event) => event.preventDefault())
     button.addEventListener('click', (event) => {
@@ -894,7 +968,7 @@ function createDdlTooltip(tableName, ddl) {
   } else {
     const empty = document.createElement('div')
     empty.className = 'cm-ntb-ddl-empty'
-    empty.textContent = '暂无 DDL，或当前连接不可用'
+    empty.textContent = t('暂无 DDL，或当前连接不可用')
     dom.appendChild(empty)
   }
   return dom
@@ -1143,7 +1217,7 @@ defineExpose({
 
 .sql-editor-container:focus-within {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+  box-shadow: var(--shadow-glow);
 }
 
 .sql-editor-container .cm-editor {

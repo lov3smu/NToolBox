@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
+import { t } from './i18n.js'
 import { app } from 'electron'
 import { log } from '../utils'
 
@@ -157,12 +158,12 @@ export async function listRunTraces(limit = LIST_LIMIT) {
 
 export async function readRunTrace(runId) {
   const file = traceFile(runId)
-  if (!file) return { success: false, error: '运行标识无效' }
+  if (!file) return { success: false, error: t('运行标识无效') }
   try {
     const trace = JSON.parse(await fs.promises.readFile(file, 'utf8'))
     return { success: true, trace }
   } catch {
-    return { success: false, error: '运行轨迹不存在或已过期（保留 7 天）' }
+    return { success: false, error: t('运行轨迹不存在或已过期（保留 7 天）') }
   }
 }
 

@@ -13,7 +13,7 @@
               </div>
               <p>{{ skill.description }}</p>
             </div>
-            <button type="button" class="skill-dialog-close" title="关闭" @click="$emit('close')">
+            <button type="button" class="skill-dialog-close" :title="t('关闭')" @click="$emit('close')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -24,19 +24,19 @@
           <div class="skill-dialog-body">
             <div class="skill-dialog-meta">
               <div class="meta-item">
-                <span class="meta-label">作者</span>
-                <span class="meta-value">{{ skill.author || '未知' }}</span>
+                <span class="meta-label">{{ t('作者') }}</span>
+                <span class="meta-value">{{ skill.author || t('未知') }}</span>
               </div>
               <div class="meta-item">
-                <span class="meta-label">分类</span>
-                <span class="meta-value">{{ getCategoryLabel(skill.category) }}</span>
+                <span class="meta-label">{{ t('分类') }}</span>
+                <span class="meta-value">{{ t(getCategoryLabel(skill.category)) }}</span>
               </div>
               <div class="meta-item">
-                <span class="meta-label">来源</span>
-                <span class="meta-value">{{ sourceLabel(skill) }}</span>
+                <span class="meta-label">{{ t('来源') }}</span>
+                <span class="meta-value">{{ t(sourceLabel(skill)) }}</span>
               </div>
               <div v-if="skill.changelog" class="meta-item">
-                <span class="meta-label">更新说明</span>
+                <span class="meta-label">{{ t('更新说明') }}</span>
                 <span class="meta-value">{{ skill.changelog }}</span>
               </div>
             </div>
@@ -46,20 +46,20 @@
             </div>
 
             <section v-if="parameterEntries.length" class="skill-dialog-section">
-              <h3>参数</h3>
+              <h3>{{ t('参数') }}</h3>
               <div class="parameter-list">
                 <div v-for="[name, schema] in parameterEntries" :key="name" class="parameter-item">
                   <div class="parameter-name">
                     <code>{{ name }}</code>
-                    <span v-if="requiredParams.has(name)" class="parameter-required">必填</span>
+                    <span v-if="requiredParams.has(name)" class="parameter-required">{{ t('必填') }}</span>
                   </div>
-                  <p>{{ schema.description || schema.type || '无描述' }}</p>
+                  <p>{{ schema.description || schema.type || t('无描述') }}</p>
                 </div>
               </div>
             </section>
 
             <section v-if="skill.examples?.length" class="skill-dialog-section">
-              <h3>示例</h3>
+              <h3>{{ t('示例') }}</h3>
               <div class="example-list">
                 <pre v-for="(example, index) in skill.examples" :key="index" class="example-item">{{
                   formatExample(example)
@@ -68,13 +68,15 @@
             </section>
 
             <section v-if="skill.path" class="skill-dialog-section">
-              <h3>安装位置</h3>
+              <h3>{{ t('安装位置') }}</h3>
               <code class="skill-dialog-path">{{ skill.path }}</code>
             </section>
           </div>
 
           <footer class="skill-dialog-footer">
-            <button type="button" class="btn btn-secondary" @click="$emit('close')">关闭</button>
+            <button type="button" class="btn btn-secondary" @click="$emit('close')">
+              {{ t('关闭') }}
+            </button>
             <slot name="actions" />
           </footer>
         </div>
@@ -87,6 +89,7 @@
 import { computed } from 'vue'
 import { getSkillIcon } from '@/utils/skillIcons'
 import { formatExample, getCategoryLabel } from '@/utils/skillMeta'
+import { t } from '@/i18n'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -101,10 +104,10 @@ const parameterEntries = computed(() => Object.entries(props.skill?.parameters?.
 const requiredParams = computed(() => new Set(props.skill?.parameters?.required || []))
 
 function sourceLabel(skill) {
-  if (skill.source === 'clawhub') return 'ClawHub 在线市场'
-  if (skill.source === 'bundled') return '内置扩展'
-  if (skill.builtin) return '内置技能'
-  return '本地扩展'
+  if (skill.source === 'clawhub') return t('ClawHub 在线市场')
+  if (skill.source === 'bundled') return t('内置扩展')
+  if (skill.builtin) return t('内置技能')
+  return t('本地扩展')
 }
 </script>
 

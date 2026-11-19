@@ -27,6 +27,7 @@
 <script setup>
 import { computed } from 'vue'
 import { getToolByPath } from '@shared/tools'
+import { t } from '@/i18n'
 
 const props = defineProps({
   toolPath: { type: String, default: '' },
@@ -37,8 +38,8 @@ const props = defineProps({
 })
 
 const tool = computed(() => (props.toolPath ? getToolByPath(props.toolPath) : null))
-const resolvedTitle = computed(() => props.title || tool.value?.name || '')
-const resolvedSubtitle = computed(() => props.subtitle || tool.value?.description || '')
+const resolvedTitle = computed(() => props.title || (tool.value ? t(tool.value.name) : ''))
+const resolvedSubtitle = computed(() => props.subtitle || (tool.value ? t(tool.value.description) : ''))
 const resolvedMaxWidth = computed(() => {
   if (props.maxWidth === 'none' || props.maxWidth === '') return null
   return typeof props.maxWidth === 'number' ? `${props.maxWidth}px` : props.maxWidth

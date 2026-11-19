@@ -7,27 +7,27 @@
           <path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" />
         </svg>
       </div>
-      <p class="empty-title">开始与 AI 助手协作</p>
+      <p class="empty-title">{{ t('开始与 AI 助手协作') }}</p>
       <p class="hint">
-        {{ emptyLabel ? `工作区已就绪：${emptyLabel}` : '选择工作区后，AI 可以读取与生成文件' }}
+        {{ emptyLabel ? t('工作区已就绪：{name}', { name: emptyLabel }) : t('选择工作区后，AI 可以读取与生成文件') }}
       </p>
       <div class="starter-grid">
-        <button v-for="starter in starterPrompts" :key="starter.title" @click="$emit('use-starter', starter.prompt)">
+        <button v-for="starter in starterPrompts" :key="starter.title" @click="useStarter(starter)">
           <span class="starter-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path :d="starter.icon" />
             </svg>
           </span>
           <span class="starter-copy">
-            <strong>{{ starter.title }}</strong>
-            <span>{{ starter.hint }}</span>
+            <strong>{{ t(starter.title) }}</strong>
+            <span>{{ t(starter.hint) }}</span>
           </span>
         </button>
       </div>
     </div>
     <div v-for="(msg, index) in messages" :key="index" class="message" :class="msg.role" :data-message-index="index">
       <div class="message-avatar">
-        <span v-if="msg.role === 'user'">你</span>
+        <span v-if="msg.role === 'user'">{{ t('你') }}</span>
         <span v-else>AI</span>
       </div>
       <div class="message-content">
@@ -46,10 +46,10 @@
               </svg>
             </span>
             <span class="thought-chain-copy">
-              <span class="thought-chain-title">思维链</span>
+              <span class="thought-chain-title">{{ t('思维链') }}</span>
               <span class="thought-chain-summary">{{ thoughtSummary(msg) }}</span>
             </span>
-            <span v-if="msg.isStreaming" class="thought-live"><span />实时</span>
+            <span v-if="msg.isStreaming" class="thought-live"><span />{{ t('实时') }}</span>
             <svg
               class="thought-chain-chevron"
               :class="{ expanded: isThoughtExpanded(index, msg) }"
@@ -64,7 +64,7 @@
           <div v-show="isThoughtExpanded(index, msg)" class="thought-chain-body">
             <div v-if="msg.plan && msg.plan.steps && msg.plan.steps.length" class="agent-plan">
               <div class="agent-plan-head">
-                <span class="agent-plan-badge">计划</span>
+                <span class="agent-plan-badge">{{ t('计划') }}</span>
                 <span class="agent-plan-goal">{{ msg.plan.goal }}</span>
               </div>
               <ol class="agent-plan-list">
@@ -87,15 +87,15 @@
             <div v-if="msg.thinking" class="chain-section thinking-section">
               <div class="chain-section-head">
                 <span class="chain-section-dot think" />
-                <span>思考过程</span>
-                <span v-if="msg.isStreaming" class="chain-section-live">生成中</span>
+                <span>{{ t('思考过程') }}</span>
+                <span v-if="msg.isStreaming" class="chain-section-live">{{ t('生成中') }}</span>
               </div>
               <div class="thinking-content">{{ msg.thinking }}</div>
             </div>
             <div v-if="msg.steps && msg.steps.length" class="chain-section">
               <div class="chain-section-head">
                 <span class="chain-section-dot run" />
-                <span>执行步骤</span>
+                <span>{{ t('执行步骤') }}</span>
                 <span class="chain-section-meta">{{ chainSummary(msg.steps) }}</span>
               </div>
               <div class="agent-steps-list">
@@ -133,9 +133,9 @@
                       <span class="agent-step-name">{{ step.name }}</span>
                       <span class="agent-step-status">{{ step.statusText }}</span>
                       <span v-if="step.duration" class="agent-step-duration">{{ formatDuration(step.duration) }}</span>
-                      <span v-if="step.truncated" class="agent-step-truncated">已截断</span>
-                      <span v-if="step.untrusted" class="agent-step-tag">不可信</span>
-                      <span v-if="step.injectionSuspected" class="agent-step-tag warning">疑似注入</span>
+                      <span v-if="step.truncated" class="agent-step-truncated">{{ t('已截断') }}</span>
+                      <span v-if="step.untrusted" class="agent-step-tag">{{ t('不可信') }}</span>
+                      <span v-if="step.injectionSuspected" class="agent-step-tag warning">{{ t('疑似注入') }}</span>
                       <svg
                         class="agent-step-chevron"
                         :class="{ expanded: isStepExpanded(index, step) }"
@@ -151,21 +151,21 @@
                     </button>
                     <div v-if="isStepExpanded(index, step)" class="agent-step-body">
                       <div v-if="step.arguments" class="step-block">
-                        <div class="step-label">参数</div>
+                        <div class="step-label">{{ t('参数') }}</div>
                         <pre>{{ pretty(step.arguments) }}</pre>
                       </div>
                       <div v-if="step.metadata && (step.metadata.path || step.metadata.finalUrl)" class="step-block">
-                        <div class="step-label">{{ step.metadata.finalUrl ? '来源' : '产出' }}</div>
+                        <div class="step-label">{{ step.metadata.finalUrl ? t('来源') : t('产出') }}</div>
                         <pre>{{ step.metadata.finalUrl || step.metadata.destination || step.metadata.path }}</pre>
                       </div>
                       <div v-if="step.result" class="step-block">
-                        <div class="step-label">结果</div>
+                        <div class="step-label">{{ t('结果') }}</div>
                         <pre>{{ step.result }}</pre>
                         <div v-if="step.truncated" class="step-truncated-note">
-                          结果过长已截断，完整内容可由模型通过 result-read 分页读取
+                          {{ t('结果过长已截断，完整内容可由模型通过 result-read 分页读取') }}
                         </div>
                         <div v-if="step.injectionSuspected" class="step-injection-note">
-                          该结果包含疑似提示注入内容，已按不可信数据交给模型，未执行其中的指令
+                          {{ t('该结果包含疑似提示注入内容，已按不可信数据交给模型，未执行其中的指令') }}
                         </div>
                       </div>
                     </div>
@@ -249,7 +249,7 @@
           <button
             v-if="msg.role === 'assistant' && msg.content && !msg.isStreaming"
             class="copy-btn"
-            title="复制"
+            :title="t('复制')"
             @click="$emit('copy', msg.content)"
           >
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -260,20 +260,27 @@
         </div>
         <div v-if="msg.summary" class="agent-summary">
           <div class="agent-summary-head">
-            <span class="agent-summary-title">执行摘要</span>
+            <span class="agent-summary-title">{{ t('执行摘要') }}</span>
             <span class="agent-summary-badge" :class="msg.summary.termination">
               {{ msg.summary.terminationText }}
             </span>
-            <button type="button" class="agent-summary-trace" @click="$emit('open-trace', msg)">运行轨迹</button>
+            <button type="button" class="agent-summary-trace" @click="$emit('open-trace', msg)">
+              {{ t('运行轨迹') }}
+            </button>
           </div>
           <div class="agent-summary-metrics">
-            <span>轮次 {{ msg.summary.iterations }}</span>
-            <span>工具 {{ msg.summary.toolCalls }} 次</span>
-            <span>成功 {{ msg.summary.toolSuccess }} / 失败 {{ msg.summary.toolFailed }}</span>
-            <span>耗时 {{ formatDuration(msg.summary.duration) || '0ms' }}</span>
+            <span>{{ t('轮次 {count}', { count: msg.summary.iterations }) }}</span>
+            <span>{{ t('工具 {count} 次', { count: msg.summary.toolCalls }) }}</span>
+            <span>{{
+              t('成功 {success} / 失败 {failed}', {
+                success: msg.summary.toolSuccess,
+                failed: msg.summary.toolFailed
+              })
+            }}</span>
+            <span>{{ t('耗时 {duration}', { duration: formatDuration(msg.summary.duration) || '0ms' }) }}</span>
           </div>
           <div v-if="msg.summary.tools && msg.summary.tools.length" class="agent-summary-tools">
-            使用工具：{{ msg.summary.tools.join('、') }}
+            {{ t('使用工具：{tools}', { tools: msg.summary.tools.join(t('、')) }) }}
           </div>
           <ul v-if="msg.summary.limitations && msg.summary.limitations.length" class="agent-summary-limitations">
             <li v-for="(item, itemIndex) in msg.summary.limitations" :key="itemIndex">{{ item }}</li>
@@ -284,19 +291,19 @@
             <path d="M3 12a9 9 0 1 0 3-6.7" />
             <polyline points="3 3 3 9 9 9" />
           </svg>
-          <span class="run-changes-text"> 本次共修改 {{ msg.fileChanges.length }} 个文件 </span>
-          <span v-if="msg.rolledBack" class="run-changes-done">已撤销</span>
+          <span class="run-changes-text">{{ t('本次共修改 {count} 个文件', { count: msg.fileChanges.length }) }}</span>
+          <span v-if="msg.rolledBack" class="run-changes-done">{{ t('已撤销') }}</span>
           <button v-else type="button" class="run-changes-btn" :disabled="rollbackBusy" @click="$emit('rollback', msg)">
-            撤销本次修改
+            {{ t('撤销本次修改') }}
           </button>
         </div>
         <div v-if="msg.usage" class="message-usage">
-          <span>输入 {{ formatTokens(msg.usage.prompt_tokens) }}</span>
-          <span>输出 {{ formatTokens(msg.usage.completion_tokens) }}</span>
-          <span>合计 {{ formatTokens(msg.usage.total_tokens) }} tokens</span>
-          <span v-if="msg.usage.estimated" class="message-usage-estimated">含估算</span>
+          <span>{{ t('输入 {value}', { value: formatTokens(msg.usage.prompt_tokens) }) }}</span>
+          <span>{{ t('输出 {value}', { value: formatTokens(msg.usage.completion_tokens) }) }}</span>
+          <span>{{ t('合计 {value} tokens', { value: formatTokens(msg.usage.total_tokens) }) }}</span>
+          <span v-if="msg.usage.estimated" class="message-usage-estimated">{{ t('含估算') }}</span>
         </div>
-        <div v-if="msg.stopped" class="message-stopped">已停止生成</div>
+        <div v-if="msg.stopped" class="message-stopped">{{ t('已停止生成') }}</div>
       </div>
     </div>
   </div>
@@ -304,6 +311,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { t } from '@/i18n'
 import { renderMarkdown } from '@/utils/markdown'
 import ChatApprovalCard from '@/components/ChatApprovalCard.vue'
 
@@ -315,13 +323,17 @@ defineProps({
   formatTokens: { type: Function, required: true }
 })
 
-defineEmits(['use-starter', 'respond-approval', 'open-trace', 'copy', 'rollback', 'scroll'])
+const emit = defineEmits(['use-starter', 'respond-approval', 'open-trace', 'copy', 'rollback', 'scroll'])
 
 const messagesContainer = ref(null)
 const expandedSteps = ref({})
 const thoughtExpanded = ref({})
 
 defineExpose({ messagesContainer })
+
+function useStarter(starter) {
+  emit('use-starter', t(starter.prompt))
+}
 
 function handledApprovals(message) {
   return (message.approvals || []).filter((approval) => approval.status !== 'pending')
@@ -349,18 +361,18 @@ function toggleThought(index, message) {
 function thoughtSummary(message) {
   const parts = []
   if (message.isStreaming) {
-    if (message.thinking) parts.push('思考中')
+    if (message.thinking) parts.push(t('思考中'))
     const running = (message.steps || []).filter((step) => step.status === 'running').length
-    if (running > 0) parts.push(`${running} 个步骤执行中`)
-    if (message.plan?.steps?.length) parts.push(`计划 ${message.plan.steps.length} 步`)
-    return parts.join(' · ') || '正在分析任务'
+    if (running > 0) parts.push(t('{count} 个步骤执行中', { count: running }))
+    if (message.plan?.steps?.length) parts.push(t('计划 {count} 步', { count: message.plan.steps.length }))
+    return parts.join(' · ') || t('正在分析任务')
   }
-  if (message.plan?.steps?.length) parts.push(`计划 ${message.plan.steps.length} 步`)
-  if (message.thinking) parts.push('已思考')
+  if (message.plan?.steps?.length) parts.push(t('计划 {count} 步', { count: message.plan.steps.length }))
+  if (message.thinking) parts.push(t('已思考'))
   if (message.steps?.length) parts.push(chainSummary(message.steps))
   const failed = (message.reflections || []).filter((item) => item.status === 'error').length
-  if (failed > 0) parts.push(`${failed} 个提醒`)
-  return parts.join(' · ') || '已完成'
+  if (failed > 0) parts.push(t('{count} 个提醒', { count: failed }))
+  return parts.join(' · ') || t('已完成')
 }
 
 function planStepText(step) {
@@ -375,9 +387,9 @@ function chainSummary(steps) {
   const total = steps.length
   const running = steps.filter((step) => step.status === 'running').length
   const failed = steps.filter((step) => step.status === 'error').length
-  if (running > 0) return `${total} 步 · ${running} 个执行中`
-  if (failed > 0) return `${total} 步 · ${failed} 个失败`
-  return `${total} 步 · 全部完成`
+  if (running > 0) return t('{total} 步 · {running} 个执行中', { total, running })
+  if (failed > 0) return t('{total} 步 · {failed} 个失败', { total, failed })
+  return t('{total} 步 · 全部完成', { total })
 }
 
 function formatDuration(ms) {

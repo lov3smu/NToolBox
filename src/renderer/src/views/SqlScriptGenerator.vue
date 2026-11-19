@@ -4,11 +4,11 @@
       <div class="generator-grid">
         <section class="panel form-panel">
           <div class="panel-header">
-            <span class="panel-title">脚本信息</span>
-            <span class="panel-hint">填写后生成规范编号的 SQL 文件</span>
+            <span class="panel-title">{{ t('脚本信息') }}</span>
+            <span class="panel-hint">{{ t('填写后生成规范编号的 SQL 文件') }}</span>
           </div>
           <div class="panel-body">
-            <div class="mode-options" role="tablist" aria-label="脚本操作类型">
+            <div class="mode-options" role="tablist" :aria-label="t('脚本操作类型')">
               <button
                 v-for="mode in operateTabs"
                 :key="mode.key"
@@ -20,27 +20,27 @@
                 @click="setOperateType(mode.key)"
               >
                 <span class="mode-option-label">{{ mode.label }}</span>
-                <span class="mode-option-desc">{{ mode.desc }}</span>
+                <span class="mode-option-desc">{{ t(mode.desc) }}</span>
               </button>
             </div>
 
             <div class="form-grid">
               <div class="field field-wide">
-                <label>脚本用途</label>
+                <label>{{ t('脚本用途') }}</label>
                 <input
                   v-model="usage"
                   type="text"
-                  placeholder="请输入脚本用途"
+                  :placeholder="t('请输入脚本用途')"
                   class="input-field"
                   @input="handleUsageInput"
                 />
-                <span class="field-hint">用于生成文件名与脚本历史记录备注</span>
+                <span class="field-hint">{{ t('用于生成文件名与脚本历史记录备注') }}</span>
               </div>
 
               <div class="field" :class="{ 'field-wide': operateType === 'QUERY' }">
-                <label>数据库</label>
+                <label>{{ t('数据库') }}</label>
                 <select v-model="database" class="select-field">
-                  <option value="">请选择数据库</option>
+                  <option value="">{{ t('请选择数据库') }}</option>
                   <option v-for="db in databases" :key="db" :value="db">
                     {{ db }}
                   </option>
@@ -48,38 +48,38 @@
               </div>
 
               <div v-if="operateType !== 'QUERY'" class="field">
-                <label>脚本类型</label>
+                <label>{{ t('脚本类型') }}</label>
                 <select v-model="scriptType" class="select-field">
-                  <option value="">请选择脚本类型</option>
+                  <option value="">{{ t('请选择脚本类型') }}</option>
                   <option v-for="type in scriptTypes" :key="type.name" :value="type.name">
                     {{ type.name }}
                   </option>
                 </select>
-                <span class="field-hint">{{ selectedScriptTypeDesc }}</span>
+                <span class="field-hint">{{ t(selectedScriptTypeDesc) }}</span>
               </div>
 
               <div class="field field-wide">
-                <label>目录名</label>
+                <label>{{ t('目录名') }}</label>
                 <div class="dir-name-row">
                   <input
                     v-model="dirName"
                     type="text"
-                    placeholder="留空自动生成"
+                    :placeholder="t('留空自动生成')"
                     class="input-field"
                     @input="handleDirNameInput"
                   />
                 </div>
                 <div v-if="lastDirName" class="dir-name-extra">
-                  <span class="dir-name-last" :title="lastDirName">上次：{{ lastDirName }}</span>
+                  <span class="dir-name-last" :title="lastDirName">{{ t('上次：{name}', { name: lastDirName }) }}</span>
                   <label class="dir-name-option" :class="{ active: useLastDirName }">
                     <input type="checkbox" :checked="useLastDirName" @change="toggleUseLastDirName" />
                     <span class="dir-name-option-track" aria-hidden="true">
                       <span class="dir-name-option-thumb" />
                     </span>
-                    <span>使用上次目录</span>
+                    <span>{{ t('使用上次目录') }}</span>
                   </label>
                 </div>
-                <span class="field-hint">可自定义目录名，或开启开关复用上次生成的目录</span>
+                <span class="field-hint">{{ t('可自定义目录名，或开启开关复用上次生成的目录') }}</span>
               </div>
             </div>
 
@@ -87,7 +87,7 @@
               <span class="form-footer-hint" :title="previewPath">{{ previewPath }}</span>
               <button class="btn btn-primary sql-generate-btn" :disabled="loading" @click="generate">
                 <span v-if="loading" class="generate-spinner" aria-hidden="true" />
-                {{ loading ? '生成中...' : '生成脚本' }}
+                {{ loading ? t('生成中...') : t('生成脚本') }}
               </button>
             </div>
           </div>
@@ -95,8 +95,8 @@
 
         <aside class="panel preview-panel">
           <div class="panel-header">
-            <span class="panel-title">输出预览</span>
-            <span class="preview-badge">实时</span>
+            <span class="panel-title">{{ t('输出预览') }}</span>
+            <span class="preview-badge">{{ t('实时') }}</span>
           </div>
           <div class="panel-body">
             <div class="preview-path">
@@ -109,22 +109,24 @@
             <div class="preview-meta">
               <div class="preview-item">
                 <span class="preview-dot" />
-                <span>目录名留空时按 <code>MMDD-用途</code> 自动生成</span>
+                <span
+                  >{{ t('目录名留空时按') }} <code>{{ t('MMDD-用途') }}</code> {{ t('自动生成') }}</span
+                >
               </div>
               <div class="preview-item">
                 <span class="preview-dot" />
-                <span>文件名按 <code>S01</code>、<code>S02</code> 自动编号</span>
+                <span>{{ t('文件名按') }} <code>S01</code>、<code>S02</code> {{ t('自动编号') }}</span>
               </div>
               <div class="preview-item">
                 <span class="preview-dot" />
-                <span>自动追加 <code>t_script_history</code> 记录</span>
+                <span>{{ t('自动追加') }} <code>t_script_history</code> {{ t('记录') }}</span>
               </div>
             </div>
 
             <div class="preview-root">
-              <div class="preview-root-label">脚本根目录</div>
-              <div class="preview-root-value" :title="config?.base_path || ''">
-                {{ config?.base_path || '未配置脚本根目录' }}
+              <div class="preview-root-label">{{ t('脚本根目录') }}</div>
+              <div class="preview-root-value" :title="config?.app.base_path || ''">
+                {{ config?.app.base_path || t('未配置脚本根目录') }}
               </div>
             </div>
           </div>
@@ -133,9 +135,9 @@
 
       <section v-if="result" class="panel result-panel" :class="result.success ? 'is-success' : 'is-error'">
         <div class="panel-header">
-          <span class="panel-title">生成结果</span>
+          <span class="panel-title">{{ t('生成结果') }}</span>
           <span class="result-badge" :class="result.success ? 'success' : 'error'">
-            {{ result.success ? '成功' : '失败' }}
+            {{ result.success ? t('成功') : t('失败') }}
           </span>
         </div>
         <div class="panel-body">
@@ -147,25 +149,25 @@
                 </svg>
               </span>
               <div class="result-copy">
-                <div class="result-message success">脚本生成成功</div>
-                <div class="result-sub">可打开文件继续补充 SQL 语句</div>
+                <div class="result-message success">{{ t('脚本生成成功') }}</div>
+                <div class="result-sub">{{ t('可打开文件继续补充 SQL 语句') }}</div>
               </div>
             </div>
 
             <div class="result-details">
               <div class="result-row">
-                <span class="result-label">文件名</span>
+                <span class="result-label">{{ t('文件名') }}</span>
                 <span class="result-value">{{ result.filename }}</span>
               </div>
               <div class="result-row">
-                <span class="result-label">文件路径</span>
+                <span class="result-label">{{ t('文件路径') }}</span>
                 <code>{{ result.filePath }}</code>
               </div>
             </div>
 
             <div class="result-actions">
-              <button class="btn btn-primary btn-sm" @click="openFile">打开文件</button>
-              <button class="btn btn-secondary btn-sm" @click="openFolder">打开文件夹</button>
+              <button class="btn btn-primary btn-sm" @click="openFile">{{ t('打开文件') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="openFolder">{{ t('打开文件夹') }}</button>
             </div>
           </template>
 
@@ -177,8 +179,8 @@
               </svg>
             </span>
             <div class="result-copy">
-              <div class="result-message error">生成失败</div>
-              <div class="result-sub">{{ result.error || '请检查填写内容后重试' }}</div>
+              <div class="result-message error">{{ t('生成失败') }}</div>
+              <div class="result-sub">{{ result.error || t('请检查填写内容后重试') }}</div>
             </div>
           </div>
         </div>
@@ -193,6 +195,7 @@ import { useAutoDirName, useConfig } from '@/composables'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { joinPath } from '@/utils/path'
 import { generateScript, openFile as apiOpenFile, openFolder as apiOpenFolder } from '@/api'
+import { t } from '@/i18n'
 
 const LAST_DIR_NAME_KEY = 'sqlGeneratorLastDirName'
 
@@ -203,9 +206,30 @@ const lastDirName = ref((localStorage.getItem(LAST_DIR_NAME_KEY) || '').trim())
 const useLastDirName = ref(false)
 
 const operateTabs = [
-  { key: 'FIX', label: 'FIX', desc: '修复脚本', root: 'PRODUCT-FIX' },
-  { key: 'PUBLISH', label: 'PUBLISH', desc: '发布脚本', root: 'PUBLISH' },
-  { key: 'QUERY', label: 'QUERY', desc: '查询脚本', root: 'DATA-QUERY' }
+  {
+    key: 'FIX',
+    label: 'FIX',
+    get desc() {
+      return t('修复脚本')
+    },
+    root: 'PRODUCT-FIX'
+  },
+  {
+    key: 'PUBLISH',
+    label: 'PUBLISH',
+    get desc() {
+      return t('发布脚本')
+    },
+    root: 'PUBLISH'
+  },
+  {
+    key: 'QUERY',
+    label: 'QUERY',
+    get desc() {
+      return t('查询脚本')
+    },
+    root: 'DATA-QUERY'
+  }
 ]
 
 const operateType = ref('PUBLISH')
@@ -214,17 +238,24 @@ const scriptType = ref('')
 const loading = ref(false)
 const result = ref(null)
 
-const databases = computed(() => config.value?.databases || [])
-const scriptTypes = computed(() => config.value?.script_types || [])
+const databases = computed(() => config.value?.sql_generator.databases || [])
+const scriptTypes = computed(() => config.value?.sql_generator.script_types || [])
 const currentMode = computed(() => operateTabs.find((mode) => mode.key === operateType.value) || operateTabs[1])
 const selectedScriptTypeDesc = computed(
-  () => scriptTypes.value.find((type) => type.name === scriptType.value)?.description || '决定脚本存放的子目录'
+  () => scriptTypes.value.find((type) => type.name === scriptType.value)?.description || t('决定脚本存放的子目录')
 )
 const previewSegments = computed(() => {
   const segments = [
     { label: currentMode.value.root },
     { label: String(new Date().getFullYear()) },
-    dirName.value.trim() ? { label: dirName.value.trim() } : { label: 'MMDD-用途', auto: true }
+    dirName.value.trim()
+      ? { label: dirName.value.trim() }
+      : {
+          get label() {
+            return t('MMDD-用途')
+          },
+          auto: true
+        }
   ]
   if (operateType.value !== 'QUERY' && scriptType.value) {
     segments.push({ label: scriptType.value })
@@ -233,7 +264,7 @@ const previewSegments = computed(() => {
 })
 const previewPath = computed(() => {
   const parts = previewSegments.value.map((segment) => segment.label)
-  return config.value?.base_path ? joinPath(config.value.base_path, parts) : parts.join(' / ')
+  return config.value?.app.base_path ? joinPath(config.value.app.base_path, parts) : parts.join(' / ')
 })
 
 function setOperateType(type) {
@@ -243,15 +274,15 @@ function setOperateType(type) {
 
 async function generate() {
   if (!usage.value.trim()) {
-    result.value = { success: false, error: '请输入脚本用途' }
+    result.value = { success: false, error: t('请输入脚本用途') }
     return
   }
   if (!database.value) {
-    result.value = { success: false, error: '请选择数据库' }
+    result.value = { success: false, error: t('请选择数据库') }
     return
   }
   if (operateType.value !== 'QUERY' && !scriptType.value) {
-    result.value = { success: false, error: '请选择脚本类型' }
+    result.value = { success: false, error: t('请选择脚本类型') }
     return
   }
 
@@ -259,7 +290,9 @@ async function generate() {
   if (!finalDirName) {
     const now = new Date()
     const monthDay = now.toISOString().slice(5, 10).replace(/-/g, '')
-    finalDirName = usage.value.trim() ? `${monthDay}-${usage.value.trim()}` : `${monthDay}-脚本`
+    finalDirName = usage.value.trim()
+      ? `${monthDay}-${usage.value.trim()}`
+      : t('{p0}-{p1}', { p0: monthDay, p1: t('脚本') })
     dirName.value = finalDirName
   }
 

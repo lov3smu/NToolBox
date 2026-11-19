@@ -2,8 +2,8 @@
   <div v-if="resultCompareDialog.show" class="dialog-overlay" @click.self="closeResultCompare">
     <div class="dialog result-compare-dialog">
       <div class="dialog-header">
-        <h3>结果对比</h3>
-        <button class="btn-icon btn-sm" title="关闭" @click="closeResultCompare">
+        <h3>{{ t('结果对比') }}</h3>
+        <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeResultCompare">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -12,25 +12,27 @@
       </div>
       <div class="dialog-content result-compare-content">
         <div class="result-compare-summary">
-          <span class="compare-chip">本次 {{ currentRows.length }} 行</span>
-          <span class="compare-chip">上次 {{ previousRows.length }} 行</span>
-          <span class="compare-chip added">新增 {{ summary.added }}</span>
-          <span class="compare-chip removed">删除 {{ summary.removed }}</span>
-          <span class="compare-chip modified">修改 {{ summary.modified }}</span>
-          <span class="compare-chip">未变 {{ summary.unchanged }}</span>
+          <span class="compare-chip">{{ t('本次') }} {{ currentRows.length }} {{ t('行') }}</span>
+          <span class="compare-chip">{{ t('上次') }} {{ previousRows.length }} {{ t('行') }}</span>
+          <span class="compare-chip added">{{ t('新增') }} {{ summary.added }}</span>
+          <span class="compare-chip removed">{{ t('删除') }} {{ summary.removed }}</span>
+          <span class="compare-chip modified">{{ t('修改') }} {{ summary.modified }}</span>
+          <span class="compare-chip">{{ t('未变') }} {{ summary.unchanged }}</span>
         </div>
         <div class="result-compare-meta">
-          <span v-if="matchMode === 'key'" class="compare-mode">按首列「{{ keyField }}」匹配</span>
-          <span v-else class="compare-mode">按行号匹配（首列不唯一）</span>
+          <span v-if="matchMode === 'key'" class="compare-mode"
+            >{{ t('按首列「') }}{{ keyField }}{{ t('」匹配') }}</span
+          >
+          <span v-else class="compare-mode">{{ t('按行号匹配（首列不唯一）') }}</span>
           <span v-if="previous?.capturedAt" class="compare-time">
-            上次执行：{{ formatTime(previous.capturedAt) }}
+            {{ t('上次执行：') }}{{ formatTime(previous.capturedAt) }}
           </span>
         </div>
         <div class="result-compare-scroll">
           <table class="result-table compare-table">
             <thead>
               <tr>
-                <th class="compare-status-col">状态</th>
+                <th class="compare-status-col">{{ t('状态') }}</th>
                 <th v-for="field in fields" :key="field">{{ field }}</th>
               </tr>
             </thead>
@@ -48,20 +50,21 @@
                 </td>
               </tr>
               <tr v-if="entries.length === 0" class="compare-empty-row">
-                <td :colspan="fields.length + 1">两次结果完全一致</td>
+                <td :colspan="fields.length + 1">{{ t('两次结果完全一致') }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
       <div class="dialog-footer">
-        <button class="btn btn-primary" @click="closeResultCompare">关闭</button>
+        <button class="btn btn-primary" @click="closeResultCompare">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
 const databaseStore = inject('database')
@@ -140,7 +143,7 @@ function displayCell(row, field) {
 }
 
 function statusLabel(status) {
-  return { added: '新增', removed: '删除', modified: '修改', unchanged: '未变' }[status] || status
+  return { added: t('新增'), removed: t('删除'), modified: t('修改'), unchanged: t('未变') }[status] || status
 }
 
 function formatTime(timestamp) {

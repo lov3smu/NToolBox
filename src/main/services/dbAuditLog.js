@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { t } from './i18n.js'
 import { getLogDir } from '../utils/path'
 import { log } from '../utils'
 import { getConfig } from './config'
@@ -34,7 +35,7 @@ async function rotateIfNeeded(filePath) {
 }
 
 export function recordDbOperation(entry) {
-  if (getConfig().database_operation_log_enabled === false) return Promise.resolve()
+  if (getConfig().database.operation_log_enabled === false) return Promise.resolve()
   const record = {
     time: Date.now(),
     connection: String(entry.connection || ''),
@@ -110,7 +111,7 @@ export async function queryDbOperationLog(options = {}) {
   } catch (error) {
     if (error.code === 'ENOENT') return { success: true, entries: [], scanned: 0 }
     log.error('读取数据库操作日志失败:', error)
-    return { success: false, error: error.message || '读取数据库操作日志失败', entries: [] }
+    return { success: false, error: error.message || t('读取数据库操作日志失败'), entries: [] }
   }
 }
 
@@ -120,6 +121,6 @@ export async function clearDbOperationLog() {
     return { success: true }
   } catch (error) {
     log.error('清空数据库操作日志失败:', error)
-    return { success: false, error: error.message || '清空数据库操作日志失败' }
+    return { success: false, error: error.message || t('清空数据库操作日志失败') }
   }
 }

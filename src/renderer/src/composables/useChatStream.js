@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 import { nextTick, onUnmounted, ref } from 'vue'
 import {
   cancelChatStream,
@@ -58,7 +60,7 @@ export function useChatStream({
 
   function updateSessionTitle(sessionId, firstMessage) {
     const session = sessions.value.find((s) => s.id === sessionId)
-    if (session && session.title === '新会话' && firstMessage) {
+    if (session && session.title === t('新会话') && firstMessage) {
       session.title = firstMessage.slice(0, 20) + (firstMessage.length > 20 ? '...' : '')
     }
   }
@@ -98,10 +100,12 @@ export function useChatStream({
       if (!message.steps) message.steps = []
       message.steps.push({
         id: event.id || `${Date.now()}-${message.steps.length}`,
-        name: event.name || '工具',
+        name: event.name || t('工具'),
         arguments: event.arguments || '',
         status: 'running',
-        statusText: '执行中'
+        get statusText() {
+          return t('执行中')
+        }
       })
     } else if (event.kind === 'tool_end') {
       const steps = message.steps || []
@@ -116,16 +120,18 @@ export function useChatStream({
         if (!message.steps) message.steps = []
         message.steps.push({
           id: event.id || `${Date.now()}-${message.steps.length}`,
-          name: event.name || '工具',
+          name: event.name || t('工具'),
           arguments: '',
           status: 'denied',
-          statusText: '已拒绝'
+          get statusText() {
+            return t('已拒绝')
+          }
         })
         step = message.steps[message.steps.length - 1]
       }
       if (step) {
         step.status = event.denied ? 'denied' : event.success ? 'success' : 'error'
-        step.statusText = event.denied ? '已拒绝' : event.success ? '完成' : '失败'
+        step.statusText = event.denied ? t('已拒绝') : event.success ? t('完成') : t('失败')
         step.duration = event.duration
         step.result = event.result || ''
         step.truncated = Boolean(event.truncated)
@@ -197,11 +203,11 @@ export function useChatStream({
       const result = await rollbackChatRun(message.runId)
       if (result?.success) {
         message.rolledBack = true
-        showSuccess(`已撤销 ${result.restored || 0} 个文件的修改`)
+        showSuccess(t('已撤销 {p0} 个文件的修改', { p0: result.restored || 0 }))
         saveSessions()
         if (currentSession.value?.workspace) refreshWorkspaceInfo()
       } else {
-        showError(result?.error || '撤销失败')
+        showError(result?.error || t('撤销失败'))
       }
     } finally {
       rollbackBusy.value = false
@@ -223,7 +229,7 @@ export function useChatStream({
       if (!assistantMessage.approvals) assistantMessage.approvals = []
       assistantMessage.approvals.push({
         approvalId: payload.approvalId,
-        tool: payload.tool || '工具',
+        tool: payload.tool || t('工具'),
         risk: payload.risk || 'write',
         key: payload.key || '',
         summary: payload.summary || '',
@@ -272,10 +278,10 @@ export function useChatStream({
       if (result.cancelled) {
         assistantMessage.stopped = true
         if (!assistantMessage.notices) assistantMessage.notices = []
-        assistantMessage.notices.push('已停止生成')
+        assistantMessage.notices.push(t('已停止生成'))
       } else if (!result.success) {
         const prefix = assistantMessage.content ? `${assistantMessage.content}\n\n` : ''
-        assistantMessage.content = `${prefix}错误: ${result.error}`
+        assistantMessage.content = t('{p0}错误: {p1}', { p0: prefix, p1: result.error })
       }
 
       session.updatedAt = Date.now()
@@ -327,7 +333,7 @@ export function useChatStream({
     const upToIndex = Number(session.context?.upToIndex) || 0
     if (history.length - upToIndex <= keepRecent + 2) return
 
-    assistantMessage.contextNote = '上下文较长，正在压缩历史…'
+    assistantMessage.contextNote = t('上下文较长，正在压缩历史…')
     if (currentSessionId.value === session.id) scrollToBottom()
 
     try {
@@ -350,16 +356,20 @@ export function useChatStream({
         }
         session.contextUsage = { tokens: result.afterTokens, window }
         if (result.usage) mergeUsage(session, { ...result.usage, calls: 1 })
-        assistantMessage.contextNote = `上下文已压缩：${formatTokens(result.beforeTokens)} → ${formatTokens(
-          result.afterTokens
-        )} tokens（保留最近 ${result.keptCount} 条消息）`
+        assistantMessage.contextNote = t('上下文已压缩：{p0} → {p1} tokens（保留最近 {p2} 条消息）', {
+          p0: formatTokens(result.beforeTokens),
+          p1: formatTokens(result.afterTokens),
+          p2: result.keptCount
+        })
         saveSessions()
       } else {
-        assistantMessage.contextNote = `上下文压缩失败：${result?.error || '未知错误'}，本轮继续使用完整历史`
+        assistantMessage.contextNote = t('上下文压缩失败：{p0}，本轮继续使用完整历史', {
+          p0: result?.error || t('未知错误')
+        })
       }
     } catch (error) {
       if (currentRequestId.value === requestId) {
-        assistantMessage.contextNote = `上下文压缩失败：${error.message}，本轮继续使用完整历史`
+        assistantMessage.contextNote = t('上下文压缩失败：{p0}，本轮继续使用完整历史', { p0: error.message })
       }
     }
     if (currentSessionId.value === session.id) scrollToBottom()
@@ -371,7 +381,7 @@ export function useChatStream({
     const files = attachments.value.slice()
     if ((!text && files.length === 0) || loading.value) return
     if (!hasCurrentApiKey.value) {
-      showError(`请先在设置中配置 ${currentProvider.value?.name || '当前服务商'} API Key`)
+      showError(t('请先在设置中配置 {p0} API Key', { p0: currentProvider.value?.name || t('当前服务商') }))
       return
     }
     if (!currentSessionId.value) createNewChat()
@@ -389,7 +399,7 @@ export function useChatStream({
     session.model = selectedModel.value
     session.messages.push({ role: 'user', content: text, attachments: files })
     session.updatedAt = Date.now()
-    updateSessionTitle(currentSessionId.value, text || files[0]?.name || '附件消息')
+    updateSessionTitle(currentSessionId.value, text || files[0]?.name || t('附件消息'))
     saveSessions()
 
     const requestId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -440,7 +450,7 @@ export function useChatStream({
       loading.value = false
       assistantMessage.isStreaming = false
       finishMessageTiming(assistantMessage)
-      assistantMessage.content = `请求失败: ${error.message}`
+      assistantMessage.content = t('请求失败: {p0}', { p0: error.message })
       persistPendingStream(null)
       saveSessions()
       scrollToBottom()

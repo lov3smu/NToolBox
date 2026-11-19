@@ -5,10 +5,10 @@
         <section class="update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-dialog-title">
           <header class="update-header">
             <div class="update-header-title">
-              <h2 id="update-dialog-title">更新中心</h2>
+              <h2 id="update-dialog-title">{{ t('更新中心') }}</h2>
               <span v-if="badgeText" class="update-badge" :class="`update-badge-${badgeTone}`">{{ badgeText }}</span>
             </div>
-            <button type="button" class="update-close" aria-label="关闭" @click="closeUpdateCenter">
+            <button type="button" class="update-close" :aria-label="t('关闭')" @click="closeUpdateCenter">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -16,7 +16,7 @@
             </button>
           </header>
 
-          <nav class="update-tabs" role="tablist" aria-label="更新中心视图">
+          <nav class="update-tabs" role="tablist" :aria-label="t('更新中心视图')">
             <button
               id="update-tab-app"
               type="button"
@@ -39,7 +39,7 @@
               aria-controls="update-panel-changelog"
               @click="activeTab = 'changelog'"
             >
-              更新日志
+              {{ t('更新日志') }}
             </button>
           </nav>
 
@@ -53,8 +53,8 @@
             <div v-if="center.phase === 'checking'" class="update-state">
               <span class="update-spinner" aria-hidden="true" />
               <div>
-                <p class="update-state-title">正在检查更新</p>
-                <p class="update-state-text">正在连接更新服务器，请稍候...</p>
+                <p class="update-state-title">{{ t('正在检查更新') }}</p>
+                <p class="update-state-text">{{ t('正在连接更新服务器，请稍候...') }}</p>
               </div>
             </div>
 
@@ -65,8 +65,10 @@
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               <div>
-                <p class="update-state-title">开发环境无法检查更新</p>
-                <p class="update-state-text">请在打包后的应用中测试更新功能，下方仍可查看历史版本。</p>
+                <p class="update-state-title">{{ t('开发环境无法检查更新') }}</p>
+                <p class="update-state-text">
+                  {{ t('请在打包后的应用中测试更新功能，下方仍可查看历史版本。') }}
+                </p>
               </div>
             </div>
 
@@ -83,11 +85,9 @@
               </svg>
               <div>
                 <p class="update-state-title">
-                  {{ center.appName }} 已是最新版本<span v-if="center.currentVersion"
-                    >（v{{ center.currentVersion }}）</span
-                  >。
+                  {{ latestVersionText }}
                 </p>
-                <p class="update-state-text">已是最新正式版本，历史版本可在下方展开查看。</p>
+                <p class="update-state-text">{{ t('已是最新正式版本，历史版本可在下方展开查看。') }}</p>
               </div>
             </div>
 
@@ -104,30 +104,32 @@
                 <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
               <div>
-                <p class="update-state-title">检查更新失败</p>
-                <p class="update-state-text">{{ center.error || '无法连接更新服务器，请稍后重试。' }}</p>
+                <p class="update-state-title">{{ t('检查更新失败') }}</p>
+                <p class="update-state-text">{{ center.error || t('无法连接更新服务器，请稍后重试。') }}</p>
               </div>
             </div>
 
             <template v-else-if="hasUpdate">
               <p class="update-version-line">
-                <span>发现新版本</span>
+                <span>{{ t('发现新版本') }}</span>
                 <strong class="update-version-latest">v{{ center.latestVersion }}</strong>
-                <span v-if="center.currentVersion" class="update-version-current"
-                  >当前 v{{ center.currentVersion }}</span
-                >
+                <span v-if="center.currentVersion" class="update-version-current">{{
+                  t('当前 v{version}', { version: center.currentVersion })
+                }}</span>
               </p>
-              <p v-if="center.phase === 'available'" class="update-state-text">完整更新内容可在「更新日志」中查看。</p>
+              <p v-if="center.phase === 'available'" class="update-state-text">
+                {{ t('完整更新内容可在「更新日志」中查看。') }}
+              </p>
 
               <div v-if="center.phase === 'downloading'" class="update-progress">
                 <div class="update-progress-track">
                   <div class="update-progress-bar" :style="{ width: `${progressValue}%` }" />
                 </div>
                 <div class="update-progress-meta">
-                  <span>正在下载更新</span>
+                  <span>{{ t('正在下载更新') }}</span>
                   <span class="update-progress-value">{{ progressValue }}%</span>
                 </div>
-                <p class="update-state-text">可以关闭此窗口，下载会在后台继续。</p>
+                <p class="update-state-text">{{ t('可以关闭此窗口，下载会在后台继续。') }}</p>
               </div>
 
               <div v-else-if="center.phase === 'downloaded'" class="update-ready">
@@ -141,18 +143,18 @@
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="9 12 12 15 16 9" />
                 </svg>
-                <span>更新已下载完成，重启应用即可安装。</span>
+                <span>{{ t('更新已下载完成，重启应用即可安装。') }}</span>
               </div>
 
               <div v-else-if="center.phase === 'installing'" class="update-state">
                 <span class="update-spinner" aria-hidden="true" />
-                <span class="update-state-text">正在准备安装，应用即将重启...</span>
+                <span class="update-state-text">{{ t('正在准备安装，应用即将重启...') }}</span>
               </div>
             </template>
 
             <div v-else class="update-state">
               <span class="update-spinner" aria-hidden="true" />
-              <span class="update-state-text">正在准备更新...</span>
+              <span class="update-state-text">{{ t('正在准备更新...') }}</span>
             </div>
 
             <section class="update-history">
@@ -164,7 +166,7 @@
                 aria-controls="update-history-panel"
                 @click="historyOpen = !historyOpen"
               >
-                <span class="update-history-toggle-title">历史版本</span>
+                <span class="update-history-toggle-title">{{ t('历史版本') }}</span>
                 <span v-if="historyReleases.length" class="update-history-count">{{ historyReleases.length }}</span>
                 <svg class="update-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="6 9 12 15 18 9" />
@@ -174,20 +176,24 @@
               <div id="update-history-panel" class="update-history-collapse" :class="{ open: historyOpen }">
                 <div class="update-history-inner">
                   <p class="update-history-hint">
-                    回退到旧版本前请先备份数据，旧版本可能无法读取新版本创建的数据或凭据。
+                    {{ t('回退到旧版本前请先备份数据，旧版本可能无法读取新版本创建的数据或凭据。') }}
                   </p>
 
                   <div v-if="center.historyLoading" class="update-history-state">
                     <span class="update-spinner" aria-hidden="true" />
-                    <span>正在加载历史版本...</span>
+                    <span>{{ t('正在加载历史版本...') }}</span>
                   </div>
 
                   <div v-else-if="center.historyError" class="update-history-state">
-                    <span>{{ center.historyError }}</span>
-                    <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">重试</button>
+                    <span>{{ t(center.historyError) }}</span>
+                    <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
+                      {{ t('重试') }}
+                    </button>
                   </div>
 
-                  <p v-else-if="historyReleases.length === 0" class="update-history-state">暂无历史版本。</p>
+                  <p v-else-if="historyReleases.length === 0" class="update-history-state">
+                    {{ t('暂无历史版本。') }}
+                  </p>
 
                   <template v-else>
                     <ul class="update-history-list">
@@ -204,17 +210,17 @@
                           :disabled="!release.htmlUrl"
                           @click="openRelease(release.htmlUrl)"
                         >
-                          打开下载页
+                          {{ t('打开下载页') }}
                         </button>
                       </li>
                     </ul>
 
                     <div v-if="hasMoreHistory" class="update-load-more">
                       <button type="button" class="update-load-more-btn" @click="loadMoreHistory">
-                        加载更多
-                        <span class="update-load-more-count"
-                          >剩余 {{ historyReleases.length - visibleHistory.length }}</span
-                        >
+                        {{ t('加载更多') }}
+                        <span class="update-load-more-count">{{
+                          t('剩余 {count}', { count: historyReleases.length - visibleHistory.length })
+                        }}</span>
                       </button>
                     </div>
                   </template>
@@ -232,12 +238,14 @@
           >
             <div v-if="center.historyLoading" class="update-history-state">
               <span class="update-spinner" aria-hidden="true" />
-              <span>正在加载更新日志...</span>
+              <span>{{ t('正在加载更新日志...') }}</span>
             </div>
 
             <div v-else-if="center.historyError" class="update-history-state">
-              <span>{{ center.historyError }}</span>
-              <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">重试</button>
+              <span>{{ t(center.historyError) }}</span>
+              <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
+                {{ t('重试') }}
+              </button>
             </div>
 
             <template v-else-if="changelogEntries.length">
@@ -248,48 +256,66 @@
                   <span v-if="entry.publishedLabel" class="update-changelog-date">{{ entry.publishedLabel }}</span>
                 </header>
                 <div v-if="entry.html" class="update-notes-content" @click="handleNotesClick" v-html="entry.html" />
-                <p v-else class="update-state-text">该版本暂无更新说明。</p>
+                <p v-else class="update-state-text">{{ t('该版本暂无更新说明。') }}</p>
               </article>
 
               <div v-if="hasMoreChangelog" class="update-load-more">
                 <button type="button" class="update-load-more-btn" @click="loadMoreChangelog">
-                  加载更多
-                  <span class="update-load-more-count"
-                    >剩余 {{ changelogEntries.length - visibleChangelogEntries.length }}</span
-                  >
+                  {{ t('加载更多') }}
+                  <span class="update-load-more-count">{{
+                    t('剩余 {count}', { count: changelogEntries.length - visibleChangelogEntries.length })
+                  }}</span>
                 </button>
               </div>
             </template>
 
-            <p v-else class="update-state-text">暂无更新日志。</p>
+            <p v-else class="update-state-text">{{ t('暂无更新日志。') }}</p>
           </div>
 
           <footer class="update-footer">
-            <button type="button" class="btn btn-secondary btn-sm" @click="openUpdateReleasePage">打开下载页</button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="openUpdateReleasePage">
+              {{ t('打开下载页') }}
+            </button>
             <span class="update-footer-spacer" />
 
             <template v-if="center.phase === 'available'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">稍后</button>
-              <button type="button" class="btn btn-primary btn-sm" @click="startUpdateDownload">立即下载</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+                {{ t('稍后') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" @click="startUpdateDownload">
+                {{ t('立即下载') }}
+              </button>
             </template>
 
             <template v-else-if="center.phase === 'downloading'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="cancelUpdateDownloadNow">取消下载</button>
-              <button type="button" class="btn btn-primary btn-sm" disabled>下载中 {{ progressValue }}%</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="cancelUpdateDownloadNow">
+                {{ t('取消下载') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" disabled>
+                {{ t('下载中 {percent}%', { percent: progressValue }) }}
+              </button>
             </template>
 
             <template v-else-if="center.phase === 'downloaded'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">稍后</button>
-              <button type="button" class="btn btn-primary btn-sm" @click="installUpdateNow">立即重启安装</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+                {{ t('稍后') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" @click="installUpdateNow">
+                {{ t('立即重启安装') }}
+              </button>
             </template>
 
             <button v-else-if="center.phase === 'installing'" type="button" class="btn btn-primary btn-sm" disabled>
-              正在安装...
+              {{ t('正在安装...') }}
             </button>
 
             <template v-else-if="center.phase === 'error' || center.phase === 'not-available'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">关闭</button>
-              <button type="button" class="btn btn-primary btn-sm" @click="openUpdateCenter">重新检查</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+                {{ t('关闭') }}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" @click="openUpdateCenter">
+                {{ t('重新检查') }}
+              </button>
             </template>
 
             <button
@@ -298,9 +324,11 @@
               class="btn btn-primary btn-sm"
               @click="closeUpdateCenter"
             >
-              知道了
+              {{ t('知道了') }}
             </button>
-            <button v-else type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">取消</button>
+            <button v-else type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+              {{ t('取消') }}
+            </button>
           </footer>
         </section>
       </div>
@@ -322,6 +350,7 @@ import {
   useUpdateCenter
 } from '@/composables'
 import { renderMarkdown } from '@/utils/markdown'
+import { t, getLocale } from '@/i18n'
 
 const { updateCenter: center } = useUpdateCenter()
 
@@ -336,11 +365,21 @@ const hasUpdate = computed(() => ['available', 'downloading', 'downloaded', 'ins
 
 const progressValue = computed(() => Math.max(0, Math.min(100, Math.round(center.progress ?? 0))))
 
+const latestVersionText = computed(() => {
+  if (center.currentVersion) {
+    return t('{name} 已是最新版本（v{version}）。', { name: center.appName, version: center.currentVersion })
+  }
+  return t('{name} 已是最新版本。', { name: center.appName })
+})
+
 function formatReleaseDate(value) {
   if (!value) return ''
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  return `发布于 ${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+  if (getLocale() === 'en-US') {
+    return `Released ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(date)}`
+  }
+  return t('发布于 {p0}年{p1}月{p2}日', { p0: date.getFullYear(), p1: date.getMonth() + 1, p2: date.getDate() })
 }
 
 function normalizeVersion(value) {
@@ -446,21 +485,21 @@ function openRelease(url) {
 const badgeText = computed(() => {
   switch (center.phase) {
     case 'checking':
-      return '检查中'
+      return t('检查中')
     case 'available':
-      return '发现新版本'
+      return t('发现新版本')
     case 'downloading':
       return `${progressValue.value}%`
     case 'downloaded':
-      return '已下载'
+      return t('已下载')
     case 'installing':
-      return '安装中'
+      return t('安装中')
     case 'not-available':
-      return '已是最新'
+      return t('已是最新')
     case 'error':
-      return '检查失败'
+      return t('检查失败')
     case 'dev-environment':
-      return '开发环境'
+      return t('开发环境')
     default:
       return ''
   }

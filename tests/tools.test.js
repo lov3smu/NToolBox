@@ -124,16 +124,16 @@ describe('recent tools', () => {
 
   it('records unique tools in most-recent order', () => {
     addToRecent(getToolByPath('/chat'))
-    addToRecent(getToolByPath('/password'))
+    addToRecent(getToolByPath('/password-manager'))
     addToRecent(getToolByPath('/chat'))
 
-    expect(getRecentTools().map((tool) => tool.path)).toEqual(['/chat', '/password'])
+    expect(getRecentTools().map((tool) => tool.path)).toEqual(['/chat', '/password-manager'])
 
     addToRecent(getToolByPath('/cron'))
     addToRecent(getToolByPath('/yaml-editor'))
     expect(getRecentTools()).toHaveLength(MAX_RECENT)
     expect(getRecentTools().map((tool) => tool.path)).toEqual(
-      ['/yaml-editor', '/cron', '/chat', '/password'].slice(0, MAX_RECENT)
+      ['/yaml-editor', '/cron', '/chat', '/password-manager'].slice(0, MAX_RECENT)
     )
   })
 
@@ -147,9 +147,9 @@ describe('recent tools', () => {
     setRecentToolsLimit(2)
     expect(getRecentToolsLimit()).toBe(2)
     addToRecent(getToolByPath('/chat'))
-    addToRecent(getToolByPath('/password'))
+    addToRecent(getToolByPath('/password-manager'))
     addToRecent(getToolByPath('/cron'))
-    expect(getRecentTools().map((tool) => tool.path)).toEqual(['/cron', '/password'])
+    expect(getRecentTools().map((tool) => tool.path)).toEqual(['/cron', '/password-manager'])
 
     setRecentToolsLimit(6)
     expect(getRecentTools()).toHaveLength(2)

@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 export function formatDateTime(date, format = 'full') {
   if (!date) return ''
   const d = new Date(date)
@@ -30,10 +32,10 @@ export function formatRelativeTime(timestamp) {
   const hour = 3600000
   const day = 86400000
 
-  if (diff < minute) return '刚刚'
-  if (diff < hour) return Math.floor(diff / minute) + '分钟前'
-  if (diff < day) return Math.floor(diff / hour) + '小时前'
-  if (diff < day * 7) return Math.floor(diff / day) + '天前'
+  if (diff < minute) return t('刚刚')
+  if (diff < hour) return Math.floor(diff / minute) + t('分钟前')
+  if (diff < day) return Math.floor(diff / hour) + t('小时前')
+  if (diff < day * 7) return Math.floor(diff / day) + t('天前')
   return formatDateTime(timestamp, 'date')
 }
 
@@ -53,16 +55,16 @@ export function formatFileSize(bytes) {
 }
 
 export function formatDuration(seconds) {
-  if (!seconds || seconds < 0) return '0秒'
+  if (!seconds || seconds < 0) return t('0秒')
 
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = Math.floor(seconds % 60)
 
   const parts = []
-  if (h > 0) parts.push(`${h}小时`)
-  if (m > 0) parts.push(`${m}分钟`)
-  if (s > 0 || parts.length === 0) parts.push(`${s}秒`)
+  if (h > 0) parts.push(t('{p0}小时', { p0: h }))
+  if (m > 0) parts.push(t('{p0}分钟', { p0: m }))
+  if (s > 0 || parts.length === 0) parts.push(t('{p0}秒', { p0: s }))
 
   return parts.join('')
 }

@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { dbExecuteQuery, dbGetTableStructure, dbGetObjectDefinition } from '@/api'
 export function createObjects(state, api) {
   const {
@@ -69,7 +70,7 @@ export function createObjects(state, api) {
         autoLimit: false
       })
       if (ddlResult.success && ddlResult.rows && ddlResult.rows.length > 0) {
-        tableDDL.value = ddlResult.rows[0]['Create Table'] || '无法获取DDL'
+        tableDDL.value = ddlResult.rows[0]['Create Table'] || t('无法获取DDL')
       }
     } catch (error) {
       console.error('加载表结构失败:', error)
@@ -89,11 +90,11 @@ export function createObjects(state, api) {
       )
 
       if (result.success && result.rows && result.rows.length > 0) {
-        viewDefinition.value = result.rows[0].VIEW_DEFINITION || '无法获取视图定义'
+        viewDefinition.value = result.rows[0].VIEW_DEFINITION || t('无法获取视图定义')
       }
     } catch (error) {
       console.error('加载视图定义失败:', error)
-      viewDefinition.value = '加载失败'
+      viewDefinition.value = t('加载失败')
     }
   }
 
@@ -110,11 +111,11 @@ export function createObjects(state, api) {
       )
 
       if (result.success && result.rows && result.rows.length > 0) {
-        functionDefinition.value = result.rows[0].ROUTINE_DEFINITION || '无法获取函数定义'
+        functionDefinition.value = result.rows[0].ROUTINE_DEFINITION || t('无法获取函数定义')
       }
     } catch (error) {
       console.error('加载函数定义失败:', error)
-      functionDefinition.value = '加载失败'
+      functionDefinition.value = t('加载失败')
     }
   }
 
@@ -201,10 +202,12 @@ export function createObjects(state, api) {
 
     try {
       const result = await dbGetObjectDefinition(connName, dbName, type, objectName)
-      objectDefinition.value = result.success ? result.ddl || '无法获取对象定义' : result.error || '加载对象定义失败'
+      objectDefinition.value = result.success
+        ? result.ddl || t('无法获取对象定义')
+        : result.error || t('加载对象定义失败')
     } catch (error) {
       console.error('加载对象定义失败:', error)
-      objectDefinition.value = '加载失败'
+      objectDefinition.value = t('加载失败')
     }
   }
 
@@ -235,12 +238,12 @@ export function createObjects(state, api) {
 
     const result = await dbGetObjectDefinition(target.connection.name, target.database, 'procedure', target.procedure)
     if (!result.success) {
-      api.showMessage(result.error || '读取存储过程定义失败', 'error')
+      api.showMessage(result.error || t('读取存储过程定义失败'), 'error')
       return
     }
 
     api.createQueryTab(target.connection.name, target.database, {
-      name: `${target.procedure}（存储过程）`,
+      name: t('{p0}（存储过程）', { p0: target.procedure }),
       sqlQuery: result.ddl || '',
       previewKey: `procedure:${target.connection.name}:${target.database}:${target.procedure}`
     })

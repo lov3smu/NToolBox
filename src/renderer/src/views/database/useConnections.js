@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { dbGetActiveConnections, getConfig, patchConfig } from '@/api'
 
 function normalizeSsh(raw = {}) {
@@ -35,8 +36,8 @@ export function createConnections(state, api) {
   async function loadConnections() {
     try {
       const config = await getConfig()
-      const savedConnections = config.dbConnections || []
-      const savedGroups = config.dbConnectionGroups || []
+      const savedConnections = config.database?.connections || []
+      const savedGroups = config.database?.connection_groups || []
       const activeConnections = await dbGetActiveConnections()
 
       connections.value = savedConnections.map((conn) => ({
@@ -85,7 +86,7 @@ export function createConnections(state, api) {
 
   async function saveConnection() {
     if (!newConnection.value.name) {
-      await api.showMessage('请输入连接名称', 'warning')
+      await api.showMessage(t('请输入连接名称'), 'warning')
       return
     }
 
@@ -97,23 +98,23 @@ export function createConnections(state, api) {
 
     try {
       const config = await getConfig()
-      const dbConnections = config.dbConnections || []
+      const dbConnections = config.database?.connections || []
       const existingIndex = dbConnections.findIndex((c) => c.name === connection.name)
 
       if (existingIndex >= 0) {
-        await api.showMessage('连接名称已存在', 'error')
+        await api.showMessage(t('连接名称已存在'), 'error')
         return
       }
 
       dbConnections.push(connection)
-      await patchConfig({ dbConnections })
+      await patchConfig({ database: { connections: dbConnections } })
 
       showCreateDialog.value = false
       resetNewConnection()
       await loadConnections()
     } catch (error) {
       console.error('保存连接失败:', error)
-      await api.showMessage('保存连接失败: ' + error.message, 'error')
+      await api.showMessage(t('保存连接失败: ') + error.message, 'error')
     }
   }
 
@@ -183,7 +184,7 @@ export function createConnections(state, api) {
 
   async function updateConnection() {
     if (!editingConnection.value.name) {
-      await api.showMessage('请输入连接名称', 'warning')
+      await api.showMessage(t('请输入连接名称'), 'warning')
       return
     }
 
@@ -196,19 +197,19 @@ export function createConnections(state, api) {
 
     try {
       const config = await getConfig()
-      const dbConnections = config.dbConnections || []
+      const dbConnections = config.database?.connections || []
       const index = dbConnections.findIndex((c) => c.name === oldName)
 
       if (index >= 0) {
         if (editingConnection.value.name !== oldName) {
           const existing = dbConnections.findIndex((c) => c.name === editingConnection.value.name)
           if (existing >= 0) {
-            await api.showMessage('连接名称已存在', 'error')
+            await api.showMessage(t('连接名称已存在'), 'error')
             return
           }
         }
         dbConnections[index] = connection
-        await patchConfig({ dbConnections })
+        await patchConfig({ database: { connections: dbConnections } })
       }
 
       showEditDialog.value = false
@@ -220,7 +221,7 @@ export function createConnections(state, api) {
       }
     } catch (error) {
       console.error('更新连接失败:', error)
-      await api.showMessage('更新连接失败: ' + error.message, 'error')
+      await api.showMessage(t('更新连接失败: ') + error.message, 'error')
     }
   }
 

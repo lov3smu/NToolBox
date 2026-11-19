@@ -5,10 +5,16 @@
         <section class="plugin-dialog" role="dialog" aria-modal="true" aria-labelledby="plugin-install-title">
           <header class="plugin-dialog-header">
             <div class="plugin-dialog-heading">
-              <h2 id="plugin-install-title">安装{{ installNoun }}</h2>
+              <h2 id="plugin-install-title">{{ t('安装{kind}', { kind: installNoun }) }}</h2>
               <p>{{ installDescription }}</p>
             </div>
-            <button type="button" class="plugin-dialog-close" title="关闭" :disabled="submitting" @click="requestClose">
+            <button
+              type="button"
+              class="plugin-dialog-close"
+              :title="t('关闭')"
+              :disabled="submitting"
+              @click="requestClose"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -48,7 +54,7 @@
                 >
                   <path d="m9 6 6 6-6 6" />
                 </svg>
-                安装引导和示例
+                {{ t('安装引导和示例') }}
               </button>
 
               <div class="plugin-source">
@@ -60,8 +66,8 @@
                   :aria-expanded="sourceOpen"
                   @click="sourceOpen = !sourceOpen"
                 >
-                  <span class="plugin-source-label">安装源</span>
-                  <span class="plugin-source-current">{{ sourceLabel }}</span>
+                  <span class="plugin-source-label">{{ t('安装源') }}</span>
+                  <span class="plugin-source-current">{{ t(sourceLabel) }}</span>
                   <svg
                     class="plugin-source-caret"
                     :class="{ open: sourceOpen }"
@@ -79,25 +85,43 @@
             </div>
 
             <Transition name="plugin-source-pop">
-              <div v-if="sourceOpen" class="plugin-source-menu" role="radiogroup" aria-label="选择安装源">
-                <label class="plugin-source-option">
-                  <input v-model="sourceMode" type="radio" value="default" @change="sourceOpen = false" />
+              <div v-if="sourceOpen" class="plugin-source-menu" role="radiogroup" :aria-label="t('选择安装源')">
+                <RadioOption
+                  v-model="sourceMode"
+                  class="plugin-source-option"
+                  variant="block"
+                  name="plugin-source"
+                  value="default"
+                  @change="sourceOpen = false"
+                >
                   <span class="plugin-source-option-body">
-                    <span class="plugin-source-option-title">默认安装源</span>
+                    <span class="plugin-source-option-title">{{ t('默认安装源') }}</span>
                     <code>registry.npmjs.org</code>
                   </span>
-                </label>
-                <label class="plugin-source-option">
-                  <input v-model="sourceMode" type="radio" value="mirror" @change="sourceOpen = false" />
+                </RadioOption>
+                <RadioOption
+                  v-model="sourceMode"
+                  class="plugin-source-option"
+                  variant="block"
+                  name="plugin-source"
+                  value="mirror"
+                  @change="sourceOpen = false"
+                >
                   <span class="plugin-source-option-body">
-                    <span class="plugin-source-option-title">中国大陆镜像源</span>
+                    <span class="plugin-source-option-title">{{ t('中国大陆镜像源') }}</span>
                     <code>registry.npmmirror.com</code>
                   </span>
-                </label>
-                <label class="plugin-source-option" :class="{ active: sourceMode === 'custom' }">
-                  <input v-model="sourceMode" type="radio" value="custom" />
+                </RadioOption>
+                <RadioOption
+                  v-model="sourceMode"
+                  class="plugin-source-option"
+                  :class="{ active: sourceMode === 'custom' }"
+                  variant="block"
+                  name="plugin-source"
+                  value="custom"
+                >
                   <span class="plugin-source-option-body">
-                    <span class="plugin-source-option-title">自定义地址</span>
+                    <span class="plugin-source-option-title">{{ t('自定义地址') }}</span>
                     <input
                       v-model="customRegistry"
                       class="plugin-source-custom"
@@ -109,12 +133,15 @@
                       @click.stop
                     />
                   </span>
-                </label>
+                </RadioOption>
                 <p class="plugin-source-hint">
-                  填写内网或私有 npm 源地址，以 http:// 或 https:// 开头。若为需要登录的源，请把凭据放在本机的 ~/.npmrc
-                  里。
+                  {{
+                    t(
+                      '填写内网或私有 npm 源地址，以 http:// 或 https:// 开头。若为需要登录的源，请把凭据放在本机的 ~/.npmrc 里。'
+                    )
+                  }}
                 </p>
-                <p v-if="customRegistryError" class="plugin-source-error">{{ customRegistryError }}</p>
+                <p v-if="customRegistryError" class="plugin-source-error">{{ t(customRegistryError) }}</p>
               </div>
             </Transition>
 
@@ -127,18 +154,20 @@
                 @click="useExample(example.value)"
               >
                 <code>{{ example.value }}</code>
-                <span>{{ example.hint }}</span>
+                <span>{{ t(example.hint) }}</span>
               </button>
-              <p class="plugin-guide-note">{{ guideNote }}</p>
+              <p class="plugin-guide-note">{{ t(guideNote) }}</p>
             </div>
 
             <p v-if="error" class="plugin-dialog-error" role="alert">{{ error }}</p>
           </div>
 
           <footer class="plugin-dialog-footer">
-            <button type="button" class="btn btn-secondary" :disabled="submitting" @click="requestClose">取消</button>
+            <button type="button" class="btn btn-secondary" :disabled="submitting" @click="requestClose">
+              {{ t('取消') }}
+            </button>
             <button type="button" class="btn btn-primary" :disabled="!canSubmit" @click="submit">
-              {{ submitting ? '安装中…' : '安装' }}
+              {{ submitting ? t('安装中…') : t('安装') }}
             </button>
           </footer>
         </section>
@@ -150,6 +179,8 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { extensionsInstallSource, pluginsInstallSource } from '@/api'
+import { t } from '@/i18n'
+import RadioOption from '@/components/RadioOption.vue'
 
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org'
 const MIRROR_REGISTRY = 'https://registry.npmmirror.com'
@@ -175,43 +206,89 @@ const isPlugin = computed(() => props.kind === 'plugin')
 const examples = computed(() =>
   isPlugin.value
     ? [
-        { value: 'plugin-name', hint: 'npm 上的插件包名，可追加 @版本 或 @标签' },
-        { value: '@scope/plugin-name', hint: '带命名空间的 npm 插件包' },
-        { value: 'https://github.com/owner/repo', hint: 'GitHub 仓库根地址，包内需包含 plugin.json' },
-        { value: '~/plugins/my-plugin', hint: '本机目录路径，目录内需包含 plugin.json' }
+        {
+          value: 'plugin-name',
+          get hint() {
+            return t('npm 上的插件包名，可追加 @版本 或 @标签')
+          }
+        },
+        {
+          value: '@scope/plugin-name',
+          get hint() {
+            return t('带命名空间的 npm 插件包')
+          }
+        },
+        {
+          value: 'https://github.com/owner/repo',
+          get hint() {
+            return t('GitHub 仓库根地址，包内需包含 plugin.json')
+          }
+        },
+        {
+          value: '~/plugins/my-plugin',
+          get hint() {
+            return t('本机目录路径，目录内需包含 plugin.json')
+          }
+        }
       ]
     : [
-        { value: 'skill-name', hint: 'npm 上的技能包名，可追加 @版本 或 @标签' },
-        { value: '@scope/skill-name', hint: '带命名空间的 npm 技能包' },
-        { value: 'https://github.com/owner/repo', hint: 'GitHub 仓库根地址，包内需包含 skill.json' },
-        { value: '~/skills/my-skill', hint: '本机目录路径，目录内需包含 skill.json' }
+        {
+          value: 'skill-name',
+          get hint() {
+            return t('npm 上的技能包名，可追加 @版本 或 @标签')
+          }
+        },
+        {
+          value: '@scope/skill-name',
+          get hint() {
+            return t('带命名空间的 npm 技能包')
+          }
+        },
+        {
+          value: 'https://github.com/owner/repo',
+          get hint() {
+            return t('GitHub 仓库根地址，包内需包含 skill.json')
+          }
+        },
+        {
+          value: '~/skills/my-skill',
+          get hint() {
+            return t('本机目录路径，目录内需包含 skill.json')
+          }
+        }
       ]
 )
 
-const installNoun = computed(() => (isPlugin.value ? '插件' : '技能'))
+const installNoun = computed(() => t(isPlugin.value ? '插件' : '技能'))
 
 const installDescription = computed(() =>
-  isPlugin.value
-    ? '输入插件包的 npm 包名、GitHub 仓库地址或本地目录路径。插件包内需包含 plugin.json。'
-    : '输入技能包的 npm 包名、GitHub 仓库地址或本地目录路径。'
+  t(
+    isPlugin.value
+      ? t('输入插件包的 npm 包名、GitHub 仓库地址或本地目录路径。插件包内需包含 plugin.json。')
+      : t('输入技能包的 npm 包名、GitHub 仓库地址或本地目录路径。')
+  )
 )
 
 const inputPlaceholder = computed(() =>
-  isPlugin.value
-    ? '例如 @scope/plugin-name 或 https://github.com/owner/repo'
-    : '例如 @scope/skill-name 或 https://github.com/owner/repo'
+  t(
+    isPlugin.value
+      ? t('例如 @scope/plugin-name 或 https://github.com/owner/repo')
+      : t('例如 @scope/skill-name 或 https://github.com/owner/repo')
+  )
 )
 
 const guideNote = computed(() =>
-  isPlugin.value
-    ? '安装源仅用于 npm 包；插件可能包含技能与连接器，请只安装来自可信来源的插件。'
-    : '安装源仅用于 npm 包；技能可能包含脚本，请只安装来自可信来源的技能。'
+  t(
+    isPlugin.value
+      ? t('安装源仅用于 npm 包；插件可能包含技能与连接器，请只安装来自可信来源的插件。')
+      : t('安装源仅用于 npm 包；技能可能包含脚本，请只安装来自可信来源的技能。')
+  )
 )
 
 const sourceLabel = computed(() => {
-  if (sourceMode.value === 'mirror') return '中国大陆镜像源'
-  if (sourceMode.value === 'custom') return '自定义地址'
-  return '默认安装源'
+  if (sourceMode.value === 'mirror') return t('中国大陆镜像源')
+  if (sourceMode.value === 'custom') return t('自定义地址')
+  return t('默认安装源')
 })
 
 const resolvedRegistry = computed(() => {
@@ -223,8 +300,8 @@ const resolvedRegistry = computed(() => {
 const customRegistryError = computed(() => {
   if (sourceMode.value !== 'custom') return ''
   const value = customRegistry.value.trim()
-  if (!value) return '请输入自定义安装源地址'
-  if (!/^https?:\/\/[^\s/]+/i.test(value)) return '安装源地址需以 http:// 或 https:// 开头'
+  if (!value) return t('请输入自定义安装源地址')
+  if (!/^https?:\/\/[^\s/]+/i.test(value)) return t('安装源地址需以 http:// 或 https:// 开头')
   return ''
 })
 
@@ -273,7 +350,7 @@ async function submit() {
       emit('close')
       query.value = ''
     } else {
-      error.value = result?.error || `安装${installNoun.value}失败`
+      error.value = result?.error || t('安装{kind}失败', { kind: installNoun.value })
     }
   } finally {
     submitting.value = false
@@ -521,11 +598,6 @@ onUnmounted(() => document.removeEventListener('keydown', onDocumentKeyDown))
 .plugin-source-option:hover,
 .plugin-source-option.active {
   background: var(--surface-hover);
-}
-
-.plugin-source-option input[type='radio'] {
-  margin: 2px 0 0;
-  accent-color: var(--accent-color);
 }
 
 .plugin-source-option-body {

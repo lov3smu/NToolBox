@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { dbExecuteQuery, dbQueryDatabases, dbQueryTables } from '@/api'
 export function createSidebar(state, api) {
   const {
@@ -145,17 +146,17 @@ export function createSidebar(state, api) {
     const connection = selectedConnection.value
     const database = selectedDatabase.value
     if (!connection) {
-      api.showMessage('请先在左侧选择连接', 'warning')
+      api.showMessage(t('请先在左侧选择连接'), 'warning')
       return
     }
 
     if (!connection.active) {
-      api.showMessage('请先连接数据库', 'warning')
+      api.showMessage(t('请先连接数据库'), 'warning')
       return
     }
 
     if (!database) {
-      api.showMessage('请先在左侧选择数据库', 'warning')
+      api.showMessage(t('请先在左侧选择数据库'), 'warning')
       return
     }
 

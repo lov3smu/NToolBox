@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { computed } from 'vue'
 import {
   dbExecuteQuery,
@@ -121,12 +122,12 @@ function parseImportContent(content, format) {
         : Array.isArray(parsed?.rows)
           ? parsed.rows
           : []
-    if (!list.length) throw new Error('JSON 中未找到数据数组')
+    if (!list.length) throw new Error(t('JSON 中未找到数据数组'))
     return list.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
   }
 
   const rows = parseCsv(content)
-  if (rows.length < 2) throw new Error('CSV 文件为空或缺少数据行')
+  if (rows.length < 2) throw new Error(t('CSV 文件为空或缺少数据行'))
   const seen = new Map()
   const headers = rows[0].map((header, index) => {
     const name = String(header || '').trim() || `column_${index + 1}`
@@ -217,7 +218,7 @@ export function createTransfer(state, api, options = {}) {
 
   function openImportDialog(tab) {
     if (!tab || tab.isView) {
-      api.showMessage('视图不支持导入数据', 'warning')
+      api.showMessage(t('视图不支持导入数据'), 'warning')
       return
     }
     importDialog.value = {
@@ -323,7 +324,7 @@ export function createTransfer(state, api, options = {}) {
     const { rows, unmatched } = getMatchedImportRows()
 
     if (!rows.length) {
-      dialog.error = '没有可导入的数据行，请检查列名是否与表字段匹配'
+      dialog.error = t('没有可导入的数据行，请检查列名是否与表字段匹配')
       return
     }
 
@@ -337,7 +338,7 @@ export function createTransfer(state, api, options = {}) {
         const batch = rows.slice(i, i + 500)
         const result = await dbInsertRows(tab.connectionName, tab.database, tab.tableName, batch)
         if (!result.success) {
-          dialog.error = `已导入 ${inserted} 行后失败: ${result.error}`
+          dialog.error = t('已导入 {p0} 行后失败: {p1}', { p0: inserted, p1: result.error })
           dialog.importing = false
           return
         }
@@ -345,7 +346,12 @@ export function createTransfer(state, api, options = {}) {
       }
 
       await api.showMessage(
-        `导入完成，共写入 ${inserted} 行${unmatched.length ? `，忽略 ${unmatched.length} 个未匹配列` : ''}`,
+        unmatched.length
+          ? t('导入完成，共写入 {count} 行，忽略 {unmatched} 个未匹配列', {
+              count: inserted,
+              unmatched: unmatched.length
+            })
+          : t('导入完成，共写入 {count} 行', { count: inserted }),
         'success'
       )
       closeImportDialog()
@@ -360,7 +366,7 @@ export function createTransfer(state, api, options = {}) {
 
   function openExportDialog(tab) {
     if (!tab || (tab.type === 'query' && !tab.queryResult?.rows?.length)) {
-      api.showMessage('没有可导出的查询结果', 'warning')
+      api.showMessage(t('没有可导出的查询结果'), 'warning')
       return
     }
     exportDialog.value = {
@@ -399,7 +405,7 @@ export function createTransfer(state, api, options = {}) {
             maxRows: 100000
           })
           if (!result.success) {
-            await api.showMessage('导出失败: ' + result.error, 'error')
+            await api.showMessage(t('导出失败: ') + result.error, 'error')
             return
           }
           content = result.content
@@ -422,17 +428,21 @@ export function createTransfer(state, api, options = {}) {
 
       if (saveResult?.canceled) return
       if (saveResult?.error) {
-        await api.showMessage('保存失败: ' + saveResult.error, 'error')
+        await api.showMessage(t('保存失败: ') + saveResult.error, 'error')
         return
       }
 
       await api.showMessage(
-        `已导出 ${rowCount} 行${truncated ? '（数据量超过上限，已截断）' : ''}到: ${saveResult.filePath}`,
+        t('已导出 {p0} 行{p1}到: {p2}', {
+          p0: rowCount,
+          p1: truncated ? t('（数据量超过上限，已截断）') : '',
+          p2: saveResult.filePath
+        }),
         'success'
       )
       closeExportDialog()
     } catch (error) {
-      await api.showMessage('导出失败: ' + error.message, 'error')
+      await api.showMessage(t('导出失败: ') + error.message, 'error')
     } finally {
       dialog.exporting = false
     }
@@ -491,11 +501,11 @@ export function createTransfer(state, api, options = {}) {
     const result = await dbSaveConnectionFile(`connections_${timestamp()}.json`, content)
     if (result?.canceled) return
     if (result?.error) {
-      await api.showMessage('导出失败: ' + result.error, 'error')
+      await api.showMessage(t('导出失败: ') + result.error, 'error')
       return
     }
     closeConnectionTransferDialog()
-    await api.showMessage(`已导出 ${list.length} 个连接`, 'success')
+    await api.showMessage(t('已导出 {p0} 个连接', { p0: list.length }), 'success')
   }
 
   async function selectConnectionImportFile() {
@@ -510,7 +520,7 @@ export function createTransfer(state, api, options = {}) {
       const parsed = JSON.parse(result.content || '')
       const list = Array.isArray(parsed) ? parsed : parsed.connections
       if (!Array.isArray(list) || list.length === 0) {
-        dialog.error = '文件中未找到连接配置'
+        dialog.error = t('文件中未找到连接配置')
         return
       }
       dialog.content = result.content
@@ -518,7 +528,7 @@ export function createTransfer(state, api, options = {}) {
       dialog.previewCount = list.length
       dialog.error = ''
     } catch (error) {
-      dialog.error = '连接配置文件解析失败: ' + error.message
+      dialog.error = t('连接配置文件解析失败: {p0}', { p0: error.message })
     }
   }
 
@@ -530,13 +540,13 @@ export function createTransfer(state, api, options = {}) {
       const parsed = JSON.parse(dialog.content || '')
       const list = Array.isArray(parsed) ? parsed : parsed.connections
       if (!Array.isArray(list) || list.length === 0) {
-        dialog.error = '文件中未找到连接配置'
+        dialog.error = t('文件中未找到连接配置')
         return
       }
 
       dialog.importing = true
       const config = await getConfig()
-      const existing = config.dbConnections || []
+      const existing = config.database?.connections || []
       const names = new Set(existing.map((conn) => conn.name))
       let imported = 0
 
@@ -584,12 +594,12 @@ export function createTransfer(state, api, options = {}) {
         imported++
       }
 
-      await patchConfig({ dbConnections: existing })
+      await patchConfig({ database: { connections: existing } })
       await api.loadConnections()
       closeConnectionTransferDialog()
-      await api.showMessage(`已导入 ${imported} 个连接`, 'success')
+      await api.showMessage(t('已导入 {p0} 个连接', { p0: imported }), 'success')
     } catch (error) {
-      dialog.error = '导入失败: ' + error.message
+      dialog.error = t('导入失败: {p0}', { p0: error.message })
     } finally {
       dialog.importing = false
     }
@@ -632,7 +642,7 @@ export function createTransfer(state, api, options = {}) {
 
     loadTransferTasks()
     if (!active.length) {
-      dataTransferDialog.value.error = '暂无已连接的数据库，请先连接后再传输'
+      dataTransferDialog.value.error = t('暂无已连接的数据库，请先连接后再传输')
       return
     }
 
@@ -647,7 +657,7 @@ export function createTransfer(state, api, options = {}) {
   async function loadTransferTasks() {
     try {
       const config = await getConfig()
-      const tasks = Array.isArray(config.dbTransferTasks) ? config.dbTransferTasks : []
+      const tasks = Array.isArray(config.database?.transfer_tasks) ? config.database.transfer_tasks : []
       dataTransferDialog.value.tasks = tasks.map(normalizeTransferTask).filter((task) => task.name)
     } catch (error) {
       console.error('加载数据传输任务失败:', error)
@@ -681,7 +691,7 @@ export function createTransfer(state, api, options = {}) {
       const result = await dbQueryDatabases(connName)
       if (!dialog.show) return
       if (!result.success) {
-        dialog.error = result.error || '读取数据库列表失败'
+        dialog.error = result.error || t('读取数据库列表失败')
         return
       }
       dialog[listKey] = result.databases || []
@@ -707,7 +717,7 @@ export function createTransfer(state, api, options = {}) {
       const result = await dbQueryObjects(dialog.sourceConnection, dialog.sourceDatabase)
       if (!dialog.show) return
       if (!result.success) {
-        dialog.error = result.error || '读取对象列表失败'
+        dialog.error = result.error || t('读取对象列表失败')
         return
       }
       dialog.objects = normalizeTransferObjects(result.items || [])
@@ -751,7 +761,9 @@ export function createTransfer(state, api, options = {}) {
     const { keys, unmatched } = parseBulkObjectNames(dialog.bulkText, dialog.objects)
 
     if (!keys.length) {
-      dialog.error = unmatched.length ? `未匹配到对象：${unmatched.slice(0, 5).join('、')}` : '请输入要选择的对象名称'
+      dialog.error = unmatched.length
+        ? t('未匹配到对象：{p0}', { p0: unmatched.slice(0, 5).join(t('、')) })
+        : t('请输入要选择的对象名称')
       return
     }
 
@@ -760,7 +772,10 @@ export function createTransfer(state, api, options = {}) {
     dialog.bulkText = ''
     dialog.error = ''
     if (unmatched.length) {
-      await api.showMessage(`已选择 ${keys.length} 个对象，未匹配 ${unmatched.length} 个`, 'warning')
+      await api.showMessage(
+        t('已选择 {p0} 个对象，未匹配 {p1} 个', { p0: keys.length, p1: unmatched.length }),
+        'warning'
+      )
     }
   }
 
@@ -794,14 +809,14 @@ export function createTransfer(state, api, options = {}) {
   async function saveTransferTask() {
     const dialog = dataTransferDialog.value
     if (!dialog.sourceConnection || !dialog.sourceDatabase || !dialog.targetConnection || !dialog.targetDatabase) {
-      dialog.error = '请先选择源和目标连接、数据库'
+      dialog.error = t('请先选择源和目标连接、数据库')
       return
     }
 
     const suggestedName =
       dialog.sourceDatabase && dialog.targetDatabase
         ? `${dialog.sourceDatabase} → ${dialog.targetDatabase}`
-        : '数据传输任务'
+        : t('数据传输任务')
     const name = await api.showPrompt('请输入传输任务名称：', suggestedName)
     const taskName = String(name || '').trim()
     if (!taskName) return
@@ -809,7 +824,7 @@ export function createTransfer(state, api, options = {}) {
     const tasks = dialog.tasks.map(normalizeTransferTask)
     const index = tasks.findIndex((task) => task.name === taskName)
     if (index >= 0) {
-      const overwrite = await api.showConfirm(`任务「${taskName}」已存在，是否覆盖？`, '保存任务')
+      const overwrite = await api.showConfirm(t('任务「{p0}」已存在，是否覆盖？', { p0: taskName }), t('保存任务'))
       if (!overwrite) return
     }
 
@@ -818,12 +833,12 @@ export function createTransfer(state, api, options = {}) {
     else tasks.push(task)
 
     try {
-      const saved = await patchConfig({ dbTransferTasks: tasks })
-      if (saved === false) throw new Error('保存配置失败')
+      const saved = await patchConfig({ database: { transfer_tasks: tasks } })
+      if (saved === false) throw new Error(t('保存配置失败'))
       dialog.tasks = tasks
-      await api.showMessage('传输任务已保存', 'success')
+      await api.showMessage(t('传输任务已保存'), 'success')
     } catch (error) {
-      dialog.error = '保存任务失败: ' + error.message
+      dialog.error = t('保存任务失败: {p0}', { p0: error.message })
     }
   }
 
@@ -836,7 +851,7 @@ export function createTransfer(state, api, options = {}) {
 
     const activeNames = new Set(activeConnections.value.map((conn) => conn.name))
     if (!activeNames.has(settings.sourceConnection) || !activeNames.has(settings.targetConnection)) {
-      dialog.error = '任务中的数据库连接未激活，请先连接后再载入任务'
+      dialog.error = t('任务中的数据库连接未激活，请先连接后再载入任务')
       return
     }
 
@@ -868,7 +883,7 @@ export function createTransfer(state, api, options = {}) {
     })
 
     if (!dialog.sourceDatabase) {
-      dialog.error = '任务中的源数据库不存在'
+      dialog.error = t('任务中的源数据库不存在')
       return
     }
 
@@ -876,23 +891,23 @@ export function createTransfer(state, api, options = {}) {
     const available = new Set(dialog.objects.map(transferObjectKey))
     dialog.selectedObjects = settings.selectedObjects.filter((key) => available.has(key))
     if (!dialog.targetDatabase) {
-      dialog.error = '任务中的目标数据库不存在'
+      dialog.error = t('任务中的目标数据库不存在')
     }
   }
 
   async function deleteTransferTask(task) {
     const dialog = dataTransferDialog.value
-    const confirmed = await api.showConfirm(`确定删除传输任务「${task.name}」？`, '删除任务')
+    const confirmed = await api.showConfirm(t('确定删除传输任务「{p0}」？', { p0: task.name }), t('删除任务'))
     if (!confirmed) return
 
     const tasks = dialog.tasks.filter((item) => item.name !== task.name)
     try {
-      const saved = await patchConfig({ dbTransferTasks: tasks })
-      if (saved === false) throw new Error('保存配置失败')
+      const saved = await patchConfig({ database: { transfer_tasks: tasks } })
+      if (saved === false) throw new Error(t('保存配置失败'))
       dialog.tasks = tasks
-      await api.showMessage('传输任务已删除', 'success')
+      await api.showMessage(t('传输任务已删除'), 'success')
     } catch (error) {
-      dialog.error = '删除任务失败: ' + error.message
+      dialog.error = t('删除任务失败: {p0}', { p0: error.message })
     }
   }
 
@@ -924,7 +939,7 @@ export function createTransfer(state, api, options = {}) {
     const { dialog, batchSize, sourceTimeout, targetTimeout } = context
     const structure = await dbGetTableStructure(dialog.targetConnection, dialog.targetDatabase, targetName)
     if (!structure.success) {
-      return { status: 'failed', error: structure.error || '读取目标表结构失败' }
+      return { status: 'failed', error: structure.error || t('读取目标表结构失败') }
     }
 
     const targetFields = structure.fields || []
@@ -940,7 +955,7 @@ export function createTransfer(state, api, options = {}) {
         timeout: sourceTimeout
       })
       if (!data.success) {
-        return { status: 'failed', error: data.error || '读取源表数据失败', rows: copied }
+        return { status: 'failed', error: data.error || t('读取源表数据失败'), rows: copied }
       }
 
       const rows = (data.rows || []).map((row) => remapRow(row, targetFields)).filter(Boolean)
@@ -949,10 +964,10 @@ export function createTransfer(state, api, options = {}) {
           timeout: targetTimeout
         })
         if (!inserted.success) {
-          return { status: 'failed', error: inserted.error || '写入目标表失败', rows: copied }
+          return { status: 'failed', error: inserted.error || t('写入目标表失败'), rows: copied }
         }
         copied += inserted.inserted ?? rows.length
-        dialog.progress = `${context.currentLabel}（已写入 ${copied} 行）`
+        dialog.progress = t('{p0}（已写入 {p1} 行）', { p0: context.currentLabel, p1: copied })
       }
 
       if (page >= data.pageCount) break
@@ -969,15 +984,15 @@ export function createTransfer(state, api, options = {}) {
     const exists = context.targetExisting.has(key)
 
     if (exists && targetMode === 'skip') {
-      return { status: 'skipped', reason: '目标表已存在' }
+      return { status: 'skipped', reason: t('目标表已存在') }
     }
     if (contentMode === 'data' && !exists) {
-      return { status: 'failed', error: '目标表不存在，仅数据模式需要先创建目标表' }
+      return { status: 'failed', error: t('目标表不存在，仅数据模式需要先创建目标表') }
     }
 
     const meta = await dbGetTableMeta(dialog.sourceConnection, dialog.sourceDatabase, object.name)
     if (!meta.success || !meta.ddl) {
-      return { status: 'failed', error: meta.error || '无法读取源表结构' }
+      return { status: 'failed', error: meta.error || t('无法读取源表结构') }
     }
 
     let created = false
@@ -992,12 +1007,12 @@ export function createTransfer(state, api, options = {}) {
         timeout: targetTimeout
       })
       if (!result.success) {
-        return { status: 'failed', error: result.error || '创建目标表失败' }
+        return { status: 'failed', error: result.error || t('创建目标表失败') }
       }
       created = true
       context.targetExisting.set(key, true)
     } else if (contentMode === 'structure') {
-      return { status: 'skipped', reason: '目标表已存在，仅结构模式不覆盖' }
+      return { status: 'skipped', reason: t('目标表已存在，仅结构模式不覆盖') }
     } else if (targetMode === 'truncate') {
       const result = await dbExecuteQuery(
         dialog.targetConnection,
@@ -1006,7 +1021,7 @@ export function createTransfer(state, api, options = {}) {
         { database: dialog.targetDatabase, timeout: targetTimeout }
       )
       if (!result.success) {
-        return { status: 'failed', error: result.error || '清空目标表失败' }
+        return { status: 'failed', error: result.error || t('清空目标表失败') }
       }
     }
 
@@ -1024,15 +1039,15 @@ export function createTransfer(state, api, options = {}) {
     const targetName = applyNameCase(object.name, tableNameCase)
 
     if (contentMode === 'data') {
-      return { status: 'skipped', reason: '视图不包含数据' }
+      return { status: 'skipped', reason: t('视图不包含数据') }
     }
     if (context.targetExisting.has(`view:${targetName}`) && targetMode === 'skip') {
-      return { status: 'skipped', reason: '目标视图已存在' }
+      return { status: 'skipped', reason: t('目标视图已存在') }
     }
 
     const definition = await dbGetObjectDefinition(dialog.sourceConnection, dialog.sourceDatabase, 'view', object.name)
     if (!definition.success || !definition.ddl) {
-      return { status: 'failed', error: definition.error || '读取视图定义失败' }
+      return { status: 'failed', error: definition.error || t('读取视图定义失败') }
     }
 
     const ddl = transformViewDdl(definition.ddl, { targetName })
@@ -1041,7 +1056,7 @@ export function createTransfer(state, api, options = {}) {
       timeout: targetTimeout
     })
     if (!result.success) {
-      return { status: 'failed', error: result.error || '创建目标视图失败' }
+      return { status: 'failed', error: result.error || t('创建目标视图失败') }
     }
 
     context.targetExisting.set(`view:${targetName}`, true)
@@ -1054,10 +1069,10 @@ export function createTransfer(state, api, options = {}) {
     const key = transferObjectKey(object)
 
     if (contentMode === 'data') {
-      return { status: 'skipped', reason: `仅数据模式不传输${label}` }
+      return { status: 'skipped', reason: t('仅数据模式不传输{p0}', { p0: label }) }
     }
     if (context.targetExisting.has(key) && targetMode === 'skip') {
-      return { status: 'skipped', reason: `目标${label}已存在` }
+      return { status: 'skipped', reason: t('目标{p0}已存在', { p0: label }) }
     }
 
     const definition = await dbGetObjectDefinition(
@@ -1067,7 +1082,7 @@ export function createTransfer(state, api, options = {}) {
       object.name
     )
     if (!definition.success || !definition.ddl) {
-      return { status: 'failed', error: definition.error || `读取${label}定义失败` }
+      return { status: 'failed', error: definition.error || t('读取{p0}定义失败', { p0: label }) }
     }
 
     const ddl = stripDefiner(definition.ddl.trim().replace(/;\s*$/, ''))
@@ -1079,7 +1094,7 @@ export function createTransfer(state, api, options = {}) {
         { database: dialog.targetDatabase, timeout: targetTimeout }
       )
       if (!dropped.success) {
-        return { status: 'failed', error: dropped.error || `删除目标${label}失败` }
+        return { status: 'failed', error: dropped.error || t('删除目标{p0}失败', { p0: label }) }
       }
     }
 
@@ -1088,7 +1103,7 @@ export function createTransfer(state, api, options = {}) {
       timeout: targetTimeout
     })
     if (!result.success) {
-      return { status: 'failed', error: result.error || `创建目标${label}失败` }
+      return { status: 'failed', error: result.error || t('创建目标{p0}失败', { p0: label }) }
     }
 
     context.targetExisting.set(key, true)
@@ -1100,18 +1115,18 @@ export function createTransfer(state, api, options = {}) {
     if (dialog.transferring) return
 
     if (!dialog.sourceConnection || !dialog.sourceDatabase || !dialog.targetConnection || !dialog.targetDatabase) {
-      dialog.error = '请选择源和目标连接、数据库'
+      dialog.error = t('请选择源和目标连接、数据库')
       return
     }
     if (dialog.sourceConnection === dialog.targetConnection && dialog.sourceDatabase === dialog.targetDatabase) {
-      dialog.error = '源数据库和目标数据库不能相同'
+      dialog.error = t('源数据库和目标数据库不能相同')
       return
     }
 
     const selected = new Set(dialog.selectedObjects)
     const objects = sortTransferObjects(dialog.objects.filter((item) => selected.has(transferObjectKey(item))))
     if (!objects.length) {
-      dialog.error = '请至少选择一个传输对象'
+      dialog.error = t('请至少选择一个传输对象')
       return
     }
 
@@ -1142,7 +1157,7 @@ export function createTransfer(state, api, options = {}) {
     try {
       const targetResult = await dbQueryObjects(dialog.targetConnection, dialog.targetDatabase)
       if (!targetResult.success) {
-        dialog.error = targetResult.error || '读取目标数据库对象失败'
+        dialog.error = targetResult.error || t('读取目标数据库对象失败')
         return
       }
       context.targetExisting = collectTargetObjects(targetResult)
@@ -1152,7 +1167,7 @@ export function createTransfer(state, api, options = {}) {
         const object = objects[index]
         const label = `${getTransferTypeLabel(object.type)} ${object.name}`
         context.currentLabel = label
-        dialog.progress = `正在传输 ${index + 1}/${objects.length}：${label}`
+        dialog.progress = t('正在传输 {p0}/{p1}：{p2}', { p0: index + 1, p1: objects.length, p2: label })
 
         let result
         if (object.type === 'table') result = await transferTable(context, object)
@@ -1162,12 +1177,12 @@ export function createTransfer(state, api, options = {}) {
         if (result.status === 'transferred') {
           summary.transferred.push({ type: object.type, name: object.name, rows: result.rows || 0 })
         } else if (result.status === 'skipped') {
-          summary.skipped.push({ type: object.type, name: object.name, reason: result.reason || '已跳过' })
+          summary.skipped.push({ type: object.type, name: object.name, reason: result.reason || t('已跳过') })
         } else {
           summary.failed.push({
             type: object.type,
             name: object.name,
-            error: result.error || '传输失败',
+            error: result.error || t('传输失败'),
             rows: result.rows || 0
           })
         }
@@ -1183,7 +1198,11 @@ export function createTransfer(state, api, options = {}) {
       }
       if (started) {
         await api.showMessage(
-          `数据传输完成：成功 ${summary.transferred.length}，跳过 ${summary.skipped.length}，失败 ${summary.failed.length}`,
+          t('数据传输完成：成功 {p0}，跳过 {p1}，失败 {p2}', {
+            p0: summary.transferred.length,
+            p1: summary.skipped.length,
+            p2: summary.failed.length
+          }),
           summary.failed.length ? 'warning' : 'success'
         )
       }

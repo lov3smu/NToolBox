@@ -48,12 +48,13 @@ export const tools = [
     hidden: true
   },
   {
-    name: '密码生成器',
-    description: '生成安全的随机密码',
-    path: '/password',
+    name: '密码管理',
+    description: '加密保存分组密码与登录信息',
+    path: '/password-manager',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      <path d="M12 3 5 6v5.5c0 4.6 2.9 7.6 7 9.5 4.1-1.9 7-4.9 7-9.5V6l-7-3z"/>
+      <circle cx="12" cy="10" r="1.8"/>
+      <path d="M12 11.8V15"/>
     </svg>`,
     menuGroup: 'utilities',
     trayGroup: 'tools'
@@ -234,8 +235,8 @@ export const MAX_RECENT = 4
 export const RECENT_TOOLS_LIMIT_OPTIONS = Object.freeze(
   [2, 3, 4, 5, 6, 8].map((value) => ({
     value,
-    label: `${value} 个${value === MAX_RECENT ? '（默认）' : ''}`,
-    hint: `首页「最近使用」最多保留 ${value} 个工具`
+    label: value === MAX_RECENT ? '{p0} 个（默认）' : '{p0} 个',
+    hint: '首页「最近使用」最多保留 {p0} 个工具'
   }))
 )
 

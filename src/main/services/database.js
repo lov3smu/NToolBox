@@ -1,6 +1,7 @@
 import fs from 'fs'
 import mysql from 'mysql2/promise'
 import { log } from '../utils'
+import { t } from './i18n.js'
 import { createSshTunnel } from './sshTunnel'
 import { recordDbOperation } from './dbAuditLog'
 
@@ -46,12 +47,12 @@ function quoteTable(database, tableName) {
 function getEntry(name) {
   const entry = connections.get(name)
   if (!entry) {
-    throw new Error('连接不存在，请先创建连接')
+    throw new Error(t('连接不存在，请先创建连接'))
   }
   return entry
 }
 
-const READONLY_BLOCK_MESSAGE = '只读连接不允许执行写操作，请在连接设置中关闭只读模式'
+const READONLY_BLOCK_MESSAGE = t('只读连接不允许执行写操作，请在连接设置中关闭只读模式')
 const WRITE_STATEMENT_PATTERN =
   /^\s*(insert|update|delete|replace|create|alter|drop|truncate|rename|grant|revoke|load\s+(?:data|xml)|lock\s+tables?|unlock\s+tables?|optimize|repair|analyze|flush|kill|call)\b/i
 
@@ -116,7 +117,7 @@ function buildSslOptions(config) {
     try {
       options.ca = fs.readFileSync(caPath)
     } catch (error) {
-      throw new Error(`读取 SSL CA 证书失败: ${error.message}`, { cause: error })
+      throw new Error(t('读取 SSL CA 证书失败: {p0}', { p0: error.message }), { cause: error })
     }
   }
   return options
@@ -212,9 +213,9 @@ function toErrorResult(error, fallbackMessage) {
   }
 }
 
-function assertColumnName(value, label = '字段') {
+function assertColumnName(value, label = t('字段')) {
   if (!value || typeof value !== 'string') {
-    throw new Error(`${label}不能为空`)
+    throw new Error(t('{p0}不能为空', { p0: label }))
   }
   return value
 }
@@ -265,14 +266,14 @@ async function loadPrimaryKeys(conn, database, tableName) {
 }
 
 function buildFilterClause(filter, columnNames) {
-  const field = assertColumnName(filter?.field, '筛选字段')
+  const field = assertColumnName(filter?.field, t('筛选字段'))
   if (!columnNames.has(field)) {
-    throw new Error(`无效的筛选字段: ${field}`)
+    throw new Error(t('无效的筛选字段: {p0}', { p0: field }))
   }
 
   const operator = String(filter.operator || '=').toUpperCase()
   if (!FILTER_OPERATORS.includes(operator)) {
-    throw new Error(`不支持的筛选运算符: ${filter.operator}`)
+    throw new Error(t('不支持的筛选运算符: {p0}', { p0: filter.operator }))
   }
 
   const column = quoteIdentifier(field)
@@ -290,7 +291,7 @@ function buildFilterClause(filter, columnNames) {
           .map((item) => item.trim())
           .filter((item) => item !== '')
     if (!values.length) {
-      throw new Error(`筛选字段 ${field} 的取值不能为空`)
+      throw new Error(t('筛选字段 {p0} 的取值不能为空', { p0: field }))
     }
     return {
       sql: `${column} ${operator} (${values.map(() => '?').join(', ')})`,
@@ -397,12 +398,12 @@ export async function testConnection(config) {
     connection = await mysql.createConnection(connConfig)
     await connection.ping()
 
-    return { success: true, message: '连接成功' }
+    return { success: true, message: t('连接成功') }
   } catch (error) {
     log.error('测试连接失败:', error)
     return {
       success: false,
-      error: error.message || '连接失败',
+      error: error.message || t('连接失败'),
       code: error.code
     }
   } finally {
@@ -467,13 +468,13 @@ export async function createConnection(name, config) {
     connections.set(name, entry)
 
     log.info(`数据库连接创建成功: ${name}`)
-    return { success: true, message: '连接创建成功' }
+    return { success: true, message: t('连接创建成功') }
   } catch (error) {
     if (tunnel) tunnel.close()
     log.error('创建连接失败:', error)
     return {
       success: false,
-      error: error.message || '创建连接失败',
+      error: error.message || t('创建连接失败'),
       code: error.code
     }
   }
@@ -502,7 +503,7 @@ export async function closeConnection(name) {
 
     const entry = connections.get(name)
     if (!entry) {
-      return { success: false, error: '连接不存在' }
+      return { success: false, error: t('连接不存在') }
     }
 
     connections.delete(name)
@@ -524,12 +525,12 @@ export async function closeConnection(name) {
     }
 
     log.info(`数据库连接已关闭: ${name}`)
-    return { success: true, message: '连接已关闭' }
+    return { success: true, message: t('连接已关闭') }
   } catch (error) {
     log.error('关闭连接失败:', error)
     return {
       success: false,
-      error: error.message || '关闭连接失败'
+      error: error.message || t('关闭连接失败')
     }
   }
 }
@@ -552,7 +553,7 @@ export async function closeAllConnections() {
   if (errors.length > 0) {
     return { success: false, errors }
   }
-  return { success: true, message: '所有连接已关闭' }
+  return { success: true, message: t('所有连接已关闭') }
 }
 
 export async function executeQuery(name, sql, params = [], options = {}) {
@@ -609,13 +610,13 @@ export async function executeQuery(name, sql, params = [], options = {}) {
         name,
         options.database,
         sql,
-        { success: false, canceled: true, error: '查询已取消' },
+        { success: false, canceled: true, error: t('查询已取消') },
         duration,
         'query'
       )
     }
     log.error('执行查询失败:', error)
-    return auditSqlResult(name, options.database, sql, toErrorResult(error, '执行查询失败'), duration, 'query')
+    return auditSqlResult(name, options.database, sql, toErrorResult(error, t('执行查询失败')), duration, 'query')
   } finally {
     if (requestId) {
       runningQueries.delete(requestId)
@@ -688,7 +689,7 @@ export async function executeScript(name, sql, options = {}) {
       name,
       options.database,
       sql,
-      toErrorResult(error, '执行脚本失败'),
+      toErrorResult(error, t('执行脚本失败')),
       Date.now() - startedAt,
       'script'
     )
@@ -708,20 +709,20 @@ export async function cancelQuery(name, requestId) {
     const entry = getEntry(name)
     const item = runningQueries.get(requestId)
     if (!item) {
-      return { success: false, error: '查询已结束或不存在' }
+      return { success: false, error: t('查询已结束或不存在') }
     }
 
     const threadId = Number(item.threadId)
     if (!Number.isInteger(threadId) || threadId <= 0) {
-      return { success: false, error: '无法获取查询线程' }
+      return { success: false, error: t('无法获取查询线程') }
     }
 
     await entry.pool.query(`KILL QUERY ${threadId}`)
     log.info(`已请求取消查询: ${name}, thread: ${threadId}`)
-    return { success: true, message: '已发送取消请求' }
+    return { success: true, message: t('已发送取消请求') }
   } catch (error) {
     log.error('取消查询失败:', error)
-    return { success: false, error: error.message || '取消查询失败' }
+    return { success: false, error: error.message || t('取消查询失败') }
   }
 }
 
@@ -921,7 +922,7 @@ export async function getSessionInfo(name) {
     }
   } catch (error) {
     log.error('读取会话信息失败:', error)
-    return toErrorResult(error, '读取会话信息失败')
+    return toErrorResult(error, t('读取会话信息失败'))
   } finally {
     conn?.release()
   }
@@ -932,28 +933,28 @@ export async function killSession(name, threadId, mode = 'connection') {
   try {
     const id = Number(threadId)
     if (!Number.isInteger(id) || id <= 0) {
-      throw new Error('无效的会话 ID')
+      throw new Error(t('无效的会话 ID'))
     }
 
     const entry = getEntry(name)
     conn = await entry.pool.getConnection()
     const [identityRows] = await conn.query('SELECT CONNECTION_ID() AS id')
     if (Number(identityRows[0]?.id) === id) {
-      throw new Error('不能操作当前正在使用的会话')
+      throw new Error(t('不能操作当前正在使用的会话'))
     }
 
     if (mode === 'query') {
       await conn.query(`KILL QUERY ${id}`)
       log.info(`已请求取消会话查询: ${name}, thread: ${id}`)
-      return { success: true, message: '已取消该会话正在执行的查询' }
+      return { success: true, message: t('已取消该会话正在执行的查询') }
     }
 
     await conn.query(`KILL CONNECTION ${id}`)
     log.info(`已终止会话: ${name}, thread: ${id}`)
-    return { success: true, message: '会话已终止' }
+    return { success: true, message: t('会话已终止') }
   } catch (error) {
     log.error('操作会话失败:', error)
-    return toErrorResult(error, '操作会话失败')
+    return toErrorResult(error, t('操作会话失败'))
   } finally {
     conn?.release()
   }
@@ -1067,7 +1068,7 @@ export async function getTableData(name, database, tableName, options = {}) {
       )
     ])
     if (!columns.length) {
-      throw new Error('表不存在或没有可读取的字段')
+      throw new Error(t('表不存在或没有可读取的字段'))
     }
 
     const { whereSql, params } = buildWhereClause(columns, options)
@@ -1155,7 +1156,7 @@ export async function getTableData(name, database, tableName, options = {}) {
     }
   } catch (error) {
     log.error('读取表数据失败:', error)
-    return toErrorResult(error, '读取表数据失败')
+    return toErrorResult(error, t('读取表数据失败'))
   }
 }
 
@@ -1170,7 +1171,7 @@ export async function getTableCellValue(name, database, tableName, columnName, k
     }
     const primaryKeys = await loadPrimaryKeys(conn, database, tableName)
     if (!primaryKeys.length) {
-      throw new Error('表没有主键，无法定位单元格')
+      throw new Error(t('表没有主键，无法定位单元格'))
     }
     const clauses = []
     const params = []
@@ -1191,12 +1192,12 @@ export async function getTableCellValue(name, database, tableName, columnName, k
       options.timeout
     )
     if (!rows.length) {
-      throw new Error('未找到该行数据')
+      throw new Error(t('未找到该行数据'))
     }
     return { success: true, value: rows[0].value ?? null }
   } catch (error) {
     log.error('读取单元格数据失败:', error)
-    return toErrorResult(error, '读取单元格数据失败')
+    return toErrorResult(error, t('读取单元格数据失败'))
   } finally {
     conn?.release()
   }
@@ -1303,7 +1304,7 @@ export async function getTableMeta(name, database, tableName) {
     }
   } catch (error) {
     log.error('读取表元数据失败:', error)
-    return toErrorResult(error, '读取表元数据失败')
+    return toErrorResult(error, t('读取表元数据失败'))
   } finally {
     conn?.release()
   }
@@ -1325,7 +1326,7 @@ function buildInsertSql(database, tableName, rows, columns) {
   }
 
   if (!keys.length) {
-    throw new Error('没有可写入的数据')
+    throw new Error(t('没有可写入的数据'))
   }
 
   const placeholders = rows.map(() => `(${keys.map(() => '?').join(', ')})`).join(', ')
@@ -1341,7 +1342,7 @@ export async function insertRows(name, database, tableName, rows = [], options =
   let conn = null
   try {
     if (!Array.isArray(rows) || rows.length === 0) {
-      throw new Error('没有可导入的数据')
+      throw new Error(t('没有可导入的数据'))
     }
 
     const entry = getEntry(name)
@@ -1357,7 +1358,7 @@ export async function insertRows(name, database, tableName, rows = [], options =
     return summary
   } catch (error) {
     log.error('插入数据失败:', error)
-    const result = toErrorResult(error, '插入数据失败')
+    const result = toErrorResult(error, t('插入数据失败'))
     auditWrite(name, database, 'INSERT', '', result, { table: tableName, source: 'grid' })
     return result
   } finally {
@@ -1368,7 +1369,7 @@ export async function insertRows(name, database, tableName, rows = [], options =
 function buildKeyClause(keys, columnNames) {
   const entries = Object.entries(keys || {})
   if (!entries.length) {
-    throw new Error('缺少定位行的主键值')
+    throw new Error(t('缺少定位行的主键值'))
   }
 
   const parts = []
@@ -1392,7 +1393,7 @@ export async function applyTableChanges(name, database, tableName, changes = {})
     conn = await entry.pool.getConnection()
     const columns = await loadColumns(conn, database, tableName)
     if (!columns.length) {
-      throw new Error('表不存在或没有可编辑的字段')
+      throw new Error(t('表不存在或没有可编辑的字段'))
     }
     const columnNames = new Set(columns.map((column) => column.name))
     const tableRef = quoteTable(database, tableName)
@@ -1448,7 +1449,7 @@ export async function applyTableChanges(name, database, tableName, changes = {})
     return result
   } catch (error) {
     log.error('保存表数据失败:', error)
-    const result = toErrorResult(error, '保存表数据失败')
+    const result = toErrorResult(error, t('保存表数据失败'))
     auditWrite(name, database, 'DATA', '', result, { table: tableName, source: 'grid' })
     return result
   } finally {
@@ -1459,13 +1460,13 @@ export async function applyTableChanges(name, database, tableName, changes = {})
 function assertColumnType(type) {
   const value = String(type || '').trim()
   if (!/^[A-Za-z0-9_]+(\s*\([0-9,\s]+\))?(\s+unsigned)?(\s+zerofill)?$/i.test(value)) {
-    throw new Error(`字段类型不合法: ${type}`)
+    throw new Error(t('字段类型不合法: {p0}', { p0: type }))
   }
   return value
 }
 
 function buildColumnDefinition(column = {}) {
-  const name = assertColumnName(column.name, '字段名')
+  const name = assertColumnName(column.name, t('字段名'))
   const type = assertColumnType(column.type || column.columnType)
   const parts = [quoteIdentifier(name), type]
 
@@ -1497,7 +1498,7 @@ function normalizeFkAction(value, label) {
     .toUpperCase()
   if (!action) return ''
   if (!FK_ACTIONS.has(action)) {
-    throw new Error(`${label}不合法: ${value}`)
+    throw new Error(t('{p0}不合法: {p1}', { p0: label, p1: value }))
   }
   return action
 }
@@ -1519,7 +1520,7 @@ function buildAlterClauses(columnNames, primaryKeys, database, tableName, operat
     }
     const target = String(column.to || '').trim()
     if (!target) {
-      throw new Error('新字段名不能为空')
+      throw new Error(t('新字段名不能为空'))
     }
     clauses.push(`CHANGE COLUMN ${quoteIdentifier(column.name)} ${buildColumnDefinition({ ...column, name: target })}`)
   }
@@ -1567,7 +1568,7 @@ function buildAlterClauses(columnNames, primaryKeys, database, tableName, operat
   for (const index of operations.addIndexes || []) {
     const indexColumns = (index.columns || []).filter((column) => knownColumns.has(column))
     if (!indexColumns.length) {
-      throw new Error('索引至少需要一个有效字段')
+      throw new Error(t('索引至少需要一个有效字段'))
     }
     const indexName = String(index.name || `idx_${tableName}_${indexColumns.join('_')}`).trim()
     clauses.push(
@@ -1585,7 +1586,7 @@ function buildAlterClauses(columnNames, primaryKeys, database, tableName, operat
   for (const fk of operations.addForeignKeys || []) {
     const fkColumns = (fk.columns || []).map((column) => String(column).trim()).filter(Boolean)
     if (!fkColumns.length) {
-      throw new Error('外键至少需要一个字段')
+      throw new Error(t('外键至少需要一个字段'))
     }
     const missing = fkColumns.filter((column) => !knownColumns.has(column))
     if (missing.length) {
@@ -1593,11 +1594,11 @@ function buildAlterClauses(columnNames, primaryKeys, database, tableName, operat
     }
     const refColumns = (fk.refColumns || []).map((column) => String(column).trim()).filter(Boolean)
     if (refColumns.length !== fkColumns.length) {
-      throw new Error('外键字段与引用字段数量不一致')
+      throw new Error(t('外键字段与引用字段数量不一致'))
     }
     const refTable = String(fk.refTable || '').trim()
     if (!refTable) {
-      throw new Error('外键引用表不能为空')
+      throw new Error(t('外键引用表不能为空'))
     }
     const refSchema = String(fk.refSchema || database || '').trim()
     const constraintName = String(fk.name || `fk_${tableName}_${fkColumns.join('_')}`).trim()
@@ -1606,8 +1607,8 @@ function buildAlterClauses(columnNames, primaryKeys, database, tableName, operat
       .join(', ')}) REFERENCES ${quoteTable(refSchema, refTable)} (${refColumns
       .map((column) => quoteIdentifier(column))
       .join(', ')})`
-    const onDelete = normalizeFkAction(fk.onDelete, 'ON DELETE 操作')
-    const onUpdate = normalizeFkAction(fk.onUpdate, 'ON UPDATE 操作')
+    const onDelete = normalizeFkAction(fk.onDelete, t('ON DELETE 操作'))
+    const onUpdate = normalizeFkAction(fk.onUpdate, t('ON UPDATE 操作'))
     if (onDelete) clause += ` ON DELETE ${onDelete}`
     if (onUpdate) clause += ` ON UPDATE ${onUpdate}`
     clauses.push(clause)
@@ -1618,7 +1619,7 @@ function buildAlterClauses(columnNames, primaryKeys, database, tableName, operat
     .toLowerCase()
   if (charset) {
     if (!SAFE_CHARSETS.has(charset)) {
-      throw new Error(`字符集不合法: ${operations.charset}`)
+      throw new Error(t('字符集不合法: {p0}', { p0: operations.charset }))
     }
     clauses.push(`DEFAULT CHARSET=${charset}`)
   }
@@ -1642,7 +1643,7 @@ export async function alterTable(name, database, tableName, operations = {}) {
     conn = await entry.pool.getConnection()
     const columns = await loadColumns(conn, database, tableName)
     if (!columns.length) {
-      throw new Error('表不存在')
+      throw new Error(t('表不存在'))
     }
     const primaryKeys = await loadPrimaryKeys(conn, database, tableName)
     const clauses = buildAlterClauses(
@@ -1654,7 +1655,7 @@ export async function alterTable(name, database, tableName, operations = {}) {
     )
 
     if (!clauses.length) {
-      throw new Error('没有需要执行的结构变更')
+      throw new Error(t('没有需要执行的结构变更'))
     }
 
     const sql = `ALTER TABLE ${quoteTable(database, tableName)} ${clauses.join(', ')}`
@@ -1666,7 +1667,7 @@ export async function alterTable(name, database, tableName, operations = {}) {
     return result
   } catch (error) {
     log.error('表结构变更失败:', error)
-    const result = toErrorResult(error, '表结构变更失败')
+    const result = toErrorResult(error, t('表结构变更失败'))
     auditWrite(name, database, 'ALTER', '', result, { table: tableName, source: 'designer' })
     return result
   } finally {
@@ -1681,7 +1682,7 @@ export async function previewAlterTable(name, database, tableName, operations = 
     conn = await entry.pool.getConnection()
     const columns = await loadColumns(conn, database, tableName)
     if (!columns.length) {
-      throw new Error('表不存在')
+      throw new Error(t('表不存在'))
     }
     const primaryKeys = await loadPrimaryKeys(conn, database, tableName)
     const clauses = buildAlterClauses(
@@ -1692,7 +1693,7 @@ export async function previewAlterTable(name, database, tableName, operations = 
       operations
     )
     if (!clauses.length) {
-      throw new Error('没有需要执行的结构变更')
+      throw new Error(t('没有需要执行的结构变更'))
     }
 
     return {
@@ -1702,7 +1703,7 @@ export async function previewAlterTable(name, database, tableName, operations = 
     }
   } catch (error) {
     log.error('生成表结构变更预览失败:', error)
-    return toErrorResult(error, '生成表结构变更预览失败')
+    return toErrorResult(error, t('生成表结构变更预览失败'))
   } finally {
     conn?.release()
   }
@@ -1714,17 +1715,17 @@ export async function createTable(name, database, tableName, options = {}) {
   let conn = null
   try {
     const table = String(tableName || '').trim()
-    if (!table) throw new Error('表名不能为空')
-    if (table.length > 64) throw new Error('表名长度不能超过 64 个字符')
-    if (!database) throw new Error('请选择数据库')
+    if (!table) throw new Error(t('表名不能为空'))
+    if (table.length > 64) throw new Error(t('表名长度不能超过 64 个字符'))
+    if (!database) throw new Error(t('请选择数据库'))
 
     const columns = Array.isArray(options.columns) ? options.columns : []
-    if (!columns.length) throw new Error('至少需要一个字段')
+    if (!columns.length) throw new Error(t('至少需要一个字段'))
 
     const seen = new Set()
     for (const column of columns) {
       const columnName = String(column?.name || '').trim()
-      if (!columnName) throw new Error('字段名不能为空')
+      if (!columnName) throw new Error(t('字段名不能为空'))
       const key = columnName.toLowerCase()
       if (seen.has(key)) throw new Error(`字段名重复: ${columnName}`)
       seen.add(key)
@@ -1732,9 +1733,9 @@ export async function createTable(name, database, tableName, options = {}) {
     }
 
     const autoColumns = columns.filter((column) => column.autoIncrement)
-    if (autoColumns.length > 1) throw new Error('只能设置一个自增字段')
+    if (autoColumns.length > 1) throw new Error(t('只能设置一个自增字段'))
     if (autoColumns.length && !autoColumns[0].primaryKey) {
-      throw new Error('自增字段必须同时设置为主键')
+      throw new Error(t('自增字段必须同时设置为主键'))
     }
 
     const primaryKeys = columns.filter((column) => column.primaryKey).map((column) => String(column.name).trim())
@@ -1754,9 +1755,9 @@ export async function createTable(name, database, tableName, options = {}) {
     for (const index of indexes) {
       const indexColumns = (index.columns || []).map((column) => String(column).trim()).filter(Boolean)
       const validColumns = indexColumns.filter((column) => seen.has(column.toLowerCase()))
-      if (!validColumns.length) throw new Error('索引至少需要一个已有字段')
+      if (!validColumns.length) throw new Error(t('索引至少需要一个已有字段'))
       const indexName = String(index.name || `idx_${table}_${validColumns.join('_')}`).trim()
-      if (indexNames.has(indexName.toLowerCase())) throw new Error(`索引名重复: ${indexName}`)
+      if (indexNames.has(indexName.toLowerCase())) throw new Error(t('索引名重复: {p0}', { p0: indexName }))
       indexNames.add(indexName.toLowerCase())
       definitions.push(
         `${index.unique ? 'UNIQUE KEY' : 'KEY'} ${quoteIdentifier(indexName)} (${validColumns
@@ -1787,7 +1788,7 @@ export async function createTable(name, database, tableName, options = {}) {
     return result
   } catch (error) {
     log.error('创建表失败:', error)
-    const result = toErrorResult(error, '创建表失败')
+    const result = toErrorResult(error, t('创建表失败'))
     auditWrite(name, database, 'CREATE', '', result, { table: String(tableName || ''), source: 'designer' })
     return result
   } finally {
@@ -1866,9 +1867,9 @@ export async function compareSchemas(name, baseDatabase, targetName, targetDatab
   let baseConn = null
   let targetConn = null
   try {
-    if (!baseDatabase || !targetDatabase) throw new Error('请选择源数据库和目标数据库')
+    if (!baseDatabase || !targetDatabase) throw new Error(t('请选择源数据库和目标数据库'))
     if (name === targetName && baseDatabase === targetDatabase) {
-      throw new Error('源数据库和目标数据库相同，无需对比')
+      throw new Error(t('源数据库和目标数据库相同，无需对比'))
     }
 
     baseConn = await getEntry(name).pool.getConnection()
@@ -1957,7 +1958,7 @@ export async function compareSchemas(name, baseDatabase, targetName, targetDatab
       const [rows] = await baseConn.query(`SHOW CREATE TABLE ${quoteTable(baseDatabase, tableName)}`)
       const createSql = rows?.[0]?.['Create Table']
       if (!createSql) {
-        warnings.push(`无法读取表 ${tableName} 的建表语句`)
+        warnings.push(t('无法读取表 {p0} 的建表语句', { p0: tableName }))
         continue
       }
       statements.push(createSql.replace(/^CREATE TABLE\s+`(?:[^`]|``)+`/, `CREATE TABLE ${targetRef(tableName)}`))
@@ -1993,7 +1994,7 @@ export async function compareSchemas(name, baseDatabase, targetName, targetDatab
     for (const item of changedIndexes) {
       const index = baseTables.get(item.table).indexes.get(item.index)
       if (item.index === 'PRIMARY') {
-        warnings.push(`表 ${item.table} 的主键定义不同，请手动处理`)
+        warnings.push(t('表 {p0} 的主键定义不同，请手动处理', { p0: item.table }))
         continue
       }
       statements.push(
@@ -2005,13 +2006,13 @@ export async function compareSchemas(name, baseDatabase, targetName, targetDatab
     }
 
     if (extraTables.length) {
-      warnings.push(`目标库多出 ${extraTables.length} 张表，未生成删除语句`)
+      warnings.push(t('目标库多出 {p0} 张表，未生成删除语句', { p0: extraTables.length }))
     }
     if (extraColumns.length) {
-      warnings.push(`目标库多出 ${extraColumns.length} 个字段，未生成删除语句`)
+      warnings.push(t('目标库多出 {p0} 个字段，未生成删除语句', { p0: extraColumns.length }))
     }
     if (extraIndexes.length) {
-      warnings.push(`目标库多出 ${extraIndexes.length} 个索引，未生成删除语句`)
+      warnings.push(t('目标库多出 {p0} 个索引，未生成删除语句', { p0: extraIndexes.length }))
     }
 
     const summary = {
@@ -2039,7 +2040,7 @@ export async function compareSchemas(name, baseDatabase, targetName, targetDatab
     }
   } catch (error) {
     log.error('结构对比失败:', error)
-    return toErrorResult(error, '结构对比失败')
+    return toErrorResult(error, t('结构对比失败'))
   } finally {
     baseConn?.release()
     targetConn?.release()
@@ -2101,7 +2102,7 @@ export async function queryObjects(name, database, keyword = '') {
       items.push({
         type: row.type === 'VIEW' ? 'view' : 'table',
         name: row.name,
-        detail: row.comment || (row.type === 'VIEW' ? '视图' : '表')
+        detail: row.comment || (row.type === 'VIEW' ? t('视图') : t('表'))
       })
     }
 
@@ -2118,7 +2119,7 @@ export async function queryObjects(name, database, keyword = '') {
       items.push({
         type: row.type === 'FUNCTION' ? 'function' : 'procedure',
         name: row.name,
-        detail: row.type === 'FUNCTION' ? '函数' : '存储过程'
+        detail: row.type === 'FUNCTION' ? t('函数') : t('存储过程')
       })
     }
 
@@ -2135,14 +2136,14 @@ export async function queryObjects(name, database, keyword = '') {
       items.push({
         type: 'event',
         name: row.name,
-        detail: row.status || '事件'
+        detail: row.status || t('事件')
       })
     }
 
     return { success: true, items }
   } catch (error) {
     log.error('搜索数据库对象失败:', error)
-    return toErrorResult(error, '搜索数据库对象失败')
+    return toErrorResult(error, t('搜索数据库对象失败'))
   } finally {
     conn?.release()
   }
@@ -2161,7 +2162,7 @@ export async function getObjectDefinition(name, database, type, objectName) {
   try {
     const statement = OBJECT_DDL_STATEMENTS[type]
     if (!statement) {
-      return { success: false, error: '不支持的对象类型' }
+      return { success: false, error: t('不支持的对象类型') }
     }
 
     const entry = getEntry(name)
@@ -2180,7 +2181,7 @@ export async function getObjectDefinition(name, database, type, objectName) {
     }
   } catch (error) {
     log.error('获取对象定义失败:', error)
-    return toErrorResult(error, '获取对象定义失败')
+    return toErrorResult(error, t('获取对象定义失败'))
   } finally {
     conn?.release()
   }
@@ -2218,7 +2219,7 @@ export async function queryUsers(name) {
     }
   } catch (error) {
     log.error('查询数据库用户失败:', error)
-    return toErrorResult(error, '查询数据库用户失败')
+    return toErrorResult(error, t('查询数据库用户失败'))
   } finally {
     conn?.release()
   }
@@ -2291,7 +2292,7 @@ export async function queryServerStatus(name) {
     }
   } catch (error) {
     log.error('读取实例状态失败:', error)
-    return toErrorResult(error, '读取实例状态失败')
+    return toErrorResult(error, t('读取实例状态失败'))
   } finally {
     conn?.release()
   }
@@ -2305,7 +2306,7 @@ export async function querySlowQueries(name, database = '', limit = 10) {
 
     const [enabledRows] = await conn.query('SELECT @@performance_schema AS enabled')
     if (!Number(enabledRows[0]?.enabled)) {
-      return { success: true, enabled: false, reason: 'performance_schema 未启用', queries: [] }
+      return { success: true, enabled: false, reason: t('performance_schema 未启用'), queries: [] }
     }
 
     const max = Math.min(50, Math.max(1, Number(limit) || 10))
@@ -2346,7 +2347,7 @@ export async function querySlowQueries(name, database = '', limit = 10) {
     return {
       success: true,
       enabled: false,
-      reason: error.message || '无法读取 performance_schema',
+      reason: error.message || t('无法读取 performance_schema'),
       queries: []
     }
   } finally {
@@ -2369,7 +2370,7 @@ export async function queryDatabaseHealth(name, database) {
   try {
     const entry = getEntry(name)
     const dbName = String(database || '').trim()
-    if (!dbName) throw new Error('请选择要检查的数据库')
+    if (!dbName) throw new Error(t('请选择要检查的数据库'))
     conn = await entry.pool.getConnection()
 
     const [tableRows] = await conn.query(
@@ -2458,8 +2459,8 @@ export async function queryDatabaseHealth(name, database) {
           level: 'warn',
           scope: 'table',
           table: table.name,
-          title: '缺少主键',
-          detail: '无主键会影响主从复制与行级更新效率，建议补充自增或唯一主键'
+          title: t('缺少主键'),
+          detail: t('无主键会影响主从复制与行级更新效率，建议补充自增或唯一主键')
         })
       }
       if (table.engine && table.engine.toLowerCase() !== 'innodb') {
@@ -2467,8 +2468,8 @@ export async function queryDatabaseHealth(name, database) {
           level: 'warn',
           scope: 'table',
           table: table.name,
-          title: `非 InnoDB 引擎（${table.engine}）`,
-          detail: 'MyISAM 等引擎不支持事务与崩溃恢复，建议转换为 InnoDB'
+          title: t('非 InnoDB 引擎（{p0}）', { p0: table.engine }),
+          detail: t('MyISAM 等引擎不支持事务与崩溃恢复，建议转换为 InnoDB')
         })
       }
       if (!table.indexCount) {
@@ -2476,8 +2477,8 @@ export async function queryDatabaseHealth(name, database) {
           level: 'info',
           scope: 'table',
           table: table.name,
-          title: '没有任何索引',
-          detail: '按条件查询只能全表扫描，建议为常用过滤字段建立索引'
+          title: t('没有任何索引'),
+          detail: t('按条件查询只能全表扫描，建议为常用过滤字段建立索引')
         })
       }
       if (table.dataFree > MB && table.freeRatio >= 0.2) {
@@ -2485,10 +2486,11 @@ export async function queryDatabaseHealth(name, database) {
           level: 'info',
           scope: 'table',
           table: table.name,
-          title: '存在可回收空间',
-          detail: `空闲 ${formatBytesForMessage(table.dataFree)}（占数据量 ${Math.round(
-            table.freeRatio * 100
-          )}%），可执行 OPTIMIZE TABLE 回收`
+          title: t('存在可回收空间'),
+          detail: t('空闲 {p0}（占数据量 {p1}%），可执行 OPTIMIZE TABLE 回收', {
+            p0: formatBytesForMessage(table.dataFree),
+            p1: Math.round(table.freeRatio * 100)
+          })
         })
       }
     }
@@ -2506,42 +2508,47 @@ export async function queryDatabaseHealth(name, database) {
       issues.push({
         level: 'info',
         scope: 'server',
-        title: 'binlog 未开启',
-        detail: '无法进行时间点恢复与主从复制，若需要请开启 log_bin'
+        title: t('binlog 未开启'),
+        detail: t('无法进行时间点恢复与主从复制，若需要请开启 log_bin')
       })
     }
     if (!slowQueryOn) {
       issues.push({
         level: 'info',
         scope: 'server',
-        title: '慢查询日志未开启',
-        detail: '开启 slow_query_log 后可配合慢查询面板定位性能问题'
+        title: t('慢查询日志未开启'),
+        detail: t('开启 slow_query_log 后可配合慢查询面板定位性能问题')
       })
     }
     if (!filePerTableOn) {
       issues.push({
         level: 'warn',
         scope: 'server',
-        title: 'innodb_file_per_table 已关闭',
-        detail: '独立表空间关闭后，单表删除或整理无法释放磁盘空间'
+        title: t('innodb_file_per_table 已关闭'),
+        detail: t('独立表空间关闭后，单表删除或整理无法释放磁盘空间')
       })
     }
     if (bufferPoolBytes > 0 && totals.dataLength > bufferPoolBytes * 2) {
       issues.push({
         level: 'info',
         scope: 'server',
-        title: '缓冲池小于数据量',
-        detail: `InnoDB 缓冲池 ${formatBytesForMessage(bufferPoolBytes)}，数据量 ${formatBytesForMessage(
-          totals.dataLength
-        )}，热点数据可能频繁读盘`
+        title: t('缓冲池小于数据量'),
+        detail: t('InnoDB 缓冲池 {p0}，数据量 {p1}，热点数据可能频繁读盘', {
+          p0: formatBytesForMessage(bufferPoolBytes),
+          p1: formatBytesForMessage(totals.dataLength)
+        })
       })
     }
     if (connectionUsage >= 0.8) {
       issues.push({
         level: 'warn',
         scope: 'server',
-        title: '连接数接近上限',
-        detail: `当前 ${threadsConnected} / ${maxConnections}（${Math.round(connectionUsage * 100)}%），建议检查连接释放或调大 max_connections`
+        title: t('连接数接近上限'),
+        detail: t('当前 {p0} / {p1}（{p2}%），建议检查连接释放或调大 max_connections', {
+          p0: threadsConnected,
+          p1: maxConnections,
+          p2: Math.round(connectionUsage * 100)
+        })
       })
     }
 
@@ -2580,7 +2587,7 @@ export async function queryDatabaseHealth(name, database) {
     }
   } catch (error) {
     log.error('数据库健康检查失败:', error)
-    return toErrorResult(error, '数据库健康检查失败')
+    return toErrorResult(error, t('数据库健康检查失败'))
   } finally {
     conn?.release()
   }
@@ -2615,9 +2622,9 @@ function escapeSqlLiteral(value) {
 function normalizeAccount(user, host) {
   const userName = String(user || '').trim()
   const hostName = String(host || '').trim() || '%'
-  if (!userName) throw new Error('用户名不能为空')
-  if (!ACCOUNT_PART_PATTERN.test(userName)) throw new Error('用户名包含不支持的字符')
-  if (!ACCOUNT_PART_PATTERN.test(hostName)) throw new Error('主机名包含不支持的字符')
+  if (!userName) throw new Error(t('用户名不能为空'))
+  if (!ACCOUNT_PART_PATTERN.test(userName)) throw new Error(t('用户名包含不支持的字符'))
+  if (!ACCOUNT_PART_PATTERN.test(hostName)) throw new Error(t('主机名包含不支持的字符'))
   return { user: userName, host: hostName, quoted: `${escapeSqlLiteral(userName)}@${escapeSqlLiteral(hostName)}` }
 }
 
@@ -2630,10 +2637,10 @@ function normalizeUserPrivileges(list) {
       .toUpperCase()
     if (!privilege) continue
     if (privilege === 'ALL PRIVILEGES') return ['ALL PRIVILEGES']
-    if (!USER_PRIVILEGES.includes(privilege)) throw new Error(`不支持的权限: ${item}`)
+    if (!USER_PRIVILEGES.includes(privilege)) throw new Error(t('不支持的权限: {p0}', { p0: item }))
     if (!privileges.includes(privilege)) privileges.push(privilege)
   }
-  if (!privileges.length) throw new Error('请至少选择一个权限')
+  if (!privileges.length) throw new Error(t('请至少选择一个权限'))
   return privileges
 }
 
@@ -2658,7 +2665,7 @@ export async function getUserGrants(name, user, host) {
     }
   } catch (error) {
     log.error('读取用户权限失败:', error)
-    return toErrorResult(error, '读取用户权限失败')
+    return toErrorResult(error, t('读取用户权限失败'))
   } finally {
     conn?.release()
   }
@@ -2668,18 +2675,18 @@ export async function createDatabaseUser(name, user, host, password) {
   let conn = null
   try {
     const account = normalizeAccount(user, host)
-    if (!String(password ?? '').length) throw new Error('密码不能为空')
+    if (!String(password ?? '').length) throw new Error(t('密码不能为空'))
     const entry = getEntry(name)
     if (entry.config?.readOnly) throw new Error(READONLY_BLOCK_MESSAGE)
     conn = await entry.pool.getConnection()
     await conn.query(`CREATE USER ${account.quoted} IDENTIFIED BY ${escapeSqlLiteral(password)}`)
     log.info(`已创建数据库用户: ${name}, ${account.quoted}`)
-    const result = { success: true, message: '用户已创建' }
+    const result = { success: true, message: t('用户已创建') }
     auditWrite(name, '', 'CREATE USER', `CREATE USER ${account.user}@${account.host}`, result, { source: 'user' })
     return result
   } catch (error) {
     log.error('创建用户失败:', error)
-    const result = toErrorResult(error, '创建用户失败')
+    const result = toErrorResult(error, t('创建用户失败'))
     auditWrite(name, '', 'CREATE USER', '', result, { source: 'user' })
     return result
   } finally {
@@ -2696,16 +2703,16 @@ export async function dropDatabaseUser(name, user, host) {
     conn = await entry.pool.getConnection()
     const [identityRows] = await conn.query('SELECT CURRENT_USER() AS currentUser')
     if (String(identityRows[0]?.currentUser || '') === `${account.user}@${account.host}`) {
-      throw new Error('不能删除当前登录用户')
+      throw new Error(t('不能删除当前登录用户'))
     }
     await conn.query(`DROP USER ${account.quoted}`)
     log.info(`已删除数据库用户: ${name}, ${account.quoted}`)
-    const result = { success: true, message: '用户已删除' }
+    const result = { success: true, message: t('用户已删除') }
     auditWrite(name, '', 'DROP USER', `DROP USER ${account.user}@${account.host}`, result, { source: 'user' })
     return result
   } catch (error) {
     log.error('删除用户失败:', error)
-    const result = toErrorResult(error, '删除用户失败')
+    const result = toErrorResult(error, t('删除用户失败'))
     auditWrite(name, '', 'DROP USER', '', result, { source: 'user' })
     return result
   } finally {
@@ -2717,18 +2724,18 @@ export async function setDatabaseUserPassword(name, user, host, password) {
   let conn = null
   try {
     const account = normalizeAccount(user, host)
-    if (!String(password ?? '').length) throw new Error('密码不能为空')
+    if (!String(password ?? '').length) throw new Error(t('密码不能为空'))
     const entry = getEntry(name)
     if (entry.config?.readOnly) throw new Error(READONLY_BLOCK_MESSAGE)
     conn = await entry.pool.getConnection()
     await conn.query(`ALTER USER ${account.quoted} IDENTIFIED BY ${escapeSqlLiteral(password)}`)
     log.info(`已修改用户密码: ${name}, ${account.quoted}`)
-    const result = { success: true, message: '密码已更新' }
+    const result = { success: true, message: t('密码已更新') }
     auditWrite(name, '', 'ALTER USER', `ALTER USER ${account.user}@${account.host}`, result, { source: 'user' })
     return result
   } catch (error) {
     log.error('修改用户密码失败:', error)
-    const result = toErrorResult(error, '修改用户密码失败')
+    const result = toErrorResult(error, t('修改用户密码失败'))
     auditWrite(name, '', 'ALTER USER', '', result, { source: 'user' })
     return result
   } finally {
@@ -2741,7 +2748,7 @@ export async function setDatabaseUserPrivileges(name, action, user, host, privil
   try {
     const account = normalizeAccount(user, host)
     if (action !== 'grant' && action !== 'revoke') {
-      throw new Error('无效的权限操作')
+      throw new Error(t('无效的权限操作'))
     }
     const privilegeList = normalizeUserPrivileges(privileges)
     const scope = buildPrivilegeScope(database, table)
@@ -2754,14 +2761,14 @@ export async function setDatabaseUserPrivileges(name, action, user, host, privil
     log.info(`已${action === 'grant' ? '授予' : '撤销'}用户权限: ${name}, ${account.quoted}, ${scope}`)
     const result = {
       success: true,
-      message: action === 'grant' ? '权限已授予' : '权限已撤销'
+      message: action === 'grant' ? t('权限已授予') : t('权限已撤销')
     }
     const summary = `${keyword} ${privilegeList.join(', ')} ON ${scope} ${target} ${account.user}@${account.host}`
     auditWrite(name, database || '', keyword, summary, result, { source: 'user' })
     return result
   } catch (error) {
     log.error('更新用户权限失败:', error)
-    const result = toErrorResult(error, '更新用户权限失败')
+    const result = toErrorResult(error, t('更新用户权限失败'))
     auditWrite(name, database || '', action === 'grant' ? 'GRANT' : 'REVOKE', '', result, { source: 'user' })
     return result
   } finally {
@@ -2820,7 +2827,7 @@ export async function getErData(name, database) {
     }
   } catch (error) {
     log.error('读取 ER 数据失败:', error)
-    return toErrorResult(error, '读取 ER 数据失败')
+    return toErrorResult(error, t('读取 ER 数据失败'))
   } finally {
     conn?.release()
   }
@@ -2833,7 +2840,7 @@ export async function explainQuery(name, database, sql) {
       .trim()
       .replace(/;\s*$/, '')
     if (!/^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH)\b/i.test(trimmed)) {
-      throw new Error('仅支持对 SELECT/INSERT/UPDATE/DELETE 语句查看执行计划')
+      throw new Error(t('仅支持对 SELECT/INSERT/UPDATE/DELETE 语句查看执行计划'))
     }
 
     const entry = getEntry(name)
@@ -2858,7 +2865,7 @@ export async function explainQuery(name, database, sql) {
     return { success: true, rows, json }
   } catch (error) {
     log.error('获取执行计划失败:', error)
-    return toErrorResult(error, '获取执行计划失败')
+    return toErrorResult(error, t('获取执行计划失败'))
   } finally {
     conn?.release()
   }
@@ -2891,7 +2898,7 @@ export async function exportTableData(name, database, tableName, options = {}) {
 
     const columns = await loadColumns(conn, database, tableName)
     if (!columns.length) {
-      throw new Error('表不存在或没有可导出的字段')
+      throw new Error(t('表不存在或没有可导出的字段'))
     }
     const primaryKeys = await loadPrimaryKeys(conn, database, tableName)
     const orderSql = primaryKeys.length ? ` ORDER BY ${primaryKeys.map((key) => quoteIdentifier(key)).join(', ')}` : ''
@@ -2958,7 +2965,7 @@ export async function exportTableData(name, database, tableName, options = {}) {
     return { success: true, content, rowCount: rows.length, truncated }
   } catch (error) {
     log.error('导出表数据失败:', error)
-    return toErrorResult(error, '导出表数据失败')
+    return toErrorResult(error, t('导出表数据失败'))
   } finally {
     conn?.release()
   }
@@ -3002,7 +3009,7 @@ export async function exportDatabaseData(name, database, options = {}) {
       [database]
     )
     const tables = tableRows.map((row) => row.name)
-    if (!tables.length) throw new Error('数据库中没有可备份的表')
+    if (!tables.length) throw new Error(t('数据库中没有可备份的表'))
 
     let rowCount = 0
     let truncated = false
@@ -3059,7 +3066,7 @@ export async function exportDatabaseData(name, database, options = {}) {
     return { success: true, files, rowCount, truncated, tableCount: tables.length }
   } catch (error) {
     log.error('导出数据库失败:', error)
-    return toErrorResult(error, '导出数据库失败')
+    return toErrorResult(error, t('导出数据库失败'))
   } finally {
     conn?.release()
   }
@@ -3076,7 +3083,7 @@ export function isConnectionActive(name) {
 export async function beginTransaction(name, database) {
   try {
     if (transactions.has(name)) {
-      return { success: false, error: '当前连接已在事务中' }
+      return { success: false, error: t('当前连接已在事务中') }
     }
 
     const entry = getEntry(name)
@@ -3093,7 +3100,7 @@ export async function beginTransaction(name, database) {
 
     transactions.set(name, { conn, database: database || '' })
 
-    return { success: true, message: '事务已开始' }
+    return { success: true, message: t('事务已开始') }
   } catch (error) {
     log.error('开始事务失败:', error)
     return { success: false, error: error.message }
@@ -3104,13 +3111,13 @@ export async function commitTransaction(name) {
   try {
     const tx = transactions.get(name)
     if (!tx) {
-      return { success: false, error: '当前连接没有进行中的事务' }
+      return { success: false, error: t('当前连接没有进行中的事务') }
     }
 
     await tx.conn.commit()
     await releaseTransaction(name)
 
-    return { success: true, message: '事务已提交' }
+    return { success: true, message: t('事务已提交') }
   } catch (error) {
     log.error('提交事务失败:', error)
     return { success: false, error: error.message }
@@ -3121,13 +3128,13 @@ export async function rollbackTransaction(name) {
   try {
     const tx = transactions.get(name)
     if (!tx) {
-      return { success: false, error: '当前连接没有进行中的事务' }
+      return { success: false, error: t('当前连接没有进行中的事务') }
     }
 
     await tx.conn.rollback()
     await releaseTransaction(name)
 
-    return { success: true, message: '事务已回滚' }
+    return { success: true, message: t('事务已回滚') }
   } catch (error) {
     log.error('回滚事务失败:', error)
     return { success: false, error: error.message }

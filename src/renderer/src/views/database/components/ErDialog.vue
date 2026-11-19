@@ -2,12 +2,12 @@
   <div v-if="erDialog.show" class="dialog-overlay" @click.self="closeErDialog">
     <div class="dialog dialog-er">
       <div class="dialog-header">
-        <h3>ER 图 · {{ erDialog.tab?.database }}</h3>
+        <h3>{{ t('ER 图 ·') }} {{ erDialog.tab?.database }}</h3>
         <div class="dialog-header-actions">
           <span v-if="layout" class="er-summary"
-            >{{ layout.tables.length }} 张表 · {{ layout.edges.length }} 个外键</span
+            >{{ layout.tables.length }} {{ t('张表 ·') }} {{ layout.edges.length }} {{ t('个外键') }}</span
           >
-          <button class="btn-icon btn-sm" title="关闭" @click="closeErDialog">
+          <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeErDialog">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -16,8 +16,8 @@
         </div>
       </div>
       <div class="dialog-content er-content">
-        <div v-if="erDialog.loading" class="structure-loading">加载中...</div>
-        <div v-else-if="!layout || layout.tables.length === 0" class="er-empty">数据库中没有可展示的表</div>
+        <div v-if="erDialog.loading" class="structure-loading">{{ t('加载中...') }}</div>
+        <div v-else-if="!layout || layout.tables.length === 0" class="er-empty">{{ t('数据库中没有可展示的表') }}</div>
         <div v-else class="er-canvas">
           <svg :width="layout.width" :height="layout.height" class="er-svg">
             <defs>
@@ -65,22 +65,23 @@
                   {{ column.columnType }}
                 </text>
               </g>
-              <text v-if="table.columns.length === 0" x="12" y="44" class="er-column-type">（无字段）</text>
+              <text v-if="table.columns.length === 0" x="12" y="44" class="er-column-type">{{ t('（无字段）') }}</text>
             </g>
           </svg>
         </div>
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-left">
-          <span class="er-hint">点击表可打开数据页</span>
+          <span class="er-hint">{{ t('点击表可打开数据页') }}</span>
         </div>
-        <button class="btn btn-primary" @click="closeErDialog">关闭</button>
+        <button class="btn btn-primary" @click="closeErDialog">{{ t('关闭') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
 const { closeErDialog, connections, erDialog, openTable, showMessage } = inject('database')
@@ -182,7 +183,7 @@ async function handleOpenTable(tableName) {
     const connection = connections.value.find((item) => item.name === tab.connectionName)
     await openTable({ connection, database: tab.database, table: tableName })
   } catch (error) {
-    await showMessage('打开表失败: ' + error.message, 'error')
+    await showMessage(t('打开表失败: ') + error.message, 'error')
   }
 }
 </script>

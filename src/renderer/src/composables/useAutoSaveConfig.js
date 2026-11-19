@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 const TEXT_INPUT_EXCLUDED_TYPES = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color']
 
 function isTextEditing() {
@@ -59,14 +61,14 @@ export function useAutoSaveConfig({ getKind, buildPayload, getError, save, onSav
       try {
         const success = await save(payload)
         if (!success) {
-          if (force) showError('保存失败，请检查配置')
+          if (force) showError(t('保存失败，请检查配置'))
           return false
         }
         lastSavedStates[kind] = state
         await onSaved?.(kind, payload)
         return true
       } catch (e) {
-        if (force) showError('保存失败: ' + e.message)
+        if (force) showError(t('保存失败: ') + e.message)
         return false
       }
     })

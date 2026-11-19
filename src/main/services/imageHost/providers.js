@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import { netFetch } from '../network.js'
+import { t } from '../i18n.js'
 import { buildObjectKey, encodeKeyPath, joinUrl, resolveJsonPath, toAbsoluteUrl } from './utils.js'
 
 const REQUEST_TIMEOUT = 60000
@@ -24,7 +25,7 @@ function md5Base64(value) {
   return crypto.createHash('md5').update(value).digest('base64')
 }
 
-function requestError(response, data, text, label = '上传失败') {
+function requestError(response, data, text, label = t('上传失败')) {
   const message =
     (data && (data.message || data.msg || data.error?.message || data.error || data.error_description)) ||
     String(text || '')
@@ -41,9 +42,9 @@ async function performFetch(url, options, fetchImpl) {
     return await fetchImpl(url, { ...options, signal: controller.signal })
   } catch (error) {
     if (error?.name === 'AbortError') {
-      throw new Error('请求超时，请检查网络或图床配置', { cause: error })
+      throw new Error(t('请求超时，请检查网络或图床配置'), { cause: error })
     }
-    throw new Error(`网络请求失败：${error?.message || '未知错误'}`, { cause: error })
+    throw new Error(t('网络请求失败：{p0}', { p0: error?.message || t('未知错误') }), { cause: error })
   } finally {
     clearTimeout(timer)
   }
@@ -74,7 +75,7 @@ function normalizeRepo(repo) {
     .trim()
     .split('/')
     .filter(Boolean)
-  if (parts.length < 2) throw new Error('仓库格式应为 owner/repo')
+  if (parts.length < 2) throw new Error(t('仓库格式应为 owner/repo'))
   return { owner: parts[0], repo: parts[1] }
 }
 
@@ -187,7 +188,7 @@ async function uploadImgur(file, settings, _key, fetchImpl) {
     fetchImpl
   )
   if (!data?.success || !data?.data?.link) {
-    throw new Error(data?.data?.error || 'Imgur 上传失败')
+    throw new Error(data?.data?.error || t('Imgur 上传失败'))
   }
   return data.data.link
 }
@@ -387,10 +388,10 @@ function parseCustomHeaders(raw) {
   try {
     parsed = JSON.parse(raw)
   } catch {
-    throw new Error('请求头必须是有效的 JSON')
+    throw new Error(t('请求头必须是有效的 JSON'))
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('请求头必须是 JSON 对象')
+    throw new Error(t('请求头必须是 JSON 对象'))
   }
   const headers = {}
   const blocked = new Set(['content-type', 'content-length', 'host', 'connection'])
@@ -403,7 +404,7 @@ function parseCustomHeaders(raw) {
 }
 
 async function uploadCustom(file, settings, _key, fetchImpl) {
-  if (!/^https?:\/\//i.test(settings.url)) throw new Error('上传接口必须是 http(s) 地址')
+  if (!/^https?:\/\//i.test(settings.url)) throw new Error(t('上传接口必须是 http(s) 地址'))
   const headers = parseCustomHeaders(settings.headers)
   const response = await performFetch(
     settings.url,
@@ -420,7 +421,7 @@ async function uploadCustom(file, settings, _key, fetchImpl) {
 
   let candidate
   if (settings.responsePath) {
-    if (!data) throw new Error('接口响应不是有效的 JSON，无法按 JSON 路径解析')
+    if (!data) throw new Error(t('接口响应不是有效的 JSON，无法按 JSON 路径解析'))
     candidate = resolveJsonPath(data, settings.responsePath)
   } else if (data) {
     candidate =
@@ -434,7 +435,7 @@ async function uploadCustom(file, settings, _key, fetchImpl) {
   }
 
   const url = toAbsoluteUrl(candidate, settings.urlPrefix)
-  if (!/^https?:\/\//i.test(url)) throw new Error('接口返回的图片地址不是有效的 http(s) 链接')
+  if (!/^https?:\/\//i.test(url)) throw new Error(t('接口返回的图片地址不是有效的 http(s) 链接'))
   return url
 }
 
@@ -453,12 +454,12 @@ const UPLOADERS = {
 
 export async function uploadToProvider({ providerId, settings, file, fetchImpl = netFetch }) {
   const uploader = UPLOADERS[providerId]
-  if (!uploader) throw new Error('不支持的图床类型')
-  if (!file?.buffer?.length) throw new Error('图片内容为空')
+  if (!uploader) throw new Error(t('不支持的图床类型'))
+  if (!file?.buffer?.length) throw new Error(t('图片内容为空'))
 
   const key = buildObjectKey(file.filePath || file.name, settings)
   const url = await uploader(file, settings, key, fetchImpl)
-  if (!url) throw new Error('图床未返回图片地址')
+  if (!url) throw new Error(t('图床未返回图片地址'))
   return { url, key }
 }
 
@@ -476,7 +477,7 @@ async function testGithub(settings, fetchImpl) {
     },
     fetchImpl
   )
-  return '仓库可访问，Token 有效'
+  return t('仓库可访问，Token 有效')
 }
 
 async function testGitee(settings, fetchImpl) {
@@ -485,7 +486,7 @@ async function testGitee(settings, fetchImpl) {
     repo
   )}?access_token=${encodeURIComponent(settings.token)}`
   await expectJson(url, {}, fetchImpl)
-  return '仓库可访问，私人令牌有效'
+  return t('仓库可访问，私人令牌有效')
 }
 
 async function testSmms(settings, fetchImpl) {
@@ -494,7 +495,7 @@ async function testSmms(settings, fetchImpl) {
     { method: 'POST', headers: { Authorization: settings.token } },
     fetchImpl
   )
-  if (!data?.success) throw new Error(data?.message || 'Token 校验失败')
+  if (!data?.success) throw new Error(data?.message || t('Token 校验失败'))
   return `Token 有效${data.data?.username ? `（${data.data.username}）` : ''}`
 }
 
@@ -504,12 +505,12 @@ async function testImgur(settings, fetchImpl) {
     { headers: { Authorization: `Client-ID ${settings.clientId}` } },
     fetchImpl
   )
-  if (!data?.success) throw new Error(data?.data?.error || 'Client ID 校验失败')
-  return 'Client ID 有效'
+  if (!data?.success) throw new Error(data?.data?.error || t('Client ID 校验失败'))
+  return t('Client ID 有效')
 }
 
 async function testQiniu() {
-  return '配置格式校验通过，上传时会自动验证密钥'
+  return t('配置格式校验通过，上传时会自动验证密钥')
 }
 
 async function testAliyun(settings, fetchImpl) {
@@ -529,9 +530,9 @@ async function testAliyun(settings, fetchImpl) {
   )
   if (!response.ok) {
     const { data, text } = await readResponseBody(response)
-    throw requestError(response, data, text, 'OSS 连接失败')
+    throw requestError(response, data, text, t('OSS 连接失败'))
   }
-  return 'Bucket 可访问，密钥有效'
+  return t('Bucket 可访问，密钥有效')
 }
 
 async function testTencent(settings, fetchImpl) {
@@ -548,8 +549,8 @@ async function testTencent(settings, fetchImpl) {
     { method: 'HEAD', headers: { Authorization: authorization } },
     fetchImpl
   )
-  if (!response.ok) throw new Error(`COS 连接失败（HTTP ${response.status}）`)
-  return 'Bucket 可访问，密钥有效'
+  if (!response.ok) throw new Error(t('COS 连接失败（HTTP {p0}）', { p0: response.status }))
+  return t('Bucket 可访问，密钥有效')
 }
 
 async function testS3(settings, fetchImpl) {
@@ -565,8 +566,8 @@ async function testS3(settings, fetchImpl) {
     forcePathStyle: settings.forcePathStyle !== false
   })
   const response = await performFetch(request.url, { method: 'HEAD', headers: request.headers }, fetchImpl)
-  if (!response.ok) throw new Error(`Bucket 连接失败（HTTP ${response.status}）`)
-  return 'Bucket 可访问，密钥有效'
+  if (!response.ok) throw new Error(t('Bucket 连接失败（HTTP {p0}）', { p0: response.status }))
+  return t('Bucket 可访问，密钥有效')
 }
 
 async function testWebdav(settings, fetchImpl) {
@@ -584,15 +585,15 @@ async function testWebdav(settings, fetchImpl) {
   )
   if (![200, 207].includes(response.status)) {
     const { data, text } = await readResponseBody(response)
-    throw requestError(response, data, text, 'WebDAV 连接失败')
+    throw requestError(response, data, text, t('WebDAV 连接失败'))
   }
-  return 'WebDAV 服务可访问'
+  return t('WebDAV 服务可访问')
 }
 
 async function testCustom(settings) {
-  if (!/^https?:\/\//i.test(settings.url)) throw new Error('上传接口必须是 http(s) 地址')
+  if (!/^https?:\/\//i.test(settings.url)) throw new Error(t('上传接口必须是 http(s) 地址'))
   parseCustomHeaders(settings.headers)
-  return '配置格式校验通过'
+  return t('配置格式校验通过')
 }
 
 const TESTERS = {
@@ -610,7 +611,7 @@ const TESTERS = {
 
 export async function testProvider({ providerId, settings, fetchImpl = netFetch }) {
   const tester = TESTERS[providerId]
-  if (!tester) throw new Error('不支持的图床类型')
+  if (!tester) throw new Error(t('不支持的图床类型'))
   const message = await tester(settings, fetchImpl)
   return { success: true, message }
 }

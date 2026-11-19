@@ -50,7 +50,7 @@ export default async function handler(params, runtime = {}) {
 
   try {
     const result = await runtime.runChat([{ role: 'user', content: buildPrompt(task, extra) }], {
-      provider: runtime.providerType || config.ai_provider || undefined,
+      provider: runtime.providerType || config.ai.provider || undefined,
       model: runtime.model || undefined,
       workspacePath: runtime.workspacePath,
       tools,
