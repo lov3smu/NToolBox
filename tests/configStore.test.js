@@ -106,7 +106,7 @@ describe('config secret storage', () => {
     await expect(saveConfig({ appearance: { theme: 'dark' } })).resolves.toBe(true)
 
     const disk = readDisk()
-    expect(disk.config_version).toBe(2)
+    expect(disk.config_version).toBe(3)
     expect(disk.appearance.theme).toBe('dark')
     expect(disk.ai.keys.openai.startsWith('enc:')).toBe(true)
     expect(decode(disk.ai.keys.openai)).toBe('sk-legacy')
@@ -214,7 +214,7 @@ describe('config atomic writes', () => {
 })
 
 describe('config migration on load', () => {
-  it('maps v1 keys to v2 groups and writes back config_version 2', async () => {
+  it('maps v1 keys to the current config version and writes it back', async () => {
     await seedConfig({
       base_path: '/tmp/scripts',
       developer_ch_name: '李四',
@@ -233,9 +233,9 @@ describe('config migration on load', () => {
     })
 
     const loaded = await loadConfig()
-    expect(loaded.config_version).toBe(2)
-    expect(loaded.app.base_path).toBe('/tmp/scripts')
-    expect(loaded.app.developer.ch_name).toBe('李四')
+    expect(loaded.config_version).toBe(3)
+    expect(loaded.sql_generator.base_path).toBe('/tmp/scripts')
+    expect(loaded.sql_generator.developer.ch_name).toBe('李四')
     expect(loaded.ai.provider).toBe('deepseek')
     expect(loaded.ai.persona).toBe('运维专家')
     expect(loaded.ai.agent.max_iterations).toBe(20)
@@ -250,11 +250,12 @@ describe('config migration on load', () => {
     expect(loaded.network.market_sources.clawhub).toBe('https://mirror.example.com')
 
     const disk = readDisk()
-    expect(disk.config_version).toBe(2)
-    expect(disk.app.base_path).toBe('/tmp/scripts')
+    expect(disk.config_version).toBe(3)
+    expect(disk.sql_generator.base_path).toBe('/tmp/scripts')
     expect(disk.ai.agent.max_iterations).toBe(20)
     expect(disk).not.toHaveProperty('ai_api_keys')
     expect(disk).not.toHaveProperty('base_path')
+    expect(disk.app).not.toHaveProperty('base_path')
   })
 
   it('absorbs legacy bailian_api_key once into ai.keys', async () => {
@@ -264,9 +265,28 @@ describe('config migration on load', () => {
     expect(decode(readDisk().ai.keys.bailian)).toBe('sk-bailian-legacy')
   })
 
-  it('keeps v2 config untouched and does not rewrite the file', async () => {
-    const v2 = { config_version: 2, appearance: { theme: 'dark' } }
+  it('migrates v2 config to v3 and writes it back', async () => {
+    const v2 = {
+      config_version: 2,
+      app: { base_path: '/tmp/scripts', developer: { ch_name: '王五', en_name: 'wangwu' }, text_edit_app: 'subl' },
+      appearance: { theme: 'dark' }
+    }
     await fs.promises.writeFile(state.configPath, JSON.stringify(v2), 'utf8')
+
+    const loaded = await loadConfig()
+    expect(loaded.appearance.theme).toBe('dark')
+    expect(loaded.sql_generator.base_path).toBe('/tmp/scripts')
+    expect(loaded.sql_generator.developer.ch_name).toBe('王五')
+    expect(loaded.sql_generator.text_edit_app).toBe('subl')
+
+    const disk = readDisk()
+    expect(disk.config_version).toBe(3)
+    expect(disk.app).not.toHaveProperty('base_path')
+  })
+
+  it('keeps v3 config untouched and does not rewrite the file', async () => {
+    const v3 = { config_version: 3, appearance: { theme: 'dark' } }
+    await fs.promises.writeFile(state.configPath, JSON.stringify(v3), 'utf8')
     const before = fs.statSync(state.configPath).mtimeMs
 
     const loaded = await loadConfig()

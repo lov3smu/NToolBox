@@ -73,8 +73,10 @@ describe('运行轨迹', () => {
     expect(detail.trace.durationMs).toBeGreaterThanOrEqual(0)
 
     const list = await listRunTraces(10)
-    expect(list).toHaveLength(1)
-    expect(list[0]).toMatchObject({
+    expect(list.items).toHaveLength(1)
+    expect(list.total).toBe(1)
+    expect(list.hasMore).toBe(false)
+    expect(list.items[0]).toMatchObject({
       id: 'run-audit',
       status: 'goal_reached',
       goal: '查询订单表',
@@ -98,13 +100,13 @@ describe('运行轨迹', () => {
     expect(detail.trace.goal).toBe('帮我整理 README 并生成摘要')
 
     const list = await listRunTraces(10)
-    const row = list.find((item) => item.id === 'run-goal')
+    const row = list.items.find((item) => item.id === 'run-goal')
     expect(row).toMatchObject({
       goal: '帮我整理 README 并生成摘要',
       workspace: '/tmp/demo-workspace',
       conversationId: 'conv-1'
     })
-    expect(list.find((item) => item.id === 'run-fail')).toMatchObject({
+    expect(list.items.find((item) => item.id === 'run-fail')).toMatchObject({
       conversationId: 'conv-1',
       error: 'provider timeout',
       goal: ''
@@ -115,12 +117,12 @@ describe('运行轨迹', () => {
     const other = createRunTrace('run-other-conv', { conversationId: 'conv-2' })
     await other.finish({ status: 'goal_reached', termination: 'goal_reached' })
 
-    const scoped = await listRunTraces(10, 'conv-1')
-    expect(scoped.map((item) => item.id).sort()).toEqual(['run-fail', 'run-goal'])
-    expect(scoped.every((item) => item.conversationId === 'conv-1')).toBe(true)
+    const scoped = await listRunTraces({ limit: 10, conversationId: 'conv-1' })
+    expect(scoped.items.map((item) => item.id).sort()).toEqual(['run-fail', 'run-goal'])
+    expect(scoped.items.every((item) => item.conversationId === 'conv-1')).toBe(true)
 
     const all = await listRunTraces(10)
-    expect(all.some((item) => item.id === 'run-other-conv')).toBe(true)
+    expect(all.items.some((item) => item.id === 'run-other-conv')).toBe(true)
   })
 
   it('按工作区统计轨迹数量', async () => {

@@ -27,11 +27,14 @@ import { getConfig, onConfigChanged, onNavigateTo, onShowAbout } from '@/api'
 import { syncThemeFromConfig, syncThemeStyleFromConfig, syncFontSizeFromConfig } from '@/utils/theme'
 import { setLocale } from '@/i18n'
 import { SETTINGS_PATH, setRecentToolsLimit } from '@shared/tools'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
+import { matchesAccelerator } from '@/utils/shortcut'
 
 const route = useRoute()
 const router = useRouter()
 const searchVisible = ref(false)
 const aboutVisible = ref(false)
+const searchAccelerator = ref(DEFAULT_SHORTCUT_ACTIONS.global_search)
 const standalone = computed(() => route.path === SETTINGS_PATH)
 let removeNavigateListener = null
 let removeConfigListener = null
@@ -44,6 +47,7 @@ async function loadThemeFromConfig() {
   syncFontSizeFromConfig(config?.appearance.font_size)
   setLocale(config?.appearance.language)
   setRecentToolsLimit(config?.app.recent_tools_limit)
+  searchAccelerator.value = config?.app?.shortcuts?.global_search || DEFAULT_SHORTCUT_ACTIONS.global_search
 }
 
 onMounted(async () => {
@@ -72,7 +76,7 @@ onUnmounted(() => {
 
 function handleKeydown(e) {
   if (standalone.value) return
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+  if (matchesAccelerator(e, searchAccelerator.value)) {
     e.preventDefault()
     searchVisible.value = !searchVisible.value
   }

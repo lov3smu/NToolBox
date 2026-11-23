@@ -1,10 +1,13 @@
 import path from 'path'
+import fs from 'fs'
+import os from 'os'
 import { spawn } from 'child_process'
 import { t } from './i18n.js'
 import { log } from '../utils'
 import { getConfig } from './config'
 import { buildMcpToolName, isMcpToolName, normalizeMcpServers, parseMcpToolName } from '../../shared/mcp.js'
 import { getNetworkEnv } from './network.js'
+import { getDataDir } from '../utils/path'
 
 const PROTOCOL_VERSION = '2024-11-05'
 const CLIENT_INFO = { name: 'NToolBox', version: '1.0.0' }
@@ -12,12 +15,72 @@ const REQUEST_TIMEOUT = 30 * 1000
 const CALL_TIMEOUT = 2 * 60 * 1000
 const MAX_BUFFER_SIZE = 4 * 1024 * 1024
 const MAX_TOOLS_PER_SERVER = 200
+const MEMORY_SERVER_PACKAGE = '@modelcontextprotocol/server-memory'
 
 function trimError(error) {
   const text = String(error?.message || error || t('未知错误'))
     .replace(/\s+/g, ' ')
     .trim()
   return text.slice(0, 300)
+}
+
+// 官方 memory 服务默认把知识图谱写进 npx 缓存目录，清缓存会连带删除；未显式配置时落到数据目录
+function buildServerEnv(server) {
+  const env = { ...process.env, ...getNetworkEnv(), ...server.env }
+  const commandLine = [server.command, ...(server.args || [])].join(' ')
+  if (!env.MEMORY_FILE_PATH && commandLine.includes(MEMORY_SERVER_PACKAGE)) {
+    try {
+      const memoryDir = path.join(getDataDir(), 'mcp')
+      fs.mkdirSync(memoryDir, { recursive: true, mode: 0o700 })
+      const memoryFile = path.join(memoryDir, 'memory.jsonl')
+      migrateLegacyMemoryFile(memoryFile, server)
+      env.MEMORY_FILE_PATH = memoryFile
+    } catch (error) {
+      log.warn(`MCP ${server.name} 记忆文件目录创建失败: ${error.message}`)
+    }
+  }
+  return env
+}
+
+function npxCacheRoots() {
+  const roots = []
+  if (process.env.npm_config_cache) roots.push(path.join(process.env.npm_config_cache, '_npx'))
+  if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+    roots.push(path.join(process.env.LOCALAPPDATA, 'npm-cache', '_npx'))
+  }
+  roots.push(path.join(os.homedir(), '.npm', '_npx'))
+  return roots
+}
+
+function migrateLegacyMemoryFile(target, server) {
+  if (fs.existsSync(target)) return
+  let newest = null
+  for (const cacheRoot of npxCacheRoots()) {
+    let entries
+    try {
+      entries = fs.readdirSync(cacheRoot, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const legacy = path.join(cacheRoot, entry.name, 'node_modules', MEMORY_SERVER_PACKAGE, 'dist', 'memory.jsonl')
+      try {
+        const stat = fs.statSync(legacy)
+        if (!newest || stat.mtimeMs > newest.mtimeMs) newest = { file: legacy, mtimeMs: stat.mtimeMs }
+      } catch {
+        // 未命中该 npx 缓存条目
+      }
+    }
+  }
+  if (!newest) return
+  try {
+    fs.copyFileSync(newest.file, target)
+    if (process.platform !== 'win32') fs.chmodSync(target, 0o600)
+    log.info(`MCP ${server.name} 旧记忆文件已迁移到 ${target}`)
+  } catch (error) {
+    log.warn(`MCP ${server.name} 旧记忆文件迁移失败: ${error.message}`)
+  }
 }
 
 function spawnServer(server) {
@@ -28,7 +91,7 @@ function spawnServer(server) {
         child = spawn(command, overrideArgs ?? server.args, {
           cwd: server.cwd || undefined,
           // MCP 子进程（npx/uvx）只认代理环境变量；server.env 优先于全局网络配置
-          env: { ...process.env, ...getNetworkEnv(), ...server.env },
+          env: buildServerEnv(server),
           stdio: ['pipe', 'pipe', 'pipe'],
           windowsHide: true
         })
@@ -42,6 +105,14 @@ function spawnServer(server) {
         // Windows 下 npx/pnpm 等脚本需要带 .cmd 后缀才能被 spawn 解析
         if (process.platform === 'win32' && error.code === 'ENOENT' && !path.extname(server.command)) {
           attempt(`${server.command}.cmd`, server.args)
+          return
+        }
+        if (error.code === 'ENOENT') {
+          reject(
+            new Error(t('启动命令 {p0} 不存在，请先安装该命令并确认它在 PATH 中', { p0: server.command }), {
+              cause: error
+            })
+          )
           return
         }
         reject(error)
@@ -67,6 +138,7 @@ export class McpClient {
     this.nextId = 1
     this.pending = new Map()
     this.closed = false
+    this.stderrTail = []
     this.onToolsChanged = null
     this.onExit = null
   }
@@ -165,6 +237,12 @@ export class McpClient {
     const text = String(chunk || '').trim()
     if (!text) return
     log.debug(`MCP ${this.server.name} stderr: ${text.slice(-500)}`)
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      this.stderrTail.push(trimmed.slice(0, 300))
+      if (this.stderrTail.length > 20) this.stderrTail.shift()
+    }
   }
 
   _handleData(chunk) {
@@ -228,9 +306,15 @@ export class McpClient {
     const wasRunning = !this.closed
     this.closed = true
     this.child = null
-    this._rejectPending(
-      new Error(t('MCP 服务已退出（code={p0}，signal={p1}）', { p0: code ?? '-', p1: signal || '-' }))
-    )
+    const detail = [...this.stderrTail].reverse().find((line) => /^error\b/i.test(line)) || this.stderrTail.at(-1)
+    const message = detail
+      ? t('MCP 服务已退出（code={p0}，signal={p1}）：{p2}', {
+          p0: code ?? '-',
+          p1: signal || '-',
+          p2: detail
+        })
+      : t('MCP 服务已退出（code={p0}，signal={p1}）', { p0: code ?? '-', p1: signal || '-' })
+    this._rejectPending(new Error(message))
     if (wasRunning) {
       log.warn(`MCP 服务 ${this.server.name} 意外退出（code=${code ?? '-'}，signal=${signal || '-'}）`)
       if (typeof this.onToolsChanged === 'function') this.onToolsChanged()

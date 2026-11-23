@@ -25,8 +25,8 @@ vi.mock('../src/main/utils/sanitize.js', () => ({
 }))
 
 vi.mock('../src/main/services/index.js', () => ({
-  getConfig: vi.fn(() => ({ app: { base_path: '/tmp/scripts' } })),
-  getPublicConfig: vi.fn(() => ({ app: { base_path: '/tmp/scripts' } })),
+  getConfig: vi.fn(() => ({ sql_generator: { base_path: '/tmp/scripts' } })),
+  getPublicConfig: vi.fn(() => ({ sql_generator: { base_path: '/tmp/scripts' } })),
   saveConfig: vi.fn(async () => true),
   loadConfig: vi.fn(async () => ({})),
   generateSQLFile: vi.fn(async () => ({})),

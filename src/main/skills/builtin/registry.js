@@ -1,4 +1,5 @@
 import path from 'node:path'
+import codeExec from './code-exec/handler.js'
 import cron from './cron/handler.js'
 import dbConnect from './db-connect/handler.js'
 import dbQuery from './db-query/handler.js'
@@ -16,11 +17,13 @@ import sqlScript from './sql-script/handler.js'
 import subagent from './subagent/handler.js'
 import timestamp from './timestamp/handler.js'
 import webFetch from './web-fetch/handler.js'
+import webSearch from './web-search/handler.js'
 import yamlValidate from './yaml-validate/handler.js'
 
 // 内置技能 handler 随主进程打包，保证与 services 共享同一模块实例；
 // 目录名与 skill.json 的 name 一致。
 export const builtinHandlers = {
+  'code-exec': codeExec,
   cron,
   'db-connect': dbConnect,
   'db-query': dbQuery,
@@ -38,6 +41,7 @@ export const builtinHandlers = {
   subagent,
   timestamp,
   'web-fetch': webFetch,
+  'web-search': webSearch,
   'yaml-validate': yamlValidate
 }
 

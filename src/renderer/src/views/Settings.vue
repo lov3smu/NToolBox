@@ -1821,18 +1821,99 @@
             <section class="setting-section">
               <div class="setting-section-head">
                 <h3 class="setting-section-title">{{ t('快捷键配置') }}</h3>
-                <span class="setting-section-desc">{{ t('格式示例：CmdOrCtrl+,（留空则不设置快捷键）') }}</span>
+                <span class="setting-section-desc">{{ t('点击修改录制新的快捷键组合，清除后不设置快捷键') }}</span>
               </div>
               <div class="setting-section-body">
                 <div class="shortcut-list">
                   <div v-for="tool in shortcutTools" :key="tool.path" class="shortcut-item">
                     <span class="shortcut-name">{{ t(tool.name) }}</span>
-                    <input
-                      v-model="shortcuts[tool.shortcutKey]"
-                      type="text"
-                      class="input-field shortcut-input"
-                      :placeholder="t('快捷键')"
-                    />
+                    <div class="shortcut-control">
+                      <span class="shortcut-value" :class="{ 'is-empty': !shortcuts[tool.shortcutKey] }">
+                        {{ shortcuts[tool.shortcutKey] ? shortcutLabel(shortcuts[tool.shortcutKey]) : t('未设置') }}
+                      </span>
+                      <button
+                        type="button"
+                        class="btn-icon btn-sm"
+                        :title="t('修改')"
+                        :aria-label="t('修改')"
+                        @click="openShortcutEditor(tool.shortcutKey, t(tool.name))"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                          <path d="m15 5 4 4" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-icon btn-sm"
+                        :title="t('清除')"
+                        :aria-label="t('清除')"
+                        :disabled="!shortcuts[tool.shortcutKey]"
+                        @click="clearShortcut(tool.shortcutKey)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path
+                            d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21"
+                          />
+                          <path d="M22 21H7" />
+                          <path d="m5 11 9 9" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="setting-section">
+              <div class="setting-section-head">
+                <h3 class="setting-section-title">{{ t('通用快捷键') }}</h3>
+                <span class="setting-section-desc">{{
+                  t('作用于聊天输入框、数据库查询与全局搜索，清除后恢复默认值')
+                }}</span>
+              </div>
+              <div class="setting-section-body">
+                <div v-for="item in shortcutActionItems" :key="item.key" class="setting-row is-top">
+                  <div class="setting-row-text">
+                    <span class="setting-row-label">{{ t(item.label) }}</span>
+                    <span class="setting-row-desc">{{ t(item.desc) }}</span>
+                  </div>
+                  <div class="setting-row-control shortcut-control">
+                    <span class="shortcut-value" :class="{ 'is-empty': !shortcuts[item.key] }">
+                      {{
+                        shortcuts[item.key]
+                          ? shortcutLabel(shortcuts[item.key])
+                          : t('默认：{shortcut}', { shortcut: item.placeholder })
+                      }}
+                    </span>
+                    <button
+                      type="button"
+                      class="btn-icon btn-sm"
+                      :title="t('修改')"
+                      :aria-label="t('修改')"
+                      @click="openShortcutEditor(item.key, t(item.label), DEFAULT_SHORTCUT_ACTIONS[item.key])"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        <path d="m15 5 4 4" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon btn-sm"
+                      :title="t('清除')"
+                      :aria-label="t('清除')"
+                      :disabled="!shortcuts[item.key]"
+                      @click="clearShortcut(item.key)"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21"
+                        />
+                        <path d="M22 21H7" />
+                        <path d="m5 11 9 9" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1873,6 +1954,15 @@
       @cancel="removeProviderTarget = ''"
       @close="removeProviderTarget = ''"
     />
+    <ShortcutRecorderDialog
+      :visible="shortcutEditor.visible"
+      :name="shortcutEditor.name"
+      :accelerator="shortcuts[shortcutEditor.key] || ''"
+      :fallback="shortcutEditor.fallback"
+      :is-mac="isMac"
+      @cancel="closeShortcutEditor"
+      @save="saveShortcut"
+    />
     <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
@@ -1883,6 +1973,7 @@ import { useRoute } from 'vue-router'
 import { openUpdateCenter, useAutoSaveConfig, usePaneResize, useToast } from '@/composables'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
+import ShortcutRecorderDialog from '@/components/ShortcutRecorderDialog.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import ExtensionsManager from '@/components/ExtensionsManager.vue'
 import ImageHostSettingsPanel from '@/components/settings/ImageHostSettingsPanel.vue'
@@ -1898,6 +1989,7 @@ import {
   getAiProviders,
   getProviderModels,
   validateApiKey,
+  getAiApiKey,
   returnToApp,
   windowMinimize,
   windowToggleMaximize,
@@ -1912,6 +2004,8 @@ import {
 } from '@/api'
 import iconUrl from '@assets/icon.png'
 import { tools, RECENT_TOOLS_LIMIT_OPTIONS, normalizeRecentToolsLimit } from '@shared/tools'
+import { DEFAULT_SHORTCUT_ACTIONS, getDefaultShortcuts } from '@shared/shortcutActions'
+import { formatAccelerator } from '@/utils/shortcut'
 import { normalizeDatabaseEditorConfig, DATABASE_EDITOR_THEME_OPTIONS } from '@shared/databaseEditor'
 import {
   DATABASE_HISTORY_LIMIT_OPTIONS,
@@ -1925,6 +2019,7 @@ import {
 } from '@shared/databaseClient'
 import { UPDATE_CHECK_INTERVAL_OPTIONS, normalizeUpdateCheckInterval } from '@shared/updater'
 import { SQL_AUDIT_RULES, DEFAULT_SQL_AUDIT_RULES } from '@shared/sqlAudit'
+import { SECRET_MASK, isSecretMask } from '@shared/secrets'
 import {
   PROXY_MODE_OPTIONS,
   DEFAULT_PROXY_BYPASS,
@@ -1986,6 +2081,26 @@ const isMac = hostPlatform === 'darwin'
 let removeSettingsTabListener = null
 
 const shortcutTools = tools.filter((tool) => tool.shortcutKey)
+const shortcutActionItems = [
+  {
+    key: 'chat_send',
+    label: '发送消息',
+    desc: '聊天输入框中发送消息，未设置时按 Enter 发送、Shift+Enter 换行',
+    placeholder: formatAccelerator(DEFAULT_SHORTCUT_ACTIONS.chat_send, isMac)
+  },
+  {
+    key: 'database_run',
+    label: '执行查询',
+    desc: '数据库查询编辑器中执行当前 SQL',
+    placeholder: formatAccelerator(DEFAULT_SHORTCUT_ACTIONS.database_run, isMac)
+  },
+  {
+    key: 'global_search',
+    label: '全局搜索',
+    desc: '打开全局搜索面板',
+    placeholder: formatAccelerator(DEFAULT_SHORTCUT_ACTIONS.global_search, isMac)
+  }
+]
 
 function toSelectOptions(options) {
   return options.map((option) => ({ ...option, value: String(option.value) }))
@@ -2160,7 +2275,7 @@ const tabMeta = {
       return t('快捷键')
     },
     get description() {
-      return t('设置打开设置窗口的全局快捷键，留空则不启用。')
+      return t('配置打开设置窗口、聊天发送、数据库执行查询与全局搜索的快捷键。')
     }
   },
   about: {
@@ -2519,9 +2634,32 @@ const databaseOperationLogEnabled = ref(true)
 const databaseAuditRules = ref({ ...DEFAULT_SQL_AUDIT_RULES })
 const sqlAuditRules = SQL_AUDIT_RULES
 const scriptTypes = ref([])
-const shortcuts = ref({
-  settings: 'CmdOrCtrl+,'
-})
+const shortcuts = ref(getDefaultShortcuts())
+const shortcutEditor = ref({ visible: false, key: '', name: '', fallback: '' })
+
+function shortcutLabel(value) {
+  if (!value) return ''
+  return formatAccelerator(value, isMac) || value
+}
+
+function openShortcutEditor(key, name, fallback = '') {
+  shortcutEditor.value = { visible: true, key, name, fallback: fallback || '' }
+}
+
+function closeShortcutEditor() {
+  shortcutEditor.value = { ...shortcutEditor.value, visible: false }
+}
+
+function saveShortcut(accelerator) {
+  const key = shortcutEditor.value.key
+  if (!key || !accelerator) return
+  shortcuts.value = { ...shortcuts.value, [key]: accelerator }
+  closeShortcutEditor()
+}
+
+function clearShortcut(key) {
+  shortcuts.value = { ...shortcuts.value, [key]: '' }
+}
 const proxyMode = ref('system')
 const proxyUrl = ref('')
 const proxyBypass = ref(DEFAULT_PROXY_BYPASS)
@@ -2591,6 +2729,7 @@ const databaseListRef = ref(null)
 const scriptTypeListRef = ref(null)
 const configDrag = ref({ list: '', enabled: false, from: -1, over: -1 })
 const showApiKey = ref({})
+const revealedApiKeys = ref({})
 const testingApiKey = ref({})
 const apiKeyTestResult = ref({})
 
@@ -2848,6 +2987,7 @@ async function confirmRemoveProvider() {
     const nextDraftKeys = { ...aiApiKeys.value }
     delete nextDraftKeys[type]
     aiApiKeys.value = nextDraftKeys
+    resetApiKeyVisibility(type)
     const nextDraftBaseUrls = { ...aiBaseUrls.value }
     delete nextDraftBaseUrls[type]
     aiBaseUrls.value = nextDraftBaseUrls
@@ -3018,8 +3158,34 @@ function endModelDrag(type) {
   modelDrag.value = { type: '', enabled: false, from: -1, over: -1 }
 }
 
-function toggleShowApiKey(type) {
-  showApiKey.value = { ...showApiKey.value, [type]: !showApiKey.value[type] }
+function resetApiKeyVisibility(type) {
+  const nextShow = { ...showApiKey.value }
+  delete nextShow[type]
+  showApiKey.value = nextShow
+  const nextRevealed = { ...revealedApiKeys.value }
+  delete nextRevealed[type]
+  revealedApiKeys.value = nextRevealed
+}
+
+async function toggleShowApiKey(type) {
+  if (showApiKey.value[type]) {
+    const revealed = revealedApiKeys.value[type]
+    if (revealed !== undefined && (aiApiKeys.value[type] || '') === revealed) {
+      aiApiKeys.value = { ...aiApiKeys.value, [type]: SECRET_MASK }
+    }
+    resetApiKeyVisibility(type)
+    return
+  }
+
+  const current = (aiApiKeys.value[type] || '').trim()
+  if (isSecretMask(current)) {
+    const plain = await getAiApiKey(type)
+    if (plain) {
+      revealedApiKeys.value = { ...revealedApiKeys.value, [type]: plain }
+      aiApiKeys.value = { ...aiApiKeys.value, [type]: plain }
+    }
+  }
+  showApiKey.value = { ...showApiKey.value, [type]: true }
 }
 
 onMounted(async () => {
@@ -3070,10 +3236,10 @@ onMounted(async () => {
   }
 
   const config = await getConfig()
-  basePath.value = config.app.base_path || ''
-  developerChName.value = config.app.developer.ch_name || ''
-  developerEnName.value = config.app.developer.en_name || ''
-  textEditApp.value = config.app.text_edit_app || ''
+  basePath.value = config.sql_generator.base_path || ''
+  developerChName.value = config.sql_generator.developer.ch_name || ''
+  developerEnName.value = config.sql_generator.developer.en_name || ''
+  textEditApp.value = config.sql_generator.text_edit_app || ''
   autoUpdate.value = config.update.auto_update !== false
   autoStart.value = config.app.auto_start === true
   databaseSafeMode.value = config.database.safe_mode !== false
@@ -3475,15 +3641,13 @@ function buildAutoSavePayload(kind) {
   }
   if (kind === 'sql') {
     return {
-      app: {
+      sql_generator: {
         base_path: basePath.value,
         developer: {
           ch_name: developerChName.value,
           en_name: developerEnName.value
         },
-        text_edit_app: textEditApp.value
-      },
-      sql_generator: {
+        text_edit_app: textEditApp.value,
         databases: databases.value.map((db) => db.name.trim()).filter(Boolean),
         script_types: scriptTypes.value
           .map((st) => ({
@@ -3993,6 +4157,7 @@ function cancelProviderCard(provider) {
 
   aiApiKeys.value = { ...aiApiKeys.value, [type]: savedApiKeys.value[type] || '' }
   aiBaseUrls.value = { ...aiBaseUrls.value, [type]: savedBaseUrls.value[type] || '' }
+  resetApiKeyVisibility(type)
 
   const saved = aiModels.value[type]
   if (saved && Array.isArray(saved.models) && saved.models.length > 0) {

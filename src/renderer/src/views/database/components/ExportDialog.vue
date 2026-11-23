@@ -1,5 +1,5 @@
 <template>
-  <div v-if="exportDialog.show" class="dialog-overlay" @click.self="closeExportDialog">
+  <div v-if="exportDialog.show" class="dialog-overlay">
     <div class="dialog">
       <div class="dialog-header">
         <h3>{{ t('导出数据 ·') }} {{ exportDialog.tab?.tableName || t('查询结果') }}</h3>

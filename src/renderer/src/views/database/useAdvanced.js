@@ -1,5 +1,7 @@
 import { t } from '@/i18n'
 import { watch } from 'vue'
+import { rankSchemaTables } from './schemaContext'
+import { formatSql } from './sqlFormat'
 import {
   chat,
   dbAlterTable,
@@ -8,23 +10,41 @@ import {
   dbGetErData,
   dbGetTableMeta,
   dbGetUserGrants,
+  dbHistoryAdd,
+  dbHistoryClear,
+  dbHistoryRemove,
   dbPreviewAlterTable,
   dbQueryUsers,
   dbSetUserPassword,
-  dbSetUserPrivileges
+  dbSetUserPrivileges,
+  dbSnippetFolderAdd,
+  dbSnippetRemove,
+  dbSnippetSave,
+  dbToolsState
 } from '@/api'
 
 const HISTORY_KEY = 'ntoolbox-db-query-history'
 const HISTORY_LIMIT = 200
 const SNIPPET_KEY = 'ntoolbox-db-sql-snippets'
 const SNIPPET_FOLDER_KEY = 'ntoolbox-db-sql-snippet-folders'
+const LEGACY_KEYS = [HISTORY_KEY, SNIPPET_KEY, SNIPPET_FOLDER_KEY]
 
-function readStorage(key) {
+function readLegacy(key) {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) || '[]')
     return Array.isArray(parsed) ? parsed : []
   } catch {
     return []
+  }
+}
+
+function clearLegacy() {
+  for (const key of LEGACY_KEYS) {
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      // 存储不可用时忽略
+    }
   }
 }
 
@@ -60,6 +80,9 @@ export function createAdvanced(state, api, options = {}) {
     erDialog,
     explainDialog,
     historyDialog,
+    historyHasMore,
+    historyLoading,
+    historyTotal,
     queryHistory,
     querySnippets,
     snippetFolders,
@@ -72,49 +95,59 @@ export function createAdvanced(state, api, options = {}) {
     userDialog
   } = state
 
-  queryHistory.value = readStorage(HISTORY_KEY).slice(0, historyLimit())
-  querySnippets.value = readStorage(SNIPPET_KEY)
-  snippetFolders.value = readStorage(SNIPPET_FOLDER_KEY).filter((folder) => typeof folder === 'string' && folder.trim())
+  function applyHistoryPage(page, append = false) {
+    if (!page) return
+    const items = Array.isArray(page.items) ? page.items : []
+    queryHistory.value = append ? [...queryHistory.value, ...items] : items
+    historyTotal.value = Number(page.total) || 0
+    historyHasMore.value = Boolean(page.hasMore)
+  }
 
-  function persistHistory() {
+  async function loadAdvancedState(options = {}) {
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(queryHistory.value.slice(0, historyLimit())))
+      const result = await dbToolsState({
+        historyLimit: historyLimit(),
+        offset: options.offset || 0,
+        legacy: options.legacy
+      })
+      applyHistoryPage(result.history, Boolean(options.offset))
+      querySnippets.value = Array.isArray(result.snippets) ? result.snippets : []
+      snippetFolders.value = Array.isArray(result.folders) ? result.folders : []
+      if (options.legacy) clearLegacy()
     } catch {
-      // 存储不可用时忽略
+      // 读取失败时保持空列表
     }
   }
+
+  loadAdvancedState({
+    legacy: {
+      history: readLegacy(HISTORY_KEY),
+      snippets: readLegacy(SNIPPET_KEY),
+      folders: readLegacy(SNIPPET_FOLDER_KEY)
+    }
+  })
 
   if (options.historyLimit) {
     watch(options.historyLimit, () => {
-      const limit = historyLimit()
-      if (queryHistory.value.length > limit) {
-        queryHistory.value = queryHistory.value.slice(0, limit)
-        persistHistory()
-      }
+      void loadAdvancedState()
     })
   }
 
-  function persistSnippets() {
+  async function loadMoreHistory() {
+    if (historyLoading.value || !historyHasMore.value) return
+    historyLoading.value = true
     try {
-      localStorage.setItem(SNIPPET_KEY, JSON.stringify(querySnippets.value))
-    } catch {
-      // 存储不可用时忽略
-    }
-  }
-
-  function persistSnippetFolders() {
-    try {
-      localStorage.setItem(SNIPPET_FOLDER_KEY, JSON.stringify(snippetFolders.value))
-    } catch {
-      // 存储不可用时忽略
+      await loadAdvancedState({ offset: queryHistory.value.length })
+    } finally {
+      historyLoading.value = false
     }
   }
 
   function rememberSnippetFolder(folder) {
     const name = String(folder || '').trim()
-    if (!name || snippetFolders.value.includes(name)) return
-    snippetFolders.value.push(name)
-    persistSnippetFolders()
+    if (!name) return
+    if (!snippetFolders.value.includes(name)) snippetFolders.value.push(name)
+    void dbSnippetFolderAdd(name).catch(() => {})
   }
 
   function openSqlPreview(title, sql) {
@@ -155,29 +188,36 @@ export function createAdvanced(state, api, options = {}) {
 
   function pushHistory(entry) {
     if (!entry?.sql) return
-    queryHistory.value.unshift({
+    const item = {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       createdAt: Date.now(),
       ...entry
-    })
+    }
+    queryHistory.value.unshift(item)
     const limit = historyLimit()
     if (queryHistory.value.length > limit) {
       queryHistory.value = queryHistory.value.slice(0, limit)
     }
-    persistHistory()
+    historyTotal.value = Math.min(historyTotal.value + 1, limit)
+    historyHasMore.value = queryHistory.value.length < historyTotal.value
+    void dbHistoryAdd(item, { historyLimit: limit }).catch(() => {})
   }
 
-  function removeHistoryItem(id) {
+  async function removeHistoryItem(id) {
     queryHistory.value = queryHistory.value.filter((item) => item.id !== id)
-    persistHistory()
+    historyTotal.value = Math.max(0, historyTotal.value - 1)
+    historyHasMore.value = queryHistory.value.length < historyTotal.value
+    await dbHistoryRemove(id).catch(() => {})
   }
 
   async function clearHistory() {
-    if (!queryHistory.value.length) return
+    if (!historyTotal.value && !queryHistory.value.length) return
     const confirmed = await api.showConfirm(t('确定清空全部查询历史吗？'))
     if (!confirmed) return
     queryHistory.value = []
-    persistHistory()
+    historyTotal.value = 0
+    historyHasMore.value = false
+    await dbHistoryClear().catch(() => {})
   }
 
   function openHistoryDialog(section = 'history') {
@@ -423,14 +463,15 @@ export function createAdvanced(state, api, options = {}) {
     if (!name) return
     const folder = String(historyDialog.value.folder || '').trim()
     rememberSnippetFolder(folder)
-    querySnippets.value.unshift({
+    const snippet = {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       name,
       sql,
       folder,
       createdAt: Date.now()
-    })
-    persistSnippets()
+    }
+    querySnippets.value.unshift(snippet)
+    void dbSnippetSave(snippet).catch(() => {})
     await api.showMessage(t('SQL 片段已保存'), 'success')
   }
 
@@ -439,20 +480,21 @@ export function createAdvanced(state, api, options = {}) {
     if (!name) return
     const folder = String(historyDialog.value.folder || '').trim()
     rememberSnippetFolder(folder)
-    querySnippets.value.unshift({
+    const snippet = {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       name,
       sql,
       folder,
       createdAt: Date.now()
-    })
-    persistSnippets()
+    }
+    querySnippets.value.unshift(snippet)
+    void dbSnippetSave(snippet).catch(() => {})
     await api.showMessage(t('SQL 片段已保存'), 'success')
   }
 
   async function deleteSnippet(id) {
     querySnippets.value = querySnippets.value.filter((item) => item.id !== id)
-    persistSnippets()
+    await dbSnippetRemove(id).catch(() => {})
   }
 
   function setSnippetFolder(id, folder) {
@@ -460,7 +502,7 @@ export function createAdvanced(state, api, options = {}) {
     if (!item) return
     item.folder = String(folder || '').trim()
     rememberSnippetFolder(item.folder)
-    persistSnippets()
+    void dbSnippetSave(item).catch(() => {})
   }
 
   async function createSnippetFolder() {
@@ -649,6 +691,7 @@ export function createAdvanced(state, api, options = {}) {
     aiDialog.value = {
       show: true,
       tab,
+      database: tab?.database || selectedDatabase.value || '',
       prompt: '',
       loading: false,
       result: '',
@@ -661,34 +704,84 @@ export function createAdvanced(state, api, options = {}) {
     aiDialog.value.tab = null
   }
 
-  async function buildSchemaContext(tab) {
-    const lines = []
-    const key = `${tab.connectionName}_${tab.database}`
-    const objects = databaseObjectsMap.value[key]
+  const SCHEMA_FETCH_LIMIT = 1000
+  const SCHEMA_TABLE_LIMIT = 200
+  const SCHEMA_CHAR_BUDGET = 64000
+  const SCHEMA_NAME_BUDGET = 4000
+  const SCHEMA_FK_LIMIT = 200
 
-    if (objects?.tables?.length) {
-      lines.push(`数据库 ${tab.database} 中的表: ${objects.tables.slice(0, 80).join(', ')}`)
+  function schemaColumnLine(column) {
+    const parts = [`  - ${column.name} ${column.columnType || ''}`.trimEnd()]
+    if (column.columnKey === 'PRI') parts.push('PK')
+    if (column.nullable === 'NO') parts.push('NOT NULL')
+    if (column.comment) parts.push(`-- ${column.comment}`)
+    return parts.join(' ')
+  }
+
+  async function buildSchemaContext(tab, database, prompt) {
+    const lines = []
+    const key = `${tab.connectionName}_${database}`
+    const objects = databaseObjectsMap.value[key]
+    let liveTables = null
+    let foreignKeys = []
+
+    if (tab.connectionName && database) {
+      const result = await dbGetErData(tab.connectionName, database, SCHEMA_FETCH_LIMIT)
+      if (result.success && Array.isArray(result.tables)) {
+        liveTables = result.tables
+        foreignKeys = result.foreignKeys || []
+      }
     }
 
-    if (tab.tableName) {
-      const result = await dbGetTableMeta(tab.connectionName, tab.database, tab.tableName)
-      if (result.success) {
-        lines.push(`表 ${tab.tableName} 的结构:`)
-        for (const column of result.columns) {
-          const flags = [
-            column.columnType,
-            column.nullable ? '' : 'NOT NULL',
-            column.columnKey === 'PRI' ? 'PRIMARY KEY' : '',
-            column.comment ? `/* ${column.comment} */` : ''
-          ]
-            .filter(Boolean)
-            .join(' ')
-          lines.push(`- ${column.name} ${flags}`)
+    if (liveTables?.length) {
+      const ranked = rankSchemaTables(liveTables, prompt).slice(0, SCHEMA_TABLE_LIMIT)
+      lines.push(`数据库: ${database}`, `表结构（共 ${liveTables.length} 张表）:`)
+      let used = lines.join('\n').length
+      const listedTables = []
+      for (const table of ranked) {
+        const block = [`- ${table.name}${table.comment ? ` -- ${table.comment}` : ''}`]
+        for (const column of table.columns || []) block.push(schemaColumnLine(column))
+        const text = block.join('\n')
+        if (used + text.length > SCHEMA_CHAR_BUDGET) break
+        lines.push(text)
+        used += text.length + 1
+        listedTables.push(table.name)
+      }
+      if (listedTables.length < liveTables.length) {
+        const omitted = ranked
+          .slice(listedTables.length)
+          .map((table) => table.name)
+          .filter(Boolean)
+        const names = []
+        let nameLength = 0
+        for (const name of omitted) {
+          if (nameLength + name.length > SCHEMA_NAME_BUDGET) break
+          names.push(name)
+          nameLength += name.length + 2
         }
-        if (result.indexes?.length) {
-          lines.push(`索引: ${result.indexes.map((index) => `${index.name}(${index.columns.join(', ')})`).join('; ')}`)
+        lines.push(
+          names.length
+            ? `（其余 ${liveTables.length - listedTables.length} 张表仅列出表名: ${names.join(', ')}${
+                names.length < omitted.length ? ' 等' : ''
+              }）`
+            : `（其余 ${liveTables.length - listedTables.length} 张表未列出）`
+        )
+      }
+      if (foreignKeys.length) {
+        const tableSet = new Set(listedTables)
+        const relevant = foreignKeys.filter((fk) => tableSet.has(fk.tableName) || tableSet.has(fk.refTable))
+        lines.push('外键关系:')
+        for (const fk of (relevant.length ? relevant : foreignKeys).slice(0, SCHEMA_FK_LIMIT)) {
+          lines.push(`- ${fk.tableName}.${fk.columnName} -> ${fk.refTable}.${fk.refColumn}`)
         }
       }
+      if (objects?.views?.length) lines.push(`视图: ${objects.views.slice(0, 60).join(', ')}`)
+    } else if (objects?.tables?.length) {
+      lines.push(
+        `数据库 ${database} 中的表: ${objects.tables.slice(0, 120).join(', ')}${
+          objects.views?.length ? `\n视图: ${objects.views.slice(0, 60).join(', ')}` : ''
+        }`
+      )
     }
 
     return lines.join('\n')
@@ -707,11 +800,23 @@ export function createAdvanced(state, api, options = {}) {
     dialog.result = ''
 
     try {
-      const schema = await buildSchemaContext(tab)
+      const database = tab.database || selectedDatabase.value || ''
+      if (!tab.connectionName || !database) {
+        dialog.error = t('请先选择要分析的目标数据库')
+        return
+      }
+      dialog.database = database
+      const schema = await buildSchemaContext(tab, database, dialog.prompt)
       const content = [
-        t('你是一位资深 MySQL 工程师，请根据数据库结构和需求生成可直接执行的 SQL。'),
-        t('要求：只输出 SQL，使用 MySQL 语法，不要输出解释性文字；多条语句用英文分号分隔。'),
-        schema ? `数据库结构:\n${schema}` : '',
+        t(
+          '你是一位资深 MySQL 工程师。请先分析下面数据库中的表、字段、注释和外键关系，再根据需求生成可直接执行的 SQL。'
+        ),
+        t('要求：只使用结构中真实存在的表和字段，不得臆造；表或字段含义不明确时按名称与注释选择最匹配的。'),
+        t(
+          '生成前先在表结构中定位需求涉及的业务表：按表名、表注释和字段注释匹配业务含义（例如需求提到“合同”，应使用表名或注释中含“合同”的表），表名是英文或缩写时也不要跳过。'
+        ),
+        t('需要多表关联时优先使用外键关系；只输出 SQL，使用 MySQL 语法，不要输出解释性文字，多条语句用英文分号分隔。'),
+        schema ? `数据库结构:\n${schema}` : t('未能读取数据库结构，请根据常见命名约定谨慎推断。'),
         tab.sqlQuery ? `当前编辑器中的 SQL:\n${tab.sqlQuery}` : '',
         `需求: ${dialog.prompt}`
       ]
@@ -723,7 +828,8 @@ export function createAdvanced(state, api, options = {}) {
         dialog.error = result.error || t('AI 生成失败')
         return
       }
-      dialog.result = extractSql(result.content)
+      const sql = extractSql(result.content)
+      dialog.result = sql ? formatSql(sql) : ''
       if (!dialog.result) {
         dialog.error = t('AI 未返回有效内容')
       }
@@ -749,6 +855,7 @@ export function createAdvanced(state, api, options = {}) {
     pushHistory,
     removeHistoryItem,
     clearHistory,
+    loadMoreHistory,
     openHistoryDialog,
     closeHistoryDialog,
     openUserDialog,

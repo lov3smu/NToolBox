@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import { app } from 'electron'
 import { log } from '../utils'
 import { isPathWithinBase } from '../utils/sanitize'
+import { recordToolResult } from './sqlite/artifactRepository.js'
 
 const MAX_RESULT_CHARS = 24000
 const MIN_PREVIEW_CHARS = 1200
@@ -15,7 +16,7 @@ const RESULT_ID_PATTERN = /^[A-Za-z0-9_-]{1,180}$/
 let cleanedUp = false
 
 function resultsRoot() {
-  return path.join(app.getPath('userData'), 'agent-results')
+  return path.join(app.getPath('userData'), 'agent', 'results')
 }
 
 function normalizeId(value, fallback) {
@@ -76,15 +77,26 @@ export function createToolResultStore(runId, options = {}) {
     initialized = true
   }
 
-  async function save(text, callId) {
+  async function save(text, callId, meta = {}) {
     await ensureRoot()
     counter += 1
     const resultId = `${runKey}__${normalizeId(callId, 'call')}__${counter}`
-    await fs.promises.writeFile(resultFilePath(resultId), text, 'utf8')
+    const file = resultFilePath(resultId)
+    await fs.promises.writeFile(file, text, 'utf8')
+    void recordToolResult({
+      id: resultId,
+      requestId: runKey,
+      conversationId: meta.conversationId,
+      tool: meta.tool,
+      bytes: Buffer.byteLength(text, 'utf8'),
+      truncated: true,
+      filePath: file,
+      createdAt: Date.now()
+    }).catch((error) => log.warn('写入工具结果索引失败:', error.message))
     return resultId
   }
 
-  async function budgetOne(toolResult, callId) {
+  async function budgetOne(toolResult, callId, meta = {}) {
     const text = safeStringify(toolResult)
     const originalChars = text.length
     const remaining = Math.max(0, maxRunChars - usedChars)
@@ -98,7 +110,7 @@ export function createToolResultStore(runId, options = {}) {
     let resultId = ''
     try {
       if (!cleanedUp) await cleanupOldResults(retentionMs)
-      resultId = await save(text, callId)
+      resultId = await save(text, callId, meta)
     } catch (error) {
       log.warn('保存完整工具结果失败:', error.message)
     }
@@ -139,8 +151,8 @@ export function createToolResultStore(runId, options = {}) {
 
   let queue = Promise.resolve()
 
-  function budget(toolResult, callId) {
-    const next = queue.then(() => budgetOne(toolResult, callId))
+  function budget(toolResult, callId, meta = {}) {
+    const next = queue.then(() => budgetOne(toolResult, callId, meta))
     queue = next.then(
       () => undefined,
       () => undefined

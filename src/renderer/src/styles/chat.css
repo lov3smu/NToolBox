@@ -1973,11 +1973,6 @@
   background: var(--surface);
 }
 
-.composer-icon-btn.recording {
-  background: rgba(var(--error-rgb), 0.12);
-  color: var(--error-dark);
-}
-
 .plus-wrap {
   position: relative;
 }
@@ -3973,5 +3968,171 @@ button.ctx-section-head:hover .ctx-section-title {
   border-top: 1px dashed var(--border-color);
   color: var(--text-tertiary);
   line-height: 1.5;
+  word-break: break-all;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.result-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.result-card-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.result-card-meta span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.result-card-table-wrap {
+  overflow: auto;
+  max-height: 260px;
+}
+
+.result-card-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-dense);
+}
+
+.result-card-table th,
+.result-card-table td {
+  padding: 5px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.result-card-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-muted);
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-size: var(--font-size-xs);
+}
+
+.result-card-table td {
+  color: var(--text-secondary);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-card-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.result-card-table tbody tr:hover td {
+  background: var(--surface-muted);
+}
+
+.result-card-foot {
+  margin: 0;
+  padding: 4px 10px 6px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.result-card-links {
+  display: flex;
+  flex-direction: column;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.result-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--motion-fast, 0.16s) ease;
+}
+
+.result-link:last-child {
+  border-bottom: none;
+}
+
+.result-link:hover {
+  background: var(--surface-muted);
+}
+
+.result-link-title {
+  color: var(--accent-color);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-link-url {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-link-snippet {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.result-card-files {
+  list-style: none;
+  margin: 0;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.result-card-files li {
+  color: var(--text-secondary);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: calc(11.5px * var(--font-scale));
   word-break: break-all;
 }

@@ -70,6 +70,14 @@ export function classifyToolRisk(name, args = {}) {
     return buildResult('read', 'web-fetch:*', `访问网页 ${describeTarget(args)}`.trim())
   }
 
+  if (tool === 'web-search') {
+    return buildResult('read', 'web-search:*', `联网搜索 ${String(args?.query || '').trim()}`.trim())
+  }
+
+  if (tool === 'code-exec') {
+    return buildResult('destructive', 'code-exec:*', '执行用户代码（沙箱）')
+  }
+
   if (tool === 'db-query') {
     const scope = [action, args?.database, describeTarget(args)].filter(Boolean).join(' ')
     return buildResult('read', 'db-query:*', `查询数据库 ${scope}`.trim(), { action })

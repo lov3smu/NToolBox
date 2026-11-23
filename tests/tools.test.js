@@ -67,7 +67,7 @@ describe('tool registry', () => {
       expect(getToolsByMenuGroup(tool.menuGroup).some((item) => item.path === tool.path)).toBe(false)
       expect(searchTools(tool.name).some((item) => item.path === tool.path)).toBe(false)
     }
-    expect(getToolByPath('/memory')?.name).toBe('记忆与知识库')
+    expect(getToolByPath('/memory')?.name).toBe('外挂知识库')
   })
 
   it('derives menu, tray and lookup collections from the registry', () => {

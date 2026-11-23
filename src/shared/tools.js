@@ -35,8 +35,8 @@ export const tools = [
     trayGroup: 'top'
   },
   {
-    name: '记忆与知识库',
-    description: '管理全局/项目记忆与外挂知识库',
+    name: '外挂知识库',
+    description: '管理与检索 AI 可引用的本地资料',
     path: '/memory',
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M12 5a3 3 0 0 0-6 0 3 3 0 0 0-1 5.8A3.5 3.5 0 0 0 8 16.5V18a3 3 0 0 0 4 2.8"/>

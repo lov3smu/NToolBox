@@ -27,6 +27,7 @@ import {
   updateMemory,
   removeMemory,
   clearMemory,
+  clearProjectMemory,
   getMemoryOverview,
   addKnowledgeSource,
   removeKnowledgeSource,
@@ -45,7 +46,9 @@ describe('memory service', () => {
     fs.mkdirSync(workspace, { recursive: true })
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    const { closeStorage } = await import('../src/main/services/sqlite/index.js')
+    await closeStorage()
     fs.rmSync(state.userDataDir, { recursive: true, force: true })
   })
 
@@ -84,6 +87,147 @@ describe('memory service', () => {
     const otherOverview = await getMemoryOverview(otherWorkspace)
     expect(otherOverview.global).toHaveLength(1)
     expect(otherOverview.project).toHaveLength(0)
+  })
+
+  it('stores global and project memory as markdown files', async () => {
+    const globalEntry = await addMemory({
+      scope: 'global',
+      content: '用户偏好 pnpm 与单引号、无分号',
+      tags: ['偏好', '代码风格']
+    })
+    const globalFile = path.join(state.userDataDir, 'memory', 'global', `${globalEntry.entry.id}.md`)
+    expect(fs.existsSync(globalFile)).toBe(true)
+    const globalRaw = fs.readFileSync(globalFile, 'utf8')
+    expect(globalRaw.startsWith('---')).toBe(true)
+    expect(globalRaw).toContain('tags: 偏好, 代码风格')
+    expect(globalRaw).toContain('用户偏好 pnpm 与单引号、无分号')
+
+    const projectEntry = await addMemory({
+      scope: 'project',
+      workspacePath: workspace,
+      content: '该项目使用 Vue 3 + Electron',
+      source: 'ai'
+    })
+    const projectFile = path.join(workspace, '.ntoolbox', 'memory', `${projectEntry.entry.id}.md`)
+    expect(fs.existsSync(projectFile)).toBe(true)
+    expect(fs.readFileSync(projectFile, 'utf8')).toContain('source: ai')
+
+    const overview = await getMemoryOverview(workspace)
+    expect(overview.globalDir).toBe(path.join(state.userDataDir, 'memory', 'global'))
+    expect(overview.projectDir).toBe(path.join(workspace, '.ntoolbox', 'memory'))
+    expect(overview.project).toHaveLength(1)
+
+    const updated = await updateMemory({
+      scope: 'project',
+      workspacePath: workspace,
+      id: projectEntry.entry.id,
+      content: '更新后的项目记忆'
+    })
+    expect(updated.success).toBe(true)
+    expect(fs.readFileSync(projectFile, 'utf8')).toContain('更新后的项目记忆')
+  })
+
+  it('migrates legacy JSON stores into markdown files', async () => {
+    const legacyDir = path.join(state.userDataDir, 'memory')
+    fs.mkdirSync(legacyDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(legacyDir, 'global.json'),
+      JSON.stringify({
+        version: 1,
+        entries: [
+          { id: 'legacy-global', content: '旧全局记忆', tags: ['旧'], source: 'ai', createdAt: 1, updatedAt: 2 }
+        ]
+      }),
+      'utf8'
+    )
+    const legacyWorkspace = path.join(state.userDataDir, 'legacy-project')
+    fs.mkdirSync(legacyWorkspace)
+    fs.writeFileSync(
+      path.join(legacyDir, 'projects.json'),
+      JSON.stringify({
+        version: 1,
+        projects: {
+          [path.resolve(legacyWorkspace)]: {
+            path: legacyWorkspace,
+            entries: [
+              { id: 'legacy-project', content: '旧项目记忆', tags: [], source: 'user', createdAt: 1, updatedAt: 2 }
+            ],
+            updatedAt: 2
+          }
+        }
+      }),
+      'utf8'
+    )
+
+    const overview = await getMemoryOverview(legacyWorkspace)
+    expect(overview.global.map((entry) => entry.content)).toContain('旧全局记忆')
+    expect(overview.project.map((entry) => entry.content)).toContain('旧项目记忆')
+    expect(fs.existsSync(path.join(legacyDir, 'global', 'legacy-global.md'))).toBe(true)
+    expect(fs.existsSync(path.join(legacyWorkspace, '.ntoolbox', 'memory', 'legacy-project.md'))).toBe(true)
+    expect(fs.existsSync(path.join(legacyDir, 'global.json'))).toBe(false)
+    expect(fs.existsSync(path.join(legacyDir, 'global.json.migrated'))).toBe(true)
+    expect(fs.existsSync(path.join(legacyDir, 'projects.json.migrated'))).toBe(true)
+  })
+
+  it('keeps legacy project memory when the workspace is missing', async () => {
+    const legacyDir = path.join(state.userDataDir, 'memory')
+    fs.mkdirSync(legacyDir, { recursive: true })
+    const missingWorkspace = path.join(state.userDataDir, 'removed-project')
+    fs.writeFileSync(
+      path.join(legacyDir, 'projects.json'),
+      JSON.stringify({
+        version: 1,
+        projects: {
+          [path.resolve(missingWorkspace)]: {
+            path: missingWorkspace,
+            entries: [
+              {
+                id: 'orphan-project',
+                content: '工作区已不存在的项目记忆',
+                tags: [],
+                source: 'ai',
+                createdAt: 1,
+                updatedAt: 2
+              }
+            ],
+            updatedAt: 2
+          }
+        }
+      }),
+      'utf8'
+    )
+
+    const overview = await getMemoryOverview(missingWorkspace)
+    expect(overview.project).toHaveLength(0)
+    expect(fs.existsSync(path.join(legacyDir, 'projects.json'))).toBe(true)
+    expect(fs.existsSync(path.join(legacyDir, 'projects.json.migrated'))).toBe(false)
+    expect(fs.existsSync(missingWorkspace)).toBe(false)
+  })
+
+  it('clears only the removed workspace project memory files', async () => {
+    const otherWorkspace = path.join(state.userDataDir, 'other-workspace')
+    fs.mkdirSync(otherWorkspace)
+    await addMemory({ scope: 'global', content: '全局记忆保留' })
+    await addMemory({ scope: 'project', workspacePath: workspace, content: '待清空项目记忆' })
+    await addMemory({ scope: 'project', workspacePath: otherWorkspace, content: '另一个项目记忆' })
+    const keepFile = path.join(workspace, 'keep.txt')
+    fs.writeFileSync(keepFile, 'keep', 'utf8')
+
+    const memoryDir = path.join(workspace, '.ntoolbox', 'memory')
+    expect(fs.readdirSync(memoryDir)).toHaveLength(1)
+
+    const result = await clearProjectMemory(workspace)
+    expect(result.success).toBe(true)
+    expect(result.removed).toBe(1)
+    expect(fs.existsSync(memoryDir)).toBe(false)
+    expect(fs.existsSync(path.join(workspace, '.ntoolbox'))).toBe(false)
+    expect(fs.existsSync(keepFile)).toBe(true)
+
+    const removedOverview = await getMemoryOverview(workspace)
+    expect(removedOverview.global).toHaveLength(1)
+    expect(removedOverview.project).toHaveLength(0)
+    const otherOverview = await getMemoryOverview(otherWorkspace)
+    expect(otherOverview.project.map((entry) => entry.content)).toContain('另一个项目记忆')
   })
 
   it('updates, removes and clears scoped memory', async () => {
@@ -229,6 +373,14 @@ describe('memory service', () => {
     expect(chatOnly).toContain('始终使用中文回复')
     expect(chatOnly).not.toContain('knowledge-search')
     expect(chatOnly).not.toContain('自动记忆已开启')
+  })
+
+  it('ranks prompt entries by query relevance before recency', async () => {
+    await addMemory({ scope: 'global', content: '界面偏好紧凑布局' })
+    await addMemory({ scope: 'global', content: '数据库连接使用 mysql57' })
+    const prompt = await buildMemoryPrompt(workspace, true, 'mysql57 连接')
+    expect(prompt.indexOf('mysql57')).toBeGreaterThan(-1)
+    expect(prompt.indexOf('mysql57')).toBeLessThan(prompt.indexOf('紧凑布局'))
   })
 
   it('always instructs auto capture when enabled, even on an empty store', async () => {

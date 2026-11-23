@@ -11,7 +11,7 @@ const state = vi.hoisted(() => ({
 }))
 
 vi.mock('../src/main/services/config', () => ({
-  getConfig: vi.fn(() => ({ app: { base_path: state.basePath, text_edit_app: 'code' } }))
+  getConfig: vi.fn(() => ({ sql_generator: { base_path: state.basePath, text_edit_app: 'code' } }))
 }))
 
 vi.mock('../src/main/services/generator.js', () => ({

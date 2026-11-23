@@ -23,7 +23,7 @@ import {
 } from './ai/tokens.js'
 import { createFallbackProviders } from './ai/fallback.js'
 import { getSkillsManager, initSkills } from './skills.js'
-import { buildMemoryPrompt } from './memory.js'
+import { addMemory, buildMemoryPrompt, getMemoryOverview } from './memory.js'
 import { classifyToolRisk, needsApproval, summarizeToolArgs } from './toolPolicy.js'
 import {
   AI_AGENT_PLAN_STEPS_DEFAULT,
@@ -45,6 +45,9 @@ import { t } from './i18n.js'
 
 const PLANNER_MIN_INPUT_LENGTH = 8
 const LONG_TASK_NOTIFY_MS = 60 * 1000
+const MAX_PROGRESS_ASSESSMENTS = 3
+const MAX_PLAN_REVISIONS = 2
+const ASSESSMENT_MAX_INPUT_CHARS = 6000
 
 function getAgentRuntime() {
   const config = getConfig()
@@ -89,6 +92,16 @@ function buildPlannerSystemPrompt(maxSteps = AI_AGENT_PLAN_STEPS_DEFAULT) {
 - 每个步骤以动词开头，简短具体，不包含具体工具参数
 - 计划只是内部参考，执行过程中可以调整`
 }
+
+const PROGRESS_ASSESSMENT_PROMPT = `你是执行进度检查器。根据用户目标、当前计划和最新工具结果，判断下一步该怎么走。
+只输出一个 JSON 对象，不要输出任何解释或 Markdown 代码块：
+{"verdict":"continue|replan|finish","note":"一句话说明判断依据","steps":["调整后的剩余步骤"]}
+
+规则：
+- 结果正常且当前计划仍然适用：verdict=continue，steps=[]
+- 结果为空、失败、被拒绝、与目标不符，或需要改用其他工具/路径：verdict=replan，步骤只列尚未完成的剩余步骤，不要重复已完成步骤
+- 计划已全部完成且结果足以回答用户：verdict=finish，steps=[]
+- 不要编造工具结果；无法判断时返回 continue`
 
 const COMPRESSION_DEFAULT_KEEP = 6
 const COMPRESSION_MAX_SUMMARY_CHARS = 8000
@@ -171,6 +184,8 @@ const SYSTEM_PROMPT = `你是一个智能助手，可以帮助用户完成各种
 返回：数据库列表 + 表列表
 
 **网页查阅规则**：
+- 需要最新信息、新闻或不确定具体网址时，先调用 web-search 搜索，再挑选可信结果用 web-fetch 读取正文
+- web-search 返回的是搜索结果摘要；回答中注明引用的来源地址，不要编造页面内容
 - 用户要求查看网页、链接、文档或最新资料时，调用 web-fetch 工具读取真实内容
 - 只允许 http/https 公网地址，工具会拒绝本地与内网地址
 - 回答中注明引用的来源地址，不要编造页面内容
@@ -714,6 +729,116 @@ async function generatePlan(provider, messages, tools, options = {}) {
   }
 }
 
+function summarizeAssessmentResult(entry) {
+  const result = entry?.toolResult
+  const status = result?.success === false ? '失败' : '成功'
+  const detail = result?.error
+    ? String(result.error).replace(/\s+/g, ' ').slice(0, 200)
+    : summarizeToolResult(result).replace(/\s+/g, ' ').slice(0, 240)
+  const reflection = entry?.reflection?.text ? `（反思：${entry.reflection.text}）` : ''
+  return `- ${entry?.toolName || '工具'}：${status}${detail ? ` · ${detail}` : ''}${reflection}`
+}
+
+function appendPlanNote(messages, line) {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i]
+    if (message?.role === 'tool' && typeof message.content === 'string') {
+      message.content = `${message.content}\n\n${line}`
+      return
+    }
+  }
+  messages.push({ role: 'user', content: `[系统] ${line}` })
+}
+
+async function assessProgress(provider, model, messages, state, entries, options = {}) {
+  if (!state?.plan || state.assessments >= MAX_PROGRESS_ASSESSMENTS) return null
+  const shouldStop = typeof options.shouldStop === 'function' ? options.shouldStop : () => false
+  if (shouldStop()) return null
+
+  const hadProblem = entries.some((entry) => {
+    const result = entry?.toolResult
+    return !result || result.success === false || Boolean(entry?.reflection)
+  })
+  const planFinished = state.planCursor >= state.plan.steps.length
+  if (!hadProblem && !planFinished) return null
+  state.assessments += 1
+
+  const planLines = state.plan.steps.map((step, index) => `${index + 1}. [${step.state}] ${step.text}`).join('\n')
+  const resultLines = entries.map(summarizeAssessmentResult).join('\n')
+  const userContent = [
+    `用户目标：${state.plan.goal || extractLastUserText(messages)}`,
+    `当前计划：\n${planLines}`,
+    `最新工具结果：\n${resultLines || '（无）'}`
+  ]
+    .join('\n\n')
+    .slice(0, ASSESSMENT_MAX_INPUT_CHARS)
+
+  const promptMessages = [
+    { role: 'system', content: PROGRESS_ASSESSMENT_PROMPT },
+    { role: 'user', content: userContent }
+  ]
+
+  try {
+    const result = await provider.chat(promptMessages, [], {
+      model,
+      max_tokens: 400,
+      temperature: 0.2,
+      conversationId: options.conversationId
+    })
+    recordUsage(state, result?.usage, promptMessages, [], result)
+    if (!result?.success) return null
+    return parsePlannerJson(result.content)
+  } catch (error) {
+    log.warn('进度评估异常:', error.message)
+    return null
+  }
+}
+
+function applyPlanRevision(state, rawSteps) {
+  if (!state?.plan) return false
+  const done = state.plan.steps.filter((step) => step.state === 'done' || step.state === 'failed')
+  const texts = (Array.isArray(rawSteps) ? rawSteps : [])
+    .map((step) => sanitizePlanText(typeof step === 'string' ? step : step?.title || step?.text, 120))
+    .filter(Boolean)
+    .slice(0, Math.max(0, state.maxPlanSteps - done.length))
+  if (texts.length === 0) return false
+
+  state.plan.steps = [...done, ...texts.map((text) => ({ text, state: 'pending' }))]
+  state.planCursor = done.length
+  state.planRevisions += 1
+  emitPlanUpdate(state)
+  return true
+}
+
+async function reflectOnProgress({ provider, model, messages, state, entries, onChunk, options = {} }) {
+  const parsed = await assessProgress(provider, model, messages, state, entries, options)
+  if (!parsed) return
+  const verdict = typeof parsed.verdict === 'string' ? parsed.verdict : 'continue'
+
+  if (verdict === 'replan' && state.planRevisions < MAX_PLAN_REVISIONS) {
+    if (!applyPlanRevision(state, parsed.steps)) return
+    const note = sanitizePlanText(parsed.note, 160) || t('执行结果与计划不符，已调整剩余步骤')
+    const text = t('已调整执行计划：{p0}', { p0: note })
+    state.reflections.push({ name: 'plan', status: 'warning', text })
+    if (onChunk) onChunk({ kind: 'reflection', name: 'plan', status: 'warning', text })
+    if (typeof options.trace?.addReflection === 'function') {
+      options.trace.addReflection({ name: 'plan', status: 'warning', text })
+    }
+    const remaining = state.plan.steps
+      .filter((step) => step.state === 'pending')
+      .map((step, index) => `${index + 1}. ${step.text}`)
+    appendPlanNote(messages, `[计划更新] ${text}\n剩余步骤：\n${remaining.join('\n')}`)
+    return
+  }
+
+  if (verdict === 'finish') {
+    appendPlanNote(
+      messages,
+      '[进度检查] 计划步骤已全部完成：如果结果足以回答用户，请直接给出最终答复，不要再调用工具。'
+    )
+  }
+}
+
 function createAgentState(plan, options = {}) {
   const runtime = options.runtime || getAgentRuntime()
   const timeout = Number(options.agentTimeout) > 0 ? Number(options.agentTimeout) : runtime.timeoutMs
@@ -721,6 +846,9 @@ function createAgentState(plan, options = {}) {
   return {
     plan,
     planCursor: 0,
+    planMaxSteps: runtime.maxPlanSteps,
+    planRevisions: 0,
+    assessments: 0,
     onPlanChange: null,
     timeout,
     maxIterations: runtime.maxIterations,
@@ -806,7 +934,9 @@ const UTILITY_TOOL_NAMES = new Set([
   'json-format',
   'yaml-validate',
   'file-ops',
-  'web-fetch'
+  'web-fetch',
+  'web-search',
+  'code-exec'
 ])
 const DATABASE_INTENT_PATTERN = /数据库|连接|数据表|表结构|建表|索引|字段|SQL|查询|字典|权限组|脚本|mysql|redis/i
 const CODE_INTENT_PATTERN = /代码|函数|接口|API|文档|审查|优化|重构|README|Swagger|模块|类/i
@@ -995,12 +1125,12 @@ function stringifyToolResult(result) {
   }
 }
 
-async function budgetToolResult(toolResult, callId, store) {
+async function budgetToolResult(toolResult, callId, store, meta = {}) {
   if (!store || typeof store.budget !== 'function') {
     return { content: stringifyToolResult(toolResult), truncated: false, resultId: '' }
   }
   try {
-    return await store.budget(toolResult, callId)
+    return await store.budget(toolResult, callId, meta)
   } catch (error) {
     log.warn('工具结果预算处理失败:', error.message)
     return { content: stringifyToolResult(toolResult), truncated: false, resultId: '' }
@@ -1069,7 +1199,10 @@ async function chatWithToolsInternal(messages, options = {}, iteration = 0) {
       const budgeted =
         call.function.name === 'result-read'
           ? { content: stringifyToolResult(toolResult), truncated: false, resultId: '' }
-          : await budgetToolResult(toolResult, call.id, options.toolResults)
+          : await budgetToolResult(toolResult, call.id, options.toolResults, {
+              tool: call.function.name,
+              conversationId: options.conversationId
+            })
       messages.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -1086,7 +1219,7 @@ async function chatWithToolsInternal(messages, options = {}, iteration = 0) {
 async function chatWithTools(messages, options = {}) {
   const toolsEnabled = options.toolsEnabled !== false
   const tools = toolsEnabled ? selectToolsForIntent(options.tools || (await getAllToolDefinitions()), messages) : []
-  const memoryBlock = await buildMemoryPrompt(options.workspacePath, toolsEnabled)
+  const memoryBlock = await buildMemoryPrompt(options.workspacePath, toolsEnabled, extractLastUserText(messages))
   const behavior = getAiBehavior()
   const systemPrompt = buildSystemPrompt(
     toolsEnabled,
@@ -1104,6 +1237,75 @@ async function chatWithTools(messages, options = {}) {
 
 export async function chat(messages, options = {}) {
   return chatWithTools(messages, options)
+}
+
+const MEMORY_EXTRACT_PROMPT = `你是长期记忆整理器。阅读一轮用户与助手的对话，只提取值得长期复用的内容：
+1. 用户明确表达、可长期沿用的稳定偏好（语言、工具、代码风格、沟通习惯等），scope=global
+2. 当前工作区项目的长期技术选型、架构、目录或协作约定，scope=project
+不要提取：一次性任务与临时数据、命令输出、密码/密钥/令牌等敏感信息、助手未经用户确认的提议、通用知识问答。
+与“已有记忆”重复或等价的条目跳过。
+只输出 JSON 数组（最多 3 条），元素格式：{"scope":"global"|"project","content":"一句话中文描述","tags":["可选标签"]}
+没有可提取内容时输出 []。不要输出 JSON 以外的任何内容。`
+
+function parseMemoryCandidates(raw) {
+  if (typeof raw !== 'string') return []
+  const start = raw.indexOf('[')
+  const end = raw.lastIndexOf(']')
+  if (start < 0 || end <= start) return []
+  try {
+    const parsed = JSON.parse(raw.slice(start, end + 1))
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((item) => item && typeof item === 'object')
+  } catch {
+    return []
+  }
+}
+
+async function captureConversationMemory({ provider, model, messages, reply, workspacePath }) {
+  try {
+    if (!provider || typeof provider.chat !== 'function') return
+    if (getConfig().memory?.auto_capture === false) return
+    const userText = extractLastUserText(messages).trim()
+    const replyText = typeof reply === 'string' ? reply.trim() : ''
+    if (userText.length < 4 || !replyText) return
+
+    const overview = await getMemoryOverview(workspacePath).catch(() => null)
+    const existing = [...(overview?.global || []), ...(overview?.project || [])]
+      .map((entry) =>
+        String(entry?.content || '')
+          .replace(/\s+/g, ' ')
+          .slice(0, 120)
+      )
+      .filter(Boolean)
+      .slice(0, 30)
+
+    const input = [
+      `工作区：${workspacePath || '未绑定（只能保存 global）'}`,
+      existing.length ? `已有记忆：\n${existing.map((text) => `- ${text}`).join('\n')}` : '已有记忆：无',
+      `对话：\n用户：${userText.slice(0, 3000)}\n助手：${replyText.slice(0, 3000)}`
+    ].join('\n\n')
+
+    const response = await provider.chat(
+      [
+        { role: 'system', content: MEMORY_EXTRACT_PROMPT },
+        { role: 'user', content: input }
+      ],
+      [],
+      { model }
+    )
+    if (!response?.success) return
+
+    for (const item of parseMemoryCandidates(response.content).slice(0, 3)) {
+      const content = typeof item.content === 'string' ? item.content.trim() : ''
+      if (content.length < 4 || content.length > 500) continue
+      if (item.scope === 'project' && !workspacePath) continue
+      const scope = item.scope === 'project' ? 'project' : 'global'
+      const result = await addMemory({ scope, workspacePath, content, tags: item.tags, source: 'ai' })
+      if (!result?.success) log.warn('自动记忆保存失败:', result?.error || '未知错误')
+    }
+  } catch (error) {
+    log.warn('自动沉淀记忆失败:', error.message)
+  }
 }
 
 export async function chatStream(messages, options = {}, onChunk) {
@@ -1124,7 +1326,7 @@ export async function chatStream(messages, options = {}, onChunk) {
   const model = options.model || provider.getDefaultModel()
   if (typeof options.trace?.setGoal === 'function') options.trace.setGoal(extractLastUserText(messages))
   const allTools = toolsEnabled ? selectToolsForIntent(options.tools || (await getAllToolDefinitions()), messages) : []
-  const memoryBlock = await buildMemoryPrompt(options.workspacePath, toolsEnabled)
+  const memoryBlock = await buildMemoryPrompt(options.workspacePath, toolsEnabled, extractLastUserText(messages))
   const behavior = getAiBehavior()
   const systemPrompt = buildSystemPrompt(
     toolsEnabled,
@@ -1196,6 +1398,16 @@ export async function chatStream(messages, options = {}, onChunk) {
 
   const modelInfo = provider.getModels()?.find((item) => item.id === model)
   const fileChanges = typeof options.snapshots?.entries === 'function' ? options.snapshots.entries() : []
+
+  if (toolsEnabled && result?.success && !result?.cancelled) {
+    void captureConversationMemory({
+      provider,
+      model,
+      messages,
+      reply: result.content,
+      workspacePath: options.workspacePath
+    })
+  }
 
   return {
     ...result,
@@ -1429,7 +1641,10 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk, s
       entry.budgeted =
         entry.toolName === 'result-read'
           ? { content: stringifyToolResult(toolResult), truncated: false, resultId: '' }
-          : await budgetToolResult(toolResult, entry.call.id, options.toolResults)
+          : await budgetToolResult(toolResult, entry.call.id, options.toolResults, {
+              tool: entry.toolName,
+              conversationId: options.conversationId
+            })
       entry.untrusted = isUntrustedTool(entry.toolName)
       entry.injection = detectPromptInjection(entry.budgeted.content)
       if (entry.injection && !entry.reflection) {
@@ -1475,7 +1690,10 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk, s
         entry.duration = 0
         entry.toolResult = { success: false, denied: true, error: approval.error }
         entry.reflection = reflectOnToolResult(toolName, entry.toolResult)
-        entry.budgeted = await budgetToolResult(entry.toolResult, call.id, options.toolResults)
+        entry.budgeted = await budgetToolResult(entry.toolResult, call.id, options.toolResults, {
+          tool: toolName,
+          conversationId: options.conversationId
+        })
         if (onChunk) {
           onChunk({
             kind: 'tool_end',
@@ -1562,6 +1780,18 @@ async function chatStreamInternal(provider, messages, tools, options, onChunk, s
     }
 
     completePlanStep(state, planStepIndex, state.toolFailed === planFailedBefore)
+
+    if (planStepIndex >= 0 && !shouldStop()) {
+      await reflectOnProgress({
+        provider: active.provider,
+        model: active.model,
+        messages,
+        state,
+        entries: planned,
+        onChunk,
+        options
+      })
+    }
 
     return await chatStreamInternal(
       active.provider,

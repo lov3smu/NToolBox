@@ -186,6 +186,7 @@ import {
   setRecentToolsLimit,
   tools as allTools
 } from '@shared/tools'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
 
 const emit = defineEmits(['open-search'])
 
@@ -219,7 +220,6 @@ const TOOL_GROUPS = [
   }
 ]
 const PICK_TOOL_PATHS = ['/image-hosting', '/markdown-editor', '/json-parser', '/clipboard']
-const SEARCH_ACCELERATOR = 'CmdOrCtrl+K'
 
 const SEARCH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <circle cx="11" cy="11" r="7"/>
@@ -359,7 +359,9 @@ const platformLabel = computed(() => {
   return { darwin: 'macOS', win32: 'Windows', linux: 'Linux' }[platform] || 'Web'
 })
 
-const searchShortcut = computed(() => formatAccelerator(SEARCH_ACCELERATOR))
+const searchShortcut = computed(() =>
+  formatAccelerator(config.value?.app?.shortcuts?.global_search || DEFAULT_SHORTCUT_ACTIONS.global_search)
+)
 
 const greeting = computed(() => {
   const hour = new Date().getHours()

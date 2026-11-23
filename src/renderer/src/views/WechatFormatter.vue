@@ -381,7 +381,7 @@
           <div class="wx-modal-body">
             <div class="wx-drafts-toolbar">
               <span class="wx-field-hint">{{
-                t('共 {count} 篇草稿，保存在本机浏览器存储中。', { count: drafts.length })
+                t('共 {count} 篇草稿，保存在本机数据库中。', { count: drafts.length })
               }}</span>
               <button class="btn btn-primary btn-sm" @click="saveDraft">{{ t('保存当前为新草稿') }}</button>
             </div>
@@ -406,7 +406,7 @@
     </Transition>
 
     <Transition name="wx-fade">
-      <div v-if="aiVisible" class="wx-overlay wx-center-overlay" @click.self="closeAi">
+      <div v-if="aiVisible" class="wx-overlay wx-center-overlay">
         <div class="wx-modal wx-ai-modal">
           <header class="wx-modal-header">
             <h2>{{ t('AI 写作助手') }}</h2>
@@ -503,7 +503,7 @@ import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import { usePaneResize, useToast } from '@/composables'
-import { chat, copyRichText, getConfig, openExternal } from '@/api'
+import { chat, copyRichText, draftImport, draftList, draftRemove, draftSave, getConfig, openExternal } from '@/api'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatDateTime } from '@/utils/format'
 import { renderWechatArticle } from '@/utils/wechatFormatter'
@@ -874,15 +874,18 @@ function scheduleRender() {
 
 watch([content, prefs], scheduleRender, { deep: true })
 
+let draftReady = false
+
 watch(content, () => {
+  if (!draftReady) return
   clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(DRAFT_KEY, content.value)
-      savedAt.value = Date.now()
-    } catch {
-      // 本地存储不可用时仅保留内存草稿
-    }
+  saveTimer = setTimeout(async () => {
+    const result = await draftSave('wechat', {
+      id: 'current',
+      title: draftTitle(),
+      content: content.value
+    })
+    if (result?.success) savedAt.value = Date.now()
   }, 500)
 })
 
@@ -1139,22 +1142,13 @@ function clearContent() {
 }
 
 function loadDrafts() {
-  try {
-    const list = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]')
-    drafts.value = Array.isArray(list)
-      ? list.filter((draft) => draft && typeof draft.content === 'string' && typeof draft.id === 'string')
-      : []
-  } catch {
-    drafts.value = []
-  }
-}
-
-function persistDrafts() {
-  try {
-    localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts.value))
-  } catch {
-    // 忽略本地存储失败
-  }
+  draftList('wechat-draft', { limit: 50 })
+    .then((page) => {
+      drafts.value = Array.isArray(page?.items) ? page.items : []
+    })
+    .catch(() => {
+      drafts.value = []
+    })
 }
 
 function draftTitle() {
@@ -1191,14 +1185,15 @@ function saveDraft() {
     showInfo(t('当前没有可保存的内容'))
     return
   }
-  drafts.value.unshift({
+  const draft = {
     id: `d_${Date.now()}`,
     title: draftTitle(),
     content: content.value,
     updatedAt: Date.now()
-  })
+  }
+  drafts.value.unshift(draft)
   if (drafts.value.length > 30) drafts.value.length = 30
-  persistDrafts()
+  void draftSave('wechat-draft', draft)
   showSuccess(t('已保存到草稿箱'))
 }
 
@@ -1210,7 +1205,7 @@ function loadDraft(draft) {
 
 function deleteDraft(id) {
   drafts.value = drafts.value.filter((draft) => draft.id !== id)
-  persistDrafts()
+  void draftRemove('wechat-draft', id)
 }
 
 function resetStyles() {
@@ -1310,14 +1305,41 @@ function replaceWithAiResult() {
   showSuccess(t('已应用 AI 结果'))
 }
 
-onMounted(() => {
-  splitMedia.addEventListener('change', syncSplitDirection)
+function readLegacyDrafts() {
   try {
-    const draft = localStorage.getItem(DRAFT_KEY)
-    content.value = draft === null ? EXAMPLE : draft
+    const content = localStorage.getItem(DRAFT_KEY)
+    const raw = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]')
+    return {
+      content,
+      drafts: Array.isArray(raw)
+        ? raw.filter((draft) => draft && typeof draft.content === 'string' && typeof draft.id === 'string')
+        : []
+    }
   } catch {
-    content.value = EXAMPLE
+    return { content: null, drafts: [] }
   }
+}
+
+onMounted(async () => {
+  splitMedia.addEventListener('change', syncSplitDirection)
+  const legacy = readLegacyDrafts()
+  let saved = null
+  try {
+    if (legacy.content !== null) {
+      await draftImport('wechat', [{ id: 'current', content: legacy.content, updatedAt: Date.now() }])
+      localStorage.removeItem(DRAFT_KEY)
+    }
+    if (legacy.drafts.length) {
+      await draftImport('wechat-draft', legacy.drafts)
+      localStorage.removeItem(DRAFTS_KEY)
+    }
+    const page = await draftList('wechat', { limit: 1 })
+    saved = page?.items?.[0]?.content ?? null
+  } catch {
+    // 读取失败时回退到旧本地草稿或示例内容
+  }
+  content.value = saved ?? legacy.content ?? EXAMPLE
+  draftReady = true
   loadDrafts()
   renderNow()
   renderDiagrams()

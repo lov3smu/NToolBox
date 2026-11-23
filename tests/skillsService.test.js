@@ -26,7 +26,7 @@ vi.mock('../src/main/utils/index.js', () => ({
 vi.mock('../src/main/services/config', () => ({
   getConfig: vi.fn(() => ({
     ai: { provider: 'bailian' },
-    app: { base_path: testFileBase },
+    sql_generator: { base_path: testFileBase },
     extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} }
   }))
 }))

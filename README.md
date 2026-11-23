@@ -344,17 +344,17 @@ npm run eval
 
 ### 配置文件位置
 
-- **开发环境**: 项目根目录 `config.json`
-- **打包环境**: `~/.config/ntoolbox/config.json`（Windows / macOS / Linux 路径一致）
+- **统一位置**: 开发与打包环境一致，均使用平台配置目录；仓库根目录的旧 `config.json` 只在首次启动时作为迁移来源被复制，不再直接读写
+- **各平台路径**: Linux `$XDG_CONFIG_HOME/ntoolbox/config.json`（默认 `~/.config/ntoolbox/config.json`）；Windows `%APPDATA%\ntoolbox\config.json`；macOS `~/Library/Application Support/ntoolbox/config.json`
 
 ### 主要配置项
 
 | 配置项                                                       | 说明                                                           |
 | :----------------------------------------------------------- | :------------------------------------------------------------- |
-| `base_path`                                                  | SQL 脚本存储根目录                                             |
-| `developer_ch_name` / `developer_en_name`                    | 开发者中英文名                                                 |
-| `text_edit_app`                                              | 打开脚本使用的编辑器                                           |
-| `databases` / `script_types`                                 | SQL 脚本生成的数据库与脚本类型                                 |
+| `sql_generator.base_path`                                    | SQL 脚本存储根目录                                             |
+| `sql_generator.developer.ch_name` / `.en_name`               | 开发者中英文名                                                 |
+| `sql_generator.text_edit_app`                                | 打开脚本使用的编辑器                                           |
+| `sql_generator.databases` / `sql_generator.script_types`     | SQL 脚本生成的数据库与脚本类型                                 |
 | `ai_provider` / `ai_models` / `ai_api_keys` / `ai_base_urls` | AI 服务商、模型、密钥与自定义接口地址                          |
 | `ai_persona` / `ai_temperature`                              | 人设与温度                                                     |
 | `ai_timeout`                                                 | AI 请求超时（秒，10–600）                                      |

@@ -125,8 +125,8 @@
 
             <div class="preview-root">
               <div class="preview-root-label">{{ t('脚本根目录') }}</div>
-              <div class="preview-root-value" :title="config?.app.base_path || ''">
-                {{ config?.app.base_path || t('未配置脚本根目录') }}
+              <div class="preview-root-value" :title="config?.sql_generator.base_path || ''">
+                {{ config?.sql_generator.base_path || t('未配置脚本根目录') }}
               </div>
             </div>
           </div>
@@ -185,6 +185,12 @@
           </div>
         </div>
       </section>
+
+      <ScriptManager
+        ref="scriptManagerRef"
+        class="script-manager-panel"
+        :root-path="config?.sql_generator.base_path || ''"
+      />
     </div>
   </PageLayout>
 </template>
@@ -193,6 +199,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAutoDirName, useConfig } from '@/composables'
 import PageLayout from '@/layouts/PageLayout.vue'
+import ScriptManager from '@/components/ScriptManager.vue'
 import { joinPath } from '@/utils/path'
 import { generateScript, openFile as apiOpenFile, openFolder as apiOpenFolder } from '@/api'
 import { t } from '@/i18n'
@@ -237,6 +244,7 @@ const database = ref('')
 const scriptType = ref('')
 const loading = ref(false)
 const result = ref(null)
+const scriptManagerRef = ref(null)
 
 const databases = computed(() => config.value?.sql_generator.databases || [])
 const scriptTypes = computed(() => config.value?.sql_generator.script_types || [])
@@ -264,7 +272,9 @@ const previewSegments = computed(() => {
 })
 const previewPath = computed(() => {
   const parts = previewSegments.value.map((segment) => segment.label)
-  return config.value?.app.base_path ? joinPath(config.value.app.base_path, parts) : parts.join(' / ')
+  return config.value?.sql_generator.base_path
+    ? joinPath(config.value.sql_generator.base_path, parts)
+    : parts.join(' / ')
 })
 
 function setOperateType(type) {
@@ -311,6 +321,7 @@ async function generate() {
     if (res?.success) {
       lastDirName.value = finalDirName
       localStorage.setItem(LAST_DIR_NAME_KEY, finalDirName)
+      scriptManagerRef.value?.refresh()
     }
   } catch (e) {
     result.value = { success: false, error: e.message }
@@ -362,6 +373,10 @@ watch(config, () => {
   display: flex;
   flex-direction: column;
   width: 100%;
+}
+
+.page-body > .generator-grid + .script-manager-panel {
+  margin-top: 14px;
 }
 
 .generator-grid {

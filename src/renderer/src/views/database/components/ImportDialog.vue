@@ -1,5 +1,5 @@
 <template>
-  <div v-if="importDialog.show" class="dialog-overlay" @click.self="closeImportDialog">
+  <div v-if="importDialog.show" class="dialog-overlay">
     <div class="dialog dialog-large">
       <div class="dialog-header">
         <h3>{{ t('导入数据 ·') }} {{ importDialog.tab?.tableName }}</h3>

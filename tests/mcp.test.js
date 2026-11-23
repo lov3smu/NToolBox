@@ -21,9 +21,10 @@ import {
   isMcpToolName,
   stopMcp
 } from '../src/main/services/mcp.js'
-import { buildMcpToolName, normalizeMcpServers, parseMcpToolName } from '../src/shared/mcp.js'
+import { buildMcpToolName, normalizeMcpServers, parseMcpToolName, splitCommandLine } from '../src/shared/mcp.js'
 
 const fixtureServer = path.join(__dirname, 'fixtures', 'mcpEchoServer.cjs')
+const crashServer = path.join(__dirname, 'fixtures', 'mcpCrashServer.cjs')
 
 function fixtureConfig(overrides = {}) {
   return {
@@ -72,6 +73,19 @@ describe('MCP 服务', () => {
     expect(getMcpStatus()).toHaveLength(2)
   })
 
+  it('启动退出时把 stderr 错误行带进状态信息', async () => {
+    const status = await initMcp([{ name: 'crash', command: process.execPath, args: [crashServer] }])
+    expect(status[0]).toEqual(expect.objectContaining({ status: 'error' }))
+    expect(status[0].error).toContain('IMAP_SECURE')
+  })
+
+  it('启动命令不存在时提示安装并检查 PATH', async () => {
+    const status = await initMcp([{ name: 'missing', command: 'ntb-definitely-missing-cmd', args: [] }])
+    expect(status[0]).toEqual(expect.objectContaining({ status: 'error' }))
+    expect(status[0].error).toContain('ntb-definitely-missing-cmd')
+    expect(status[0].error).toContain('PATH')
+  })
+
   it('禁用服务只出现在状态列表，不注册工具', async () => {
     const status = await initMcp([fixtureConfig({ enabled: false })])
     expect(status[0]).toEqual(expect.objectContaining({ status: 'disabled', toolCount: 0 }))
@@ -94,6 +108,31 @@ describe('MCP 名称与配置规范化', () => {
     expect(parseMcpToolName(name)).toEqual({ server: 'filesystem', tool: 'read_file' })
     expect(parseMcpToolName('file-ops')).toBeNull()
     expect(isMcpToolName(name)).toBe(true)
+  })
+
+  it('整行命令自动拆分为命令与参数', () => {
+    expect(splitCommandLine('npx -y @modelcontextprotocol/server-memory')).toEqual({
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-memory']
+    })
+    expect(splitCommandLine('"/opt/my tools/node" a.js')).toEqual({
+      command: '/opt/my tools/node',
+      args: ['a.js']
+    })
+    expect(splitCommandLine('  ')).toEqual({ command: '', args: [] })
+  })
+
+  it('规范化时合并命令行参数与参数列表', () => {
+    const [server] = normalizeMcpServers([
+      { name: 'memory', command: 'npx -y @modelcontextprotocol/server-memory', args: ['--verbose'] }
+    ])
+    expect(server).toEqual({
+      name: 'memory',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-memory', '--verbose'],
+      env: {},
+      enabled: true
+    })
   })
 
   it('过滤非法与重复服务配置', () => {

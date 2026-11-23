@@ -1,5 +1,5 @@
 <template>
-  <div v-if="showCreateDialog" class="dialog-overlay" @click.self="closeCreateDialog">
+  <div v-if="showCreateDialog" class="dialog-overlay">
     <div class="dialog">
       <div class="dialog-header">
         <h3>{{ t('新建连接') }}</h3>

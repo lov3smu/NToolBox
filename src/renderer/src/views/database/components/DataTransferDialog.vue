@@ -1,5 +1,5 @@
 <template>
-  <div v-if="dataTransferDialog.show" class="dialog-overlay" @click.self="closeDataTransferDialog">
+  <div v-if="dataTransferDialog.show" class="dialog-overlay">
     <div class="dialog data-transfer-dialog">
       <div class="dialog-header">
         <h3 class="transfer-heading">

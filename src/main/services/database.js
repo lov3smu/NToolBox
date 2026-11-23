@@ -2776,23 +2776,24 @@ export async function setDatabaseUserPrivileges(name, action, user, host, privil
   }
 }
 
-export async function getErData(name, database) {
+export async function getErData(name, database, limit = 200) {
   let conn = null
   try {
     const entry = getEntry(name)
     conn = await entry.pool.getConnection()
 
+    const tableLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 200, 1), 1000)
     const [tables] = await conn.query(
       `SELECT TABLE_NAME AS name, TABLE_COMMENT AS comment
        FROM information_schema.TABLES
        WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
-       ORDER BY TABLE_NAME LIMIT 200`,
+       ORDER BY TABLE_NAME LIMIT ${tableLimit}`,
       [database]
     )
 
     const [columns] = await conn.query(
       `SELECT TABLE_NAME AS tableName, COLUMN_NAME AS name, COLUMN_TYPE AS columnType,
-              COLUMN_KEY AS columnKey, IS_NULLABLE AS nullable
+              COLUMN_KEY AS columnKey, IS_NULLABLE AS nullable, COLUMN_COMMENT AS comment
        FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = ?
        ORDER BY TABLE_NAME, ORDINAL_POSITION`,

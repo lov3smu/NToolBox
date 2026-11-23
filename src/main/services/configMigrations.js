@@ -1,4 +1,4 @@
-export const CONFIG_VERSION = 2
+export const CONFIG_VERSION = 3
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -104,11 +104,33 @@ function migrateV1ToV2(raw) {
   return out
 }
 
+function migrateV2ToV3(raw) {
+  const app = isPlainObject(raw.app) ? { ...raw.app } : {}
+  const sqlGenerator = isPlainObject(raw.sql_generator) ? { ...raw.sql_generator } : {}
+
+  if (app.base_path !== undefined && sqlGenerator.base_path === undefined) sqlGenerator.base_path = app.base_path
+  if (isPlainObject(app.developer) && sqlGenerator.developer === undefined) sqlGenerator.developer = app.developer
+  if (app.text_edit_app !== undefined && sqlGenerator.text_edit_app === undefined) {
+    sqlGenerator.text_edit_app = app.text_edit_app
+  }
+  delete app.base_path
+  delete app.developer
+  delete app.text_edit_app
+
+  const out = { ...raw }
+  if (Object.keys(app).length > 0) out.app = app
+  else delete out.app
+  if (Object.keys(sqlGenerator).length > 0) out.sql_generator = sqlGenerator
+  else delete out.sql_generator
+  return out
+}
+
 export function migrateConfig(raw) {
   if (!isPlainObject(raw)) return { config: {}, migrated: false }
   const version = Number.isInteger(raw.config_version) && raw.config_version > 0 ? raw.config_version : 1
   if (version >= CONFIG_VERSION) return { config: raw, migrated: false }
-  const config = migrateV1ToV2(raw)
+  let config = version < 2 ? migrateV1ToV2(raw) : raw
+  if (version < 3) config = migrateV2ToV3(config)
   config.config_version = CONFIG_VERSION
   return { config, migrated: true }
 }

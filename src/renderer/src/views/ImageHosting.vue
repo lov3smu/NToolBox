@@ -132,7 +132,7 @@
         <section class="panel history-panel">
           <div class="panel-header">
             <span class="panel-title">{{ t('上传记录') }}</span>
-            <span class="history-count">{{ history.length }}</span>
+            <span class="history-count">{{ historyTotal }}</span>
             <div class="panel-actions history-actions">
               <div class="segmented link-format">
                 <button
@@ -146,7 +146,7 @@
                   {{ format.label }}
                 </button>
               </div>
-              <button v-if="history.length" class="btn btn-danger btn-sm" @click="requestClearHistory">
+              <button v-if="historyTotal" class="btn btn-danger btn-sm" @click="requestClearHistory">
                 {{ t('清空') }}
               </button>
             </div>
@@ -226,6 +226,14 @@
                   </button>
                 </div>
               </article>
+              <button
+                v-if="historyHasMore"
+                class="btn btn-sm history-more"
+                :disabled="historyLoading"
+                @click="loadMoreHistory"
+              >
+                {{ historyLoading ? t('加载中…') : t('加载更多') }}
+              </button>
             </div>
           </div>
         </section>
@@ -288,6 +296,9 @@ const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarni
 
 const settings = ref(createDefaultImageHostSettings())
 const history = ref([])
+const historyTotal = ref(0)
+const historyHasMore = ref(false)
+const historyLoading = ref(false)
 const tasks = ref([])
 const loading = ref(true)
 const uploading = ref(false)
@@ -342,10 +353,28 @@ async function applySettings(next) {
   settings.value = normalizeImageHostSettings(next)
 }
 
+function applyHistoryPage(page, append = false) {
+  if (!page || !Array.isArray(page.items)) return
+  history.value = append ? [...history.value, ...page.items] : page.items
+  historyTotal.value = Number(page.total) || 0
+  historyHasMore.value = page.hasMore === true
+}
+
 async function loadState() {
-  const state = await imageHostState()
+  const state = await imageHostState({ offset: 0 })
   if (state?.settings) await applySettings(state.settings)
-  history.value = Array.isArray(state?.history) ? state.history : []
+  applyHistoryPage(state?.history)
+}
+
+async function loadMoreHistory() {
+  if (historyLoading.value || !historyHasMore.value) return
+  historyLoading.value = true
+  try {
+    const state = await imageHostState({ offset: history.value.length })
+    applyHistoryPage(state?.history, true)
+  } finally {
+    historyLoading.value = false
+  }
 }
 
 function updateTask(id, patch) {
@@ -377,13 +406,14 @@ async function persistSettings(options = {}) {
 
   if (response?.success) {
     await applySettings(response.settings)
-    if (Array.isArray(response.history)) history.value = response.history
+    applyHistoryPage(response.history)
     if (options.successMessage) showInfo(options.successMessage)
     return true
   }
 
-  const state = await imageHostState()
+  const state = await imageHostState({ offset: 0 })
   if (state?.settings) await applySettings(state.settings)
+  applyHistoryPage(state?.history)
   showError(t('保存图床配置失败'))
   return false
 }
@@ -453,7 +483,7 @@ function requestRemoveRecord(record) {
 async function removeRecord(id) {
   const response = await imageHostRemoveHistory(id)
   if (response?.success) {
-    history.value = response.history
+    applyHistoryPage(response.history)
     showInfo(t('已删除该条上传记录'))
   } else {
     showError(t('删除记录失败'))
@@ -461,7 +491,7 @@ async function removeRecord(id) {
 }
 
 function requestClearHistory() {
-  if (!history.value.length) return
+  if (!historyTotal.value) return
   pendingConfirm.value = {
     kind: 'clear',
     message: t('确定要清空全部上传记录吗？该操作不会删除图床上的图片。')
@@ -471,7 +501,7 @@ function requestClearHistory() {
 async function clearHistory() {
   const response = await imageHostClearHistory()
   if (response?.success) {
-    history.value = response.history
+    applyHistoryPage(response.history)
     showInfo(t('已清空上传记录'))
   } else {
     showError(t('清空记录失败'))
@@ -527,7 +557,7 @@ async function startUpload(paths) {
       }
     })
 
-    if (Array.isArray(response?.history)) history.value = response.history
+    applyHistoryPage(response?.history)
 
     const successCount = results.filter((result) => result?.success).length
     if (successCount > 0) {
@@ -570,7 +600,7 @@ async function uploadClipboard() {
       }
     }
 
-    if (Array.isArray(response?.history)) history.value = response.history
+    applyHistoryPage(response?.history)
   } catch (error) {
     updateTask(task.id, { status: 'error', error: error?.message || t('上传失败') })
     showError(error?.message || t('上传失败'))
@@ -1077,6 +1107,11 @@ button.history-thumb:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.history-more {
+  align-self: center;
+  margin: 4px 0 2px;
 }
 
 .history-item {

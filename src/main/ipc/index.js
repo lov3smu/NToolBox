@@ -29,6 +29,30 @@ import {
   getProviderModels,
   getAiProviderCatalog
 } from '../services/chat.js'
+import {
+  deleteChatSession,
+  importChatSessions,
+  loadChatMessagePage,
+  loadChatSessionSummaries,
+  loadChatSessions,
+  saveChatSession
+} from '../services/sqlite/chatRepository.js'
+import {
+  addDbQueryHistory,
+  addDbSnippetFolder,
+  clearDbQueryHistory,
+  importDbQueryHistory,
+  importDbSnippetFolders,
+  importDbSnippets,
+  listDbQueryHistory,
+  listDbSnippetFolders,
+  listDbSnippets,
+  pruneDbQueryHistory,
+  removeDbQueryHistory,
+  removeDbSnippet,
+  saveDbSnippet
+} from '../services/sqlite/dbToolsRepository.js'
+import { importDrafts, listDrafts, removeDraft, saveDraft } from '../services/sqlite/draftRepository.js'
 import { getWorkspaceInfo, openWorkspaceItem } from '../services/workspace.js'
 import {
   KNOWLEDGE_FILE_EXTENSIONS,
@@ -37,6 +61,7 @@ import {
   updateMemory,
   removeMemory,
   clearMemory,
+  clearProjectMemory,
   addKnowledgeSource,
   removeKnowledgeSource,
   setKnowledgeSourceEnabled,
@@ -254,17 +279,17 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.openFile, async (_event, filePath) => {
     if (!filePath || typeof filePath !== 'string') return false
     const config = getConfig()
-    if (config.app.base_path && !isPathWithinBase(filePath, config.app.base_path)) {
+    if (config.sql_generator.base_path && !isPathWithinBase(filePath, config.sql_generator.base_path)) {
       log.warn('拒绝打开 base_path 外的文件:', filePath)
       return false
     }
-    return await openFile(filePath, config.app.text_edit_app)
+    return await openFile(filePath, config.sql_generator.text_edit_app)
   })
 
   handle(IPC_CHANNELS.openFolder, async (_event, folderPath) => {
     if (!folderPath || typeof folderPath !== 'string') return false
     const config = getConfig()
-    if (config.app.base_path && !isPathWithinBase(folderPath, config.app.base_path)) {
+    if (config.sql_generator.base_path && !isPathWithinBase(folderPath, config.sql_generator.base_path)) {
       log.warn('拒绝打开 base_path 外的文件夹:', folderPath)
       return false
     }
@@ -444,7 +469,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.readDirectory, async (_event, dirPath, options = {}) => {
     try {
       const config = getConfig()
-      const basePath = config.app.base_path
+      const basePath = config.sql_generator.base_path
 
       if (!dirPath || typeof dirPath !== 'string') {
         return { success: false, error: '路径无效' }
@@ -496,7 +521,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.searchDirectory, async (_event, rootPath, keyword, options = {}) => {
     try {
       const config = getConfig()
-      const basePath = config.app.base_path
+      const basePath = config.sql_generator.base_path
 
       if (!rootPath || typeof rootPath !== 'string') {
         return { success: false, error: '路径无效' }
@@ -577,7 +602,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.copyToClipboard, async (_event, itemPath, recursive = false) => {
     try {
       const config = getConfig()
-      const basePath = config.app.base_path
+      const basePath = config.sql_generator.base_path
 
       if (!itemPath || typeof itemPath !== 'string') {
         return false
@@ -644,7 +669,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.getItemInfo, async (_event, itemPath) => {
     try {
       const config = getConfig()
-      const basePath = config.app.base_path
+      const basePath = config.sql_generator.base_path
 
       if (!itemPath || typeof itemPath !== 'string') {
         return { success: false, error: '路径无效' }
@@ -700,7 +725,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
       event.sender.send(IPC_EVENTS.chatStreamChunk, { requestId, ...eventPayload })
     }
 
-    const snapshots = createSnapshotStore(requestId)
+    const snapshots = createSnapshotStore(requestId, { conversationId: options.conversationId })
     const budgetConfig = getConfig()
     const toolResults = createToolResultStore(requestId, {
       maxResultChars: normalizeAiToolResultMaxKb(budgetConfig.ai.tool_result.max_kb) * 1024,
@@ -829,8 +854,8 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return await restoreSnapshot(requestId)
   })
 
-  handle(IPC_CHANNELS.listRunTraces, async (_event, limit, conversationId) => {
-    return await listRunTraces(limit, conversationId)
+  handle(IPC_CHANNELS.listRunTraces, async (_event, options) => {
+    return await listRunTraces(options)
   })
 
   handle(IPC_CHANNELS.runTraceStats, async () => {
@@ -871,6 +896,18 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return await compressChatContext(messages, options)
   })
 
+  handle(IPC_CHANNELS.chatLoadSessions, async () => await loadChatSessions())
+
+  handle(IPC_CHANNELS.chatSessionSummaries, async (_event, options) => await loadChatSessionSummaries(options))
+
+  handle(IPC_CHANNELS.chatImportSessions, async (_event, sessions) => await importChatSessions(sessions))
+
+  handle(IPC_CHANNELS.chatSaveSession, async (_event, session) => await saveChatSession(session))
+
+  handle(IPC_CHANNELS.chatDeleteSession, async (_event, id) => await deleteChatSession(id))
+
+  handle(IPC_CHANNELS.chatMessagePage, async (_event, options) => await loadChatMessagePage(options))
+
   handle(IPC_CHANNELS.workspaceInfo, async (_event, workspacePath) => {
     return await getWorkspaceInfo(workspacePath)
   })
@@ -899,6 +936,10 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return await clearMemory(input)
   })
 
+  handle(IPC_CHANNELS.memoryClearProject, async (_event, workspacePath) => {
+    return await clearProjectMemory(workspacePath)
+  })
+
   handle(IPC_CHANNELS.memoryKnowledgeAdd, async (_event, input) => {
     return await addKnowledgeSource(input)
   })
@@ -917,6 +958,12 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
   handle(IPC_CHANNELS.validateApiKey, async (_event, providerType, apiKey, extraConfig) => {
     return await validateApiKey(providerType, apiKey, extraConfig)
+  })
+
+  handle(IPC_CHANNELS.getAiApiKey, async (_event, providerType) => {
+    if (typeof providerType !== 'string' || !providerType) return ''
+    const value = getConfig().ai?.keys?.[providerType]
+    return typeof value === 'string' ? value : ''
   })
 
   handle(IPC_CHANNELS.getAiProviders, async () => {
@@ -1044,8 +1091,8 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return await killSession(name, threadId, mode)
   })
 
-  handle(IPC_CHANNELS.dbGetErData, async (_event, name, database) => {
-    return await getErData(name, database)
+  handle(IPC_CHANNELS.dbGetErData, async (_event, name, database, limit) => {
+    return await getErData(name, database, limit)
   })
 
   handle(IPC_CHANNELS.dbExplainQuery, async (_event, name, database, sql) => {
@@ -1210,6 +1257,84 @@ export function registerIPCHandlers(ipc = ipcMain) {
 
     await fs.promises.writeFile(result.filePath, String(content ?? ''), 'utf-8')
     return { canceled: false, filePath: result.filePath }
+  })
+
+  function dbHistoryLimit(options = {}) {
+    const configured = Number(getConfig().database?.history_limit)
+    const value = Number(options.historyLimit) || configured || 200
+    return Math.min(200, Math.max(1, Math.floor(value)))
+  }
+
+  handle(IPC_CHANNELS.dbToolsState, async (_event, options = {}) => {
+    const limit = dbHistoryLimit(options)
+    const legacy = options.legacy || {}
+    if (Array.isArray(legacy.history) && legacy.history.length) {
+      await importDbQueryHistory(legacy.history.slice(0, limit), limit)
+    }
+    if (Array.isArray(legacy.snippets) && legacy.snippets.length) {
+      await importDbSnippets(legacy.snippets)
+    }
+    if (Array.isArray(legacy.folders) && legacy.folders.length) {
+      await importDbSnippetFolders(legacy.folders)
+    }
+    await pruneDbQueryHistory(limit)
+    const [history, snippets, folders] = await Promise.all([
+      listDbQueryHistory({ limit: 50, offset: options.offset }),
+      listDbSnippets(),
+      listDbSnippetFolders()
+    ])
+    return { history, snippets, folders }
+  })
+
+  handle(IPC_CHANNELS.dbHistoryAdd, async (_event, entry, options = {}) => {
+    const saved = await addDbQueryHistory(entry, dbHistoryLimit(options))
+    return { success: saved }
+  })
+
+  handle(IPC_CHANNELS.dbHistoryRemove, async (_event, id) => {
+    return { success: await removeDbQueryHistory(id) }
+  })
+
+  handle(IPC_CHANNELS.dbHistoryClear, async () => {
+    return { success: await clearDbQueryHistory() }
+  })
+
+  handle(IPC_CHANNELS.dbHistoryImport, async (_event, records, options = {}) => {
+    const imported = await importDbQueryHistory(records, dbHistoryLimit(options))
+    return { success: true, imported }
+  })
+
+  handle(IPC_CHANNELS.dbSnippetSave, async (_event, snippet) => {
+    return { success: await saveDbSnippet(snippet) }
+  })
+
+  handle(IPC_CHANNELS.dbSnippetRemove, async (_event, id) => {
+    return { success: await removeDbSnippet(id) }
+  })
+
+  handle(IPC_CHANNELS.dbSnippetFolderAdd, async (_event, name) => {
+    return { success: await addDbSnippetFolder(name) }
+  })
+
+  function draftRetention(kind) {
+    return kind === 'wechat-draft' ? 30 : 1
+  }
+
+  handle(IPC_CHANNELS.draftList, async (_event, kind, options = {}) => {
+    return listDrafts(kind, { limit: options?.limit, offset: options?.offset })
+  })
+
+  handle(IPC_CHANNELS.draftSave, async (_event, kind, draft) => {
+    return { success: await saveDraft(kind, draft) }
+  })
+
+  handle(IPC_CHANNELS.draftRemove, async (_event, kind, id) => {
+    return { success: await removeDraft(kind, id) }
+  })
+
+  handle(IPC_CHANNELS.draftImport, async (_event, kind, drafts) => {
+    const imported = await importDrafts(kind, drafts, draftRetention(kind))
+    return { success: true, imported }
   })
 
   handle(IPC_CHANNELS.selectSqlFile, async () => {
@@ -1381,8 +1506,8 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return { success: false, error: '未找到可打开的图片或文件夹' }
   })
 
-  handle(IPC_CHANNELS.imageHostState, async () => {
-    const state = getImageHostState()
+  handle(IPC_CHANNELS.imageHostState, async (_event, options) => {
+    const state = await getImageHostState(options)
     return { ...state, settings: maskImageHostSettings(state.settings) }
   })
 
@@ -1408,11 +1533,12 @@ export function registerIPCHandlers(ipc = ipcMain) {
   handle(IPC_CHANNELS.imageHostUploadClipboard, async () => {
     const image = clipboard.readImage()
     if (!image || image.isEmpty()) {
+      const state = await getImageHostState()
       return {
         success: false,
         results: [],
         error: '剪贴板中没有图片',
-        history: getImageHostState().history
+        history: state.history
       }
     }
     return uploadImageBuffer({

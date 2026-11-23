@@ -1,8 +1,8 @@
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
-import { app } from 'electron'
 import log from './logger'
+import { getConfigDir } from './path'
 
 const ALGORITHM = 'aes-256-gcm'
 const KEY_LENGTH = 32
@@ -13,14 +13,17 @@ const ENCRYPTED_PREFIX = 'enc:'
 let encryptionKey = null
 
 function getKeyPath() {
-  const userDataPath = app.getPath('userData')
-  return path.join(userDataPath, '.dbkey')
+  return path.join(getConfigDir(), '.dbkey')
 }
 
 async function generateAndSaveKey() {
   const key = crypto.randomBytes(KEY_LENGTH)
   const keyPath = getKeyPath()
-  await fs.promises.writeFile(keyPath, key.toString('base64'), 'utf8')
+  await fs.promises.mkdir(path.dirname(keyPath), { recursive: true, mode: 0o700 })
+  await fs.promises.writeFile(keyPath, key.toString('base64'), { encoding: 'utf8', mode: 0o600 })
+  if (process.platform !== 'win32') {
+    await fs.promises.chmod(keyPath, 0o600).catch(() => {})
+  }
   return key
 }
 
@@ -32,6 +35,9 @@ async function loadOrGenerateKey() {
     if (key.length !== KEY_LENGTH) {
       log.warn('加密密钥长度不正确，重新生成')
       return await generateAndSaveKey()
+    }
+    if (process.platform !== 'win32') {
+      await fs.promises.chmod(keyPath, 0o600).catch(() => {})
     }
     return key
   } catch (error) {

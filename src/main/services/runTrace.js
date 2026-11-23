@@ -3,6 +3,13 @@ import fs from 'node:fs'
 import { t } from './i18n.js'
 import { app } from 'electron'
 import { log } from '../utils'
+import {
+  listRunTraces as listRunTracesPage,
+  pruneRunTraces,
+  runTraceStats,
+  upsertRunTrace,
+  upsertRunTraces
+} from './sqlite/runTraceRepository.js'
 
 const RETENTION_MS = 7 * 24 * 60 * 60 * 1000
 const MAX_STEPS = 40
@@ -10,9 +17,10 @@ const MAX_CONTENT_PREVIEW = 2000
 const LIST_LIMIT = 30
 
 let cleanedUp = false
+let filesIndexed = false
 
 function tracesRoot() {
-  return path.join(app.getPath('userData'), 'agent-runs')
+  return path.join(app.getPath('userData'), 'agent', 'runs')
 }
 
 function normalizeRunId(runId) {
@@ -25,6 +33,31 @@ function normalizeRunId(runId) {
 function traceFile(runId) {
   const id = normalizeRunId(runId)
   return id ? path.join(tracesRoot(), `${id}.json`) : ''
+}
+
+function indexRow(trace, file) {
+  return {
+    id: trace.id,
+    startedAt: Number(trace.startedAt) || 0,
+    endedAt: Number(trace.endedAt) || null,
+    durationMs: Number(trace.durationMs) || 0,
+    status: trace.status || 'running',
+    termination: trace.termination || '',
+    goal: trace.plan?.goal || trace.goal || trace.summary?.goal || '',
+    workspace: trace.meta?.workspacePath || '',
+    conversationId: trace.meta?.conversationId || '',
+    provider: trace.meta?.provider || '',
+    model: trace.meta?.model || '',
+    toolCalls: Array.isArray(trace.steps) ? trace.steps.length : 0,
+    error: trace.error || '',
+    filePath: file
+  }
+}
+
+function persistIndex(trace, file) {
+  void upsertRunTrace(indexRow(trace, file)).catch((error) => {
+    log.warn('写入运行轨迹索引失败:', error.message)
+  })
 }
 
 async function cleanupOldTraces() {
@@ -42,6 +75,7 @@ async function cleanupOldTraces() {
         await fs.promises.rm(file, { force: true })
       }
     }
+    await pruneRunTraces(now - RETENTION_MS).catch(() => {})
   } catch (error) {
     log.warn('清理历史运行轨迹失败:', error.message)
   }
@@ -105,6 +139,7 @@ export function createRunTrace(runId, meta = {}) {
     if (finished) return
     trace.plan = plan || null
     persist()
+    persistIndex(trace, file)
   }
 
   function setGoal(goal) {
@@ -116,6 +151,7 @@ export function createRunTrace(runId, meta = {}) {
     if (!text) return
     trace.goal = text
     persist()
+    persistIndex(trace, file)
   }
 
   async function finish(payload = {}) {
@@ -130,62 +166,55 @@ export function createRunTrace(runId, meta = {}) {
     trace.error = payload.error || null
     trace.contentPreview = String(payload.content || '').slice(0, MAX_CONTENT_PREVIEW)
     await persist()
+    await upsertRunTrace(indexRow(trace, file)).catch((error) => {
+      log.warn('写入运行轨迹索引失败:', error.message)
+    })
     return { id, file }
   }
 
   persist()
+  persistIndex(trace, file)
   return { id, addStep, addReflection, setPlan, setGoal, finish }
 }
 
-async function readTraceRows() {
+async function ensureIndexed() {
+  if (filesIndexed) return
+  filesIndexed = true
   await cleanupOldTraces()
   const root = tracesRoot()
   const entries = await fs.promises.readdir(root, { withFileTypes: true }).catch(() => [])
   const rows = []
-
   for (const entry of entries) {
     if (!entry.isFile() || !entry.name.endsWith('.json')) continue
+    const file = path.join(root, entry.name)
     const data = await fs.promises
-      .readFile(path.join(root, entry.name), 'utf8')
+      .readFile(file, 'utf8')
       .then((raw) => JSON.parse(raw))
       .catch(() => null)
     if (!data || typeof data !== 'object') continue
-    rows.push({
-      id: data.id || entry.name.replace(/\.json$/, ''),
-      startedAt: Number(data.startedAt) || 0,
-      endedAt: Number(data.endedAt) || null,
-      durationMs: Number(data.durationMs) || 0,
-      status: data.status || 'ended',
-      termination: data.termination || '',
-      goal: data.plan?.goal || data.goal || data.summary?.goal || '',
-      workspace: data.meta?.workspacePath || '',
-      conversationId: data.meta?.conversationId || '',
-      error: data.error || '',
-      provider: data.meta?.provider || '',
-      model: data.meta?.model || '',
-      toolCalls: Array.isArray(data.steps) ? data.steps.length : 0
-    })
+    rows.push(indexRow({ id: entry.name.replace(/\.json$/, ''), ...data }, file))
   }
-
-  return rows
+  if (rows.length) await upsertRunTraces(rows)
+  await pruneRunTraces(Date.now() - RETENTION_MS)
 }
 
-export async function listRunTraces(limit = LIST_LIMIT, conversationId = '') {
-  const rows = await readTraceRows()
-  const scoped = conversationId ? rows.filter((row) => row.conversationId === conversationId) : rows
-  scoped.sort((a, b) => b.startedAt - a.startedAt)
-  const max = Math.max(1, Math.min(LIST_LIMIT, Math.floor(Number(limit) || LIST_LIMIT)))
-  return scoped.slice(0, max)
+export async function listRunTraces(options = {}) {
+  const normalized = typeof options === 'number' ? { limit: options } : options || {}
+  await ensureIndexed()
+  const page = await listRunTracesPage({
+    limit: normalized.limit || LIST_LIMIT,
+    offset: normalized.offset || 0,
+    keyword: normalized.keyword || '',
+    status: normalized.status && normalized.status !== 'all' ? normalized.status : '',
+    conversationId: normalized.conversationId || '',
+    since: Date.now() - RETENTION_MS
+  })
+  return page
 }
 
 export async function countRunTracesByWorkspace() {
-  const rows = await readTraceRows()
-  const byWorkspace = {}
-  for (const row of rows) {
-    if (!row.workspace) continue
-    byWorkspace[row.workspace] = (byWorkspace[row.workspace] || 0) + 1
-  }
-  return { total: rows.length, byWorkspace }
+  await ensureIndexed()
+  return runTraceStats({ since: Date.now() - RETENTION_MS })
 }
 
 export async function readRunTrace(runId) {

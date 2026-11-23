@@ -1,5 +1,5 @@
 <template>
-  <div v-if="createTableDialog.show" class="dialog-overlay" @click.self="closeCreateTableDialog">
+  <div v-if="createTableDialog.show" class="dialog-overlay">
     <div class="dialog dialog-wide create-table-dialog">
       <div class="dialog-header">
         <h3>{{ t('新建表 ·') }} {{ createTableDialog.database }}</h3>

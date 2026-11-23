@@ -1,6 +1,7 @@
 import { app, nativeImage } from 'electron'
 import path from 'path'
 import fs from 'fs'
+import { getAppPaths } from './appPaths'
 
 export function getInstallDir() {
   return app.isPackaged ? path.dirname(app.getPath('exe')) : process.cwd()
@@ -45,23 +46,31 @@ export function getWindowIcon() {
   return icon.resize({ width: LINUX_WINDOW_ICON_SIZE, height: LINUX_WINDOW_ICON_SIZE, quality: 'best' })
 }
 
-export function getLogDir() {
-  if (app.isPackaged) {
-    // AppImage 的安装目录是只读挂载点，安装目录下无法创建日志
-    return path.join(app.getPath('userData'), 'logs')
-  } else {
-    return path.join(getProjectRoot(), 'logs')
+export function getConfigDir() {
+  return getAppPaths().configDir
+}
+
+// 启动时 prepareStorageLayout 会把 userData 指向数据根目录；未初始化时回落到解析结果
+export function getDataDir() {
+  try {
+    return app.getPath('userData')
+  } catch {
+    return getAppPaths().dataDir
   }
 }
 
+export function getCacheDir() {
+  return getAppPaths().cacheDir
+}
+
+export function getLogsDir() {
+  return getAppPaths().logsDir
+}
+
+export function getLogDir() {
+  return getLogsDir()
+}
+
 export function getConfigPath() {
-  if (app.isPackaged) {
-    const configDir = path.join(app.getPath('home'), '.config', 'ntoolbox')
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true })
-    }
-    return path.join(configDir, 'config.json')
-  } else {
-    return path.join(getProjectRoot(), 'config.json')
-  }
+  return path.join(getConfigDir(), 'config.json')
 }

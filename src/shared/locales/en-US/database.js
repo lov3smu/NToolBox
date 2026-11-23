@@ -24,6 +24,19 @@ export default {
   'AI 生成 SQL': 'AI-generated SQL',
   'AI 生成失败': 'AI generation failed',
   'AI 生成失败: {message}': 'AI generation failed: {message}',
+  '目标数据库：{p0}': 'Target database: {p0}',
+  '正在分析表结构并生成 SQL...': 'Analyzing schema and generating SQL...',
+  请先选择要分析的目标数据库: 'Select a target database to analyze first',
+  '你是一位资深 MySQL 工程师。请先分析下面数据库中的表、字段、注释和外键关系，再根据需求生成可直接执行的 SQL。':
+    'You are a senior MySQL engineer. Analyze the tables, columns, comments and foreign keys of the database below, then generate SQL that can be executed directly.',
+  '要求：只使用结构中真实存在的表和字段，不得臆造；表或字段含义不明确时按名称与注释选择最匹配的。':
+    'Requirements: use only tables and columns that actually exist in the schema; never invent them. If a table or column is ambiguous, pick the best match by name and comment.',
+  '生成前先在表结构中定位需求涉及的业务表：按表名、表注释和字段注释匹配业务含义（例如需求提到“合同”，应使用表名或注释中含“合同”的表），表名是英文或缩写时也不要跳过。':
+    'Before generating, locate the business tables involved in the requirement within the schema: match business meaning against table names, table comments and column comments (for example, when the requirement mentions "contract", use the table whose name or comment contains "contract"); do not skip a table just because its name is in English or abbreviated.',
+  '需要多表关联时优先使用外键关系；只输出 SQL，使用 MySQL 语法，不要输出解释性文字，多条语句用英文分号分隔。':
+    'When joining tables, prefer the listed foreign keys. Output SQL only in MySQL syntax without explanations; separate multiple statements with semicolons.',
+  '未能读取数据库结构，请根据常见命名约定谨慎推断。':
+    'The schema could not be read; infer carefully from common naming conventions.',
   'CA 证书路径': 'CA certificate path',
   'CSV 文件为空或缺少数据行': 'CSV file is empty or has no data rows',
   'ER 图 ·': 'ER Diagram ·',
@@ -385,6 +398,7 @@ export default {
   '已复制 {p0} 行 CSV': 'Copied {p0} rows as CSV',
   '已复制 {p0} 行 INSERT 语句': 'Copied {p0} rows as INSERT statements',
   '已复制为新行，请修改后提交': 'Copied as a new row; edit it before submitting',
+  '已复制 SQL': 'Copied SQL',
   已复制单元格内容: 'Copied cell content',
   '已复制该行 INSERT 语句': 'Copied INSERT statement for this row',
   '已导入 {p0} 个连接': 'Imported {p0} connections',

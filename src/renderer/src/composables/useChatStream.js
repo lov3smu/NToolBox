@@ -60,7 +60,7 @@ export function useChatStream({
 
   function updateSessionTitle(sessionId, firstMessage) {
     const session = sessions.value.find((s) => s.id === sessionId)
-    if (session && session.title === t('新会话') && firstMessage) {
+    if (session && (!session.title || session.title === t('新会话')) && firstMessage) {
       session.title = firstMessage.slice(0, 20) + (firstMessage.length > 20 ? '...' : '')
     }
   }
@@ -103,9 +103,7 @@ export function useChatStream({
         name: event.name || t('工具'),
         arguments: event.arguments || '',
         status: 'running',
-        get statusText() {
-          return t('执行中')
-        }
+        statusText: t('执行中')
       })
     } else if (event.kind === 'tool_end') {
       const steps = message.steps || []
@@ -123,9 +121,7 @@ export function useChatStream({
           name: event.name || t('工具'),
           arguments: '',
           status: 'denied',
-          get statusText() {
-            return t('已拒绝')
-          }
+          statusText: t('已拒绝')
         })
         step = message.steps[message.steps.length - 1]
       }
@@ -171,7 +167,7 @@ export function useChatStream({
         const allowlist = new Set(Array.isArray(session.toolAllowlist) ? session.toolAllowlist : [])
         allowlist.add(approval.key)
         session.toolAllowlist = [...allowlist]
-        saveSessions()
+        saveSessions(session.id)
       }
     }
     const ok = await respondChatApproval(approval.approvalId, { decision })
@@ -184,8 +180,8 @@ export function useChatStream({
   }
 
   function switchChatTab(tab) {
-    chatTab.value = tab === 'traces' ? 'traces' : 'chat'
-    if (chatTab.value === 'traces' && contextPanelOpen.value) toggleContextPanel()
+    chatTab.value = tab === 'traces' ? 'traces' : tab === 'memory' ? 'memory' : 'chat'
+    if (chatTab.value !== 'chat' && contextPanelOpen.value) toggleContextPanel()
   }
 
   function openRunTrace(message) {
@@ -204,7 +200,7 @@ export function useChatStream({
       if (result?.success) {
         message.rolledBack = true
         showSuccess(t('已撤销 {p0} 个文件的修改', { p0: result.restored || 0 }))
-        saveSessions()
+        saveSessions(currentSession.value?.id)
         if (currentSession.value?.workspace) refreshWorkspaceInfo()
       } else {
         showError(result?.error || t('撤销失败'))
@@ -287,7 +283,7 @@ export function useChatStream({
 
       session.updatedAt = Date.now()
       persistPendingStream(null)
-      saveSessions()
+      saveSessions(session.id)
       if (session.workspace) refreshWorkspaceInfo()
       refreshRunStats()
       if (currentSessionId.value === session.id) scrollToBottom()
@@ -320,7 +316,7 @@ export function useChatStream({
     loading.value = false
     markStreamInterrupted(assistantMessage)
     persistPendingStream(null)
-    saveSessions()
+    saveSessions(session.id)
     if (currentSessionId.value === session.id) scrollToBottom()
   }
 
@@ -362,7 +358,7 @@ export function useChatStream({
           p1: formatTokens(result.afterTokens),
           p2: result.keptCount
         })
-        saveSessions()
+        saveSessions(session.id)
       } else {
         assistantMessage.contextNote = t('上下文压缩失败：{p0}，本轮继续使用完整历史', {
           p0: result?.error || t('未知错误')
@@ -377,7 +373,7 @@ export function useChatStream({
   }
 
   async function sendMessage(e) {
-    if (e && (e.shiftKey || e.isComposing)) return
+    if (e && e.isComposing) return
     const text = inputText.value.trim()
     const files = attachments.value.slice()
     if ((!text && files.length === 0) || loading.value) return
@@ -402,7 +398,7 @@ export function useChatStream({
     session.messages.push({ role: 'user', content: text, attachments: files })
     session.updatedAt = Date.now()
     updateSessionTitle(currentSessionId.value, text || files[0]?.name || t('附件消息'))
-    saveSessions()
+    saveSessions(session.id)
 
     const requestId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     currentRequestId.value = requestId
@@ -426,7 +422,7 @@ export function useChatStream({
         delete assistantMessage.contextNote
         finalizeContent(assistantMessage)
         persistPendingStream(null)
-        saveSessions()
+        saveSessions(session.id)
         return
       }
 
@@ -455,7 +451,7 @@ export function useChatStream({
       finishMessageTiming(assistantMessage)
       assistantMessage.content = t('请求失败: {p0}', { p0: error.message })
       persistPendingStream(null)
-      saveSessions()
+      saveSessions(session.id)
       scrollToBottom()
     }
   }

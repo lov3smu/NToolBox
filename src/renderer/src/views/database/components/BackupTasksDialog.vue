@@ -1,5 +1,5 @@
 <template>
-  <div v-if="backupDialog.show" class="dialog-overlay" @click.self="closeBackupDialog">
+  <div v-if="backupDialog.show" class="dialog-overlay">
     <div class="dialog backup-dialog">
       <div class="dialog-header">
         <h3>{{ t('定时备份与导出') }}</h3>

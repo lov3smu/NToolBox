@@ -1,5 +1,5 @@
 <template>
-  <div v-if="showEditDialog" class="dialog-overlay" @click.self="closeEditDialog">
+  <div v-if="showEditDialog" class="dialog-overlay">
     <div class="dialog">
       <div class="dialog-header">
         <h3>{{ t('编辑连接') }}</h3>

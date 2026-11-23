@@ -6,6 +6,7 @@ import {
   normalizeDatabaseRefreshInterval,
   normalizeDatabaseTransferBatchSize
 } from '@shared/databaseClient'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
 import { createState } from './state'
 import { createMessages } from './useMessages'
 import { createLayout } from './useLayout'
@@ -40,6 +41,9 @@ export function useDatabase(appConfig) {
     normalizeDatabaseTransferBatchSize(appConfig?.value?.database?.transfer_batch_size)
   )
   const queryHistoryLimit = computed(() => normalizeDatabaseHistoryLimit(appConfig?.value?.database?.history_limit))
+  const runShortcut = computed(
+    () => appConfig?.value?.app?.shortcuts?.database_run || DEFAULT_SHORTCUT_ACTIONS.database_run
+  )
 
   Object.assign(
     api,
@@ -47,7 +51,7 @@ export function useDatabase(appConfig) {
     createLayout(state),
     createMenus(state, api),
     createSidebar(state, api),
-    createTabs(state, api),
+    createTabs(state, api, { runShortcut }),
     createPagination(state, api),
     createFormat(state, api),
     createObjects(state, api),

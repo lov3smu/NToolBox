@@ -194,6 +194,7 @@
                         <div class="step-label">{{ step.metadata.finalUrl ? t('来源') : t('产出') }}</div>
                         <pre>{{ step.metadata.finalUrl || step.metadata.destination || step.metadata.path }}</pre>
                       </div>
+                      <ChatResultCard v-if="step.metadata" :metadata="step.metadata" />
                       <div v-if="step.result" class="step-block">
                         <div class="step-label">{{ t('结果') }}</div>
                         <pre>{{ step.result }}</pre>
@@ -358,6 +359,7 @@ import { ref } from 'vue'
 import { t } from '@/i18n'
 import { renderMarkdown } from '@/utils/markdown'
 import ChatApprovalCard from '@/components/ChatApprovalCard.vue'
+import ChatResultCard from './ChatResultCard.vue'
 
 defineProps({
   messages: { type: Array, default: () => [] },

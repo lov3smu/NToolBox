@@ -226,7 +226,7 @@ import MessageDialog from '@/components/MessageDialog.vue'
 import { usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatDateTime } from '@/utils/format'
-import { openExternal } from '@/api'
+import { draftImport, draftList, draftSave, openExternal } from '@/api'
 import { decorateMarkdownPreview, renderMarkdownPreview } from '@/utils/markdownEditor'
 import SplitHandle from '@/components/SplitHandle.vue'
 import '@/styles/markdown.css'
@@ -415,6 +415,7 @@ const savedTime = computed(() => {
 
 let renderTimer = null
 let saveTimer = null
+let draftReady = false
 
 function scheduleRender() {
   clearTimeout(renderTimer)
@@ -429,14 +430,11 @@ watch(
   content,
   () => {
     scheduleRender()
+    if (!draftReady) return
     clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => {
-      try {
-        localStorage.setItem(DRAFT_KEY, content.value)
-        savedAt.value = Date.now()
-      } catch {
-        // 本地存储不可用时仅保留内存草稿
-      }
+    saveTimer = setTimeout(async () => {
+      const result = await draftSave('markdown', { id: 'current', content: content.value })
+      if (result?.success) savedAt.value = Date.now()
     }, 500)
   },
   { immediate: true }
@@ -589,13 +587,30 @@ function clearContent() {
   showSuccess(t('已清空编辑内容'))
 }
 
-onMounted(() => {
-  splitMedia.addEventListener('change', syncSplitDirection)
+function readLegacyDraft() {
   try {
-    content.value = localStorage.getItem(DRAFT_KEY) || buildExample()
+    return localStorage.getItem(DRAFT_KEY)
   } catch {
-    content.value = buildExample()
+    return null
   }
+}
+
+onMounted(async () => {
+  splitMedia.addEventListener('change', syncSplitDirection)
+  const legacy = readLegacyDraft()
+  let saved = null
+  try {
+    if (legacy !== null) {
+      await draftImport('markdown', [{ id: 'current', content: legacy, updatedAt: Date.now() }])
+      localStorage.removeItem(DRAFT_KEY)
+    }
+    const page = await draftList('markdown', { limit: 1 })
+    saved = page?.items?.[0]?.content ?? null
+  } catch {
+    // 读取失败时回退到旧本地草稿或示例内容
+  }
+  content.value = saved ?? legacy ?? buildExample()
+  draftReady = true
   scheduleRender()
   nextTick(() => {
     decorateMarkdownPreview(previewScrollRef.value)

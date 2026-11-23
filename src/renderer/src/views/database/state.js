@@ -224,6 +224,7 @@ export function createState(options = {}) {
   const aiDialog = ref({
     show: false,
     tab: null,
+    database: '',
     prompt: '',
     loading: false,
     result: '',
@@ -380,6 +381,12 @@ export function createState(options = {}) {
   })
 
   const queryHistory = ref([])
+
+  const historyTotal = ref(0)
+
+  const historyHasMore = ref(false)
+
+  const historyLoading = ref(false)
 
   const querySnippets = ref([])
 
@@ -616,6 +623,9 @@ export function createState(options = {}) {
     connectionTransferDialog,
     dataTransferDialog,
     queryHistory,
+    historyTotal,
+    historyHasMore,
+    historyLoading,
     querySnippets,
     snippetFolders,
     tableMeta,

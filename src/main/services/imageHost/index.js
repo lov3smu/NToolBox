@@ -4,14 +4,23 @@ import crypto from 'crypto'
 import { getConfig, saveConfig } from '../config.js'
 import { log } from '../../utils/index.js'
 import {
-  IMAGE_HOST_HISTORY_LIMIT,
   getImageHostMaxFileSize,
   getMissingRequiredFields,
   getProviderMeta,
-  normalizeImageHostConfig,
+  normalizeImageHostHistory,
+  normalizeImageHostHistoryLimit,
   normalizeImageHostSettings,
   normalizeProviderSettings
 } from '../../../shared/imageHosts.js'
+import {
+  IMAGE_HISTORY_PAGE_SIZE,
+  addImageUploads,
+  clearImageUploads,
+  importImageUploads,
+  listImageUploads,
+  pruneImageUploads,
+  removeImageUpload
+} from '../sqlite/imageRepository.js'
 import { getImageMime } from './utils.js'
 import { testProvider, uploadToProvider } from './providers.js'
 import { restoreMaskedImageHostSettings } from '../../../shared/secrets.js'
@@ -21,47 +30,54 @@ import { t, getLocale } from '../i18n.js'
 const MAX_BATCH_SIZE = 20
 const MAX_CONCURRENCY = 3
 
-let historyQueue = Promise.resolve()
+let legacyImport = null
 
-function currentConfig() {
-  return normalizeImageHostConfig(getConfig()?.image_hosting)
+function currentSettings() {
+  return normalizeImageHostSettings(getConfig()?.image_hosting)
 }
 
-export function getImageHostState() {
-  const config = currentConfig()
-  return {
-    settings: normalizeImageHostSettings(config),
-    history: config.history
+async function ensureLegacyHistory() {
+  if (!legacyImport) {
+    legacyImport = (async () => {
+      const raw = getConfig()?.image_hosting
+      const legacy = normalizeImageHostHistory(raw?.history, normalizeImageHostHistoryLimit(raw?.historyLimit))
+      if (!legacy.length) return
+      await importImageUploads(legacy, normalizeImageHostHistoryLimit(raw?.historyLimit))
+      await saveConfig({ image_hosting: { ...normalizeImageHostSettings(raw), history: [] } })
+    })().catch((error) => {
+      legacyImport = null
+      throw error
+    })
   }
+  return legacyImport
+}
+
+async function firstHistoryPage() {
+  return listImageUploads({ limit: IMAGE_HISTORY_PAGE_SIZE, offset: 0 })
+}
+
+export async function getImageHostState(options = {}) {
+  const settings = currentSettings()
+  await ensureLegacyHistory()
+  const page = await listImageUploads({
+    limit: options.limit ?? IMAGE_HISTORY_PAGE_SIZE,
+    offset: options.offset ?? 0
+  })
+  return { settings, historyLimit: settings.historyLimit, history: page }
 }
 
 export async function saveImageHostSettings(input) {
-  const current = currentConfig()
-  const settings = normalizeImageHostSettings(restoreMaskedImageHostSettings(input, current))
-  const next = { ...settings, history: current.history }
-  const saved = await saveConfig({ image_hosting: next })
+  const settings = normalizeImageHostSettings(restoreMaskedImageHostSettings(input, currentSettings()))
+  const saved = await saveConfig({ image_hosting: settings })
   if (!saved) throw new Error(t('保存图床配置失败'))
 
-  const state = getImageHostState()
-  return { success: true, settings: state.settings, history: state.history }
-}
-
-function enqueueHistoryUpdate(mutator) {
-  const task = historyQueue.then(async () => {
-    const config = currentConfig()
-    const history = mutator(config.history).slice(0, config.historyLimit)
-    const saved = await saveConfig({
-      image_hosting: { ...normalizeImageHostSettings(config), history }
-    })
-    if (!saved) throw new Error(t('保存上传记录失败'))
-    return history
-  })
-  historyQueue = task.catch(() => {})
-  return task
+  await pruneImageUploads(settings.historyLimit)
+  const state = await getImageHostState()
+  return { success: true, settings: state.settings, historyLimit: state.historyLimit, history: state.history }
 }
 
 function resolveUploadContext() {
-  const { settings, history } = getImageHostState()
+  const settings = currentSettings()
   const meta = getProviderMeta(settings.active)
   if (!meta) throw new Error(t('当前图床类型无效，请重新选择'))
 
@@ -78,7 +94,6 @@ function resolveUploadContext() {
 
   return {
     settings,
-    history,
     meta,
     providerSettings: { ...providerSettings, rename: settings.rename }
   }
@@ -157,14 +172,14 @@ async function mapLimit(items, limit, mapper) {
   return results
 }
 
-async function commitHistory(records, fallbackHistory, historyLimit = IMAGE_HOST_HISTORY_LIMIT) {
-  if (!records.length) return fallbackHistory
+async function commitHistory(records, historyLimit) {
+  if (!records.length) return firstHistoryPage()
   try {
-    return await enqueueHistoryUpdate((history) => [...records, ...history])
+    await addImageUploads(records, historyLimit)
   } catch (error) {
     log.error('保存图床上传记录失败:', error)
-    return [...records, ...fallbackHistory].slice(0, historyLimit)
   }
+  return firstHistoryPage()
 }
 
 export async function uploadImagePaths(paths) {
@@ -172,14 +187,16 @@ export async function uploadImagePaths(paths) {
     ? [...new Set(paths.filter((item) => typeof item === 'string' && item.trim()))].slice(0, MAX_BATCH_SIZE)
     : []
   if (!candidates.length) {
-    return { success: false, results: [], error: t('未选择图片'), history: currentConfig().history }
+    await ensureLegacyHistory()
+    return { success: false, results: [], error: t('未选择图片'), history: await firstHistoryPage() }
   }
 
   let context
   try {
     context = resolveUploadContext()
   } catch (error) {
-    return { success: false, results: [], error: error.message, history: currentConfig().history }
+    await ensureLegacyHistory()
+    return { success: false, results: [], error: error.message, history: await firstHistoryPage() }
   }
 
   const uploads = await mapLimit(candidates, MAX_CONCURRENCY, async (filePath) => {
@@ -201,7 +218,7 @@ export async function uploadImagePaths(paths) {
 
   const results = uploads.map((entry) => entry.result)
   const records = uploads.map((entry) => entry.record).filter(Boolean)
-  const history = await commitHistory(records, context.history, context.settings.historyLimit)
+  const history = await commitHistory(records, context.settings.historyLimit)
   const successCount = records.length
   const failedCount = results.length - successCount
 
@@ -226,42 +243,47 @@ export async function uploadImagePaths(paths) {
 export async function uploadImageBuffer({ buffer, name, mime }) {
   const data = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || [])
   if (!data.length) {
-    return { success: false, results: [], error: t('剪贴板中没有图片'), history: currentConfig().history }
+    await ensureLegacyHistory()
+    return { success: false, results: [], error: t('剪贴板中没有图片'), history: await firstHistoryPage() }
   }
-  const maxBytes = getImageHostMaxFileSize(currentConfig())
+  const settings = currentSettings()
+  const maxBytes = getImageHostMaxFileSize(settings)
   if (data.length > maxBytes) {
+    await ensureLegacyHistory()
     return {
       success: false,
       results: [],
       error: t('图片超过 {size}MB，暂不支持上传', { size: Math.round(maxBytes / 1024 / 1024) }),
-      history: currentConfig().history
+      history: await firstHistoryPage()
     }
   }
 
   const fileName = path.basename(name || 'clipboard.png')
   const fileMime = mime || getImageMime(fileName)
   if (!fileMime || !String(fileMime).startsWith('image/')) {
-    return { success: false, results: [], error: t('不支持的图片格式'), history: currentConfig().history }
+    await ensureLegacyHistory()
+    return { success: false, results: [], error: t('不支持的图片格式'), history: await firstHistoryPage() }
   }
 
   let context
   try {
     context = resolveUploadContext()
   } catch (error) {
-    return { success: false, results: [], error: error.message, history: currentConfig().history }
+    await ensureLegacyHistory()
+    return { success: false, results: [], error: error.message, history: await firstHistoryPage() }
   }
 
   try {
     const file = { filePath: fileName, name: fileName, mime: fileMime, size: data.length, buffer: data }
     const { result, record } = await uploadPreparedFile(file, context)
-    const history = await commitHistory([record], context.history, context.settings.historyLimit)
+    const history = await commitHistory([record], context.settings.historyLimit)
     void notify('upload_done', { title: t('上传完成'), body: t('图片已上传到图床') })
     return { success: true, results: [result], history, error: '' }
   } catch (error) {
     return {
       success: false,
       results: [{ success: false, name: fileName, error: error?.message || t('上传失败') }],
-      history: context.history,
+      history: await firstHistoryPage(),
       error: error?.message || t('上传失败')
     }
   }
@@ -273,7 +295,10 @@ export async function testImageHostProvider(providerId, rawSettings) {
 
   const settings = normalizeProviderSettings(
     providerId,
-    restoreMaskedImageHostSettings({ providers: { [providerId]: rawSettings } }, currentConfig()).providers[providerId]
+    restoreMaskedImageHostSettings(
+      { providers: { [providerId]: rawSettings } },
+      { providers: currentSettings().providers }
+    ).providers[providerId]
   )
   const missing = getMissingRequiredFields(providerId, settings)
   if (missing.length) {
@@ -293,11 +318,11 @@ export async function testImageHostProvider(providerId, rawSettings) {
 }
 
 export async function clearImageHostHistory() {
-  const history = await enqueueHistoryUpdate(() => [])
-  return { success: true, history }
+  await clearImageUploads()
+  return { success: true, history: await firstHistoryPage() }
 }
 
 export async function removeImageHostHistory(id) {
-  const history = await enqueueHistoryUpdate((items) => items.filter((item) => item.id !== id))
-  return { success: true, history }
+  await removeImageUpload(id)
+  return { success: true, history: await firstHistoryPage() }
 }

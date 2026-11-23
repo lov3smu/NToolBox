@@ -1,5 +1,5 @@
 <template>
-  <div v-if="userDialog.show" class="dialog-overlay" @click.self="closeUserDialog">
+  <div v-if="userDialog.show" class="dialog-overlay">
     <div class="dialog dialog-wide user-dialog">
       <div class="dialog-header">
         <h3>

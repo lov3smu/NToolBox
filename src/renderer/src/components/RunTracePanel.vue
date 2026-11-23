@@ -8,7 +8,7 @@
         </svg>
         <input v-model="keyword" type="text" :placeholder="t('筛选目标、模型、工作区或终止原因')" />
       </label>
-      <span class="runs-count">{{ filteredRuns.length }} / {{ scopedRuns.length }}</span>
+      <span class="runs-count">{{ runs.length }} / {{ runsTotal }}</span>
       <div v-if="conversationId" class="runs-scope" role="group" :aria-label="t('轨迹范围')">
         <button type="button" class="runs-chip" :class="{ active: scope === 'session' }" @click="setScope('session')">
           {{ t('当前会话') }}
@@ -84,6 +84,15 @@
               </div>
             </button>
           </div>
+          <button
+            v-if="runsHasMore"
+            type="button"
+            class="runs-btn runs-more"
+            :disabled="loadingMore"
+            @click="loadMoreRuns"
+          >
+            {{ loadingMore ? t('加载中…') : t('加载更多') }}
+          </button>
         </div>
       </div>
 
@@ -228,7 +237,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { t } from '@/i18n'
 import { listRunTraces, readRunTrace, exportRunTrace } from '@/api'
 
@@ -307,6 +316,9 @@ const PLAN_STATE_LABELS = {
 }
 
 const runs = ref([])
+const runsTotal = ref(0)
+const runsHasMore = ref(false)
+const loadingMore = ref(false)
 const selectedId = ref('')
 const trace = ref(null)
 const keyword = ref('')
@@ -346,40 +358,7 @@ const STATUS_FILTERS = [
   }
 ]
 
-function statusKind(run) {
-  const value = run?.termination || run?.status || ''
-  if (value === 'goal_reached') return 'done'
-  if (value === 'cancelled') return 'stopped'
-  if (value === 'error' || value === 'timeout' || value === 'max_steps') return 'error'
-  return 'other'
-}
-
-const scopedRuns = computed(() => {
-  if (scope.value === 'session' && props.conversationId) {
-    return runs.value.filter((run) => run.conversationId === props.conversationId)
-  }
-  return runs.value
-})
-
-const filteredRuns = computed(() => {
-  const query = keyword.value.trim().toLowerCase()
-  return scopedRuns.value.filter((run) => {
-    if (statusFilter.value !== 'all' && statusKind(run) !== statusFilter.value) return false
-    if (!query) return true
-    return [
-      run.goal,
-      run.model,
-      run.provider,
-      run.workspace,
-      run.error,
-      terminationLabel(run.termination || run.status)
-    ].some((value) =>
-      String(value || '')
-        .toLowerCase()
-        .includes(query)
-    )
-  })
-})
+const filteredRuns = computed(() => runs.value)
 
 function dayStart(offset = 0) {
   const date = new Date()
@@ -410,12 +389,17 @@ const successCount = computed(() => (trace.value?.steps || []).filter((step) => 
 const failCount = computed(() => (trace.value?.steps || []).filter((step) => step.success === false).length)
 const longestStep = computed(() => Math.max(0, ...(trace.value?.steps || []).map((step) => Number(step.duration) || 0)))
 
-function keepSelectionVisible() {
-  if (filteredRuns.value.some((run) => run.id === selectedId.value)) return
-  selectedId.value = filteredRuns.value[0]?.id || ''
-  if (selectedId.value) loadTrace(selectedId.value)
-  else trace.value = null
-}
+let keywordTimer = null
+watch(keyword, () => {
+  clearTimeout(keywordTimer)
+  keywordTimer = setTimeout(() => {
+    loadRuns(selectedId.value)
+  }, 250)
+})
+
+onUnmounted(() => {
+  clearTimeout(keywordTimer)
+})
 
 async function setScope(value) {
   const next = value === 'all' ? 'all' : 'session'
@@ -427,8 +411,9 @@ async function setScope(value) {
 }
 
 function setStatusFilter(value) {
+  if (statusFilter.value === value) return
   statusFilter.value = value
-  keepSelectionVisible()
+  loadRuns(selectedId.value)
 }
 
 function terminationLabel(value) {
@@ -507,17 +492,32 @@ async function loadTrace(id) {
   }
 }
 
+function runQuery({ offset = 0 } = {}) {
+  const requestedScope = scope.value === 'session' && props.conversationId ? 'session' : 'all'
+  return {
+    limit: 30,
+    offset,
+    keyword: keyword.value.trim(),
+    status: statusFilter.value,
+    conversationId: requestedScope === 'session' ? props.conversationId : ''
+  }
+}
+
 async function loadRuns(preferredId) {
   loading.value = true
   listError.value = ''
   try {
     const requestedScope = scope.value === 'session' && props.conversationId ? 'session' : 'all'
-    let list = await listRunTraces(30, requestedScope === 'session' ? props.conversationId : '')
+    let page = await listRunTraces(runQuery())
+    let list = Array.isArray(page?.items) ? page.items : []
     if (preferredId && requestedScope === 'session' && !list.some((item) => item.id === preferredId)) {
-      list = await listRunTraces(30, '')
+      page = await listRunTraces({ ...runQuery(), conversationId: '' })
+      list = Array.isArray(page?.items) ? page.items : []
       if (list.some((item) => item.id === preferredId)) scope.value = 'all'
     }
-    runs.value = Array.isArray(list) ? list : []
+    runs.value = list
+    runsTotal.value = Number(page?.total) || list.length
+    runsHasMore.value = page?.hasMore === true
     const preferred = runs.value.find((item) => item.id === (preferredId || selectedId.value))
     const visible = filteredRuns.value
     const target = visible.some((item) => item.id === preferred?.id) ? preferred.id : visible[0]?.id || ''
@@ -525,11 +525,31 @@ async function loadRuns(preferredId) {
     if (!target && !detailLoading.value) trace.value = null
   } catch (error) {
     runs.value = []
+    runsTotal.value = 0
+    runsHasMore.value = false
     listError.value = error?.message || t('加载运行轨迹失败')
   } finally {
     loading.value = false
   }
   if (selectedId.value) await loadTrace(selectedId.value)
+}
+
+async function loadMoreRuns() {
+  if (loadingMore.value || !runsHasMore.value) return
+  loadingMore.value = true
+  listError.value = ''
+  try {
+    const page = await listRunTraces(runQuery({ offset: runs.value.length }))
+    const list = Array.isArray(page?.items) ? page.items : []
+    const seen = new Set(runs.value.map((item) => item.id))
+    runs.value = [...runs.value, ...list.filter((item) => !seen.has(item.id))]
+    runsTotal.value = Number(page?.total) || runsTotal.value
+    runsHasMore.value = page?.hasMore === true
+  } catch (error) {
+    listError.value = error?.message || t('加载运行轨迹失败')
+  } finally {
+    loadingMore.value = false
+  }
 }
 
 function selectRun(id) {
@@ -689,6 +709,13 @@ onMounted(() => {
 .runs-btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.runs-more {
+  align-self: center;
+  margin: 6px 0 2px;
+  height: var(--control-height-sm);
+  font-size: var(--font-size-xs);
 }
 
 .runs-body {

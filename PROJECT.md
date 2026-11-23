@@ -272,7 +272,10 @@
 
 - 配置键变更必须保留旧键读取兼容，经 `src/main/services/config.js` 归一化默认值
 - 每类配置在 `src/shared/<domain>.js` 提供 `normalizeXxx`，config.js 只负责编排调用，不重复定义枚举或默认值
-- 生产配置位于 `~/.config/ntoolbox/config.json`（全平台同路径）；开发期 userData 固定，不得移动 `.dbkey` 相关路径
+- 存储目录由 `src/main/utils/appPaths.js` 解析、`storageLayout.js` 在启动最早期应用：目录名固定为 `ntoolbox`，不随 app name 变化；Linux 遵循 XDG（配置 `$XDG_CONFIG_HOME/ntoolbox`、数据 `$XDG_DATA_HOME/ntoolbox`、缓存 `$XDG_CACHE_HOME/ntoolbox`、日志 `$XDG_STATE_HOME/ntoolbox/logs`），Windows 配置在 `%APPDATA%\ntoolbox`、数据/缓存/日志在 `%LOCALAPPDATA%\ntoolbox`，macOS 用 `~/Library/Application Support|Caches|Logs`
+- 角色分离：配置目录放 `config.json`（及 `.bak` / `.previous`）、`.dbkey`（及 `.previous`）与一次性 `.layout-migrated` 标记；数据目录放 SQLite、`memory/`、`skills/`、`plugins/`、`agent/{runs,results,snapshots}/`、`mcp/`、`password-vault.json`；Chromium profile 走缓存目录；日志走日志目录
+- 旧布局（userData 根目录平铺）由 `layoutMigration.js` 一次性迁移，并同步改写 SQLite 内的绝对路径；新 Chromium profile 已有同名条目时，纯缓存（`Cache`、`Code Cache` 等）直接删除旧副本，状态数据重命名为 `<name>.previous` 保留；迁移后清理空的旧根目录与配置目录空壳，配置目录若仍出现已知 Chromium 条目则按体积告警；迁前无 `.layout-migrated` 标记时，开发版仓库根 `config.json` 若比目标文件更新则接管（原文件备份为 `config.json.previous`）；随后 `storageLayout.js` 用配置中的真实密文在候选密钥（配置目录、仓库根、旧 userData 根）中选出能解密的那把替换为 `.dbkey`（被替换的密钥保留为 `.dbkey.previous`），标记写入后不再重复接管；禁止在 userData 根目录新增散落文件，禁止重新引入按 app name 推导的目录
+- 本地 SQLite 表统一约定：每张表必须包含 `id`、`created_at`、`updated_at` 三列，仓储写入时同步维护；schema 变更只能向 `src/main/services/sqlite/schema.js` 追加迁移条目（`PRAGMA user_version`），不得改写既有条目，该约定由 `tests/sqlite.test.js` 校验
 
 ## 15. 测试与验证
 

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="aiDialog.show" class="dialog-overlay" @click.self="closeAiDialog">
+  <div v-if="aiDialog.show" class="dialog-overlay">
     <div class="dialog dialog-large">
       <div class="dialog-header">
         <h3>{{ t('AI 生成 SQL') }}</h3>
@@ -13,6 +13,9 @@
       <div class="dialog-content ai-dialog-content">
         <div class="form-group">
           <label>{{ t('需求描述') }}</label>
+          <div v-if="aiDialog.database" class="ai-dialog-target">
+            {{ t('目标数据库：{p0}', { p0: aiDialog.database }) }}
+          </div>
           <textarea
             v-model="aiDialog.prompt"
             class="ai-prompt-input"
@@ -22,7 +25,7 @@
           />
         </div>
         <div v-if="aiDialog.error" class="dialog-alert error">{{ aiDialog.error }}</div>
-        <div v-if="aiDialog.loading" class="ai-loading">{{ t('正在生成 SQL...') }}</div>
+        <div v-if="aiDialog.loading" class="ai-loading">{{ t('正在分析表结构并生成 SQL...') }}</div>
         <div v-else-if="aiDialog.result" class="ai-result">
           <div class="ai-result-title">{{ t('生成结果') }}</div>
           <pre class="sql-preview-block">{{ aiDialog.result }}</pre>

@@ -119,7 +119,7 @@
         {{ error }}
       </div>
 
-      <div v-else-if="!config?.app.base_path || isDirectoryNotExist" class="empty-state">
+      <div v-else-if="!config?.sql_generator.base_path || isDirectoryNotExist" class="empty-state">
         <span class="empty-state-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
@@ -369,7 +369,7 @@ const properties = ref({
 
 const pathParts = computed(() => {
   if (!currentPath.value) return []
-  const base = config.value?.app.base_path || ''
+  const base = config.value?.sql_generator.base_path || ''
   const relative = currentPath.value.replace(base, '').replace(/^[\\/]/, '')
   return relative ? relative.split(/[\\/]/).filter(Boolean) : []
 })
@@ -401,9 +401,9 @@ const sourceFiles = computed(() =>
 const displayedItems = computed(() => [...sortItems(sourceDirectories.value), ...sortItems(sourceFiles.value)])
 
 const isAtRoot = computed(() => {
-  if (!currentPath.value || !config.value?.app.base_path) return true
+  if (!currentPath.value || !config.value?.sql_generator.base_path) return true
   const normalizePath = (p) => p.replace(/[\\/]+$/, '').toLowerCase()
-  return normalizePath(currentPath.value) === normalizePath(config.value.app.base_path)
+  return normalizePath(currentPath.value) === normalizePath(config.value.sql_generator.base_path)
 })
 
 const isDirectoryNotExist = computed(() => {
@@ -453,7 +453,7 @@ async function loadDirectorySizes(dirPath, token) {
 }
 
 function navigateToRoot() {
-  const base = config.value?.app.base_path
+  const base = config.value?.sql_generator.base_path
   if (base) {
     resetSearch()
     loadDirectory(base)
@@ -465,7 +465,7 @@ function goToSettings() {
 }
 
 function navigateToPath(index) {
-  const base = config.value?.app.base_path || ''
+  const base = config.value?.sql_generator.base_path || ''
   const parts = pathParts.value.slice(0, index + 1)
   resetSearch()
   loadDirectory(joinPath(base, parts))
@@ -506,7 +506,7 @@ function selectSort(option) {
 function goToParent() {
   if (isAtRoot.value) return
 
-  const base = config.value?.app.base_path || ''
+  const base = config.value?.sql_generator.base_path || ''
   const parts = pathParts.value
   if (parts.length > 0) {
     resetSearch()
@@ -738,7 +738,7 @@ onMounted(() => {
 })
 
 watch(
-  () => config.value?.app.base_path,
+  () => config.value?.sql_generator.base_path,
   (basePath) => {
     if (basePath) {
       resetSearch()

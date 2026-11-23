@@ -1,5 +1,5 @@
 <template>
-  <div v-if="schemaDiffDialog.show" class="dialog-overlay" @click.self="closeSchemaDiffDialog">
+  <div v-if="schemaDiffDialog.show" class="dialog-overlay">
     <div class="dialog dialog-wide schema-diff-dialog">
       <div class="dialog-header">
         <h3>{{ t('结构对比') }}</h3>

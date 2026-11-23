@@ -37,7 +37,7 @@ vi.mock('../src/main/services/config.js', () => ({
     },
     database: { connections: [] },
     extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} },
-    app: { base_path: '', text_edit_app: '' },
+    sql_generator: { base_path: '', text_edit_app: '' },
     network: { market_sources: {} },
     update: { auto_update: false, check_interval: 24 },
     appearance: { theme: 'system' },

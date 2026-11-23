@@ -10,13 +10,13 @@ Skills 是 AI 助手的可扩展工具模块。每个 Skill 就是一条 functio
 |------|------|------|
 | builtin | `src/main/skills/builtin/<name>/` | 随应用打包，只读，不可卸载、不可被同名用户技能覆盖 |
 | market | `src/main/skills/market/<name>/` | 随应用打包的技能市场模板，安装后复制到用户目录 |
-| user | `<userData>/skills/<name>/` | 用户安装或自行开发的技能；开发模式下 userData 固定为 `<appData>/ntoolbox` |
+| user | `<dataDir>/skills/<name>/` | 用户安装或自行开发的技能；`dataDir` 由 `src/main/utils/appPaths.js` 解析（见 PROJECT.md 存储布局） |
 | remote | ClawHub | 通过远程市场安装，安装方式与 market 相同（临时目录 + rename） |
 
 ## 目录结构
 
 ```
-builtin/                 # 或 market/、<userData>/skills/
+builtin/                 # 或 market/、<dataDir>/skills/
 └── skill-name/
     ├── skill.json       # 必需：工具定义
     ├── handler.js       # 可选：本地执行逻辑（与 promptTemplate 二选一）

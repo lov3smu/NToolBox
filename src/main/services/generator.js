@@ -58,19 +58,19 @@ export async function generateSQLFile(scriptInfo) {
     let targetPath
     switch (scriptInfo.operateType) {
       case 'FIX':
-        targetPath = path.join(config.app.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
+        targetPath = path.join(config.sql_generator.base_path, 'PRODUCT-FIX', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'PUBLISH':
-        targetPath = path.join(config.app.base_path, 'PUBLISH', currentYear, normalizedDirName)
+        targetPath = path.join(config.sql_generator.base_path, 'PUBLISH', currentYear, normalizedDirName)
         if (scriptInfo.scriptType) targetPath = path.join(targetPath, scriptInfo.scriptType)
         break
       case 'QUERY':
-        targetPath = path.join(config.app.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
+        targetPath = path.join(config.sql_generator.base_path, 'DATA-QUERY', currentYear, normalizedDirName)
         break
     }
 
-    if (!isPathWithinBase(targetPath, config.app.base_path)) {
+    if (!isPathWithinBase(targetPath, config.sql_generator.base_path)) {
       throw new Error(t('目标路径超出允许范围'))
     }
 
@@ -99,7 +99,7 @@ export async function generateSQLFile(scriptInfo) {
     filename = filename.replace(/\s/g, '_')
 
     const filePath = path.join(targetPath, filename)
-    if (!isPathWithinBase(filePath, config.app.base_path)) {
+    if (!isPathWithinBase(filePath, config.sql_generator.base_path)) {
       throw new Error(t('生成的文件路径超出允许范围'))
     }
 
@@ -107,13 +107,13 @@ export async function generateSQLFile(scriptInfo) {
     const safeUsageComment = String(scriptInfo.usage)
       .replace(/[\r\n]+/g, ' ')
       .trim()
-    const safeDevEnName = escapeSql(config.app.developer.en_name)
+    const safeDevEnName = escapeSql(config.sql_generator.developer.en_name)
     const safeFilename = escapeSql(filename)
     const safeDbIdentifier = escapeIdentifier(scriptInfo.database)
 
     const content = `-- Please use UTF8 encoding without BOM
 -- Script Usage: ${safeUsageComment}
--- Script Author: ${config.app.developer.ch_name}
+-- Script Author: ${config.sql_generator.developer.ch_name}
 -- Creation Time: ${currentDate}
 
 USE ${safeDbIdentifier};

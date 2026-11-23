@@ -246,6 +246,11 @@
     overflow-y: auto;
   }
 
+  .history-more {
+    align-self: center;
+    margin: 4px 0 2px;
+  }
+
   .history-item {
     display: flex;
     flex-direction: column;
@@ -301,6 +306,13 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .ai-dialog-target {
+    margin: -4px 0 6px;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-xs);
+    font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
   }
 
   .ai-prompt-input {

@@ -786,10 +786,38 @@
   font-weight: 500;
 }
 
-.shortcut-input {
+.shortcut-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.shortcut-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 190px;
   width: 190px;
+  min-width: 0;
+  height: var(--control-height-sm);
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
   font-size: var(--font-size-sm);
-  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shortcut-value.is-empty {
+  color: var(--text-tertiary);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
 }
 
 .api-key-input-group {

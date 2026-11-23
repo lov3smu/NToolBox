@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="plugin-dialog">
-      <div v-if="visible" class="plugin-dialog-overlay" @click.self="requestClose">
+      <div v-if="visible" class="plugin-dialog-overlay">
         <section class="plugin-dialog" role="dialog" aria-modal="true" aria-labelledby="plugin-install-title">
           <header class="plugin-dialog-header">
             <div class="plugin-dialog-heading">

@@ -38,6 +38,10 @@
     overflow: hidden;
   }
 
+  .status-sql > * {
+    flex-shrink: 0;
+  }
+
   .status-item {
     display: flex;
     align-items: center;
@@ -72,6 +76,8 @@
   }
 
   .sql-preview {
+    flex: 0 1 auto;
+    min-width: 0;
     color: var(--text-tertiary);
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: var(--font-size-sm);
@@ -83,6 +89,7 @@
   }
 
   .copy-btn {
+    flex: none;
     width: var(--icon-size-sm);
     height: var(--icon-size-sm);
     padding: 2px;
@@ -103,8 +110,8 @@
   }
 
   .copy-btn svg {
-    width: var(--icon-size-2xs);
-    height: var(--icon-size-2xs);
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
   }
 
   .sql-time {

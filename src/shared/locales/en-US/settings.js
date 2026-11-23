@@ -294,7 +294,8 @@ export default {
   更新源: 'Update feed',
   '历史版本列表的 GitHub Releases API 地址': 'GitHub Releases API URL for previous versions',
   快捷键配置: 'Shortcuts',
-  '格式示例：CmdOrCtrl+,（留空则不设置快捷键）': 'Example: CmdOrCtrl+, (leave empty for no shortcut)',
+  '点击修改录制新的快捷键组合，清除后不设置快捷键':
+    'Click Modify to record a new combination; Clear removes the shortcut.',
   快捷键: 'Shortcut',
   '版本: {version}': 'Version: {version}',
   '一款面向开发人员的多端工具集合平台，集成丰富工具 + AI大模型能力，启动快、功能全、更智能。':
@@ -393,10 +394,14 @@ export default {
   '尚未配置任何 MCP 连接器': 'No MCP connectors configured yet',
   '例如：npx -y @modelcontextprotocol/server-filesystem /path/to/dir':
     'For example: npx -y @modelcontextprotocol/server-filesystem /path/to/dir',
+  常用连接器: 'Common connectors',
+  '邮件 IMAP/SMTP': 'Email IMAP/SMTP',
+  '该连接器已存在：{name}': 'Connector already exists: {name}',
   连接器名称: 'Connector name',
   启用: 'Enabled',
   停用: 'Disabled',
-  '启动命令，如 npx': 'Start command, e.g. npx',
+  '启动命令，如 npx（也可填完整命令行，保存时自动拆分）':
+    'Start command, e.g. npx (a full command line is split automatically on save)',
   '参数，每行一个': 'Arguments, one per line',
   '环境变量，每行一个 KEY=VALUE': 'Environment variables, one KEY=VALUE per line',
   '+ 添加连接器': '+ Add connector',
@@ -445,6 +450,27 @@ export default {
   '配置上传使用的图床服务、单文件大小与历史记录上限。':
     'Configure the image host service, per-file size limit, and history limit.',
   '设置打开设置窗口的全局快捷键，留空则不启用。': 'Global shortcut to open Settings; leave empty to disable.',
+  '配置打开设置窗口、聊天发送、数据库执行查询与全局搜索的快捷键。':
+    'Configure shortcuts for opening Settings, sending chat messages, running database queries, and global search.',
+  通用快捷键: 'General shortcuts',
+  '作用于聊天输入框、数据库查询与全局搜索，清除后恢复默认值':
+    'Used by the chat composer, database queries, and global search; Clear restores the defaults',
+  发送消息: 'Send message',
+  '聊天输入框中发送消息，未设置时按 Enter 发送、Shift+Enter 换行':
+    'Send a chat message; when unset, Enter sends and Shift+Enter inserts a new line',
+  执行查询: 'Run query',
+  '数据库查询编辑器中执行当前 SQL': 'Run the current SQL in the database query editor',
+  全局搜索: 'Global search',
+  打开全局搜索面板: 'Open the global search panel',
+  未设置: 'Not set',
+  清除: 'Clear',
+  修改快捷键: 'Modify shortcut',
+  当前快捷键: 'Current shortcut',
+  按下新快捷键: 'Press a new shortcut',
+  '在输入区按下新的组合键，支持字母、F1–F12 与方向键等，Esc 取消':
+    'Press a new key combination here; letters, F1–F12, arrow keys, and more are supported. Press Esc to cancel.',
+  保存快捷键: 'Save shortcut',
+  '默认：{shortcut}': 'Default: {shortcut}',
   '查看版本信息、项目动态与更新入口。': 'View version info, project updates, and the update entry.',
   跟随系统: 'System',
   明亮: 'Light',

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="eventDialog.show" class="dialog-overlay" @click.self="closeEventDialog">
+  <div v-if="eventDialog.show" class="dialog-overlay">
     <div class="dialog dialog-wide event-dialog">
       <div class="dialog-header">
         <h3>{{ t('MySQL 事件') }}</h3>

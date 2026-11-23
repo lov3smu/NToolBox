@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
 import { dbExecuteQuery } from '@/api'
+import { copyToClipboard } from '@/utils/clipboard'
 export function createPagination(state, api) {
   const { lastExecutedSql, lastExecutedTime, limitCount } = state
 
@@ -99,11 +100,8 @@ export function createPagination(state, api) {
 
   async function copyLastSql() {
     if (!lastExecutedSql.value) return
-    try {
-      await navigator.clipboard.writeText(lastExecutedSql.value)
-    } catch (err) {
-      console.error('复制失败:', err)
-    }
+    const copied = await copyToClipboard(lastExecutedSql.value)
+    await api.showMessage(copied ? t('已复制 SQL') : t('复制失败'), copied ? 'success' : 'error')
   }
 
   return { firstPage, lastPage, prevPage, nextPage, jumpToPage, loadPageData, copyLastSql }

@@ -5,9 +5,6 @@ import { validateConfig } from '../src/main/services/configValidation.js'
 function createConfig(overrides = {}) {
   return {
     app: {
-      base_path: '/tmp/scripts',
-      developer: { ch_name: '张三', en_name: 'zhangsan' },
-      text_edit_app: '',
       auto_start: true,
       close_action: 'ask',
       shortcuts: { settings: 'CmdOrCtrl+,' }
@@ -16,7 +13,13 @@ function createConfig(overrides = {}) {
     update: { auto_update: true },
     network: {},
     database: {},
-    sql_generator: { databases: ['main_db'], script_types: [{ name: 'DDL' }] },
+    sql_generator: {
+      base_path: '/tmp/scripts',
+      developer: { ch_name: '张三', en_name: 'zhangsan' },
+      text_edit_app: '',
+      databases: ['main_db'],
+      script_types: [{ name: 'DDL' }]
+    },
     ai: { provider: 'bailian', keys: {} },
     extensions: {},
     notifications: {},

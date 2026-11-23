@@ -18,7 +18,7 @@
         :show-archived="showArchived"
         :format-time="formatTime"
         @new-chat="createNewChat"
-        @open-memory="openMemoryPage"
+        @open-knowledge="openKnowledgePage"
         @open-market="router.push('/market')"
         @add-workspace="openWorkspaceDialog"
         @toggle-search="toggleSessionSearch"
@@ -88,6 +88,16 @@
               @click="switchChatTab('traces')"
             >
               {{ t('轨迹') }}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="chat-view-tab"
+              :class="{ active: chatTab === 'memory' }"
+              :aria-selected="chatTab === 'memory'"
+              @click="switchChatTab('memory')"
+            >
+              {{ t('记忆') }}
             </button>
           </div>
           <button
@@ -160,6 +170,12 @@
           :focus-run-id="traceFocusId"
           :conversation-id="currentSession?.id || ''"
         />
+        <MemoryPanel
+          v-if="chatTab === 'memory'"
+          :workspace="currentSession?.workspace || ''"
+          @bind-workspace="pickWorkspace"
+          @open-knowledge="openKnowledgePage"
+        />
         <Transition name="dock-slide">
           <div
             v-if="chatTab === 'chat' && pendingApprovals.length"
@@ -221,25 +237,38 @@
               ref="inputRef"
               v-model="inputText"
               class="composer-input"
-              :placeholder="t('Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件')"
+              :placeholder="composerPlaceholder"
               :disabled="!hasCurrentApiKey"
               @input="resizeInput"
-              @keydown.enter.exact="sendMessage"
+              @keydown="onComposerKeydown"
             />
             <div class="composer-toolbar">
               <div class="toolbar-left">
                 <div class="plus-wrap">
-                  <button
-                    class="composer-icon-btn plus-btn"
-                    :title="t('添加附件')"
-                    @click.stop="plusMenuOpen = !plusMenuOpen"
-                  >
+                  <button class="composer-icon-btn plus-btn" :title="t('快捷指令')" @click.stop="toggleCommandMenu">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                   </button>
-                  <div v-if="plusMenuOpen" v-clamp-viewport class="plus-menu">
+                  <div v-if="commandMenuOpen" v-clamp-viewport class="plus-menu command-menu" @click.stop>
+                    <button type="button" @click="insertCommandTemplate(t('目标：'))">{{ t('目标') }}</button>
+                    <button type="button" @click="insertCommandTemplate(t('计划：'))">{{ t('计划') }}</button>
+                  </div>
+                </div>
+                <div class="plus-wrap">
+                  <button
+                    class="composer-icon-btn"
+                    :title="t('添加附件')"
+                    @click.stop="attachMenuOpen = !attachMenuOpen"
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <path
+                        d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+                      />
+                    </svg>
+                  </button>
+                  <div v-if="attachMenuOpen" v-clamp-viewport class="plus-menu" @click.stop>
                     <button
                       :disabled="!modelSupportsImage"
                       :title="modelSupportsImage ? t('添加图片') : t('当前模型未启用图片输入')"
@@ -250,13 +279,6 @@
                     <button @click="chooseFiles">{{ t('添加文件') }}</button>
                   </div>
                 </div>
-                <button class="composer-icon-btn" :title="t('添加文件')" @click="chooseFiles">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                    <path
-                      d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
-                    />
-                  </svg>
-                </button>
                 <label class="composer-select" :title="t('工具审批模式')">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="9" />
@@ -449,18 +471,6 @@
                     </template>
                   </div>
                 </div>
-                <button
-                  class="composer-icon-btn"
-                  :class="{ recording: isRecording }"
-                  :title="isRecording ? t('停止语音输入') : t('语音输入')"
-                  @click="toggleVoiceInput"
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="2" width="6" height="12" rx="3" />
-                    <path d="M5 10a7 7 0 0 0 14 0" />
-                    <line x1="12" y1="19" x2="12" y2="22" />
-                  </svg>
-                </button>
                 <button
                   v-if="!loading"
                   class="send-circle"
@@ -1133,7 +1143,7 @@
       @close="rollbackTarget = null"
     />
     <Teleport to="body">
-      <div v-if="workspaceDialogOpen" class="workspace-dialog-overlay" @click.self="closeWorkspaceDialog">
+      <div v-if="workspaceDialogOpen" class="workspace-dialog-overlay">
         <div
           class="workspace-dialog"
           role="dialog"
@@ -1246,12 +1256,16 @@ import {
   workspaceInfo as fetchWorkspaceInfo,
   workspaceOpen as openWorkspacePath,
   runTraceStats as fetchRunTraceStats,
+  memoryClearProject,
   openExternal,
   openSettings,
-  getAiProviders
+  getAiProviders,
+  platform as hostPlatform
 } from '@/api'
 import { useChatSessions, useChatStream, useChatUsage, useConfig, usePaneResize, useToast } from '@/composables'
 import { copyToClipboard } from '@/utils'
+import { formatAccelerator, matchesAccelerator, parseAccelerator } from '@/utils/shortcut'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
 import { t } from '@/i18n'
 import { joinPath } from '@/utils/path'
 import { WORKSPACE_ICONS } from '@/utils/workspaceIcons'
@@ -1268,6 +1282,7 @@ import MessageDialog from '@/components/MessageDialog.vue'
 import ChatApprovalCard from '@/components/ChatApprovalCard.vue'
 import WorkspaceHoverCard from '@/components/WorkspaceHoverCard.vue'
 import RunTracePanel from '@/components/RunTracePanel.vue'
+import MemoryPanel from '@/components/MemoryPanel.vue'
 import SessionRail from './chat/SessionRail.vue'
 import MessageList from './chat/MessageList.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
@@ -1305,6 +1320,15 @@ const compressKeepRecent = computed(() => normalizeAiCompressKeepRecent(config.v
 const maxAttachments = computed(() => normalizeAiMaxAttachments(config.value?.ai.attachments.max_count))
 const maxImageBytes = computed(() => normalizeAiMaxImageMb(config.value?.ai.attachments.max_image_mb) * 1024 * 1024)
 const maxTextFileBytes = computed(() => normalizeAiMaxTextKb(config.value?.ai.attachments.max_text_kb) * 1024)
+const chatSendShortcut = computed(() => config.value?.app?.shortcuts?.chat_send || DEFAULT_SHORTCUT_ACTIONS.chat_send)
+const composerPlaceholder = computed(() => {
+  const parsed = parseAccelerator(chatSendShortcut.value)
+  const isPlainEnter = parsed && parsed.key === 'enter' && !parsed.mod && !parsed.ctrl && !parsed.alt && !parsed.shift
+  if (isPlainEnter) return t('Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件')
+  return t('{shortcut} 发送 · Enter 换行 · 支持图片与文本文件', {
+    shortcut: formatAccelerator(chatSendShortcut.value, hostPlatform === 'darwin')
+  })
+})
 const route = useRoute()
 const router = useRouter()
 const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
@@ -1410,7 +1434,9 @@ const starterPrompts = [
   }
 ]
 const attachments = ref([])
-const plusMenuOpen = ref(false)
+const attachMenuOpen = ref(false)
+const commandMenuOpen = ref(false)
+const commandMenuFromSlash = ref(false)
 const modelMenuOpen = ref(false)
 const modelMenuView = ref('root')
 const approvalMode = ref('all')
@@ -1445,8 +1471,6 @@ const reasoningLevels = [
   }
 ]
 const thinkingPrefs = ref(loadThinkingPrefs())
-const isRecording = ref(false)
-let recognition = null
 
 const {
   sessions,
@@ -1819,6 +1843,12 @@ const {
   toggleContextPanel
 })
 
+function onComposerKeydown(e) {
+  if (!matchesAccelerator(e, chatSendShortcut.value)) return
+  e.preventDefault()
+  sendMessage(e)
+}
+
 function loadThinkingPrefs() {
   try {
     return JSON.parse(localStorage.getItem(THINKING_PREFS_KEY)) || {}
@@ -2052,8 +2082,11 @@ async function refreshRunStats() {
 }
 
 function openMemoryPage() {
-  const workspace = currentSession.value?.workspace || ''
-  router.push({ path: '/memory', query: workspace ? { workspace } : {} })
+  switchChatTab('memory')
+}
+
+function openKnowledgePage() {
+  router.push('/memory')
 }
 
 async function pickWorkspace() {
@@ -2065,7 +2098,7 @@ async function pickWorkspace() {
   if (!session || session.workspace) return
   session.workspace = directory
   session.updatedAt = Date.now()
-  saveSessions()
+  saveSessions(session.id)
   persistViewState()
   await refreshWorkspaceInfo()
   showSuccess(t('已绑定工作区 {name}', { name: workspaceLabel(directory) }))
@@ -2194,7 +2227,7 @@ function requestDeleteWorkspace(path) {
   workspaceDeleteTarget.value = { path, name: meta.name }
 }
 
-function confirmDeleteWorkspace() {
+async function confirmDeleteWorkspace() {
   const target = workspaceDeleteTarget.value
   workspaceDeleteTarget.value = null
   if (!target) return
@@ -2216,7 +2249,16 @@ function confirmDeleteWorkspace() {
     }
   }
   if (changed) saveSessions()
-  showSuccess(t('已删除工作区 {name}', { name: target.name }))
+  const cleared = await memoryClearProject(target.path)
+  if (cleared?.success === false) {
+    showError(cleared.error || t('工作区已删除，但项目记忆清空失败'))
+    return
+  }
+  showSuccess(
+    cleared?.removed > 0
+      ? t('已删除工作区 {name}，并清空项目记忆', { name: target.name })
+      : t('已删除工作区 {name}', { name: target.name })
+  )
 }
 
 function handleWorkspaceAction(action) {
@@ -2435,13 +2477,32 @@ function resizeInput() {
 }
 
 function chooseImages() {
-  plusMenuOpen.value = false
+  attachMenuOpen.value = false
   imageInput.value?.click()
 }
 
 function chooseFiles() {
-  plusMenuOpen.value = false
+  attachMenuOpen.value = false
   fileInput.value?.click()
+}
+
+function toggleCommandMenu() {
+  commandMenuFromSlash.value = false
+  commandMenuOpen.value = !commandMenuOpen.value
+}
+
+function insertCommandTemplate(template) {
+  const rest = inputText.value.startsWith('/') ? inputText.value.slice(1) : inputText.value
+  inputText.value = `${template}${rest}`
+  commandMenuOpen.value = false
+  commandMenuFromSlash.value = false
+  nextTick(() => {
+    resizeInput()
+    const el = inputRef.value
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(el.value.length, el.value.length)
+  })
 }
 
 function onImagePicked(e) {
@@ -2540,52 +2601,10 @@ async function addFiles(files, kindHint) {
   resizeInput()
 }
 
-function toggleVoiceInput() {
-  if (isRecording.value) {
-    recognition?.stop()
-    return
-  }
-
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
-  if (!Recognition) {
-    showError(t('当前环境不支持语音输入'))
-    return
-  }
-
-  const base = inputText.value.trim()
-  const instance = new Recognition()
-  instance.lang = 'zh-CN'
-  instance.interimResults = true
-  instance.continuous = false
-  instance.onresult = (event) => {
-    let transcript = ''
-    for (let i = 0; i < event.results.length; i += 1) {
-      transcript += event.results[i][0].transcript
-    }
-    inputText.value = base ? `${base} ${transcript}` : transcript
-    resizeInput()
-  }
-  instance.onerror = (event) => {
-    if (event.error !== 'aborted' && event.error !== 'no-speech') {
-      showError(t('语音识别失败: {error}', { error: event.error }))
-    }
-  }
-  instance.onend = () => {
-    isRecording.value = false
-    recognition = null
-  }
-
-  try {
-    instance.start()
-    recognition = instance
-    isRecording.value = true
-  } catch (error) {
-    showError(t('无法启动语音识别: {message}', { message: error.message }))
-  }
-}
-
 function closePlusMenu() {
-  plusMenuOpen.value = false
+  attachMenuOpen.value = false
+  commandMenuOpen.value = false
+  commandMenuFromSlash.value = false
 }
 
 function handleOutsideClick() {
@@ -2609,7 +2628,8 @@ function handleGlobalKeydown(event) {
   }
   if (editingSessionId.value) return
   if (
-    !plusMenuOpen.value &&
+    !attachMenuOpen.value &&
+    !commandMenuOpen.value &&
     !modelMenuOpen.value &&
     !railMoreOpen.value &&
     !sessionMenu.value &&
@@ -2634,7 +2654,7 @@ function consumeRoutePrompt() {
 
 onMounted(async () => {
   loadViewState()
-  loadSessions()
+  await loadSessions()
   loadWorkspaceMeta()
   loadContextState()
   recoverStreamState()
@@ -2695,21 +2715,15 @@ onActivated(() => {
 
 onDeactivated(() => {
   handleOutsideClick()
-  if (recognition) {
-    recognition.stop()
-    recognition = null
-  }
 })
 
 onUnmounted(() => {
   saveDraft()
   saveScroll()
-  if (currentRequestId.value) saveSessions()
+  if (currentRequestId.value) saveSessions(currentSessionId.value)
   document.removeEventListener('click', handleOutsideClick)
   document.removeEventListener('keydown', handleGlobalKeydown)
   window.removeEventListener('keydown', onWorkspaceDialogKey)
-  recognition?.stop()
-  recognition = null
 })
 
 watch(
@@ -2720,6 +2734,18 @@ watch(
   },
   { deep: true }
 )
+
+watch(inputText, (value) => {
+  if (value === '/') {
+    commandMenuFromSlash.value = true
+    commandMenuOpen.value = true
+    return
+  }
+  if (commandMenuFromSlash.value && !value.startsWith('/')) {
+    commandMenuOpen.value = false
+    commandMenuFromSlash.value = false
+  }
+})
 
 watch(inputText, () => {
   scheduleDraftSave()

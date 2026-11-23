@@ -2,7 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { t } from './i18n.js'
 import { log } from '../utils'
-import { getConfigPath } from '../utils/path'
+import { getDataDir } from '../utils/path'
+import { writeFileAtomic } from '../utils/atomicFile'
 import { isPathWithinBase } from '../utils/sanitize'
 import { getConfig, saveConfig } from './config.js'
 import { getSkills, initSkills, installSkill, uninstallSkill } from './skills.js'
@@ -13,11 +14,11 @@ const MAX_MCP_SERVERS = 16
 const SKILL_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/
 
 function getPluginDirectory() {
-  return path.join(path.dirname(getConfigPath()), 'plugins')
+  return path.join(getDataDir(), 'plugins')
 }
 
 function getRegistryPath() {
-  return path.join(path.dirname(getConfigPath()), 'plugins.json')
+  return path.join(getDataDir(), 'plugins.json')
 }
 
 function normalizeRecord(raw) {
@@ -54,10 +55,8 @@ async function readRegistry() {
 
 async function writeRegistry(records) {
   const registryPath = getRegistryPath()
-  await fs.promises.mkdir(path.dirname(registryPath), { recursive: true })
-  const tempPath = `${registryPath}.tmp`
-  await fs.promises.writeFile(tempPath, JSON.stringify({ plugins: records }, null, 2), 'utf8')
-  await fs.promises.rename(tempPath, registryPath)
+  await fs.promises.mkdir(path.dirname(registryPath), { recursive: true, mode: 0o700 })
+  await writeFileAtomic(registryPath, JSON.stringify({ plugins: records }, null, 2), 'utf8')
 }
 
 async function copyDirectory(source, target) {

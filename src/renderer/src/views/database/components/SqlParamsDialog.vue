@@ -1,5 +1,5 @@
 <template>
-  <div v-if="sqlParamsDialog.show" class="dialog-overlay" @click.self="cancel">
+  <div v-if="sqlParamsDialog.show" class="dialog-overlay">
     <div class="dialog sql-params-dialog">
       <div class="dialog-header">
         <h3>{{ t('SQL 参数赋值') }}</h3>

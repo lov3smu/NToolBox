@@ -2,6 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { app } from 'electron'
 import { log } from '../utils'
+import { recordSnapshot, pruneArtifacts } from './sqlite/artifactRepository.js'
 
 const MAX_ENTRIES = 50
 const MAX_FILE_BYTES = 5 * 1024 * 1024
@@ -12,7 +13,7 @@ const RETENTION_MS = 7 * 24 * 60 * 60 * 1000
 let cleanedUp = false
 
 function snapshotsRoot() {
-  return path.join(app.getPath('userData'), 'agent-snapshots')
+  return path.join(app.getPath('userData'), 'agent', 'snapshots')
 }
 
 function normalizeStoreId(requestId) {
@@ -74,13 +75,15 @@ async function cleanupOldSnapshots() {
         await fs.promises.rm(dir, { recursive: true, force: true })
       }
     }
+    await pruneArtifacts(now - RETENTION_MS).catch(() => {})
   } catch (error) {
     log.warn('清理历史快照失败:', error.message)
   }
 }
 
-export function createSnapshotStore(requestId) {
+export function createSnapshotStore(requestId, options = {}) {
   const dir = storeDir(requestId)
+  const conversationId = String(options.conversationId || '')
   const entries = []
   let initialized = false
 
@@ -102,6 +105,13 @@ export function createSnapshotStore(requestId) {
       }))
     }
     await fs.promises.writeFile(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8')
+    void recordSnapshot({
+      requestId: manifest.requestId,
+      conversationId,
+      fileCount: entries.length,
+      directory: dir,
+      createdAt: manifest.createdAt
+    }).catch((error) => log.warn('写入快照索引失败:', error.message))
   }
 
   async function record(target) {

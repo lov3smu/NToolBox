@@ -1,7 +1,7 @@
 import { VALID_CLOSE_ACTIONS, VALID_THEMES, VALID_THEME_STYLES, VALID_FONT_SIZES } from '../constants'
 import { t } from './i18n.js'
 import { LOCALE_VALUES } from '../../shared/i18n.js'
-import { tools } from '../../shared/tools.js'
+import { ALL_SHORTCUT_KEYS } from '../../shared/shortcutActions.js'
 import { DATABASE_EDITOR_THEMES, DATABASE_EDITOR_BOOLEAN_KEYS } from '../../shared/databaseEditor.js'
 import { normalizeMcpServer } from '../../shared/mcp.js'
 import { SQL_AUDIT_RULES } from '../../shared/sqlAudit.js'
@@ -20,7 +20,7 @@ import {
 import { RECENT_TOOLS_LIMIT_MAX, RECENT_TOOLS_LIMIT_MIN } from '../../shared/tools.js'
 import { UPDATE_CHECK_INTERVALS } from '../../shared/updater.js'
 
-export const VALID_SHORTCUT_KEYS = tools.filter((tool) => tool.shortcutKey).map((tool) => tool.shortcutKey)
+export const VALID_SHORTCUT_KEYS = [...ALL_SHORTCUT_KEYS]
 
 const SQL_AUDIT_RULE_IDS = SQL_AUDIT_RULES.map((rule) => rule.id)
 
@@ -39,13 +39,6 @@ export function normalizeShortcuts(raw, defaults) {
 
 function validateApp(app) {
   if (!isPlainObject(app)) return t('app 必须是对象')
-  if (typeof app.base_path !== 'string') return t('app.base_path 必须是字符串')
-  if (!isPlainObject(app.developer)) return t('app.developer 必须是对象')
-  if (typeof app.developer.ch_name !== 'string') return t('app.developer.ch_name 必须是字符串')
-  if (typeof app.developer.en_name !== 'string') return t('app.developer.en_name 必须是字符串')
-  if (app.text_edit_app !== undefined && typeof app.text_edit_app !== 'string') {
-    return t('app.text_edit_app 必须是字符串')
-  }
   if (app.auto_start !== undefined && typeof app.auto_start !== 'boolean') return t('app.auto_start 必须是布尔值')
   if (app.first_launch_done !== undefined && typeof app.first_launch_done !== 'boolean') {
     return t('app.first_launch_done 必须是布尔值')
@@ -219,6 +212,13 @@ function validateDatabase(database) {
 
 function validateSqlGenerator(sqlGenerator) {
   if (!isPlainObject(sqlGenerator)) return t('sql_generator 必须是对象')
+  if (typeof sqlGenerator.base_path !== 'string') return t('sql_generator.base_path 必须是字符串')
+  if (!isPlainObject(sqlGenerator.developer)) return t('sql_generator.developer 必须是对象')
+  if (typeof sqlGenerator.developer.ch_name !== 'string') return t('sql_generator.developer.ch_name 必须是字符串')
+  if (typeof sqlGenerator.developer.en_name !== 'string') return t('sql_generator.developer.en_name 必须是字符串')
+  if (sqlGenerator.text_edit_app !== undefined && typeof sqlGenerator.text_edit_app !== 'string') {
+    return t('sql_generator.text_edit_app 必须是字符串')
+  }
   if (sqlGenerator.databases !== undefined) {
     if (!Array.isArray(sqlGenerator.databases)) return t('sql_generator.databases 必须是数组')
     for (const name of sqlGenerator.databases) {

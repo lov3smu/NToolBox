@@ -10,13 +10,12 @@
     </button>
 
     <nav class="rail-nav">
-      <button class="rail-nav-item" @click="$emit('open-memory')">
+      <button class="rail-nav-item" @click="$emit('open-knowledge')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M12 5a3 3 0 0 0-6 0 3 3 0 0 0-1 5.8A3.5 3.5 0 0 0 8 16.5V18a3 3 0 0 0 4 2.8" />
-          <path d="M12 5a3 3 0 0 1 6 0 3 3 0 0 1 1 5.8 3.5 3.5 0 0 1-3 5.7V18a3 3 0 0 1-4 2.8" />
-          <path d="M12 5v16" />
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
         </svg>
-        <span>{{ t('记忆与知识库') }}</span>
+        <span>{{ t('知识库') }}</span>
       </button>
       <button class="rail-nav-item" @click="$emit('open-market')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -230,7 +229,7 @@
           <span>{{ t('更多') }}</span>
         </button>
         <div v-if="railMoreOpen" v-clamp-viewport class="rail-more-menu" @click.stop>
-          <button @click="$emit('rail-more', 'memory')">{{ t('记忆与知识库') }}</button>
+          <button @click="$emit('rail-more', 'memory')">{{ t('记忆') }}</button>
           <button @click="$emit('rail-more', 'archived')">
             {{ showArchived ? t('隐藏已归档会话') : t('显示已归档会话') }}
           </button>
@@ -272,7 +271,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'new-chat',
-  'open-memory',
+  'open-knowledge',
   'open-market',
   'add-workspace',
   'toggle-search',

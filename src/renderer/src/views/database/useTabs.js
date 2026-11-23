@@ -13,10 +13,12 @@ import {
 } from '@/api'
 import { buildPendingSql, coerceValue, keysForRow, rowKeyFor, isSameValue } from './rowEditing'
 import { bindSqlParams, extractSqlParams } from './sqlParams'
+import { matchesAccelerator } from '@/utils/shortcut'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
 
 const TAB_STORAGE_KEY = 'ntoolbox-db-tabs'
 
-export function createTabs(state, api) {
+export function createTabs(state, api, options = {}) {
   const {
     activeTabId,
     autoLimit,
@@ -37,12 +39,12 @@ export function createTabs(state, api) {
   } = state
 
   function handleKeyDown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
-      if (activeTab?.type === 'query' && activeTab.sqlQuery && activeTab.connectionName && !activeTab.executing) {
-        e.preventDefault()
-        executeQueryForTab(activeTab)
-      }
+    const accelerator = options.runShortcut?.value || DEFAULT_SHORTCUT_ACTIONS.database_run
+    if (!matchesAccelerator(e, accelerator)) return
+    const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
+    if (activeTab?.type === 'query' && activeTab.sqlQuery && activeTab.connectionName && !activeTab.executing) {
+      e.preventDefault()
+      executeQueryForTab(activeTab)
     }
   }
 

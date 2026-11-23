@@ -1,5 +1,5 @@
 <template>
-  <div v-if="promptDialog.visible" class="dialog-overlay" @click.self="onPromptCancel">
+  <div v-if="promptDialog.visible" class="dialog-overlay">
     <div class="dialog dialog-small">
       <div class="dialog-header">
         <h3>{{ promptDialog.title }}</h3>

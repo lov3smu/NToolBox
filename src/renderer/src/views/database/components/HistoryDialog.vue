@@ -15,7 +15,7 @@
           :class="['dialog-tab', { active: historyDialog.section === 'history' }]"
           @click="historyDialog.section = 'history'"
         >
-          {{ t('查询历史 (') }}{{ queryHistory.length }})
+          {{ t('查询历史 (') }}{{ historyTotal }})
         </div>
         <div
           :class="['dialog-tab', { active: historyDialog.section === 'snippets' }]"
@@ -54,6 +54,14 @@
               </button>
             </div>
           </div>
+          <button
+            v-if="historyHasMore"
+            class="btn btn-secondary history-more"
+            :disabled="historyLoading"
+            @click="loadMoreHistory"
+          >
+            {{ historyLoading ? t('加载中…') : t('加载更多') }}
+          </button>
         </div>
         <div v-else class="history-list">
           <div class="snippet-folder-bar">
@@ -107,7 +115,7 @@
           <button
             v-if="historyDialog.section === 'history'"
             class="btn btn-secondary"
-            :disabled="queryHistory.length === 0"
+            :disabled="historyTotal === 0"
             @click="clearHistory"
           >
             {{ t('清空历史') }}
@@ -131,6 +139,10 @@ const {
   createSnippetFolder,
   deleteSnippet,
   historyDialog,
+  historyHasMore,
+  historyLoading,
+  historyTotal,
+  loadMoreHistory,
   loadSqlIntoEditor,
   queryHistory,
   querySnippets,

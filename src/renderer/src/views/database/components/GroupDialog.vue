@@ -1,5 +1,5 @@
 <template>
-  <div v-if="showGroupDialog" class="dialog-overlay" @click.self="closeGroupDialog">
+  <div v-if="showGroupDialog" class="dialog-overlay">
     <div class="dialog">
       <div class="dialog-header">
         <h3>{{ editingGroup ? t('编辑分组') : t('新建分组') }}</h3>

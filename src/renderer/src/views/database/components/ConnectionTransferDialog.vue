@@ -1,5 +1,5 @@
 <template>
-  <div v-if="connectionTransferDialog.show" class="dialog-overlay" @click.self="closeConnectionTransferDialog">
+  <div v-if="connectionTransferDialog.show" class="dialog-overlay">
     <div class="dialog">
       <div class="dialog-header">
         <h3>{{ isExport ? t('导出连接配置') : t('导入连接配置') }}</h3>

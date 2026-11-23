@@ -454,7 +454,7 @@
 
     <Teleport to="body">
       <Transition name="vault-modal">
-        <div v-if="editorVisible" class="vault-modal-overlay" @click.self="closeEditor">
+        <div v-if="editorVisible" class="vault-modal-overlay">
           <div class="vault-modal" role="dialog" aria-modal="true">
             <header class="vault-modal-header">
               <div class="vault-modal-heading">
@@ -669,7 +669,7 @@
 
     <Teleport to="body">
       <Transition name="vault-modal">
-        <div v-if="groupEditorVisible" class="vault-modal-overlay" @click.self="closeGroupEditor">
+        <div v-if="groupEditorVisible" class="vault-modal-overlay">
           <div class="vault-modal" role="dialog" aria-modal="true">
             <header class="vault-modal-header">
               <div class="vault-modal-heading">

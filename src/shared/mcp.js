@@ -34,6 +34,33 @@ export function parseMcpToolName(name) {
   return { server: rest.slice(0, separator), tool: rest.slice(separator + 2) }
 }
 
+// 允许把「npx -y @scope/pkg」整行填进命令框：首个词为命令，其余为参数（支持引号包裹带空格的路径）
+export function splitCommandLine(text) {
+  const input = String(text || '').trim()
+  if (!input) return { command: '', args: [] }
+
+  const tokens = []
+  let current = ''
+  let quote = ''
+  for (const char of input) {
+    if (quote) {
+      if (char === quote) quote = ''
+      else current += char
+    } else if (char === '"' || char === "'") {
+      quote = char
+    } else if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current)
+        current = ''
+      }
+    } else {
+      current += char
+    }
+  }
+  if (current) tokens.push(current)
+  return { command: tokens[0] || '', args: tokens.slice(1) }
+}
+
 function normalizeEnv(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const env = {}
@@ -55,16 +82,17 @@ export function normalizeMcpServer(raw) {
   const name = typeof raw.name === 'string' ? raw.name.trim().toLowerCase() : ''
   if (!MCP_SERVER_NAME_PATTERN.test(name)) return null
 
-  const command = typeof raw.command === 'string' ? raw.command.trim() : ''
+  const split = splitCommandLine(typeof raw.command === 'string' ? raw.command : '')
+  const command = split.command
   if (!command || command.includes('\0')) return null
 
-  const args = Array.isArray(raw.args)
+  const extraArgs = Array.isArray(raw.args)
     ? raw.args
         .filter((arg) => typeof arg === 'string' && !arg.includes('\0'))
         .map((arg) => arg.trim())
         .filter(Boolean)
-        .slice(0, MAX_ARGS)
     : []
+  const args = [...split.args, ...extraArgs].slice(0, MAX_ARGS)
 
   const server = {
     name,
