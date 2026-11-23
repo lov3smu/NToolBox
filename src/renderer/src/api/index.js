@@ -79,6 +79,7 @@ export const {
   respondChatApproval,
   rollbackChatRun,
   listRunTraces,
+  runTraceStats,
   readRunTrace,
   exportRunTrace,
   compressChatContext,

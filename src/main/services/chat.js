@@ -1122,6 +1122,7 @@ export async function chatStream(messages, options = {}, onChunk) {
 
   const toolsEnabled = options.toolsEnabled !== false
   const model = options.model || provider.getDefaultModel()
+  if (typeof options.trace?.setGoal === 'function') options.trace.setGoal(extractLastUserText(messages))
   const allTools = toolsEnabled ? selectToolsForIntent(options.tools || (await getAllToolDefinitions()), messages) : []
   const memoryBlock = await buildMemoryPrompt(options.workspacePath, toolsEnabled)
   const behavior = getAiBehavior()

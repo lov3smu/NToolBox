@@ -26,14 +26,7 @@
       </svg>
     </button>
     <Teleport to="body">
-      <div
-        v-if="open"
-        ref="panelRef"
-        class="setting-select-panel"
-        role="listbox"
-        :style="panelStyle"
-        @scroll.passive="onPanelScroll"
-      >
+      <div v-if="open" ref="panelRef" class="setting-select-panel" role="listbox" :style="panelStyle">
         <button
           v-for="(option, index) in options"
           :key="option.value"
@@ -126,6 +119,7 @@ async function openPanel() {
   await nextTick()
   measure()
   window.addEventListener('pointerdown', onWindowPointerdown, true)
+  window.addEventListener('scroll', onWindowScroll, { capture: true, passive: true })
   window.addEventListener('resize', closePanel)
 }
 
@@ -133,6 +127,7 @@ function closePanel() {
   if (!open.value) return
   open.value = false
   window.removeEventListener('pointerdown', onWindowPointerdown, true)
+  window.removeEventListener('scroll', onWindowScroll, true)
   window.removeEventListener('resize', closePanel)
 }
 
@@ -147,7 +142,8 @@ function onWindowPointerdown(event) {
   closePanel()
 }
 
-function onPanelScroll() {
+function onWindowScroll(event) {
+  if (panelRef.value?.contains(event.target)) return
   closePanel()
 }
 

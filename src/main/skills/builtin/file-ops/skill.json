@@ -67,7 +67,7 @@
         "minimum": 1,
         "maximum": 1048576,
         "default": 204800,
-        "description": "read 允许读取的最大字节数"
+        "description": "read 最多返回的字节数，超出部分截断并在结果末尾提示（默认 200KB）"
       }
     },
     "required": ["action"],
@@ -81,7 +81,7 @@
     },
     {
       "input": "action: read, path: reports/summary.md",
-      "output": "返回文件内容，超过 max_bytes 时提示"
+      "output": "返回文件内容，超过 max_bytes 时截断并在末尾提示"
     },
     {
       "input": "action: write, path: out/result.json, content: {}, create_dirs: true",

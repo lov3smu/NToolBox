@@ -83,6 +83,59 @@ describe('运行轨迹', () => {
     })
   })
 
+  it('记录用户请求作为目标，并在无计划时回退到列表', async () => {
+    const trace = createRunTrace('run-goal', {
+      workspacePath: '/tmp/demo-workspace',
+      conversationId: 'conv-1'
+    })
+    trace.setGoal('帮我整理 README\n并生成摘要')
+    await trace.finish({ status: 'goal_reached', termination: 'goal_reached' })
+
+    const failed = createRunTrace('run-fail', { conversationId: 'conv-1' })
+    await failed.finish({ status: 'error', termination: 'error', error: 'provider timeout' })
+
+    const detail = await readRunTrace('run-goal')
+    expect(detail.trace.goal).toBe('帮我整理 README 并生成摘要')
+
+    const list = await listRunTraces(10)
+    const row = list.find((item) => item.id === 'run-goal')
+    expect(row).toMatchObject({
+      goal: '帮我整理 README 并生成摘要',
+      workspace: '/tmp/demo-workspace',
+      conversationId: 'conv-1'
+    })
+    expect(list.find((item) => item.id === 'run-fail')).toMatchObject({
+      conversationId: 'conv-1',
+      error: 'provider timeout',
+      goal: ''
+    })
+  })
+
+  it('按会话过滤轨迹列表', async () => {
+    const other = createRunTrace('run-other-conv', { conversationId: 'conv-2' })
+    await other.finish({ status: 'goal_reached', termination: 'goal_reached' })
+
+    const scoped = await listRunTraces(10, 'conv-1')
+    expect(scoped.map((item) => item.id).sort()).toEqual(['run-fail', 'run-goal'])
+    expect(scoped.every((item) => item.conversationId === 'conv-1')).toBe(true)
+
+    const all = await listRunTraces(10)
+    expect(all.some((item) => item.id === 'run-other-conv')).toBe(true)
+  })
+
+  it('按工作区统计轨迹数量', async () => {
+    const { countRunTracesByWorkspace } = await import('../src/main/services/runTrace.js')
+    const first = createRunTrace('run-stats-1', { workspacePath: '/tmp/stats-workspace' })
+    const second = createRunTrace('run-stats-2', { workspacePath: '/tmp/stats-workspace' })
+    await first.finish({ status: 'goal_reached', termination: 'goal_reached' })
+    await second.finish({ status: 'error', termination: 'error' })
+
+    const stats = await countRunTracesByWorkspace()
+    expect(stats.byWorkspace['/tmp/stats-workspace']).toBe(2)
+    expect(stats.byWorkspace['/tmp/demo-workspace']).toBe(1)
+    expect(stats.total).toBeGreaterThanOrEqual(6)
+  })
+
   it('完成后不再追加步骤，重复结束不覆盖结果', async () => {
     const trace = createRunTrace('run-frozen')
     await trace.finish({ status: 'cancelled', termination: 'cancelled' })

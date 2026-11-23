@@ -154,7 +154,12 @@
             </button>
           </aside>
         </div>
-        <RunTracePanel v-if="chatTab === 'traces'" :key="tracePanelKey" :focus-run-id="traceFocusId" />
+        <RunTracePanel
+          v-if="chatTab === 'traces'"
+          :key="tracePanelKey"
+          :focus-run-id="traceFocusId"
+          :conversation-id="currentSession?.id || ''"
+        />
         <Transition name="dock-slide">
           <div
             v-if="chatTab === 'chat' && pendingApprovals.length"
@@ -694,222 +699,292 @@
               </div>
             </section>
 
-            <section class="ctx-section">
-              <div class="ctx-section-head">
+            <section class="ctx-section" :class="{ 'is-collapsed': isSectionCollapsed('env') }">
+              <button
+                type="button"
+                class="ctx-section-head"
+                :aria-expanded="!isSectionCollapsed('env')"
+                @click="toggleSectionCollapsed('env')"
+              >
                 <span class="ctx-section-title">{{ t('环境信息') }}</span>
                 <span v-if="currentSession.workspace" class="ctx-link is-static">{{ t('已绑定') }}</span>
-              </div>
-              <div v-if="!currentSession.workspace" class="ctx-empty-row">
-                <span>{{ t('未绑定工作区，可在输入框下方选择') }}</span>
-              </div>
-              <div v-else class="ctx-env">
-                <div class="env-row">
-                  <span class="env-key">{{ t('工作区') }}</span>
-                  <button class="env-value link" :title="currentSession.workspace" @click="openWorkspaceRoot">
-                    {{ workspaceLabel(currentSession.workspace) }}
-                  </button>
+                <svg class="ctx-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div v-show="!isSectionCollapsed('env')">
+                <div v-if="!currentSession.workspace" class="ctx-empty-row">
+                  <span>{{ t('未绑定工作区，可在输入框下方选择') }}</span>
                 </div>
-                <div v-if="workspaceDescription(currentSession.workspace)" class="env-row">
-                  <span class="env-key">{{ t('描述') }}</span>
-                  <span class="env-value">{{ workspaceDescription(currentSession.workspace) }}</span>
-                </div>
-                <div class="env-row">
-                  <span class="env-key">{{ t('目录') }}</span>
-                  <span class="env-value mono" :title="currentSession.workspace">{{ currentSession.workspace }}</span>
-                </div>
-                <div class="env-row">
-                  <span class="env-key">{{ t('版本') }}</span>
-                  <span class="env-value">
-                    <template v-if="workspaceInfo?.isGit">
-                      <span class="env-branch">{{ workspaceInfo.branch || 'detached' }}</span>
-                      <span v-if="workspaceInfo.ahead" class="env-ahead">↑{{ workspaceInfo.ahead }}</span>
-                      <span v-if="workspaceInfo.behind" class="env-behind">↓{{ workspaceInfo.behind }}</span>
-                    </template>
-                    <span v-else class="env-muted">{{ workspaceInfoLoading ? t('读取中...') : t('非 Git 仓库') }}</span>
-                  </span>
-                </div>
-                <div class="env-row">
-                  <span class="env-key">{{ t('变更') }}</span>
-                  <span class="env-value">
-                    <span v-if="workspaceInfo && workspaceInfo.isGit" class="env-change">
-                      <span :class="['env-change-dot', { clean: !workspaceInfo.changes }]" />
-                      {{ workspaceInfo.changes ? t('{count} 个文件', { count: workspaceInfo.changes }) : t('无变更') }}
+                <div v-else class="ctx-env">
+                  <div class="env-row">
+                    <span class="env-key">{{ t('工作区') }}</span>
+                    <button class="env-value link" :title="currentSession.workspace" @click="openWorkspaceRoot">
+                      {{ workspaceLabel(currentSession.workspace) }}
+                    </button>
+                  </div>
+                  <div v-if="workspaceDescription(currentSession.workspace)" class="env-row">
+                    <span class="env-key">{{ t('描述') }}</span>
+                    <span class="env-value">{{ workspaceDescription(currentSession.workspace) }}</span>
+                  </div>
+                  <div class="env-row">
+                    <span class="env-key">{{ t('目录') }}</span>
+                    <span class="env-value mono" :title="currentSession.workspace">{{ currentSession.workspace }}</span>
+                  </div>
+                  <div class="env-row">
+                    <span class="env-key">{{ t('版本') }}</span>
+                    <span class="env-value">
+                      <template v-if="workspaceInfo?.isGit">
+                        <span class="env-branch">{{ workspaceInfo.branch || 'detached' }}</span>
+                        <span v-if="workspaceInfo.ahead" class="env-ahead">↑{{ workspaceInfo.ahead }}</span>
+                        <span v-if="workspaceInfo.behind" class="env-behind">↓{{ workspaceInfo.behind }}</span>
+                      </template>
+                      <span v-else class="env-muted">{{
+                        workspaceInfoLoading ? t('读取中...') : t('非 Git 仓库')
+                      }}</span>
                     </span>
-                    <span v-else class="env-muted">--</span>
-                  </span>
+                  </div>
+                  <div class="env-row">
+                    <span class="env-key">{{ t('变更') }}</span>
+                    <span class="env-value">
+                      <span v-if="workspaceInfo && workspaceInfo.isGit" class="env-change">
+                        <span :class="['env-change-dot', { clean: !workspaceInfo.changes }]" />
+                        {{
+                          workspaceInfo.changes ? t('{count} 个文件', { count: workspaceInfo.changes }) : t('无变更')
+                        }}
+                      </span>
+                      <span v-else class="env-muted">--</span>
+                    </span>
+                  </div>
+                  <div v-if="workspaceInfo?.lastCommit" class="env-row">
+                    <span class="env-key">{{ t('提交') }}</span>
+                    <span class="env-value" :title="workspaceInfo.lastCommit.subject">
+                      {{ workspaceInfo.lastCommit.subject }}
+                    </span>
+                  </div>
+                  <div v-if="workspaceInfo?.error" class="ctx-alert">{{ workspaceInfo.error }}</div>
                 </div>
-                <div v-if="workspaceInfo?.lastCommit" class="env-row">
-                  <span class="env-key">{{ t('提交') }}</span>
-                  <span class="env-value" :title="workspaceInfo.lastCommit.subject">
-                    {{ workspaceInfo.lastCommit.subject }}
-                  </span>
-                </div>
-                <div v-if="workspaceInfo?.error" class="ctx-alert">{{ workspaceInfo.error }}</div>
               </div>
             </section>
 
-            <section class="ctx-section">
-              <div class="ctx-section-head">
-                <span class="ctx-section-title">{{ t('记忆') }}</span>
-                <button class="ctx-link" @click="openMemoryPage">{{ t('管理') }}</button>
-              </div>
-              <div v-if="memoryLoading && !memoryOverview" class="ctx-empty-row">{{ t('读取中...') }}</div>
-              <template v-else>
-                <div class="ctx-memory-grid">
-                  <div class="ctx-memory-stat">
-                    <strong>{{ memoryTotals.global }}</strong>
-                    <span>{{ t('全局') }}</span>
-                  </div>
-                  <div class="ctx-memory-stat">
-                    <strong>{{ memoryTotals.project }}</strong>
-                    <span>{{ t('项目') }}</span>
-                  </div>
-                  <div class="ctx-memory-stat">
-                    <strong>{{ memoryTotals.knowledge }}</strong>
-                    <span>{{ t('知识库') }}</span>
-                  </div>
+            <section class="ctx-section" :class="{ 'is-collapsed': isSectionCollapsed('subagents') }">
+              <button
+                type="button"
+                class="ctx-section-head"
+                :aria-expanded="!isSectionCollapsed('subagents')"
+                @click="toggleSectionCollapsed('subagents')"
+              >
+                <span class="ctx-section-title">{{ t('子智能体') }}</span>
+                <span class="ctx-count">{{ workspaceSubagents.length }}</span>
+                <svg class="ctx-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div v-show="!isSectionCollapsed('subagents')">
+                <div v-if="workspaceSubagents.length === 0" class="ctx-empty-row">
+                  {{ t('暂无子智能体任务') }}
                 </div>
-                <div v-if="memoryRecent.length" class="ctx-memory-list">
-                  <button
-                    v-for="item in memoryRecent"
-                    :key="item.id"
-                    class="ctx-memory"
-                    :title="item.content"
-                    @click="openMemoryPage"
+                <div v-else class="ctx-list">
+                  <div
+                    v-for="run in visibleItems(workspaceSubagents, 'subagents', 4)"
+                    :key="run.key"
+                    class="ctx-run"
+                    :class="run.status"
                   >
-                    <span class="ctx-memory-scope" :class="item.scopeKey">{{ t(item.scopeLabel) }}</span>
-                    <span class="ctx-memory-text">{{ item.content }}</span>
+                    <span class="ctx-run-dot" />
+                    <div class="ctx-run-main">
+                      <span class="ctx-run-name">{{ run.task }}</span>
+                      <span class="ctx-run-meta">
+                        {{ run.statusText }}{{ run.duration ? ` · ${formatDuration(run.duration)}` : '' }}
+                      </span>
+                    </div>
+                  </div>
+                  <button v-if="workspaceSubagents.length > 4" class="ctx-more" @click="toggleSection('subagents')">
+                    {{
+                      expandedSections.subagents
+                        ? t('收起')
+                        : t('查看更多 ({count})', { count: workspaceSubagents.length - 4 })
+                    }}
                   </button>
                 </div>
-                <div v-else class="ctx-empty-row">{{ t('AI 会在对话中记住你的偏好与项目约定') }}</div>
-              </template>
+              </div>
             </section>
 
-            <section class="ctx-section">
-              <div class="ctx-section-head">
+            <section class="ctx-section" :class="{ 'is-collapsed': isSectionCollapsed('runs') }">
+              <button
+                type="button"
+                class="ctx-section-head"
+                :aria-expanded="!isSectionCollapsed('runs')"
+                @click="toggleSectionCollapsed('runs')"
+              >
                 <span class="ctx-section-title">{{ t('后台进程') }}</span>
-                <span class="ctx-count">{{ sessionToolRuns.length }}</span>
-              </div>
-              <div v-if="sessionToolRuns.length === 0" class="ctx-empty-row">{{ t('暂无工具执行记录') }}</div>
-              <div v-else class="ctx-list">
-                <div
-                  v-for="run in visibleItems(sessionToolRuns, 'runs', 4)"
-                  :key="run.key"
-                  class="ctx-run"
-                  :class="run.status"
-                >
-                  <span class="ctx-run-dot" />
-                  <div class="ctx-run-main">
-                    <span class="ctx-run-name">{{ run.name }}</span>
-                    <span class="ctx-run-meta">
-                      {{ run.statusText }}{{ run.duration ? ` · ${formatDuration(run.duration)}` : '' }}
-                    </span>
+                <span class="ctx-count">{{ workspaceToolRuns.length }}</span>
+                <svg class="ctx-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div v-show="!isSectionCollapsed('runs')">
+                <div v-if="workspaceToolRuns.length === 0" class="ctx-empty-row">{{ t('暂无工具执行记录') }}</div>
+                <div v-else class="ctx-list">
+                  <div
+                    v-for="run in visibleItems(workspaceToolRuns, 'runs', 4)"
+                    :key="run.key"
+                    class="ctx-run"
+                    :class="run.status"
+                  >
+                    <span class="ctx-run-dot" />
+                    <div class="ctx-run-main">
+                      <span class="ctx-run-name">{{ run.name }}</span>
+                      <span class="ctx-run-meta">
+                        {{ run.statusText }}{{ run.duration ? ` · ${formatDuration(run.duration)}` : '' }}
+                      </span>
+                    </div>
                   </div>
+                  <button v-if="workspaceToolRuns.length > 4" class="ctx-more" @click="toggleSection('runs')">
+                    {{
+                      expandedSections.runs
+                        ? t('收起')
+                        : t('查看更多 ({count})', { count: workspaceToolRuns.length - 4 })
+                    }}
+                  </button>
                 </div>
-                <button v-if="sessionToolRuns.length > 4" class="ctx-more" @click="toggleSection('runs')">
-                  {{
-                    expandedSections.runs ? t('收起') : t('查看更多 ({count})', { count: sessionToolRuns.length - 4 })
-                  }}
-                </button>
               </div>
             </section>
 
-            <section class="ctx-section">
-              <div class="ctx-section-head">
+            <section class="ctx-section" :class="{ 'is-collapsed': isSectionCollapsed('artifacts') }">
+              <button
+                type="button"
+                class="ctx-section-head"
+                :aria-expanded="!isSectionCollapsed('artifacts')"
+                @click="toggleSectionCollapsed('artifacts')"
+              >
                 <span class="ctx-section-title">{{ t('产出') }}</span>
-                <span class="ctx-count">{{ sessionArtifacts.length }}</span>
-              </div>
-              <div v-if="sessionArtifacts.length === 0" class="ctx-empty-row">{{ t('AI 写入的文件会显示在这里') }}</div>
-              <div v-else class="ctx-list">
-                <button
-                  v-for="item in visibleItems(sessionArtifacts, 'artifacts', 4)"
-                  :key="item.key"
-                  class="ctx-file"
-                  :title="item.target || item.path"
-                  @click="openSource(item)"
-                >
-                  <span class="ctx-file-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  </span>
-                  <span class="ctx-file-copy">
-                    <span class="ctx-file-name">{{ item.label }}</span>
-                    <span class="ctx-file-path">{{ item.detail }}</span>
-                  </span>
-                </button>
-                <button v-if="sessionArtifacts.length > 4" class="ctx-more" @click="toggleSection('artifacts')">
-                  {{
-                    expandedSections.artifacts
-                      ? t('收起')
-                      : t('查看更多 ({count})', { count: sessionArtifacts.length - 4 })
-                  }}
-                </button>
+                <span class="ctx-count">{{ workspaceArtifacts.length }}</span>
+                <svg class="ctx-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div v-show="!isSectionCollapsed('artifacts')">
+                <div v-if="workspaceArtifacts.length === 0" class="ctx-empty-row">
+                  {{ t('AI 写入的文件会显示在这里') }}
+                </div>
+                <div v-else class="ctx-list">
+                  <button
+                    v-for="item in visibleItems(workspaceArtifacts, 'artifacts', 4)"
+                    :key="item.key"
+                    class="ctx-file"
+                    :title="item.target || item.path"
+                    @click="openSource(item)"
+                  >
+                    <span class="ctx-file-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </span>
+                    <span class="ctx-file-copy">
+                      <span class="ctx-file-name">{{ item.label }}</span>
+                      <span class="ctx-file-path">{{ item.detail }}</span>
+                    </span>
+                  </button>
+                  <button v-if="workspaceArtifacts.length > 4" class="ctx-more" @click="toggleSection('artifacts')">
+                    {{
+                      expandedSections.artifacts
+                        ? t('收起')
+                        : t('查看更多 ({count})', { count: workspaceArtifacts.length - 4 })
+                    }}
+                  </button>
+                </div>
               </div>
             </section>
 
-            <section class="ctx-section">
-              <div class="ctx-section-head">
+            <section class="ctx-section" :class="{ 'is-collapsed': isSectionCollapsed('web') }">
+              <button
+                type="button"
+                class="ctx-section-head"
+                :aria-expanded="!isSectionCollapsed('web')"
+                @click="toggleSectionCollapsed('web')"
+              >
                 <span class="ctx-section-title">{{ t('网页查阅') }}</span>
-                <span class="ctx-count">{{ sessionWebPages.length }}</span>
-              </div>
-              <div v-if="sessionWebPages.length === 0" class="ctx-empty-row">{{ t('AI 阅读的网页会显示在这里') }}</div>
-              <div v-else class="ctx-list">
-                <button
-                  v-for="item in visibleItems(sessionWebPages, 'web', 4)"
-                  :key="item.key"
-                  class="ctx-web"
-                  :title="item.url"
-                  @click="openSource(item)"
-                >
-                  <span class="ctx-web-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="9" />
-                      <path
-                        d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"
-                      />
-                    </svg>
-                  </span>
-                  <span class="ctx-web-copy">
-                    <span class="ctx-web-title">{{ item.label }}</span>
-                    <span class="ctx-web-host">{{ item.detail }}</span>
-                  </span>
-                </button>
-                <button v-if="sessionWebPages.length > 4" class="ctx-more" @click="toggleSection('web')">
-                  {{
-                    expandedSections.web ? t('收起') : t('查看更多 ({count})', { count: sessionWebPages.length - 4 })
-                  }}
-                </button>
+                <span class="ctx-count">{{ workspaceWebPages.length }}</span>
+                <svg class="ctx-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div v-show="!isSectionCollapsed('web')">
+                <div v-if="workspaceWebPages.length === 0" class="ctx-empty-row">
+                  {{ t('AI 阅读的网页会显示在这里') }}
+                </div>
+                <div v-else class="ctx-list">
+                  <button
+                    v-for="item in visibleItems(workspaceWebPages, 'web', 4)"
+                    :key="item.key"
+                    class="ctx-web"
+                    :title="item.url"
+                    @click="openSource(item)"
+                  >
+                    <span class="ctx-web-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <path
+                          d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"
+                        />
+                      </svg>
+                    </span>
+                    <span class="ctx-web-copy">
+                      <span class="ctx-web-title">{{ item.label }}</span>
+                      <span class="ctx-web-host">{{ item.detail }}</span>
+                    </span>
+                  </button>
+                  <button v-if="workspaceWebPages.length > 4" class="ctx-more" @click="toggleSection('web')">
+                    {{
+                      expandedSections.web
+                        ? t('收起')
+                        : t('查看更多 ({count})', { count: workspaceWebPages.length - 4 })
+                    }}
+                  </button>
+                </div>
               </div>
             </section>
 
-            <section class="ctx-section">
-              <div class="ctx-section-head">
+            <section class="ctx-section" :class="{ 'is-collapsed': isSectionCollapsed('sources') }">
+              <button
+                type="button"
+                class="ctx-section-head"
+                :aria-expanded="!isSectionCollapsed('sources')"
+                @click="toggleSectionCollapsed('sources')"
+              >
                 <span class="ctx-section-title">{{ t('来源') }}</span>
-                <span class="ctx-count">{{ sessionSources.length }}</span>
-              </div>
-              <div v-if="sessionSources.length === 0" class="ctx-empty-row">{{ t('暂无引用来源') }}</div>
-              <div v-else class="ctx-list">
-                <button
-                  v-for="item in visibleItems(sessionSources, 'sources', 5)"
-                  :key="item.key"
-                  class="ctx-source"
-                  :class="{ disabled: !item.target }"
-                  :title="item.detail || item.label"
-                  @click="openSource(item)"
-                >
-                  <span class="ctx-source-type">{{ sourceTypeLabel(item.type) }}</span>
-                  <span class="ctx-source-copy">
-                    <span class="ctx-source-name">{{ item.label }}</span>
-                    <span class="ctx-source-detail">{{ item.detail }}</span>
-                  </span>
-                </button>
-                <button v-if="sessionSources.length > 5" class="ctx-more" @click="toggleSection('sources')">
-                  {{
-                    expandedSections.sources ? t('收起') : t('查看更多 ({count})', { count: sessionSources.length - 5 })
-                  }}
-                </button>
+                <span class="ctx-count">{{ workspaceSources.length }}</span>
+                <svg class="ctx-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div v-show="!isSectionCollapsed('sources')">
+                <div v-if="workspaceSources.length === 0" class="ctx-empty-row">{{ t('暂无引用来源') }}</div>
+                <div v-else class="ctx-list">
+                  <button
+                    v-for="item in visibleItems(workspaceSources, 'sources', 5)"
+                    :key="item.key"
+                    class="ctx-source"
+                    :class="{ disabled: !item.target }"
+                    :title="item.detail || item.label"
+                    @click="openSource(item)"
+                  >
+                    <span class="ctx-source-type">{{ sourceTypeLabel(item.type) }}</span>
+                    <span class="ctx-source-copy">
+                      <span class="ctx-source-name">{{ item.label }}</span>
+                      <span class="ctx-source-detail">{{ item.detail }}</span>
+                    </span>
+                  </button>
+                  <button v-if="workspaceSources.length > 5" class="ctx-more" @click="toggleSection('sources')">
+                    {{
+                      expandedSections.sources
+                        ? t('收起')
+                        : t('查看更多 ({count})', { count: workspaceSources.length - 5 })
+                    }}
+                  </button>
+                </div>
               </div>
             </section>
           </div>
@@ -1170,7 +1245,7 @@ import {
   selectDirectory,
   workspaceInfo as fetchWorkspaceInfo,
   workspaceOpen as openWorkspacePath,
-  memoryOverview as fetchMemoryOverview,
+  runTraceStats as fetchRunTraceStats,
   openExternal,
   openSettings,
   getAiProviders
@@ -1201,6 +1276,7 @@ import PageLayout from '@/layouts/PageLayout.vue'
 const THINKING_PREFS_KEY = 'chat_thinking_prefs'
 const ARTIFACT_ACTIONS = new Set(['write', 'append', 'mkdir', 'copy', 'move'])
 const WORKSPACE_META_KEY = 'chat_workspace_meta'
+const CONTEXT_STATE_KEY = 'chat_context_state'
 const DEFAULT_WORKSPACE_ICON = 'folder'
 const WORKSPACE_COLORS = [
   '#3b82f6',
@@ -1273,7 +1349,7 @@ const providers = ref([])
 const selectedProvider = ref('')
 const selectedModel = ref('')
 const models = ref([])
-const expandedSections = ref({})
+const contextPanelState = ref({})
 const storedContextWidth = Number(localStorage.getItem('chatContextWidth'))
 const contextPanelWidth = ref(
   Number.isFinite(storedContextWidth) && storedContextWidth >= 240 ? storedContextWidth : 300
@@ -1282,9 +1358,7 @@ const isResizingContext = ref(false)
 const workspaceInfo = ref(null)
 const workspaceInfoLoading = ref(false)
 let workspaceRequest = 0
-const memoryOverview = ref(null)
-const memoryLoading = ref(false)
-let memoryRequest = 0
+const runStats = ref({ total: 0, byWorkspace: {} })
 const starterPrompts = [
   {
     get title() {
@@ -1476,6 +1550,10 @@ const filteredSessions = computed(() => {
     return title.includes(keyword) || workspace.includes(keyword)
   })
 })
+function isSessionActive(session) {
+  if (pendingStream.value?.sessionId === session.id) return true
+  return (session.messages || []).some((message) => message.isStreaming)
+}
 const workspaceGroups = computed(() => {
   const groups = new Map()
   for (const session of filteredSessions.value) {
@@ -1503,6 +1581,9 @@ const workspaceGroups = computed(() => {
     group.hasMeta = Boolean(meta)
     group.pinned = meta?.pinned === true
     group.archived = meta?.archived === true
+    group.activeCount = group.sessions.filter((session) => isSessionActive(session)).length
+    group.unreadCount = group.sessions.filter((session) => session.unread === true).length
+    group.taskCount = group.path ? runStats.value.byWorkspace[group.path] || 0 : 0
     const sessionTimes = group.sessions.map((session) => Number(session.createdAt) || 0).filter(Boolean)
     group.createdAt = Number(meta?.createdAt) || (sessionTimes.length ? Math.min(...sessionTimes) : 0)
     group.sessions.sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true))
@@ -1516,25 +1597,29 @@ const workspaceGroups = computed(() => {
 const workspaceMenuMeta = computed(() =>
   workspaceMenu.value ? workspaceMeta.value[workspaceMenu.value.path] || null : null
 )
-const sessionToolRuns = computed(() => {
+function collectToolRuns(sessionList) {
   const runs = []
-  currentMessages.value.forEach((message, messageIndex) => {
-    for (const [stepIndex, step] of (message.steps || []).entries()) {
-      if (!step || !step.name) continue
-      runs.push({
-        ...step,
-        key: `${messageIndex}-${step.id || stepIndex}`,
-        statusText:
-          step.statusText || (step.status === 'running' ? t('执行中') : step.status === 'error' ? t('失败') : t('完成'))
-      })
-    }
-  })
-  return runs.reverse()
-})
-const sessionArtifacts = computed(() => {
-  const workspace = currentSession.value?.workspace || ''
+  for (const session of sessionList) {
+    const sessionRuns = []
+    ;(session.messages || []).forEach((message, messageIndex) => {
+      for (const [stepIndex, step] of (message.steps || []).entries()) {
+        if (!step || !step.name) continue
+        sessionRuns.push({
+          ...step,
+          key: `${session.id}-${messageIndex}-${step.id || stepIndex}`,
+          statusText:
+            step.statusText ||
+            (step.status === 'running' ? t('执行中') : step.status === 'error' ? t('失败') : t('完成'))
+        })
+      }
+    })
+    runs.push(...sessionRuns.reverse())
+  }
+  return runs
+}
+function collectArtifacts(runs, workspace) {
   const artifacts = new Map()
-  for (const run of sessionToolRuns.value) {
+  for (const run of runs) {
     const meta = run.metadata && typeof run.metadata === 'object' ? run.metadata : null
     const action = meta?.action || ''
     let relative = meta && ARTIFACT_ACTIONS.has(action) ? meta.destination || meta.path : ''
@@ -1558,10 +1643,10 @@ const sessionArtifacts = computed(() => {
     })
   }
   return [...artifacts.values()]
-})
-const sessionWebPages = computed(() => {
+}
+function collectWebPages(runs) {
   const pages = new Map()
-  for (const run of sessionToolRuns.value) {
+  for (const run of runs) {
     const meta = run.metadata && typeof run.metadata === 'object' ? run.metadata : null
     const args = parseToolArgs(run.arguments)
     const url = meta?.finalUrl || meta?.url || (run.name === 'web-fetch' ? args.url : '')
@@ -1578,52 +1663,68 @@ const sessionWebPages = computed(() => {
     })
   }
   return [...pages.values()]
-})
-const sessionSources = computed(() => {
-  const sources = [...sessionWebPages.value]
+}
+const sessionToolRuns = computed(() => (currentSession.value ? collectToolRuns([currentSession.value]) : []))
+const activeWorkspace = computed(() => currentSession.value?.workspace || '')
+const activeWorkspaceKey = computed(() => activeWorkspace.value || '__none__')
+const workspaceSessions = computed(() =>
+  sessions.value.filter((session) => (session.workspace || '') === activeWorkspace.value)
+)
+const workspaceToolRuns = computed(() => collectToolRuns(workspaceSessions.value))
+const workspaceSubagents = computed(() =>
+  workspaceToolRuns.value
+    .filter((run) => run.name === 'subagent')
+    .map((run) => {
+      const args = parseToolArgs(run.arguments)
+      const task = typeof args.task === 'string' ? args.task.trim() : ''
+      return {
+        key: run.key,
+        status: run.status || 'done',
+        statusText: run.statusText,
+        task:
+          task ||
+          String(run.result || '')
+            .trim()
+            .slice(0, 80) ||
+          t('子智能体任务'),
+        duration: run.duration
+      }
+    })
+)
+const workspaceArtifacts = computed(() => collectArtifacts(workspaceToolRuns.value, activeWorkspace.value))
+const workspaceWebPages = computed(() => collectWebPages(workspaceToolRuns.value))
+function collectSources(webPages, artifacts, sessionList) {
+  const sources = [...webPages]
   const seen = new Set(sources.map((item) => item.key))
-  for (const item of sessionArtifacts.value) {
+  for (const item of artifacts) {
     if (seen.has(item.key)) continue
     seen.add(item.key)
     sources.push(item)
   }
-  currentMessages.value.forEach((message, messageIndex) => {
-    for (const [index, attachment] of (message.attachments || []).entries()) {
-      const key = `attachment:${messageIndex}-${index}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      sources.push({
-        key,
-        type: 'attachment',
-        label: attachment.name || t('附件'),
-        detail: attachment.kind === 'image' ? t('图片附件') : t('文本附件'),
-        target: ''
-      })
-    }
-  })
+  for (const session of sessionList) {
+    ;(session.messages || []).forEach((message, messageIndex) => {
+      for (const [index, attachment] of (message.attachments || []).entries()) {
+        const key = `attachment:${session.id}-${messageIndex}-${index}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        sources.push({
+          key,
+          type: 'attachment',
+          label: attachment.name || t('附件'),
+          detail: attachment.kind === 'image' ? t('图片附件') : t('文本附件'),
+          target: ''
+        })
+      }
+    })
+  }
   return sources
-})
+}
+const workspaceSources = computed(() =>
+  collectSources(workspaceWebPages.value, workspaceArtifacts.value, workspaceSessions.value)
+)
+const expandedSections = computed(() => contextPanelState.value[activeWorkspaceKey.value]?.expanded || {})
+const collapsedSections = computed(() => contextPanelState.value[activeWorkspaceKey.value]?.collapsed || {})
 const currentProvider = computed(() => providers.value.find((p) => p.type === selectedProvider.value))
-const memoryTotals = computed(() => ({
-  global: memoryOverview.value?.global?.length || 0,
-  project: memoryOverview.value?.project?.length || 0,
-  knowledge: memoryOverview.value?.knowledgeEnabled || 0
-}))
-const memoryRecent = computed(() => {
-  const overview = memoryOverview.value
-  if (!overview) return []
-  const project = (overview.project || []).slice(0, 2).map((entry) => ({
-    ...entry,
-    scopeKey: 'project',
-    scopeLabel: t('项目')
-  }))
-  const global = (overview.global || []).slice(0, 2).map((entry) => ({
-    ...entry,
-    scopeKey: 'global',
-    scopeLabel: t('全局')
-  }))
-  return [...project, ...global].slice(0, 3)
-})
 const hasCurrentApiKey = computed(() => Boolean(currentProvider.value?.hasApiKey))
 const showKeyWarning = computed(() => providers.value.length > 0 && !hasCurrentApiKey.value)
 const selectableProviders = computed(() =>
@@ -1711,7 +1812,7 @@ const {
   finishMessageTiming,
   scrollToBottom,
   refreshWorkspaceInfo,
-  refreshMemoryOverview,
+  refreshRunStats,
   resizeInput,
   showSuccess,
   showError,
@@ -1872,8 +1973,46 @@ function visibleItems(list, key, limit) {
   return expandedSections.value[key] ? list : list.slice(0, limit)
 }
 
+function isSectionCollapsed(key) {
+  return collapsedSections.value[key] === true
+}
+
+function setContextState(patch) {
+  const key = activeWorkspaceKey.value
+  contextPanelState.value = {
+    ...contextPanelState.value,
+    [key]: { ...(contextPanelState.value[key] || {}), ...patch }
+  }
+  persistContextState()
+}
+
 function toggleSection(key) {
-  expandedSections.value = { ...expandedSections.value, [key]: !expandedSections.value[key] }
+  const expanded = { ...expandedSections.value }
+  expanded[key] = !expanded[key]
+  setContextState({ expanded })
+}
+
+function toggleSectionCollapsed(key) {
+  const collapsed = { ...collapsedSections.value }
+  collapsed[key] = !collapsed[key]
+  setContextState({ collapsed })
+}
+
+function loadContextState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CONTEXT_STATE_KEY))
+    contextPanelState.value = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    contextPanelState.value = {}
+  }
+}
+
+function persistContextState() {
+  try {
+    localStorage.setItem(CONTEXT_STATE_KEY, JSON.stringify(contextPanelState.value))
+  } catch {
+    // 本地存储不可用时仅保留当前会话内的状态
+  }
 }
 
 function toggleContextPanel() {
@@ -1903,18 +2042,12 @@ async function refreshWorkspaceInfo() {
       }
 }
 
-async function refreshMemoryOverview() {
-  const workspace = currentSession.value?.workspace || ''
-  const token = ++memoryRequest
-  memoryLoading.value = true
-  try {
-    const data = await fetchMemoryOverview(workspace)
-    if (token !== memoryRequest) return
-    memoryOverview.value = data?.success ? data : null
-  } catch {
-    if (token === memoryRequest) memoryOverview.value = null
-  } finally {
-    if (token === memoryRequest) memoryLoading.value = false
+async function refreshRunStats() {
+  const data = await fetchRunTraceStats()
+  if (!data || typeof data !== 'object') return
+  runStats.value = {
+    total: Number(data.total) || 0,
+    byWorkspace: data.byWorkspace && typeof data.byWorkspace === 'object' ? data.byWorkspace : {}
   }
 }
 
@@ -2069,6 +2202,12 @@ function confirmDeleteWorkspace() {
   delete nextMeta[target.path]
   workspaceMeta.value = nextMeta
   persistWorkspaceMeta()
+  if (contextPanelState.value[target.path]) {
+    const nextState = { ...contextPanelState.value }
+    delete nextState[target.path]
+    contextPanelState.value = nextState
+    persistContextState()
+  }
   let changed = false
   for (const session of sessions.value) {
     if (session.workspace === target.path) {
@@ -2497,9 +2636,10 @@ onMounted(async () => {
   loadViewState()
   loadSessions()
   loadWorkspaceMeta()
+  loadContextState()
   recoverStreamState()
   refreshWorkspaceInfo()
-  refreshMemoryOverview()
+  refreshRunStats()
   applyDraft(currentSessionId.value)
   consumeRoutePrompt()
   suppressAutoScroll.value = true
@@ -2550,7 +2690,7 @@ watch(
 
 onActivated(() => {
   refreshWorkspaceInfo()
-  refreshMemoryOverview()
+  refreshRunStats()
 })
 
 onDeactivated(() => {
@@ -2624,7 +2764,6 @@ watch(
   () => currentSession.value?.workspace,
   () => {
     refreshWorkspaceInfo()
-    refreshMemoryOverview()
   }
 )
 

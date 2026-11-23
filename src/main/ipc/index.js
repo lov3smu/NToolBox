@@ -66,7 +66,13 @@ import { getMcpRegistryBase } from '../../shared/network.js'
 import { fetchMcpRegistryServers } from '../services/mcpRegistry.js'
 import { createSnapshotStore, restoreSnapshot } from '../services/snapshots.js'
 import { createToolResultStore } from '../services/toolResults.js'
-import { createRunTrace, listRunTraces, readRunTrace, writeRunTraceFile } from '../services/runTrace.js'
+import {
+  countRunTracesByWorkspace,
+  createRunTrace,
+  listRunTraces,
+  readRunTrace,
+  writeRunTraceFile
+} from '../services/runTrace.js'
 import { isPathWithinBase } from '../utils/sanitize'
 import { grantFilePath, isFilePathGranted } from '../utils/fileAccess'
 import { maskImageHostSettings } from '../../shared/secrets.js'
@@ -705,6 +711,7 @@ export function registerIPCHandlers(ipc = ipcMain) {
       provider: options.provider,
       model: options.model,
       workspacePath: options.workspacePath,
+      conversationId: options.conversationId,
       approvalPolicy: options.approvalPolicy,
       toolsEnabled: options.toolsEnabled !== false
     })
@@ -822,8 +829,12 @@ export function registerIPCHandlers(ipc = ipcMain) {
     return await restoreSnapshot(requestId)
   })
 
-  handle(IPC_CHANNELS.listRunTraces, async (_event, limit) => {
-    return await listRunTraces(limit)
+  handle(IPC_CHANNELS.listRunTraces, async (_event, limit, conversationId) => {
+    return await listRunTraces(limit, conversationId)
+  })
+
+  handle(IPC_CHANNELS.runTraceStats, async () => {
+    return await countRunTracesByWorkspace()
   })
 
   handle(IPC_CHANNELS.readRunTrace, async (_event, runId) => {

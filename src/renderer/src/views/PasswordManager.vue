@@ -158,7 +158,7 @@
                 :class="{ selected: isGroupActive(node.group) }"
                 @contextmenu.prevent="openGroupContextMenu($event, node.group)"
               >
-                <span class="tree-indent" :style="{ width: `${20 + (node.depth - 1) * 16}px` }" />
+                <span class="tree-indent" :style="{ width: `${4 + (node.depth - 1) * 12}px` }" />
                 <button
                   v-if="hasChildGroups(node.group.id)"
                   type="button"
@@ -1682,7 +1682,7 @@ onUnmounted(() => {
 
 .tree-indent {
   flex-shrink: 0;
-  width: 20px;
+  width: 4px;
 }
 
 .tree-label {

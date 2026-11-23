@@ -86,5 +86,10 @@ export default {
   已取消: 'Cancelled',
   关闭窗口: 'Close window',
   上一步: 'Back',
-  下一步: 'Next'
+  下一步: 'Next',
+  图片预览: 'Image preview',
+  关闭预览: 'Close preview',
+  点击预览: 'Click to preview',
+  双击切换原始大小: 'Double-click to toggle actual size',
+  图片加载失败: 'Failed to load image'
 }

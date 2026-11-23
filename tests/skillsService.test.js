@@ -144,6 +144,20 @@ describe('skills service', () => {
     expect(escape.error).toContain('允许范围')
   })
 
+  it('truncates file-ops reads that exceed max_bytes', async () => {
+    const long = 'x'.repeat(5000)
+    const write = await skills.executeSkill('file-ops', { action: 'write', path: 'long.txt', content: long })
+    expect(write.success).toBe(true)
+
+    const limited = await skills.executeSkill('file-ops', { action: 'read', path: 'long.txt', max_bytes: 1000 })
+    expect(limited.success).toBe(true)
+    expect(limited.metadata.truncated).toBe(true)
+    expect(limited.metadata.size).toBe(5000)
+    expect(limited.metadata.returnedBytes).toBe(1000)
+    expect(limited.content.startsWith('x'.repeat(1000))).toBe(true)
+    expect(limited.content).toContain('内容已截断')
+  })
+
   it('scopes file-ops to the runtime workspace', async () => {
     const workspace = path.join(testUserData, 'workspace')
     fs.mkdirSync(workspace, { recursive: true })

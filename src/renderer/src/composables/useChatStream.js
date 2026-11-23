@@ -41,7 +41,7 @@ export function useChatStream({
   finishMessageTiming,
   scrollToBottom,
   refreshWorkspaceInfo,
-  refreshMemoryOverview,
+  refreshRunStats,
   resizeInput,
   showSuccess,
   showError,
@@ -245,6 +245,7 @@ export function useChatStream({
       currentRequestId.value = ''
       loading.value = false
       assistantMessage.isStreaming = false
+      session.unread = currentSessionId.value !== session.id
       finishMessageTiming(assistantMessage)
       finalizeContent(assistantMessage)
       if (removeApprovalListener) {
@@ -288,7 +289,7 @@ export function useChatStream({
       persistPendingStream(null)
       saveSessions()
       if (session.workspace) refreshWorkspaceInfo()
-      refreshMemoryOverview()
+      refreshRunStats()
       if (currentSessionId.value === session.id) scrollToBottom()
     })
   }
@@ -397,6 +398,7 @@ export function useChatStream({
 
     session.provider = selectedProvider.value
     session.model = selectedModel.value
+    session.unread = false
     session.messages.push({ role: 'user', content: text, attachments: files })
     session.updatedAt = Date.now()
     updateSessionTitle(currentSessionId.value, text || files[0]?.name || t('附件消息'))
@@ -449,6 +451,7 @@ export function useChatStream({
       currentRequestId.value = ''
       loading.value = false
       assistantMessage.isStreaming = false
+      session.unread = currentSessionId.value !== session.id
       finishMessageTiming(assistantMessage)
       assistantMessage.content = t('请求失败: {p0}', { p0: error.message })
       persistPendingStream(null)
