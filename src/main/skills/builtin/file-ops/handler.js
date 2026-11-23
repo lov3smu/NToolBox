@@ -61,6 +61,17 @@ function isBinary(buffer) {
   return buffer.includes(0)
 }
 
+async function readHead(target, maxBytes) {
+  const handle = await fs.promises.open(target, 'r')
+  try {
+    const buffer = Buffer.alloc(maxBytes)
+    const { bytesRead } = await handle.read(buffer, 0, maxBytes, 0)
+    return buffer.subarray(0, bytesRead)
+  } finally {
+    await handle.close()
+  }
+}
+
 const PREVIEW_MAX_BYTES = 512 * 1024
 const PREVIEW_MAX_ITEMS = 50
 const PREVIEW_MAX_SCAN = 5000
@@ -345,19 +356,17 @@ export default async function handler(params, context) {
           return { success: false, error: `不是文件：${relativePath}` }
         }
 
-        if (stat.size > maxBytes) {
-          return {
-            success: false,
-            error: `文件大小 ${formatSize(stat.size)} 超过 max_bytes（${formatSize(maxBytes)}），请提高 max_bytes 后重试`
-          }
-        }
-
-        const buffer = await fs.promises.readFile(target)
+        const readLimit = Math.max(1, Math.min(Number(maxBytes) || 204800, 1048576))
+        const truncated = stat.size > readLimit
+        const buffer = truncated ? await readHead(target, readLimit) : await fs.promises.readFile(target)
         if (isBinary(buffer)) {
           return { success: false, error: `文件疑似二进制内容，无法按文本读取：${relativePath}` }
         }
 
-        const content = buffer.toString('utf8')
+        let content = buffer.toString('utf8')
+        if (truncated) {
+          content += `\n\n[内容已截断：文件共 ${formatSize(stat.size)}，本次仅返回前 ${formatSize(readLimit)}；可提高 max_bytes 或先 search 定位后分段读取]`
+        }
 
         return {
           success: true,
@@ -366,6 +375,8 @@ export default async function handler(params, context) {
             action,
             path: relativePath,
             size: stat.size,
+            returnedBytes: buffer.length,
+            truncated,
             lines: content.split('\n').length,
             modified: stat.mtime.toISOString()
           }

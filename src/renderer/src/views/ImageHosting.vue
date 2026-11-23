@@ -9,21 +9,13 @@
             <div class="panel-actions upload-actions">
               <label class="provider-select">
                 <span>{{ t('图床') }}</span>
-                <select
-                  v-model="settings.active"
-                  class="select-field"
+                <SettingSelect
+                  :model-value="settings.active"
+                  :options="providerOptions"
                   :disabled="uploading || saving"
-                  @change="onProviderSelect"
-                >
-                  <option v-for="provider in providers" :key="provider.id" :value="provider.id">
-                    {{ t(provider.name)
-                    }}{{ isProviderConfigured(provider.id, settings.providers[provider.id]) ? '' : t('（未配置）') }}
-                  </option>
-                </select>
+                  @update:model-value="onProviderSelect"
+                />
               </label>
-              <button class="btn btn-primary btn-sm" :disabled="uploading || loading" @click="chooseFiles">
-                {{ t('选择图片') }}
-              </button>
             </div>
           </div>
           <div class="panel-body upload-body">
@@ -88,14 +80,21 @@
               </div>
               <div class="task-list">
                 <div v-for="task in tasks" :key="task.id" class="task-item" :class="task.status">
-                  <div class="task-thumb">
+                  <button
+                    type="button"
+                    class="task-thumb"
+                    :disabled="!task.url || task.broken"
+                    :title="task.url && !task.broken ? t('点击预览') : ''"
+                    :aria-label="task.url && !task.broken ? t('点击预览') : undefined"
+                    @click="previewImage(task.url, task.name)"
+                  >
                     <img v-if="task.url && !task.broken" :src="task.url" alt="" @error="task.broken = true" />
                     <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
                       <rect x="3" y="3" width="18" height="18" rx="2" />
                       <circle cx="8.5" cy="8.5" r="1.5" />
                       <path d="m21 15-5-5L5 21" />
                     </svg>
-                  </div>
+                  </button>
                   <div class="task-info">
                     <span class="task-name" :title="task.name">{{ task.name }}</span>
                     <span class="task-meta" :title="task.error || task.url">
@@ -166,7 +165,14 @@
             </div>
             <div v-else class="history-list">
               <article v-for="record in history" :key="record.id" class="history-item">
-                <div class="history-thumb">
+                <button
+                  type="button"
+                  class="history-thumb"
+                  :disabled="!record.url || record.broken"
+                  :title="record.url && !record.broken ? t('点击预览') : ''"
+                  :aria-label="record.url && !record.broken ? t('点击预览') : undefined"
+                  @click="previewImage(record.url, record.name)"
+                >
                   <img
                     v-if="record.url && !record.broken"
                     :src="record.url"
@@ -179,7 +185,7 @@
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <path d="m21 15-5-5L5 21" />
                   </svg>
-                </div>
+                </button>
                 <div class="history-info">
                   <span class="history-name" :title="record.name">{{ record.name }}</span>
                   <span class="history-meta">
@@ -243,7 +249,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
-import { useToast } from '@/composables'
+import SettingSelect from '@/components/settings/SettingSelect.vue'
+import { previewImage, useToast } from '@/composables'
 import { getLocale, t } from '@/i18n'
 import { copyToClipboard } from '@/utils'
 import { formatFileSize, formatRelativeTime } from '@/utils/format'
@@ -298,6 +305,14 @@ let taskSeq = 0
 let copiedTimer = null
 
 const activeMeta = computed(() => getProviderMeta(settings.value.active) || providers[0])
+const providerOptions = computed(() =>
+  providers.map((provider) => ({
+    value: provider.id,
+    label: `${t(provider.name)}${
+      isProviderConfigured(provider.id, settings.value.providers[provider.id]) ? '' : t('（未配置）')
+    }`
+  }))
+)
 const missingFields = computed(() =>
   getMissingRequiredFields(activeMeta.value.id, settings.value.providers[activeMeta.value.id])
 )
@@ -373,7 +388,9 @@ async function persistSettings(options = {}) {
   return false
 }
 
-async function onProviderSelect() {
+async function onProviderSelect(value) {
+  if (!value || value === settings.value.active) return
+  settings.value.active = value
   await persistSettings({ successMessage: t('上传图床已切换为 {name}', { name: activeMeta.value.name }) })
 }
 
@@ -652,10 +669,31 @@ onUnmounted(() => {
   max-height: 620px;
 }
 
+.upload-panel .panel-header {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.upload-panel .panel-title {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.upload-panel .panel-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .upload-actions,
 .history-actions {
   flex-wrap: wrap;
   row-gap: 6px;
+}
+
+.upload-actions {
+  flex-shrink: 0;
 }
 
 .provider-select {
@@ -667,11 +705,13 @@ onUnmounted(() => {
   color: var(--text-tertiary);
 }
 
-.provider-select .select-field {
-  height: 28px;
-  min-width: 150px;
-  width: auto;
-  max-width: 260px;
+.provider-select .setting-select {
+  width: 220px;
+  flex: none;
+}
+
+.provider-select :deep(.setting-select-trigger) {
+  height: var(--control-height-sm);
   font-size: var(--font-size-sm);
 }
 
@@ -916,6 +956,31 @@ onUnmounted(() => {
   height: 16px;
 }
 
+button.task-thumb,
+button.history-thumb {
+  padding: 0;
+  border: none;
+  font: inherit;
+  cursor: zoom-in;
+  transition: box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+button.task-thumb:disabled,
+button.history-thumb:disabled {
+  cursor: default;
+}
+
+button.task-thumb:not(:disabled):hover,
+button.history-thumb:not(:disabled):hover {
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.45);
+}
+
+button.task-thumb:focus-visible,
+button.history-thumb:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.55);
+  outline-offset: 2px;
+}
+
 .task-info {
   flex: 1;
   min-width: 0;
@@ -1086,10 +1151,11 @@ onUnmounted(() => {
     min-width: 0;
   }
 
-  .provider-select .select-field {
-    flex: 1;
+  .provider-select .setting-select {
+    flex: 1 1 0;
     width: auto;
     min-width: 0;
+    max-width: 300px;
   }
 
   .drop-zone {

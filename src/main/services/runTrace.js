@@ -56,10 +56,12 @@ export function createRunTrace(runId, meta = {}) {
     endedAt: null,
     status: 'running',
     termination: null,
+    goal: '',
     meta: {
       provider: String(meta.provider || ''),
       model: String(meta.model || ''),
       workspacePath: String(meta.workspacePath || ''),
+      conversationId: String(meta.conversationId || ''),
       approvalPolicy: String(meta.approvalPolicy || ''),
       toolsEnabled: meta.toolsEnabled !== false
     },
@@ -105,6 +107,17 @@ export function createRunTrace(runId, meta = {}) {
     persist()
   }
 
+  function setGoal(goal) {
+    if (finished || trace.goal) return
+    const text = String(goal || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 160)
+    if (!text) return
+    trace.goal = text
+    persist()
+  }
+
   async function finish(payload = {}) {
     if (finished) return { id, file }
     finished = true
@@ -121,10 +134,10 @@ export function createRunTrace(runId, meta = {}) {
   }
 
   persist()
-  return { id, addStep, addReflection, setPlan, finish }
+  return { id, addStep, addReflection, setPlan, setGoal, finish }
 }
 
-export async function listRunTraces(limit = LIST_LIMIT) {
+async function readTraceRows() {
   await cleanupOldTraces()
   const root = tracesRoot()
   const entries = await fs.promises.readdir(root, { withFileTypes: true }).catch(() => [])
@@ -144,16 +157,35 @@ export async function listRunTraces(limit = LIST_LIMIT) {
       durationMs: Number(data.durationMs) || 0,
       status: data.status || 'ended',
       termination: data.termination || '',
-      goal: data.plan?.goal || '',
+      goal: data.plan?.goal || data.goal || data.summary?.goal || '',
+      workspace: data.meta?.workspacePath || '',
+      conversationId: data.meta?.conversationId || '',
+      error: data.error || '',
       provider: data.meta?.provider || '',
       model: data.meta?.model || '',
       toolCalls: Array.isArray(data.steps) ? data.steps.length : 0
     })
   }
 
-  rows.sort((a, b) => b.startedAt - a.startedAt)
+  return rows
+}
+
+export async function listRunTraces(limit = LIST_LIMIT, conversationId = '') {
+  const rows = await readTraceRows()
+  const scoped = conversationId ? rows.filter((row) => row.conversationId === conversationId) : rows
+  scoped.sort((a, b) => b.startedAt - a.startedAt)
   const max = Math.max(1, Math.min(LIST_LIMIT, Math.floor(Number(limit) || LIST_LIMIT)))
-  return rows.slice(0, max)
+  return scoped.slice(0, max)
+}
+
+export async function countRunTracesByWorkspace() {
+  const rows = await readTraceRows()
+  const byWorkspace = {}
+  for (const row of rows) {
+    if (!row.workspace) continue
+    byWorkspace[row.workspace] = (byWorkspace[row.workspace] || 0) + 1
+  }
+  return { total: rows.length, byWorkspace }
 }
 
 export async function readRunTrace(runId) {

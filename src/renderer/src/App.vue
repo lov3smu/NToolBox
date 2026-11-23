@@ -12,6 +12,7 @@
   <SearchModal v-if="!standalone" :visible="searchVisible" @close="searchVisible = false" />
   <UpdateDialog />
   <AboutDialog :visible="aboutVisible" @close="aboutVisible = false" />
+  <ImagePreviewDialog />
 </template>
 
 <script setup>
@@ -21,6 +22,7 @@ import AppShell from '@/layouts/AppShell.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import UpdateDialog from '@/components/UpdateDialog.vue'
 import AboutDialog from '@/components/AboutDialog.vue'
+import ImagePreviewDialog from '@/components/ImagePreviewDialog.vue'
 import { getConfig, onConfigChanged, onNavigateTo, onShowAbout } from '@/api'
 import { syncThemeFromConfig, syncThemeStyleFromConfig, syncFontSizeFromConfig } from '@/utils/theme'
 import { setLocale } from '@/i18n'

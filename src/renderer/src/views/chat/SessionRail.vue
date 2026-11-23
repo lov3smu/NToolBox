@@ -97,6 +97,9 @@
               :icon="group.icon || (group.path ? 'shield' : 'folder')"
               :color="group.color"
               :count="group.sessions.length"
+              :task-count="group.taskCount"
+              :active-count="group.activeCount"
+              :unread-count="group.unreadCount"
               :delay="1500"
               placement="right"
               boundary=".chat-rail"
@@ -160,7 +163,7 @@
               ]"
               @click="$emit('select-session', session.id)"
             >
-              <span class="session-dot" aria-hidden="true" />
+              <span class="session-dot" :class="{ 'is-unread': session.unread }" aria-hidden="true" />
               <div class="session-info">
                 <div v-if="editingSessionId !== session.id" class="session-title">
                   <svg

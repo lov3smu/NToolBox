@@ -39,10 +39,7 @@ describe('file-ops path guard', () => {
   })
 
   it('rejects missing base_path', async () => {
-    const result = await fileOps(
-      { action: 'list' },
-      { ...context, config: {}, getConfig: () => ({}) }
-    )
+    const result = await fileOps({ action: 'list' }, { ...context, config: {}, getConfig: () => ({}) })
     expect(result.success).toBe(false)
     expect(result.error).toContain('base_path')
   })
@@ -89,7 +86,7 @@ describe('file-ops write and read', () => {
     expect(read.content).toBe('覆盖')
   })
 
-  it('rejects binary files and oversized files', async () => {
+  it('rejects binary files and truncates oversized reads', async () => {
     fs.writeFileSync(path.join(baseDir, 'binary.bin'), Buffer.from([0, 1, 2, 3]))
     const binary = await run({ action: 'read', path: 'binary.bin' })
     expect(binary.success).toBe(false)
@@ -97,8 +94,12 @@ describe('file-ops write and read', () => {
 
     fs.writeFileSync(path.join(baseDir, 'large.txt'), 'x'.repeat(2048))
     const large = await run({ action: 'read', path: 'large.txt', max_bytes: 1024 })
-    expect(large.success).toBe(false)
-    expect(large.error).toContain('max_bytes')
+    expect(large.success).toBe(true)
+    expect(large.metadata.truncated).toBe(true)
+    expect(large.metadata.size).toBe(2048)
+    expect(large.metadata.returnedBytes).toBe(1024)
+    expect(large.content.startsWith('x'.repeat(1024))).toBe(true)
+    expect(large.content).toContain('内容已截断')
   })
 })
 
@@ -196,7 +197,12 @@ describe('file-ops search', () => {
     expect(byName.success).toBe(true)
     expect(byName.metadata.matches.some((item) => item.name === 'schema.sql')).toBe(true)
 
-    const byContent = await run({ action: 'search', path: '.', pattern: 'unlikely-name', content_match: 'create table' })
+    const byContent = await run({
+      action: 'search',
+      path: '.',
+      pattern: 'unlikely-name',
+      content_match: 'create table'
+    })
     expect(byContent.success).toBe(true)
     expect(byContent.metadata.matches.map((item) => item.name).sort()).toEqual(['notes.txt', 'schema.sql'])
   })

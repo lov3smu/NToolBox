@@ -6,9 +6,17 @@
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.5" y2="16.5" />
         </svg>
-        <input v-model="keyword" type="text" :placeholder="t('筛选目标、模型或终止原因')" />
+        <input v-model="keyword" type="text" :placeholder="t('筛选目标、模型、工作区或终止原因')" />
       </label>
-      <span class="runs-count">{{ filteredRuns.length }} / {{ runs.length }}</span>
+      <span class="runs-count">{{ filteredRuns.length }} / {{ scopedRuns.length }}</span>
+      <div v-if="conversationId" class="runs-scope" role="group" :aria-label="t('轨迹范围')">
+        <button type="button" class="runs-chip" :class="{ active: scope === 'session' }" @click="setScope('session')">
+          {{ t('当前会话') }}
+        </button>
+        <button type="button" class="runs-chip" :class="{ active: scope === 'all' }" @click="setScope('all')">
+          {{ t('全部') }}
+        </button>
+      </div>
       <div class="runs-toolbar-actions">
         <button type="button" class="runs-btn" :disabled="loading" @click="loadRuns()">{{ t('刷新') }}</button>
         <button type="button" class="runs-btn" :disabled="!selectedId || exporting" @click="handleExport">
@@ -17,35 +25,65 @@
       </div>
     </div>
 
+    <div class="runs-status-filter" role="group" :aria-label="t('按状态筛选')">
+      <button
+        v-for="item in STATUS_FILTERS"
+        :key="item.value"
+        type="button"
+        class="runs-chip"
+        :class="{ active: statusFilter === item.value }"
+        @click="setStatusFilter(item.value)"
+      >
+        {{ item.label }}
+      </button>
+    </div>
+
     <div class="runs-body">
       <div class="runs-list">
         <div class="runs-list-body">
           <div v-if="loading" class="runs-hint">{{ t('加载中…') }}</div>
           <div v-else-if="listError" class="runs-hint error">{{ listError }}</div>
           <div v-else-if="!filteredRuns.length" class="runs-hint">
-            {{ t('暂无运行轨迹，在 AI 助手中执行一次任务后再查看') }}
+            <p v-if="keyword || statusFilter !== 'all'">{{ t('暂无匹配的运行轨迹') }}</p>
+            <p v-else-if="scope === 'session' && conversationId">{{ t('当前会话暂无运行轨迹') }}</p>
+            <p v-else>{{ t('暂无运行轨迹，在 AI 助手中执行一次任务后再查看') }}</p>
+            <button
+              v-if="!keyword && statusFilter === 'all' && scope === 'session' && conversationId"
+              type="button"
+              class="runs-link"
+              @click="setScope('all')"
+            >
+              {{ t('查看全部轨迹') }}
+            </button>
           </div>
-          <button
-            v-for="run in filteredRuns"
-            :key="run.id"
-            type="button"
-            class="run-item"
-            :class="{ active: run.id === selectedId }"
-            @click="selectRun(run.id)"
-          >
-            <div class="run-item-top">
-              <span class="run-item-time">{{ formatTime(run.startedAt) }}</span>
-              <span class="run-badge" :class="run.termination || run.status">
-                {{ terminationLabel(run.termination || run.status) }}
-              </span>
-            </div>
-            <div class="run-item-goal">{{ run.goal || t('未记录目标') }}</div>
-            <div class="run-item-meta">
-              <span>{{ formatDuration(run.durationMs) }}</span>
-              <span>{{ t('{count} 次工具', { count: run.toolCalls }) }}</span>
-              <span v-if="run.model">{{ run.model }}</span>
-            </div>
-          </button>
+          <div v-for="group in groupedRuns" :key="group.key" class="runs-group">
+            <div class="runs-group-label">{{ group.label }}</div>
+            <button
+              v-for="run in group.runs"
+              :key="run.id"
+              type="button"
+              class="run-item"
+              :class="{ active: run.id === selectedId }"
+              @click="selectRun(run.id)"
+            >
+              <div class="run-item-top">
+                <span class="run-item-time">{{ formatTime(run.startedAt) }}</span>
+                <span class="run-badge" :class="run.termination || run.status">
+                  {{ terminationLabel(run.termination || run.status) }}
+                </span>
+              </div>
+              <div class="run-item-goal">{{ run.goal || t('未记录目标') }}</div>
+              <div v-if="run.error" class="run-item-error" :title="run.error">{{ run.error }}</div>
+              <div class="run-item-meta">
+                <span>{{ formatDuration(run.durationMs) }}</span>
+                <span>{{ t('{count} 次工具', { count: run.toolCalls }) }}</span>
+                <span v-if="workspaceName(run.workspace)" :title="run.workspace">{{
+                  workspaceName(run.workspace)
+                }}</span>
+                <span v-if="run.model">{{ run.model }}</span>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -57,13 +95,16 @@
         <div v-else class="runs-detail-body">
           <header class="run-detail-head">
             <div class="run-detail-title">
-              <h2>{{ trace.plan?.goal || trace.summary?.goal || t('未记录目标') }}</h2>
+              <h2>{{ trace.plan?.goal || trace.goal || trace.summary?.goal || t('未记录目标') }}</h2>
               <span class="run-badge" :class="trace.termination || trace.status">
                 {{ terminationLabel(trace.termination || trace.status) }}
               </span>
             </div>
             <div class="run-detail-meta">
               <span>{{ trace.meta?.provider || t('未知平台') }} · {{ trace.meta?.model || t('默认模型') }}</span>
+              <span v-if="trace.meta?.workspacePath" class="run-detail-workspace" :title="trace.meta.workspacePath">
+                {{ t('工作区：{path}', { path: trace.meta.workspacePath }) }}
+              </span>
               <span>{{ t('审批：{policy}', { policy: approvalLabel(trace.meta?.approvalPolicy) }) }}</span>
               <span>{{ formatTime(trace.startedAt) }}</span>
               <span>{{ t('耗时 {duration}', { duration: formatDuration(trace.durationMs) }) }}</span>
@@ -187,12 +228,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { t } from '@/i18n'
 import { listRunTraces, readRunTrace, exportRunTrace } from '@/api'
 
 const props = defineProps({
   focusRunId: {
+    type: String,
+    default: ''
+  },
+  conversationId: {
     type: String,
     default: ''
   }
@@ -265,6 +310,8 @@ const runs = ref([])
 const selectedId = ref('')
 const trace = ref(null)
 const keyword = ref('')
+const scope = ref('session')
+const statusFilter = ref('all')
 const loading = ref(false)
 const detailLoading = ref(false)
 const exporting = ref(false)
@@ -272,20 +319,117 @@ const listError = ref('')
 const detailError = ref('')
 const exportNote = ref('')
 
+const STATUS_FILTERS = [
+  {
+    value: 'all',
+    get label() {
+      return t('全部')
+    }
+  },
+  {
+    value: 'done',
+    get label() {
+      return t('完成')
+    }
+  },
+  {
+    value: 'error',
+    get label() {
+      return t('异常')
+    }
+  },
+  {
+    value: 'stopped',
+    get label() {
+      return t('停止')
+    }
+  }
+]
+
+function statusKind(run) {
+  const value = run?.termination || run?.status || ''
+  if (value === 'goal_reached') return 'done'
+  if (value === 'cancelled') return 'stopped'
+  if (value === 'error' || value === 'timeout' || value === 'max_steps') return 'error'
+  return 'other'
+}
+
+const scopedRuns = computed(() => {
+  if (scope.value === 'session' && props.conversationId) {
+    return runs.value.filter((run) => run.conversationId === props.conversationId)
+  }
+  return runs.value
+})
+
 const filteredRuns = computed(() => {
   const query = keyword.value.trim().toLowerCase()
-  if (!query) return runs.value
-  return runs.value.filter((run) =>
-    [run.goal, run.model, run.provider, terminationLabel(run.termination || run.status)].some((value) =>
+  return scopedRuns.value.filter((run) => {
+    if (statusFilter.value !== 'all' && statusKind(run) !== statusFilter.value) return false
+    if (!query) return true
+    return [
+      run.goal,
+      run.model,
+      run.provider,
+      run.workspace,
+      run.error,
+      terminationLabel(run.termination || run.status)
+    ].some((value) =>
       String(value || '')
         .toLowerCase()
         .includes(query)
     )
-  )
+  })
 })
+
+function dayStart(offset = 0) {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() - offset)
+  return date.getTime()
+}
+
+function groupFor(timestamp) {
+  const value = Number(timestamp) || 0
+  if (!value) return 'earlier'
+  if (value >= dayStart(0)) return 'today'
+  if (value >= dayStart(1)) return 'yesterday'
+  return 'earlier'
+}
+
+const groupedRuns = computed(() => {
+  const order = ['today', 'yesterday', 'earlier']
+  const labels = { today: t('今天'), yesterday: t('昨天'), earlier: t('更早') }
+  const buckets = new Map(order.map((key) => [key, []]))
+  for (const run of filteredRuns.value) buckets.get(groupFor(run.startedAt)).push(run)
+  return order
+    .filter((key) => buckets.get(key).length)
+    .map((key) => ({ key, label: labels[key], runs: buckets.get(key) }))
+})
+
 const successCount = computed(() => (trace.value?.steps || []).filter((step) => step.success).length)
 const failCount = computed(() => (trace.value?.steps || []).filter((step) => step.success === false).length)
 const longestStep = computed(() => Math.max(0, ...(trace.value?.steps || []).map((step) => Number(step.duration) || 0)))
+
+function keepSelectionVisible() {
+  if (filteredRuns.value.some((run) => run.id === selectedId.value)) return
+  selectedId.value = filteredRuns.value[0]?.id || ''
+  if (selectedId.value) loadTrace(selectedId.value)
+  else trace.value = null
+}
+
+async function setScope(value) {
+  const next = value === 'all' ? 'all' : 'session'
+  if (scope.value === next) return
+  scope.value = next
+  selectedId.value = ''
+  trace.value = null
+  await loadRuns()
+}
+
+function setStatusFilter(value) {
+  statusFilter.value = value
+  keepSelectionVisible()
+}
 
 function terminationLabel(value) {
   return t(TERMINATION_LABELS[value] || t('已结束'))
@@ -325,6 +469,13 @@ function formatTime(timestamp) {
   return new Date(value).toLocaleString('zh-CN', { hour12: false })
 }
 
+function workspaceName(value) {
+  const parts = String(value || '')
+    .split(/[\\/]/)
+    .filter(Boolean)
+  return parts[parts.length - 1] || ''
+}
+
 function stepBarWidth(step) {
   const max = longestStep.value
   const value = Number(step.duration) || 0
@@ -360,13 +511,16 @@ async function loadRuns(preferredId) {
   loading.value = true
   listError.value = ''
   try {
-    const list = await listRunTraces(30)
+    const requestedScope = scope.value === 'session' && props.conversationId ? 'session' : 'all'
+    let list = await listRunTraces(30, requestedScope === 'session' ? props.conversationId : '')
+    if (preferredId && requestedScope === 'session' && !list.some((item) => item.id === preferredId)) {
+      list = await listRunTraces(30, '')
+      if (list.some((item) => item.id === preferredId)) scope.value = 'all'
+    }
     runs.value = Array.isArray(list) ? list : []
-    const target =
-      runs.value.find((item) => item.id === (preferredId || selectedId.value))?.id ||
-      preferredId ||
-      runs.value[0]?.id ||
-      ''
+    const preferred = runs.value.find((item) => item.id === (preferredId || selectedId.value))
+    const visible = filteredRuns.value
+    const target = visible.some((item) => item.id === preferred?.id) ? preferred.id : visible[0]?.id || ''
     selectedId.value = target
     if (!target && !detailLoading.value) trace.value = null
   } catch (error) {
@@ -400,6 +554,16 @@ async function handleExport() {
   }
 }
 
+watch(
+  () => props.conversationId,
+  (next, prev) => {
+    if (next === prev || scope.value !== 'session') return
+    selectedId.value = ''
+    trace.value = null
+    loadRuns()
+  }
+)
+
 onMounted(() => {
   loadRuns(props.focusRunId)
 })
@@ -417,10 +581,55 @@ onMounted(() => {
 .runs-toolbar {
   flex-shrink: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px;
+  row-gap: 6px;
+  padding: 8px 14px 6px;
+  border-bottom: 0;
+}
+
+.runs-scope {
+  flex-shrink: 0;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.runs-status-filter {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px 8px;
   border-bottom: 1px dashed var(--border-color);
+}
+
+.runs-chip {
+  min-height: 22px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.runs-chip:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.runs-chip.active {
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-color);
 }
 
 .runs-search {
@@ -512,6 +721,23 @@ onMounted(() => {
   padding: 8px;
 }
 
+.runs-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.runs-group + .runs-group {
+  margin-top: 8px;
+}
+
+.runs-group-label {
+  padding: 2px 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
 .run-item {
   display: flex;
   flex-direction: column;
@@ -559,6 +785,14 @@ onMounted(() => {
   white-space: nowrap;
   font-size: var(--font-size-sm);
   color: var(--text-primary);
+}
+
+.run-item-error {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  color: var(--error-dark);
 }
 
 .run-item-meta {
@@ -631,6 +865,15 @@ onMounted(() => {
   gap: 6px 14px;
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+}
+
+.run-detail-workspace {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--text-tertiary);
 }
 
 .run-stats {
@@ -967,6 +1210,24 @@ onMounted(() => {
   text-align: center;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+}
+
+.runs-hint p {
+  margin: 0 0 8px;
+}
+
+.runs-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-color);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.runs-link:hover {
+  text-decoration: underline;
 }
 
 .runs-hint.error {

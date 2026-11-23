@@ -411,6 +411,10 @@ export function useChatSessions({
     applyDraft(id)
     const session = sessions.value.find((s) => s.id === id)
     if (session) {
+      if (session.unread) {
+        session.unread = false
+        saveSessions()
+      }
       const providerType = session.provider || selectedProvider.value
       if (providerType) {
         selectedProvider.value = providerType

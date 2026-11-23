@@ -90,7 +90,12 @@
                 <span>{{ t('思考过程') }}</span>
                 <span v-if="msg.isStreaming" class="chain-section-live">{{ t('生成中') }}</span>
               </div>
-              <div class="thinking-content">{{ msg.thinking }}</div>
+              <div class="thinking-content" :class="{ 'is-clamped': isThinkingClamped(index, msg) }">
+                {{ msg.thinking }}
+              </div>
+              <button v-if="isThinkingLong(msg)" type="button" class="clamp-toggle" @click="toggleThinking(index)">
+                {{ isThinkingClamped(index, msg) ? t('展开思考过程') : t('收起思考过程') }}
+              </button>
             </div>
             <div v-if="msg.steps && msg.steps.length" class="chain-section">
               <div class="chain-section-head">
@@ -99,7 +104,38 @@
                 <span class="chain-section-meta">{{ chainSummary(msg.steps) }}</span>
               </div>
               <div class="agent-steps-list">
-                <div v-for="step in msg.steps" :key="step.id || step.name" class="agent-step" :class="step.status">
+                <button
+                  v-if="hiddenStepCount(msg)"
+                  type="button"
+                  class="steps-more"
+                  :aria-expanded="isStepsExpanded(index)"
+                  @click="toggleSteps(index)"
+                >
+                  <svg
+                    class="steps-more-chevron"
+                    :class="{ expanded: isStepsExpanded(index) }"
+                    viewBox="0 0 24 24"
+                    width="12"
+                    height="12"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                  <span>{{
+                    isStepsExpanded(index)
+                      ? t('收起更早的 {count} 条工具调用', { count: hiddenStepCount(msg) })
+                      : t('展开更早的 {count} 条工具调用', { count: hiddenStepCount(msg) })
+                  }}</span>
+                </button>
+                <div
+                  v-for="(step, stepIndex) in msg.steps"
+                  v-show="isStepVisible(index, stepIndex, msg)"
+                  :key="step.id || `${stepIndex}-${step.name}`"
+                  class="agent-step"
+                  :class="step.status"
+                >
                   <div class="agent-step-rail">
                     <span class="agent-step-dot">
                       <span v-if="step.status === 'running'" class="mini-spinner" />
@@ -242,10 +278,18 @@
           </template>
         </div>
         <div v-if="msg.content || (msg.isStreaming && !hasThoughtChain(msg))" class="message-bubble">
-          <div v-if="msg.content" class="message-text" v-html="messageHtml(msg)" />
+          <div
+            v-if="msg.content"
+            class="message-text"
+            :class="{ 'is-clamped': isContentClamped(index, msg) }"
+            v-html="messageHtml(msg)"
+          />
           <div v-if="msg.isStreaming && !msg.content && !hasThoughtChain(msg)" class="loading-indicator">
             <span /><span /><span />
           </div>
+          <button v-if="isContentLong(msg)" type="button" class="clamp-toggle" @click="toggleContent(index)">
+            {{ isContentClamped(index, msg) ? t('展开全文') : t('收起') }}
+          </button>
           <button
             v-if="msg.role === 'assistant' && msg.content && !msg.isStreaming"
             class="copy-btn"
@@ -328,6 +372,13 @@ const emit = defineEmits(['use-starter', 'respond-approval', 'open-trace', 'copy
 const messagesContainer = ref(null)
 const expandedSteps = ref({})
 const thoughtExpanded = ref({})
+const moreStepsExpanded = ref({})
+const thinkingExpanded = ref({})
+const contentExpanded = ref({})
+
+const VISIBLE_STEPS = 3
+const THINKING_CLAMP_CHARS = 600
+const CONTENT_CLAMP_CHARS = 1600
 
 defineExpose({ messagesContainer })
 
@@ -346,6 +397,53 @@ function hasThoughtChain(message) {
     (message?.steps && message.steps.length) ||
     (message?.reflections && message.reflections.length)
   )
+}
+
+function isStepsExpanded(index) {
+  return Boolean(moreStepsExpanded.value[index])
+}
+
+function hiddenStepCount(message) {
+  return Math.max(0, (message?.steps || []).length - VISIBLE_STEPS)
+}
+
+function isStepVisible(index, stepIndex, message) {
+  const total = message?.steps?.length || 0
+  if (total <= VISIBLE_STEPS || isStepsExpanded(index)) return true
+  return stepIndex >= total - VISIBLE_STEPS
+}
+
+function toggleSteps(index) {
+  moreStepsExpanded.value = { ...moreStepsExpanded.value, [index]: !isStepsExpanded(index) }
+}
+
+function isThinkingLong(message) {
+  return Boolean(message && !message.isStreaming && (message.thinking || '').length > THINKING_CLAMP_CHARS)
+}
+
+function isThinkingClamped(index, message) {
+  return isThinkingLong(message) && !thinkingExpanded.value[index]
+}
+
+function toggleThinking(index) {
+  thinkingExpanded.value = { ...thinkingExpanded.value, [index]: !thinkingExpanded.value[index] }
+}
+
+function isContentLong(message) {
+  return Boolean(
+    message &&
+    message.role === 'assistant' &&
+    !message.isStreaming &&
+    (message.content || '').length > CONTENT_CLAMP_CHARS
+  )
+}
+
+function isContentClamped(index, message) {
+  return isContentLong(message) && !contentExpanded.value[index]
+}
+
+function toggleContent(index) {
+  contentExpanded.value = { ...contentExpanded.value, [index]: !contentExpanded.value[index] }
 }
 
 function isThoughtExpanded(index, message) {

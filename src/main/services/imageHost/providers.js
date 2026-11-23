@@ -519,7 +519,7 @@ async function testAliyun(settings, fetchImpl) {
   const stringToSign = `GET\n\n\n${date}\n/${settings.bucket}/`
   const signature = hmacSha1(settings.accessKeySecret, stringToSign)
   const response = await performFetch(
-    `https://${host}/?max-keys=0`,
+    `https://${host}/?max-keys=1`,
     {
       headers: {
         Date: date,
