@@ -1,17 +1,18 @@
 <template>
-  <div v-if="structureDialog.show" class="dialog-overlay" @click.self="closeStructureDialog">
-    <div class="dialog dialog-structure">
+  <div
+    v-if="structureDialog.show"
+    v-modal-shell="{ onClose: closeStructureDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
+    <div class="dialog dialog-wide">
       <div class="dialog-header">
         <h3>{{ t('表结构 ·') }} {{ structureDialog.tab?.tableName }}</h3>
         <div class="structure-header-actions">
-          <button v-if="!structureDialog.meta?.isView" class="btn btn-sm btn-secondary" @click="renameTable">
+          <button v-if="structureEditable" class="btn btn-sm btn-secondary" @click="renameTable">
             {{ t('重命名表') }}
           </button>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeStructureDialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -53,7 +54,7 @@
                     <td>{{ column.extra || '-' }}</td>
                     <td>{{ column.comment || '-' }}</td>
                     <td class="structure-actions">
-                      <template v-if="!structureDialog.meta.isView">
+                      <template v-if="structureEditable">
                         <button class="btn btn-xs btn-secondary" @click="startEditColumn(column)">
                           {{ t('修改') }}
                         </button>
@@ -68,20 +69,20 @@
               </table>
             </div>
 
-            <div v-if="!structureDialog.meta.isView && editingColumn" class="structure-form">
+            <div v-if="structureEditable && editingColumn" class="structure-form">
               <div class="structure-form-title">{{ t('修改字段') }} {{ editingColumn.name }}</div>
               <div class="structure-form-grid">
                 <label class="structure-field">
                   <span>{{ t('类型') }}</span>
-                  <input v-model="editingColumn.type" class="input-field" :placeholder="t('如 VARCHAR(255)')" />
+                  <AppInput v-model="editingColumn.type" :placeholder="t('如 VARCHAR(255)')" />
                 </label>
                 <label class="structure-field">
                   <span>{{ t('默认值') }}</span>
-                  <input v-model="editingColumn.defaultValue" class="input-field" :placeholder="t('留空表示不设置')" />
+                  <AppInput v-model="editingColumn.defaultValue" :placeholder="t('留空表示不设置')" />
                 </label>
                 <label class="structure-field">
                   <span>{{ t('注释') }}</span>
-                  <input v-model="editingColumn.comment" class="input-field" />
+                  <AppInput v-model="editingColumn.comment" />
                 </label>
                 <div class="structure-checkboxes">
                   <label class="checkbox-label-inline">
@@ -100,24 +101,24 @@
               </div>
             </div>
 
-            <div v-else-if="!structureDialog.meta.isView" class="structure-form">
+            <div v-else-if="structureEditable" class="structure-form">
               <div class="structure-form-title">{{ t('新增字段') }}</div>
               <div class="structure-form-grid">
                 <label class="structure-field">
                   <span>{{ t('字段名') }}</span>
-                  <input v-model="newColumn.name" class="input-field" :placeholder="t('字段名')" />
+                  <AppInput v-model="newColumn.name" :placeholder="t('字段名')" />
                 </label>
                 <label class="structure-field">
                   <span>{{ t('类型') }}</span>
-                  <input v-model="newColumn.type" class="input-field" :placeholder="t('如 INT / VARCHAR(255)')" />
+                  <AppInput v-model="newColumn.type" :placeholder="t('如 INT / VARCHAR(255)')" />
                 </label>
                 <label class="structure-field">
                   <span>{{ t('默认值') }}</span>
-                  <input v-model="newColumn.defaultValue" class="input-field" :placeholder="t('留空表示不设置')" />
+                  <AppInput v-model="newColumn.defaultValue" :placeholder="t('留空表示不设置')" />
                 </label>
                 <label class="structure-field">
                   <span>{{ t('注释') }}</span>
-                  <input v-model="newColumn.comment" class="input-field" />
+                  <AppInput v-model="newColumn.comment" />
                 </label>
                 <label class="structure-field">
                   <span>{{ t('位于字段之后') }}</span>
@@ -166,7 +167,11 @@
                     <td>{{ index.columns.join(', ') }}</td>
                     <td>{{ index.cardinality ?? '-' }}</td>
                     <td class="structure-actions">
-                      <button v-if="!index.primary" class="btn btn-xs btn-secondary danger" @click="dropIndex(index)">
+                      <button
+                        v-if="structureEditable && !index.primary"
+                        class="btn btn-xs btn-secondary danger"
+                        @click="dropIndex(index)"
+                      >
                         {{ t('删除') }}
                       </button>
                       <span v-else class="structure-muted">-</span>
@@ -175,12 +180,12 @@
                 </tbody>
               </table>
             </div>
-            <div v-if="!structureDialog.meta.isView" class="structure-form">
+            <div v-if="structureEditable" class="structure-form">
               <div class="structure-form-title">{{ t('新增索引') }}</div>
               <div class="structure-form-grid">
                 <label class="structure-field">
                   <span>{{ t('索引名') }}</span>
-                  <input v-model="newIndex.name" class="input-field" :placeholder="t('留空自动生成')" />
+                  <AppInput v-model="newIndex.name" :placeholder="t('留空自动生成')" />
                 </label>
                 <div class="structure-checkboxes">
                   <label class="checkbox-label-inline">
@@ -289,13 +294,17 @@
 
 <script setup>
 import { t } from '@/i18n'
-import { inject, ref, watch } from 'vue'
+import { getEngineCapabilities } from '@shared/databaseEngines'
+import { computed, inject, ref, watch } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const {
   applyStructureChanges,
   closeStructureDialog,
+  connections,
   copySql,
   loadStructureMeta,
   showConfirm,
@@ -303,6 +312,16 @@ const {
   showPrompt,
   structureDialog
 } = databaseStore
+
+const structureEditable = computed(() => {
+  const tab = structureDialog.value.tab
+  const engine = connections.value?.find((conn) => conn.name === tab?.connectionName)?.engine
+  return (
+    Boolean(structureDialog.value.meta) &&
+    !structureDialog.value.meta.isView &&
+    getEngineCapabilities(engine).tableDesigner
+  )
+})
 
 const sections = [
   { key: 'columns', label: t('字段') },

@@ -125,16 +125,19 @@ export function getAvailableProviders(config = null) {
     const envKey = info.envKey || ''
     const hasEnvKey = Boolean(envKey && String(process.env[envKey] || '').trim())
     const storedKey = typeof apiKeys[key] === 'string' ? apiKeys[key].trim() : ''
+    const baseUrl = typeof baseUrls[key] === 'string' ? baseUrls[key].trim() : ''
+    const keyless = info.requiresApiKey === false
     return {
       type: key,
       name: info.name,
       description: info.description,
       requiresGroupId: info.requiresGroupId,
       requiresEndpointId: info.requiresEndpointId,
+      requiresApiKey: !keyless,
       docsUrl: info.docsUrl,
       envKey,
       hasEnvKey,
-      baseUrl: typeof baseUrls[key] === 'string' ? baseUrls[key].trim() : '',
+      baseUrl,
       defaultBaseUrl: info.defaultBaseUrl || '',
       models: models.map((model) => ({
         ...model,
@@ -142,7 +145,8 @@ export function getAvailableProviders(config = null) {
         contextWindow: model.contextWindow || getContextWindow(key)
       })),
       defaultModel: config ? resolveProviderDefaultModel(key, config.ai?.models) : models[0]?.id || '',
-      hasApiKey: Boolean(storedKey || hasEnvKey)
+      // 本地服务没有密钥，保存过模型目录或地址即视为已启用
+      hasApiKey: keyless ? Boolean(storedKey || baseUrl || models.length > 0) : Boolean(storedKey || hasEnvKey)
     }
   })
 }

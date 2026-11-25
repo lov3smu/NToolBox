@@ -2,41 +2,27 @@
   <PageLayout tool-path="/json-parser">
     <template #actions>
       <button class="btn-icon btn-sm" :title="t('格式化')" @click="formatJson">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3" />
-        </svg>
+        <AppIcon name="unfold-vertical" />
       </button>
       <button class="btn-icon btn-sm" :title="t('折叠全部')" @click="collapseAll">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 5L12 9L18 5M6 19L12 15L18 19" />
-        </svg>
+        <AppIcon name="chevrons-down-up" />
       </button>
       <button class="btn-icon btn-sm" :title="t('展开全部')" @click="expandAll">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 9L12 5L18 9M6 15L12 19L18 15" />
-        </svg>
+        <AppIcon name="chevrons-up-down" />
       </button>
       <span class="toolbar-sep" />
       <button class="btn-icon btn-sm" :title="t('压缩 JSON 并复制')" @click="copyMinified">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3" />
-        </svg>
+        <AppIcon name="fold-vertical" />
       </button>
       <button class="btn-icon btn-sm" :title="t('压缩转义 JSON 并复制')" @click="copyEscaped">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 17h3l2-4V7H5v6h3l-2 4m8 0h3l2-4V7h-6v6h3l-2 4z" />
-        </svg>
+        <AppIcon name="quote" />
       </button>
       <button class="btn-icon btn-sm" :title="t('JSON 转 XML')" @click="convertToXml">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M8 6l-6 6l6 6M16 6l6 6l-6 6" />
-        </svg>
+        <AppIcon name="code" />
       </button>
       <span class="toolbar-sep" />
       <button class="btn-icon btn-sm" :title="t('清空')" @click="clearInput">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12" />
-        </svg>
+        <AppIcon name="close" />
       </button>
     </template>
 
@@ -46,7 +32,10 @@
           <span class="panel-title">JSON</span>
           <div class="status-area">
             <span :class="['status', validationStatus]">{{ validationMessage }}</span>
-            <span class="size-info">{{ t('{chars} 字符 · {lines} 行', { chars: inputSize, lines: lineCount }) }}</span>
+            <span class="size-info">
+              {{ t('{chars} 字符 · {lines} 行', { chars: inputSize, lines: lineCount }) }}
+              <template v-if="draftSavedTime"> · {{ t('已自动保存 {time}', { time: draftSavedTime }) }}</template>
+            </span>
           </div>
         </div>
         <div class="editor-wrapper">
@@ -89,10 +78,10 @@
         </div>
         <div class="panel-body">
           <div class="jsonpath-input-row">
-            <input
+            <AppInput
               v-model="jsonPathInput"
               type="text"
-              class="input-field jsonpath-input"
+              class="jsonpath-input"
               :placeholder="t('输入 JSONPath 表达式，如：$.data.items[0].name')"
               @keydown.enter="executeJsonPath"
             />
@@ -112,10 +101,11 @@
       </div>
 
       <div class="panel help-panel">
-        <div class="panel-header">
+        <button type="button" class="panel-header help-toggle" :aria-expanded="helpOpen" @click="helpOpen = !helpOpen">
           <span class="panel-title">{{ t('JSONPath 语法说明') }}</span>
-        </div>
-        <div class="panel-body">
+          <AppIcon name="chevron-down" class="help-caret" :class="{ open: helpOpen }" />
+        </button>
+        <div v-show="helpOpen" class="panel-body">
           <table class="syntax-table">
             <thead>
               <tr>
@@ -165,33 +155,39 @@
       v-if="contextMenu.show"
       v-clamp-viewport
       class="context-menu"
+      role="menu"
       :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
     >
-      <div v-if="contextMenu.path" class="context-menu-item" @click="copySelectedPath">
+      <div v-if="contextMenu.path" role="menuitem" class="context-menu-item" @click="copySelectedPath">
         {{ t('复制 JSONPath: {path}', { path: contextMenu.path }) }}
       </div>
-      <div class="context-menu-item" @click="copySelectedText">{{ t('复制选中内容') }}</div>
-      <div class="context-menu-separator" />
-      <div class="context-menu-item" @click="formatJson">{{ t('格式化 JSON') }}</div>
-      <div class="context-menu-item" @click="compressJson">{{ t('压缩 JSON') }}</div>
+      <div role="menuitem" class="context-menu-item" @click="copySelectedText">{{ t('复制选中内容') }}</div>
+      <div class="context-menu-separator" role="separator" />
+      <div role="menuitem" class="context-menu-item" @click="formatJson">{{ t('格式化 JSON') }}</div>
+      <div role="menuitem" class="context-menu-item" @click="compressJson">{{ t('压缩 JSON') }}</div>
     </div>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { usePaneResize, useToast } from '@/composables'
-import { copyToClipboard } from '@/utils'
-import Toast from '@/components/Toast.vue'
+import { useAutoDraft, usePaneResize, useSendReceiver, useToast } from '@/composables'
+import { copyToClipboard } from '@/utils/clipboard'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { t } from '@/i18n'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+const { showSuccess, showError, showWarning } = useToast()
 
 const jsonInput = ref('')
+const { savedTime: draftSavedTime, ready: draftReady } = useAutoDraft('json', jsonInput, {
+  onRestore: (text) => {
+    renderHighlight(text)
+    autoFormat()
+  }
+})
 const pageBodyRef = ref(null)
 const {
   size: editorHeight,
@@ -213,6 +209,7 @@ const jsonPathInput = ref('')
 const jsonPathResult = ref(null)
 const parsedJson = ref(null)
 const collapsedPaths = ref(new Set())
+const helpOpen = ref(false)
 const displayLineCount = ref(1)
 const foldMarkers = ref([])
 
@@ -1175,12 +1172,27 @@ function handleClickOutside(e) {
   }
 }
 
+function handleKeydown(e) {
+  if (e.key === 'Escape' && contextMenu.value.show) {
+    hideContextMenu()
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleKeydown)
+})
+
+useSendReceiver('/json-parser', draftReady, (resource) => {
+  nextTick(() => {
+    renderJson(resource.text)
+    autoFormat()
+  })
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleKeydown)
   clearTimeout(formatTimeout)
 })
 </script>
@@ -1222,7 +1234,7 @@ onUnmounted(() => {
   background: var(--surface-muted);
   border-right: 1px solid var(--border-color);
   overflow-y: hidden;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 1.6;
   color: var(--text-tertiary);
@@ -1237,7 +1249,7 @@ onUnmounted(() => {
 .json-editor {
   flex: 1;
   padding: 12px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 1.6;
   background: var(--surface);
@@ -1245,10 +1257,6 @@ onUnmounted(() => {
   overflow: auto;
   outline: none;
   border: none;
-}
-
-.json-editor:focus {
-  outline: none;
 }
 
 .status-area {
@@ -1260,7 +1268,7 @@ onUnmounted(() => {
 
 .status {
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
   line-height: 18px;
 }
@@ -1293,7 +1301,7 @@ onUnmounted(() => {
 
 .jsonpath-input {
   flex: 1;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
 }
 
 .jsonpath-hint {
@@ -1310,10 +1318,10 @@ onUnmounted(() => {
   padding: 1px 6px;
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   color: var(--text-secondary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   transition:
     border-color 0.15s,
     color 0.15s;
@@ -1346,8 +1354,8 @@ onUnmounted(() => {
   overflow: auto;
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   line-height: 1.6;
   white-space: pre-wrap;
@@ -1381,8 +1389,8 @@ onUnmounted(() => {
 .syntax-table code {
   padding: 1px 5px;
   background: var(--surface-muted);
-  border-radius: 4px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
   color: var(--text-primary);
 }
 
@@ -1394,7 +1402,7 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
   padding: 4px 0;
   min-width: 180px;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .context-menu-item {
@@ -1466,7 +1474,7 @@ onUnmounted(() => {
   cursor: pointer;
   user-select: none;
   font-size: var(--font-size-xs);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   opacity: 0;
   transition: opacity 0.2s;
   z-index: 1;
@@ -1509,7 +1517,7 @@ onUnmounted(() => {
 
 .json-editor .fold-line.collapsed {
   background: rgba(var(--primary-rgb), 0.05);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .json-editor .fold-ellipsis {

@@ -1,4 +1,5 @@
 import { t } from '@/i18n'
+import { formatBytes as formatSize } from '@shared/format'
 const BINARY_COLUMN_PATTERN = /blob|binary|\bbit\b|geometry|point|linestring|polygon/i
 const DATE_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}/
 const JSON_PREVIEW_LIMIT = 160
@@ -31,17 +32,7 @@ export function toByteArray(value) {
 }
 
 export function formatBytes(bytes) {
-  const size = Number(bytes)
-  if (!Number.isFinite(size) || size <= 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let value = size
-  let unitIndex = 0
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024
-    unitIndex++
-  }
-  const text = unitIndex === 0 ? String(Math.round(value)) : value.toFixed(1).replace(/\.0$/, '')
-  return `${text} ${units[unitIndex]}`
+  return formatSize(bytes, { trimZeros: true })
 }
 
 function formatClockDate(date) {

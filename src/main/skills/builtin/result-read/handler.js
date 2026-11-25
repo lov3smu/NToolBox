@@ -1,4 +1,4 @@
-import { readToolResult } from '../../../services/toolResults.js'
+import { readToolResult } from '../../../services/agent/toolResults.js'
 
 export default async function handler(params) {
   return await readToolResult(params.result_id, {

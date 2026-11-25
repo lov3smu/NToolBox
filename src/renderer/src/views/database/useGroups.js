@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
 import { getConfig, patchConfig } from '@/api'
+import { logError } from '@/utils/log'
 export function createGroups(state, api) {
   const {
     activeTabId,
@@ -74,7 +75,7 @@ export function createGroups(state, api) {
       newGroupName.value = ''
       await api.loadConnections()
     } catch (error) {
-      console.error('保存分组失败:', error)
+      logError('保存分组失败:', error)
       await api.showMessage(t('保存分组失败: ') + error.message, 'error')
     }
   }
@@ -104,7 +105,7 @@ export function createGroups(state, api) {
         await api.loadConnections()
       }
     } catch (error) {
-      console.error('删除分组失败:', error)
+      logError('删除分组失败:', error)
       await api.showMessage(t('删除分组失败: ') + error.message, 'error')
     }
   }
@@ -139,7 +140,7 @@ export function createGroups(state, api) {
         await api.loadConnections()
       }
     } catch (error) {
-      console.error('移动连接失败:', error)
+      logError('移动连接失败:', error)
       await api.showMessage(t('移动连接失败: ') + error.message, 'error')
     }
   }
@@ -156,7 +157,7 @@ export function createGroups(state, api) {
         await api.loadConnections()
       }
     } catch (error) {
-      console.error('从组中删除失败:', error)
+      logError('从组中删除失败:', error)
       await api.showMessage(t('从组中删除失败: ') + error.message, 'error')
     }
   }

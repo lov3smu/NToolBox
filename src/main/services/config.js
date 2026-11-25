@@ -50,9 +50,11 @@ import {
   normalizeDatabaseRefreshInterval,
   normalizeDatabaseTransferBatchSize
 } from '../../shared/databaseClient.js'
-import { normalizeRecentToolsLimit } from '../../shared/tools.js'
+import { normalizeRecentToolsLimit } from '../../shared/navTools.js'
 import { getDefaultShortcuts } from '../../shared/shortcutActions.js'
 import { normalizeUpdateCheckInterval } from '../../shared/updater.js'
+import { applyManagedSettings } from '../../shared/managedProfile.js'
+import { getManagedSettings } from './managedProfile'
 
 export { validateConfig }
 
@@ -476,7 +478,7 @@ function normalizeAiConfig(raw, defaults) {
   }
 }
 
-function normalizeConfig(raw) {
+export function normalizeConfig(raw) {
   const defaults = getDefaultConfigContent()
   const merged = mergeConfig(defaults, isPlainObject(raw) ? raw : {})
   const appearance = isPlainObject(merged.appearance) ? merged.appearance : {}
@@ -585,6 +587,7 @@ export async function loadConfig() {
     const migration = migrateConfig(parsed.data)
     config = normalizeConfig(migration.config)
     decryptSecrets(config)
+    applyManagedSettings(config, getManagedSettings())
 
     if (migration.migrated) {
       await persistConfig(config)
@@ -618,6 +621,7 @@ async function saveConfigNow(newConfig) {
       keys: restoreMaskedAiApiKeys(mergedConfig.ai?.keys, config.ai?.keys)
     }
     mergedConfig.image_hosting = restoreMaskedImageHostSettings(mergedConfig.image_hosting, config.image_hosting)
+    applyManagedSettings(mergedConfig, getManagedSettings())
     const error = validateConfig(mergedConfig)
     if (error) {
       log.error('配置校验失败:', error)

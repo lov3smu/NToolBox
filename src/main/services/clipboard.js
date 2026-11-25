@@ -182,12 +182,9 @@ function readClipboardImage() {
   const buffer = clipboard.readBuffer(imageFormat)
   if (!buffer || buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) return null
 
-  const image = clipboard.readImage()
-  if (image.isEmpty()) return null
-
   return {
     type: 'image',
-    image: image.toDataURL(),
+    buffer,
     fingerprint: digest('image', buffer),
     size: buffer.length
   }
@@ -199,18 +196,26 @@ async function readImageFile(filePath) {
     if (!stat.isFile() || stat.size === 0 || stat.size > MAX_IMAGE_BYTES) return null
 
     const buffer = await fs.promises.readFile(filePath)
-    const image = nativeImage.createFromBuffer(buffer)
-    if (image.isEmpty()) return null
+    if (buffer.length === 0) return null
 
     return {
       type: 'image',
-      image: image.toDataURL(),
+      buffer,
       fingerprint: digest('image', buffer),
       size: buffer.length
     }
   } catch {
     return null
   }
+}
+
+// PNG 编码开销大，只在指纹变化后才执行，避免每轮轮询阻塞主线程
+function encodeImageSnapshot(snapshot) {
+  const image = nativeImage.createFromBuffer(snapshot.buffer)
+  if (image.isEmpty()) return null
+  const encoded = { ...snapshot, image: image.toDataURL() }
+  delete encoded.buffer
+  return encoded
 }
 
 async function readCurrentSnapshots() {
@@ -282,7 +287,9 @@ async function pollClipboard() {
 
     const now = Date.now()
     for (const snapshot of snapshots) {
-      next = mergeHistoryEntry(next, toHistoryEntry(snapshot, now), settings.max_entries)
+      const resolved = snapshot.type === 'image' ? encodeImageSnapshot(snapshot) : snapshot
+      if (!resolved) continue
+      next = mergeHistoryEntry(next, toHistoryEntry(resolved, now), settings.max_entries)
     }
     if (next !== entries) updateEntries(next)
   } catch (error) {

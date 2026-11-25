@@ -1,0 +1,111 @@
+{
+  "name": "toolbox",
+  "version": "1.0.0",
+  "description": "调用 NToolBox 工具箱的精确计算能力：编码/解码、文本转换、正则测试、文本对比与模板查询。需要确定结果时优先用它，不要手算。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["编码", "转换", "正则", "对比", "模板", "工具"],
+  "icon": "toolbox",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["codec", "text", "regex", "diff", "template"],
+        "description": "要调用的工具能力：codec 编码/解码，text 文本转换，regex 正则测试，diff 文本对比，template 模板查询"
+      },
+      "text": {
+        "type": "string",
+        "description": "codec/text/regex 操作的输入文本"
+      },
+      "mode": {
+        "type": "string",
+        "enum": ["base64", "url", "html", "unicode", "hex", "json"],
+        "description": "codec 的编码模式"
+      },
+      "direction": {
+        "type": "string",
+        "enum": ["encode", "decode"],
+        "description": "codec 的方向，默认 encode"
+      },
+      "operation": {
+        "type": "string",
+        "enum": [
+          "upper",
+          "lower",
+          "title",
+          "sentence",
+          "trim-lines",
+          "remove-empty-lines",
+          "dedupe-lines",
+          "sort-lines",
+          "sort-lines-desc",
+          "reverse-lines",
+          "number-lines",
+          "collapse-spaces",
+          "remove-whitespace"
+        ],
+        "description": "text 操作的转换类型"
+      },
+      "pattern": {
+        "type": "string",
+        "description": "regex 的正则表达式"
+      },
+      "flags": {
+        "type": "string",
+        "description": "regex 的修饰符，如 i、m、s、u"
+      },
+      "left": {
+        "type": "string",
+        "description": "diff 的左侧（旧）文本"
+      },
+      "right": {
+        "type": "string",
+        "description": "diff 的右侧（新）文本"
+      },
+      "ignore_case": {
+        "type": "boolean",
+        "default": false,
+        "description": "diff 时忽略大小写"
+      },
+      "ignore_whitespace": {
+        "type": "boolean",
+        "default": false,
+        "description": "diff 时忽略空白差异"
+      },
+      "query": {
+        "type": "string",
+        "description": "template 查询关键字，匹配模板名称、标签与内容"
+      },
+      "template_id": {
+        "type": "string",
+        "description": "template 要读取的模板 id，省略时列出模板"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "default": 100,
+        "description": "正则匹配或文本对比最多返回的条目数"
+      }
+    },
+    "required": ["action"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "action: codec, mode: base64, direction: encode, text: hello",
+      "output": "aGVsbG8="
+    },
+    {
+      "input": "action: regex, pattern: \"\\\\d+\", text: \"订单 42 与 7\"",
+      "output": "命中 2 处及每处位置与内容"
+    },
+    {
+      "input": "action: template, query: 周报",
+      "output": "匹配到的模板 id、名称与发送目标"
+    }
+  ]
+}

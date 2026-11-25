@@ -54,15 +54,10 @@
     <article v-for="(server, index) in servers" :key="server.key" class="mcp-server">
       <div class="mcp-server-head">
         <span class="mcp-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22v-5" />
-            <path d="M9 8V2" />
-            <path d="M15 8V2" />
-            <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
-          </svg>
+          <AppIcon name="plug" />
         </span>
         <div class="mcp-server-title">
-          <input v-model="server.name" class="input-field mcp-name" :placeholder="t('连接器名称')" spellcheck="false" />
+          <AppInput v-model="server.name" class="mcp-name" :placeholder="t('连接器名称')" spellcheck="false" />
           <span v-if="server.status" class="mcp-status" :class="`is-${server.status}`">
             {{ statusLabel(server) }}
           </span>
@@ -72,26 +67,25 @@
           <span>{{ server.enabled ? t('启用') : t('停用') }}</span>
         </label>
       </div>
-      <input
+      <AppInput
         v-model="server.command"
-        class="input-field"
         :placeholder="t('启动命令，如 npx（也可填完整命令行，保存时自动拆分）')"
         spellcheck="false"
       />
-      <textarea
+      <AppTextarea
         v-model="server.argsText"
-        class="input-field mcp-input"
+        class="mcp-input"
         rows="2"
         spellcheck="false"
         :placeholder="t('参数，每行一个')"
-      ></textarea>
-      <textarea
+      />
+      <AppTextarea
         v-model="server.envText"
-        class="input-field mcp-input"
+        class="mcp-input"
         rows="2"
         spellcheck="false"
         :placeholder="t('环境变量，每行一个 KEY=VALUE')"
-      ></textarea>
+      />
       <p v-if="server.error" class="mcp-error">{{ server.error }}</p>
       <p v-if="server.testMessage" class="mcp-test-result" :class="{ success: server.testSuccess }">
         {{ server.testMessage }}
@@ -107,20 +101,20 @@
     <button type="button" class="mcp-add" :disabled="servers.length >= 16" @click="addServer">
       {{ t('+ 添加连接器') }}
     </button>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { getConfig, mcpReload, mcpStatus, mcpTest, patchConfig } from '@/api'
+import AppIcon from '@/components/AppIcon.vue'
 import { useToast } from '@/composables'
 import { MCP_SERVER_NAME_PATTERN, normalizeMcpServers, splitCommandLine } from '@shared/mcp'
 import { t } from '@/i18n'
-import Toast from '@/components/Toast.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
+const { showSuccess, showError } = useToast()
 
 const servers = ref([])
 const loading = ref(true)
@@ -383,7 +377,7 @@ onMounted(load)
 
 .mcp-panel-tag {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-muted);
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
@@ -424,7 +418,7 @@ onMounted(load)
 .mcp-preset {
   padding: 4px 10px;
   border: 1px dashed var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
@@ -530,7 +524,7 @@ onMounted(load)
 
 .mcp-status {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   background: var(--surface-muted);
   color: var(--text-tertiary);
@@ -560,7 +554,7 @@ onMounted(load)
 
 .mcp-input {
   resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
 }
 

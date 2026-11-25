@@ -93,7 +93,7 @@ const TOOL_DEFINITIONS = [
   }
 ]
 
-vi.mock('../src/main/services/skills.js', () => ({
+vi.mock('../src/main/services/extensions/skills.js', () => ({
   initSkills: vi.fn(async () => {}),
   getSkillsManager: () => ({
     getToolDefinitions: () => TOOL_DEFINITIONS,
@@ -102,7 +102,7 @@ vi.mock('../src/main/services/skills.js', () => ({
   })
 }))
 
-const { chatStream } = await import('../src/main/services/chat.js')
+const { chatStream } = await import('../src/main/services/agent/chat.js')
 
 function planResult() {
   return { success: true, content: JSON.stringify({ complexity: 'simple', goal: '', steps: [] }) }

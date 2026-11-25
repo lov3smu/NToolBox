@@ -185,7 +185,7 @@ describe('config atomic writes', () => {
     expect(disk.appearance.theme).toBe('light')
     expect(disk.appearance.font_size).toBe('small')
     expect(disk.ai.keys.openai).toBeDefined()
-    expect(getConfig().notifications.upload_done).toBe(false)
+    expect(getConfig().notifications.upload_done).toBe('off')
   })
 
   it('patchConfig rejects non-object payloads without writing', async () => {

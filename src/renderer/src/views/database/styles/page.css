@@ -15,6 +15,9 @@
     gap: 6px;
     height: var(--control-height-sm);
     padding: 0 10px;
+    border: none;
+    background: transparent;
+    font: inherit;
     border-radius: var(--radius-sm);
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
@@ -64,7 +67,7 @@
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    z-index: 40;
+    z-index: 1200;
     min-width: 190px;
     padding: 5px;
     display: flex;
@@ -80,7 +83,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    width: 100%;
     padding: 7px 10px;
+    border: none;
+    background: transparent;
+    font: inherit;
+    text-align: left;
     border-radius: var(--radius-sm);
     color: var(--text-secondary);
     font-size: var(--font-size-sm);

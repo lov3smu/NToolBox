@@ -172,7 +172,7 @@ export function prepareStorageLayout(app, overrides = {}) {
   const legacyUserData = pathOrNull(() => app.getPath('userData'))
   const appName = typeof app.getName === 'function' ? app.getName() : 'NToolBox'
   const repoRoot = getProjectRoot()
-  const isDev = !app.isPackaged
+  const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
   const home = overrides.home || os.homedir()
 
   const legacyRoots = [

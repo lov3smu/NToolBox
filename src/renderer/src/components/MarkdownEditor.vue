@@ -227,6 +227,17 @@ function insertText(text) {
   focus()
 }
 
+function scrollToLine(lineNumber) {
+  const view = editorView
+  if (!view) return
+  const line = view.state.doc.line(Math.min(Math.max(1, Number(lineNumber) || 1), view.state.doc.lines))
+  view.dispatch({
+    selection: { anchor: line.from },
+    effects: EditorView.scrollIntoView(line.from, { y: 'start' })
+  })
+  focus()
+}
+
 function emitCursor(state) {
   const range = state.selection.main
   const line = state.doc.lineAt(range.head)
@@ -339,6 +350,7 @@ defineExpose({
   getSelection,
   setContent,
   insertText,
+  scrollToLine,
   wrapSelection,
   toggleLineMark,
   insertBlock,

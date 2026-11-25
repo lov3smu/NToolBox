@@ -1,12 +1,13 @@
 <template>
-  <div v-if="dataTransferDialog.show" class="dialog-overlay">
-    <div class="dialog data-transfer-dialog">
+  <div
+    v-if="dataTransferDialog.show"
+    v-modal-shell="{ onClose: closeDataTransferDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
+    <div class="dialog dialog-wide data-transfer-dialog">
       <div class="dialog-header">
         <h3 class="transfer-heading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 7h13l-3-3" />
-            <path d="M20 17H7l3 3" />
-          </svg>
+          <AppIcon name="swap-horizontal" />
           {{ t('数据传输') }}
         </h3>
         <button
@@ -15,10 +16,7 @@
           :disabled="dataTransferDialog.transferring"
           @click="closeDataTransferDialog"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
 
@@ -33,10 +31,7 @@
                 :disabled="dataTransferDialog.transferring"
                 @click="openDataTransferDialog"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
+                <AppIcon name="plus" />
               </button>
               <button
                 class="btn-icon btn-sm"
@@ -44,25 +39,20 @@
                 :disabled="dataTransferDialog.transferring"
                 @click="refreshTransferTasks"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                </svg>
+                <AppIcon name="folder" />
               </button>
             </div>
           </div>
 
-          <input
+          <AppInput
             v-model="dataTransferDialog.taskKeyword"
-            class="input-field transfer-task-search"
+            class="transfer-task-search"
             :placeholder="t('搜索任务...')"
           />
 
           <div class="transfer-task-list">
             <div v-if="!filteredTasks.length" class="transfer-task-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M4 7h13l-3-3" />
-                <path d="M20 17H7l3 3" />
-              </svg>
+              <AppIcon name="swap-horizontal" :stroke-width="1.5" />
               <span>{{ dataTransferDialog.tasks.length ? t('没有匹配的任务') : t('暂无已保存的传输任务') }}</span>
             </div>
             <template v-else>
@@ -83,11 +73,7 @@
                   :disabled="dataTransferDialog.transferring"
                   @click.stop="deleteTransferTask(task)"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M8 6V4h8v2" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                  </svg>
+                  <AppIcon name="trash" />
                 </button>
               </div>
             </template>
@@ -138,12 +124,7 @@
               :disabled="dataTransferDialog.transferring"
               @click="swapTransferSides"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M7 4L3 8l4 4" />
-                <path d="M3 8h14" />
-                <path d="M17 20l4-4-4-4" />
-                <path d="M21 16H7" />
-              </svg>
+              <AppIcon name="swap-horizontal" />
             </button>
 
             <section class="transfer-side">
@@ -198,9 +179,8 @@
             </div>
             <template v-else>
               <div class="transfer-object-toolbar">
-                <input
+                <AppInput
                   v-model="dataTransferDialog.objectKeyword"
-                  class="input-field"
                   :placeholder="t('搜索对象名...')"
                   :disabled="dataTransferDialog.transferring"
                 />
@@ -221,7 +201,7 @@
               </div>
 
               <div v-if="dataTransferDialog.bulkOpen" class="transfer-bulk">
-                <textarea
+                <AppTextarea
                   v-model="dataTransferDialog.bulkText"
                   class="transfer-bulk-input"
                   :placeholder="t('输入对象名称，每行一个；可用 table:orders 指定类型')"
@@ -303,6 +283,26 @@
               </RadioOption>
             </div>
 
+            <div v-if="dataTransferDialog.contentMode !== 'structure'" class="transfer-option-block">
+              <div class="transfer-option-title">{{ t('数据脱敏') }}</div>
+              <div class="mask-preset-group">
+                <button
+                  v-for="preset in MASK_PRESETS"
+                  :key="preset.key"
+                  type="button"
+                  :class="['mask-preset-chip', { active: dataTransferDialog.maskPresets.includes(preset.key) }]"
+                  :aria-pressed="dataTransferDialog.maskPresets.includes(preset.key)"
+                  :disabled="dataTransferDialog.transferring"
+                  @click="toggleMaskPreset(preset.key)"
+                >
+                  {{ t(preset.label) }}
+                </button>
+              </div>
+              <p class="transfer-option-hint">
+                {{ t('仅影响写入目标表的数据：按字段名关键词匹配，命中的列写入掩码。') }}
+              </p>
+            </div>
+
             <div class="transfer-option-grid">
               <label class="transfer-field">
                 <span>{{ t('目标表处理方式') }}</span>
@@ -347,9 +347,8 @@
 
               <label class="transfer-field">
                 <span>{{ t('每批行数') }}</span>
-                <input
+                <AppInput
                   v-model.number="dataTransferDialog.batchSize"
-                  class="input-field"
                   type="number"
                   min="1"
                   max="10000"
@@ -420,9 +419,13 @@
 <script setup>
 import { t } from '@/i18n'
 import { computed, inject } from 'vue'
+import { MASK_PRESETS } from '@shared/dataMasking'
 import RadioOption from '@/components/RadioOption.vue'
 import { filterTransferObjects, getTransferTypeLabel, groupTransferObjects, transferObjectKey } from '../transferPlan'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 const databaseStore = inject('database')
 const {
   activeConnections,
@@ -526,5 +529,12 @@ function summaryKey(item) {
 
 function summaryLabel(item) {
   return `${getTransferTypeLabel(item.type)} ${item.name}`
+}
+
+function toggleMaskPreset(key) {
+  const list = dataTransferDialog.value.maskPresets
+  const index = list.indexOf(key)
+  if (index >= 0) list.splice(index, 1)
+  else list.push(key)
 }
 </script>

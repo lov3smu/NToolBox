@@ -31,7 +31,12 @@ describe('IPC contract', () => {
   })
 
   it('registers every contract channel in the main process', () => {
-    const source = read('src/main/ipc/index.js')
+    const handlersDir = path.join(process.cwd(), 'src/main/ipc/handlers')
+    const source = fs
+      .readdirSync(handlersDir)
+      .filter((file) => file.endsWith('.js'))
+      .map((file) => fs.readFileSync(path.join(handlersDir, file), 'utf8'))
+      .join('\n')
     for (const method of IPC_METHODS) {
       expect(source, method.channel).toContain(`handle(IPC_CHANNELS.${method.name},`)
     }

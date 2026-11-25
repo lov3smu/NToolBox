@@ -79,7 +79,7 @@
     flex: 0 1 auto;
     min-width: 0;
     color: var(--text-tertiary);
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: var(--font-mono);
     font-size: var(--font-size-sm);
     font-weight: 400;
     white-space: nowrap;
@@ -94,7 +94,7 @@
     height: var(--icon-size-sm);
     padding: 2px;
     border: none;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
@@ -120,7 +120,7 @@
     font-weight: 400;
     padding: 3px 8px;
     background: var(--inset-bg);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
   }
 
   .status-right {

@@ -23,6 +23,7 @@ let artifactRepository
 let dbToolsRepository
 let clipboardRepository
 let draftRepository
+let notificationRepository
 
 beforeAll(async () => {
   storage = await import('../src/main/services/sqlite/index.js')
@@ -33,6 +34,7 @@ beforeAll(async () => {
   dbToolsRepository = await import('../src/main/services/sqlite/dbToolsRepository.js')
   clipboardRepository = await import('../src/main/services/sqlite/clipboardRepository.js')
   draftRepository = await import('../src/main/services/sqlite/draftRepository.js')
+  notificationRepository = await import('../src/main/services/sqlite/notificationRepository.js')
 })
 
 afterAll(async () => {
@@ -584,6 +586,17 @@ describe('草稿仓储', () => {
     expect((await draftRepository.listDrafts('wechat-draft')).total).toBe(1)
   })
 
+  it('编辑器草稿支持 JSON/YAML/HTML', async () => {
+    for (const kind of ['json', 'yaml', 'html']) {
+      await draftRepository.clearDrafts(kind)
+      expect(await draftRepository.saveDraft(kind, { id: 'current', content: `${kind}-content` })).toBe(true)
+      const page = await draftRepository.listDrafts(kind)
+      expect(page.total).toBe(1)
+      expect(page.items[0].content).toBe(`${kind}-content`)
+      await draftRepository.clearDrafts(kind)
+    }
+  })
+
   it('旧草稿导入幂等并按保留条数裁剪', async () => {
     await draftRepository.clearDrafts('wechat-draft')
     const legacy = []
@@ -604,5 +617,44 @@ describe('草稿仓储', () => {
     await draftRepository.clearDrafts('markdown')
     expect((await draftRepository.listDrafts('markdown')).total).toBe(0)
     await draftRepository.clearDrafts('wechat-draft')
+  })
+})
+
+describe('notification center repository', () => {
+  it('records notifications, tracks unread and marks read', async () => {
+    await notificationRepository.clearNotifications()
+    const first = await notificationRepository.addNotification({
+      kind: 'upload_done',
+      level: 'success',
+      title: '上传完成',
+      body: '图片已上传到图床',
+      createdAt: 1000
+    })
+    const second = await notificationRepository.addNotification({
+      kind: 'backup_done',
+      level: 'success',
+      title: '备份完成',
+      body: '任务已结束',
+      createdAt: 2000
+    })
+    expect(first?.id).toBeTruthy()
+    expect(second?.id).toBeTruthy()
+
+    const page = await notificationRepository.listNotifications({ limit: 10 })
+    expect(page.total).toBe(2)
+    expect(page.unread).toBe(2)
+    expect(page.items.map((item) => item.kind)).toEqual(['backup_done', 'upload_done'])
+    expect(await notificationRepository.unreadNotificationCount()).toBe(2)
+
+    expect(await notificationRepository.markNotificationsRead([first.id])).toBe(true)
+    expect(await notificationRepository.unreadNotificationCount()).toBe(1)
+
+    expect(await notificationRepository.markNotificationsRead()).toBe(true)
+    expect(await notificationRepository.unreadNotificationCount()).toBe(0)
+
+    expect(await notificationRepository.clearNotifications()).toBe(true)
+    const empty = await notificationRepository.listNotifications({ limit: 10 })
+    expect(empty.total).toBe(0)
+    expect(empty.items).toEqual([])
   })
 })

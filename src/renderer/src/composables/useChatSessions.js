@@ -2,7 +2,7 @@ import { t } from '@/i18n'
 
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { chatDeleteSession, chatImportSessions, chatLoadSessions, chatSaveSession } from '@/api'
-import { finalizeContent, normalizeLegacyThinking } from '@/utils/chatContent'
+import { ensureMessageIds, finalizeContent, normalizeLegacyThinking } from '@/views/chat/chatContent'
 
 const VIEW_STATE_KEY = 'chat_view_state'
 const PENDING_STREAM_KEY = 'chat_pending_stream'
@@ -199,6 +199,7 @@ export function useChatSessions({
     }
     for (const session of sessions.value) {
       if (typeof session.workspace !== 'string') session.workspace = ''
+      ensureMessageIds(session.messages)
       for (const message of session.messages || []) normalizeLegacyThinking(message)
     }
     const savedId = viewState.value.activeSessionId

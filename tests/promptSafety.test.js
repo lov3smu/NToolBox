@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectPromptInjection, isUntrustedTool, wrapUntrustedContent } from '../src/main/services/promptSafety.js'
+import { detectPromptInjection, isUntrustedTool, wrapUntrustedContent } from '../src/main/services/agent/promptSafety.js'
 
 describe('prompt safety', () => {
   it('marks external tools as untrusted', () => {

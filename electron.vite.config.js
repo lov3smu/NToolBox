@@ -78,12 +78,17 @@ const copySkillsPlugin = () => {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   main: {
     build: {
+      // 主进程包约 1.5 MB，构建时压缩；保留函数/类名便于日志与堆栈定位
+      minify: command === 'build' ? 'esbuild' : false,
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/main/index.js')
+        },
+        output: {
+          keepNames: true
         },
         external: [
           'electron',
@@ -149,4 +154,4 @@ export default defineConfig({
       }
     }
   }
-})
+}))

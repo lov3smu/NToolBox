@@ -1,13 +1,14 @@
 <template>
-  <div v-if="exportDialog.show" class="dialog-overlay">
+  <div
+    v-if="exportDialog.show"
+    v-modal-shell="{ onClose: closeExportDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
     <div class="dialog">
       <div class="dialog-header">
         <h3>{{ t('导出数据 ·') }} {{ exportDialog.tab?.tableName || t('查询结果') }}</h3>
         <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeExportDialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="dialog-content">
@@ -46,6 +47,23 @@
             <span>{{ t('包含表结构（DROP + CREATE TABLE）') }}</span>
           </label>
         </div>
+        <div class="form-group">
+          <label>{{ t('数据脱敏') }}</label>
+          <div class="mask-preset-group">
+            <button
+              v-for="preset in MASK_PRESETS"
+              :key="preset.key"
+              type="button"
+              :class="['mask-preset-chip', { active: exportDialog.maskPresets.includes(preset.key) }]"
+              :aria-pressed="exportDialog.maskPresets.includes(preset.key)"
+              :disabled="exportDialog.exporting"
+              @click="toggleMaskPreset(preset.key)"
+            >
+              {{ t(preset.label) }}
+            </button>
+          </div>
+          <p class="export-hint">{{ t('仅影响导出文件：按字段名关键词匹配，命中的列写入掩码。') }}</p>
+        </div>
         <p class="export-hint">
           {{
             exportDialog.scope === 'all' && exportDialog.tab?.type === 'table'
@@ -69,8 +87,10 @@
 <script setup>
 import { t } from '@/i18n'
 import { inject } from 'vue'
+import { MASK_PRESETS } from '@shared/dataMasking'
 import RadioOption from '@/components/RadioOption.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const { closeExportDialog, executeExport, exportDialog } = databaseStore
 
@@ -80,4 +100,11 @@ const formats = [
   { value: 'sql', label: 'SQL' },
   { value: 'markdown', label: 'Markdown' }
 ]
+
+function toggleMaskPreset(key) {
+  const list = exportDialog.value.maskPresets
+  const index = list.indexOf(key)
+  if (index >= 0) list.splice(index, 1)
+  else list.push(key)
+}
 </script>

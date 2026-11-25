@@ -3,7 +3,7 @@ import fs from 'fs'
 import log from 'electron-log'
 import sudo from 'sudo-prompt'
 import { getLogDir } from './path'
-import { buildElevatedMkdirCommand } from './elevateCommand'
+import { buildElevatedMkdirCommand } from './elevate/command.js'
 
 let initialized = false
 

@@ -1,4 +1,5 @@
 import { IPC_METHODS, IPC_LISTENERS } from '@shared/ipc'
+import { logError } from '@/utils/log'
 
 const bridge = window.electronAPI || {}
 
@@ -12,7 +13,7 @@ function createInvoker({ name, channel, fallback }) {
       const result = await fn(...args)
       return result ?? fallback
     } catch (error) {
-      console.error(`[ipc] ${channel} failed:`, error)
+      logError(`ipc ${channel}`, error)
       return fallback
     }
   }
@@ -43,6 +44,24 @@ export const {
   selectDirectory,
   selectFile,
   reloadConfig,
+  configExport,
+  configImportPick,
+  configImportApply,
+  managedProfileGet,
+  managedProfilePick,
+  managedProfileFetch,
+  managedProfileApply,
+  managedProfileRefresh,
+  managedProfileClear,
+  syncGetStatus,
+  syncPickDirectory,
+  syncPreview,
+  syncNow,
+  syncClear,
+  syncSetDeviceName,
+  syncSetSections,
+  syncSetAutoSync,
+  syncSetPassphrase,
   reloadMenu,
   menuAction,
   setAutoStart,
@@ -71,6 +90,14 @@ export const {
   clipboardTogglePin,
   clipboardClear,
   clipboardSetPaused,
+  scheduledTasksList,
+  scheduledTasksSave,
+  scheduledTasksDelete,
+  scheduledTasksRun,
+  notificationsList,
+  notificationsUnread,
+  notificationsMarkRead,
+  notificationsClear,
   getItemInfo,
   chat,
   chatStream,
@@ -78,6 +105,9 @@ export const {
   isChatStreamActive,
   respondChatApproval,
   rollbackChatRun,
+  inlineAi,
+  cancelInlineAi,
+  activityTimeline,
   listRunTraces,
   runTraceStats,
   readRunTrace,
@@ -108,11 +138,16 @@ export const {
   getProviderModels,
   dbTestConnection,
   dbCreateConnection,
+  dbSelectSqliteFile,
   dbCloseConnection,
   dbCloseAllConnections,
   dbExecuteQuery,
   dbQueryDatabases,
   dbQueryTables,
+  dbGetConnectionInfo,
+  dbGetDatabaseInfo,
+  dbGetTableDetails,
+  dbGetTableInfo,
   dbGetTableStructure,
   dbGetActiveConnections,
   dbIsConnectionActive,
@@ -157,6 +192,11 @@ export const {
   draftSave,
   draftRemove,
   draftImport,
+  mdOpenDocument,
+  mdListRecents,
+  mdReadDocument,
+  mdSaveDocument,
+  mdSaveDocumentAs,
   dbExportTable,
   dbGetBackupTasks,
   dbSaveBackupTask,
@@ -171,6 +211,7 @@ export const {
   dbSaveConnectionFile,
   selectSqlFile,
   readFile,
+  readTextDocument,
   saveSqlFile,
   writeFile,
   imageOpenDialog,
@@ -178,12 +219,14 @@ export const {
   imageListDir,
   imageRead,
   imageThumbnail,
+  imageDownload,
   imageAcceptDropped,
   imageHostState,
   imageHostSaveSettings,
   imageHostSelectFiles,
   imageHostUpload,
   imageHostUploadClipboard,
+  imageHostUploadData,
   imageHostTest,
   imageHostClearHistory,
   imageHostRemoveHistory,
@@ -196,6 +239,13 @@ export const {
   passwordEntrySave,
   passwordEntryDelete,
   passwordEntryReveal,
+  profilesList,
+  profilesSaveProject,
+  profilesDeleteProject,
+  profilesActivateProject,
+  profilesActiveEnvironment,
+  profilesSaveCredential,
+  profilesDeleteCredential,
   skillsInit,
   skillsList,
   skillsGet,
@@ -210,6 +260,9 @@ export const {
   mcpTest,
   mcpRegistryServers,
   networkTest,
+  httpRequest,
+  systemPorts,
+  systemSslCheck,
   extensionsMarket,
   extensionsInstall,
   extensionsInstallFromFolder,
@@ -220,6 +273,7 @@ export const {
   pluginsInstallFromFolder,
   pluginsInstallSource,
   pluginsUninstall,
+  pluginsRunAction,
   pluginsOpenDirectory,
   openExternal,
   onChatStreamChunk,
@@ -232,7 +286,8 @@ export const {
   onConfigChanged,
   onWindowMaximized,
   onWindowFullscreen,
-  onClipboardChanged
+  onClipboardChanged,
+  onNotificationCreated
 } = generated
 
 export function getPathForFile(file) {

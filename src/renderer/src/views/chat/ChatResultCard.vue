@@ -46,6 +46,7 @@
 import { computed } from 'vue'
 import { openExternal } from '@/api'
 import { t } from '@/i18n'
+import { formatDurationMs } from '@shared/format'
 
 const props = defineProps({
   metadata: { type: Object, default: null }
@@ -91,7 +92,7 @@ const chips = computed(() => {
   const list = []
   if (kind.value === 'table') {
     list.push(t('{count} 行', { count: props.metadata?.rowCount ?? rows.value.length }))
-    if (props.metadata?.duration) list.push(t('耗时 {value}', { value: formatDuration(props.metadata.duration) }))
+    if (props.metadata?.duration) list.push(t('耗时 {value}', { value: formatDurationMs(props.metadata.duration) }))
   } else if (kind.value === 'links') {
     list.push(t('{count} 条结果', { count: links.value.length }))
     if (props.metadata?.engine) list.push(String(props.metadata.engine))
@@ -112,11 +113,6 @@ function cellText(row, field) {
   if (value === null || value === undefined) return '—'
   const text = typeof value === 'object' ? JSON.stringify(value) : String(value)
   return text.length > MAX_CELL_CHARS ? `${text.slice(0, MAX_CELL_CHARS)}…` : text
-}
-
-function formatDuration(ms) {
-  if (!ms) return ''
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`
 }
 
 function openLink(url) {

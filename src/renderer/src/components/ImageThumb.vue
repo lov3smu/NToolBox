@@ -10,11 +10,7 @@
   >
     <span class="thumb-preview">
       <img v-if="src" :src="src" alt="" draggable="false" />
-      <svg v-else class="thumb-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <path d="m21 15-5-5L5 21" />
-      </svg>
+      <AppIcon v-else name="image" :stroke-width="1.5" class="thumb-placeholder" />
     </span>
     <span class="thumb-name">{{ file.name }}</span>
   </button>
@@ -24,6 +20,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { imageRead, imageThumbnail } from '@/api'
 
+import AppIcon from '@/components/AppIcon.vue'
 const props = defineProps({
   file: { type: Object, required: true },
   active: Boolean
@@ -96,7 +93,7 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 4px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-secondary);
   font: inherit;
@@ -121,7 +118,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--surface-muted);
 }

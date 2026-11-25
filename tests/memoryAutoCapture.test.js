@@ -75,7 +75,7 @@ vi.mock('../src/main/services/ai/index.js', () => ({
   PROVIDER_INFO: {}
 }))
 
-vi.mock('../src/main/services/skills.js', () => ({
+vi.mock('../src/main/services/extensions/skills.js', () => ({
   initSkills: vi.fn(async () => {}),
   getSkillsManager: () => ({
     getToolDefinitions: () => [
@@ -87,13 +87,13 @@ vi.mock('../src/main/services/skills.js', () => ({
   })
 }))
 
-vi.mock('../src/main/services/memory.js', () => ({
+vi.mock('../src/main/services/agent/memory.js', () => ({
   buildMemoryPrompt: vi.fn(async () => ''),
   getMemoryOverview: mocks.getMemoryOverview,
   addMemory: mocks.addMemory
 }))
 
-const { chatStream } = await import('../src/main/services/chat.js')
+const { chatStream } = await import('../src/main/services/agent/chat.js')
 
 const userMessage = (text) => [{ role: 'user', content: text }]
 

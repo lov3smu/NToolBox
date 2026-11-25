@@ -15,6 +15,7 @@ import { buildPendingSql, coerceValue, keysForRow, rowKeyFor, isSameValue } from
 import { bindSqlParams, extractSqlParams } from './sqlParams'
 import { matchesAccelerator } from '@/utils/shortcut'
 import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
+import { logError, logWarn } from '@/utils/log'
 
 const TAB_STORAGE_KEY = 'ntoolbox-db-tabs'
 
@@ -37,6 +38,10 @@ export function createTabs(state, api, options = {}) {
     tabs,
     transactionConnections
   } = state
+
+  function engineForConnection(connName) {
+    return connections.value?.find((conn) => conn.name === connName)?.engine || 'mysql'
+  }
 
   function handleKeyDown(e) {
     const accelerator = options.runShortcut?.value || DEFAULT_SHORTCUT_ACTIONS.database_run
@@ -477,7 +482,8 @@ export function createTabs(state, api, options = {}) {
         tableName: source.tableName,
         primaryKeys,
         isUniqueKey: !meta.primaryKeys?.length,
-        columns: meta.columns || []
+        columns: meta.columns || [],
+        engine: engineForConnection(tab.connectionName)
       }
     } catch (error) {
       result.readonlyReason = t('读取来源表结构失败: ') + error.message
@@ -667,7 +673,8 @@ export function createTabs(state, api, options = {}) {
       tableName: result.editSource.tableName,
       rowEdits: result.rowEdits,
       rowDeletes: result.rowDeletes,
-      rowInserts: result.rowInserts
+      rowInserts: result.rowInserts,
+      engine: result.editSource.engine
     })
     if (!sql) {
       api.showMessage(t('没有待保存的修改'), 'info')
@@ -911,7 +918,7 @@ export function createTabs(state, api, options = {}) {
 
       tab.queryResult = tab.queryResults[0]
     } catch (error) {
-      console.error('执行查询失败:', error)
+      logError('执行查询失败:', error)
       tab.queryResults = [
         {
           index: 0,
@@ -1119,7 +1126,7 @@ export function createTabs(state, api, options = {}) {
     try {
       localStorage.setItem(TAB_STORAGE_KEY, JSON.stringify(serializeTabs()))
     } catch (error) {
-      console.warn('保存数据库标签页失败:', error)
+      logWarn('保存数据库标签页失败:', error)
     }
   }
 

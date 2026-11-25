@@ -34,7 +34,7 @@ import {
   setKnowledgeSourceEnabled,
   searchKnowledge,
   buildMemoryPrompt
-} from '../src/main/services/memory.js'
+} from '../src/main/services/agent/memory.js'
 
 describe('memory service', () => {
   let workspace

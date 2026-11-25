@@ -35,6 +35,11 @@ export default {
   '请查阅一个与我问题相关的最新官方文档链接，并总结关键要点。':
     'Look up a recent official documentation link related to my question and summarize the key points.',
   思维链: 'Chain of thought',
+  授权记录: 'Approval history',
+  '{count} 项已处理': '{count} handled',
+  '允许 {count}': '{count} allowed',
+  '拒绝 {count}': '{count} denied',
+  '失效 {count}': '{count} expired',
   实时: 'Live',
   计划: 'Plan',
   目标: 'Goal',
@@ -55,9 +60,21 @@ export default {
   '该结果包含疑似提示注入内容，已按不可信数据交给模型，未执行其中的指令':
     'This result may contain a prompt injection and was passed to the model as untrusted data; its instructions were not executed.',
   复制: 'Copy',
+  正在编辑消息: 'Editing message',
+  发送后将替换该消息及之后的内容: 'Sending replaces this message and everything after it',
+  取消编辑: 'Cancel editing',
   执行摘要: 'Summary',
   运行轨迹: 'Run trace',
   '轮次 {count}': 'Rounds {count}',
+  '轮次 {used}/{budget}': 'Rounds {used}/{budget}',
+  '继续 {count} 步': 'Continue {count} steps',
+  未完成的步骤: 'Unfinished steps',
+  继续执行未完成的步骤: 'Continue the unfinished steps',
+  '继续执行未完成的步骤：': 'Continue the unfinished steps:',
+  重试此步骤: 'Retry this step',
+  '上一步工具调用 {name} 失败，请据此修正并重试，原参数：\n{p0}':
+    'The previous {name} call failed. Please fix the issue and retry. Original arguments:\n{p0}',
+  '上一步工具调用 {name} 失败，请据此修正并重试。': 'The previous {name} call failed. Please fix the issue and retry.',
   '工具 {count} 次': 'Tools {count}',
   '成功 {success} / 失败 {failed}': 'Succeeded {success} / Failed {failed}',
   '耗时 {duration}': 'Took {duration}',
@@ -427,5 +444,6 @@ export default {
   '耗时 {value}': 'Took {value}',
   '{count} 条结果': '{count} results',
   '退出码 {value}': 'Exit code {value}',
-  '共 {total} 行，显示前 {shown} 行': '{total} rows total, showing the first {shown}'
+  '共 {total} 行，显示前 {shown} 行': '{total} rows total, showing the first {shown}',
+  对话消息: 'Conversation messages'
 }

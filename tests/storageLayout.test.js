@@ -63,9 +63,11 @@ beforeEach(() => {
   repoKey = crypto.randomBytes(32)
   staleKey = crypto.randomBytes(32)
   fs.mkdirSync(state.repoRoot, { recursive: true })
+  process.env.ELECTRON_RENDERER_URL = 'http://localhost:5173'
 })
 
 afterEach(() => {
+  delete process.env.ELECTRON_RENDERER_URL
   fs.rmSync(root, { recursive: true, force: true })
 })
 

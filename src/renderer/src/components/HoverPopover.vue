@@ -15,6 +15,7 @@
           v-if="open"
           ref="cardRef"
           class="hover-popover"
+          :class="`is-${sizeClass}`"
           role="tooltip"
           :style="cardStyle"
           @mouseenter="cancelHide"
@@ -28,9 +29,12 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+
+const SIZES = ['xl', 'lg', 'md', 'sm', 'xs']
 
 const props = defineProps({
+  size: { type: String, default: 'md' },
   delay: { type: Number, default: 320 },
   hideDelay: { type: Number, default: 140 },
   focusDelay: { type: Number, default: 120 },
@@ -40,6 +44,8 @@ const props = defineProps({
   inline: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false }
 })
+
+const sizeClass = computed(() => (SIZES.includes(props.size) ? props.size : 'md'))
 
 const anchorRef = ref(null)
 const cardRef = ref(null)
@@ -163,7 +169,9 @@ async function place() {
   cardStyle.value = { top: `${Math.round(top)}px`, left: `${Math.round(left)}px` }
 }
 
-const onScroll = () => {
+const onScroll = (event) => {
+  const target = event.target
+  if (target && target.nodeType && cardRef.value?.contains(target)) return
   open.value = false
   cardStyle.value = {}
 }
@@ -223,11 +231,35 @@ onBeforeUnmount(() => {
   max-width: 320px;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--surface);
   box-shadow: var(--shadow-md);
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+}
+
+.hover-popover.is-xl {
+  max-width: 384px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+}
+
+.hover-popover.is-lg {
+  max-width: 352px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+}
+
+.hover-popover.is-sm {
+  max-width: 288px;
+  padding: 8px 10px;
+}
+
+.hover-popover.is-xs {
+  max-width: 240px;
+  padding: 6px 8px;
 }
 
 .hover-popover-enter-active,

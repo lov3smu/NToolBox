@@ -9,7 +9,7 @@
         <section class="panel field-panel">
           <div class="panel-header">
             <span class="panel-title">{{ t('字段设置') }}</span>
-            <span class="field-hint">{{ getFieldHint(activeTab) }}</span>
+            <span class="panel-hint">{{ getFieldHint(activeTab) }}</span>
           </div>
           <div class="panel-body">
             <div class="type-options">
@@ -29,33 +29,23 @@
               <template v-if="currentFieldType === 'range'">
                 <template v-if="activeTab === 'week'">
                   <div class="inline-row">
-                    <select v-model="weekRangeFrom" class="select-field" @change="generateExpression">
-                      <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                        {{ t(day.label) }}
-                      </option>
-                    </select>
+                    <AppSelect v-model="weekRangeFrom" :options="weekDayOptions" @change="generateExpression" />
                     <span class="range-separator">{{ t('至') }}</span>
-                    <select v-model="weekRangeTo" class="select-field" @change="generateExpression">
-                      <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                        {{ t(day.label) }}
-                      </option>
-                    </select>
+                    <AppSelect v-model="weekRangeTo" :options="weekDayOptions" @change="generateExpression" />
                   </div>
                 </template>
                 <template v-else>
-                  <input
+                  <AppInput
                     v-model.number="rangeValues[activeTab].from"
                     type="number"
-                    class="input-field"
                     :min="FIELD_CONFIG[activeTab]?.min"
                     :max="FIELD_CONFIG[activeTab]?.max"
                     @input="generateExpression"
                   />
                   <span class="range-separator">{{ t('至') }}</span>
-                  <input
+                  <AppInput
                     v-model.number="rangeValues[activeTab].to"
                     type="number"
-                    class="input-field"
                     :min="FIELD_CONFIG[activeTab]?.min"
                     :max="FIELD_CONFIG[activeTab]?.max"
                     @input="generateExpression"
@@ -65,19 +55,17 @@
 
               <template v-else-if="currentFieldType === 'interval'">
                 <span class="interval-label">{{ t('从') }}</span>
-                <input
+                <AppInput
                   v-model.number="intervalValues[activeTab].start"
                   type="number"
-                  class="input-field"
                   :min="FIELD_CONFIG[activeTab]?.min"
                   :max="FIELD_CONFIG[activeTab]?.max"
                   @input="generateExpression"
                 />
                 <span class="interval-label">{{ t('开始，每') }}</span>
-                <input
+                <AppInput
                   v-model.number="intervalValues[activeTab].step"
                   type="number"
-                  class="input-field"
                   :min="1"
                   :max="FIELD_CONFIG[activeTab]?.max"
                   @input="generateExpression"
@@ -87,10 +75,10 @@
 
               <template v-else-if="currentFieldType === 'specific'">
                 <template v-if="activeTab === 'year'">
-                  <input
+                  <AppInput
                     v-model="yearSpecificInput"
                     type="text"
-                    class="input-field specific-input"
+                    class="specific-input"
                     :placeholder="t('例如: 2024,2025,2026')"
                     @input="generateExpression"
                   />
@@ -100,29 +88,33 @@
                     <div class="time-section">
                       <div class="time-section-title">{{ t('上午') }}</div>
                       <div class="specific-grid hour-grid">
-                        <div
+                        <button
                           v-for="n in 12"
                           :key="'am-' + n"
+                          type="button"
                           class="specific-item"
                           :class="{ active: specificValues.hour?.includes(n - 1) }"
+                          :aria-pressed="specificValues.hour?.includes(n - 1)"
                           @click="toggleSpecific('hour', n - 1)"
                         >
                           {{ (n - 1).toString().padStart(2, '0') }}
-                        </div>
+                        </button>
                       </div>
                     </div>
                     <div class="time-section">
                       <div class="time-section-title">{{ t('下午') }}</div>
                       <div class="specific-grid hour-grid">
-                        <div
+                        <button
                           v-for="n in 12"
                           :key="'pm-' + n"
+                          type="button"
                           class="specific-item"
                           :class="{ active: specificValues.hour?.includes(n + 11) }"
+                          :aria-pressed="specificValues.hour?.includes(n + 11)"
                           @click="toggleSpecific('hour', n + 11)"
                         >
                           {{ (n + 11).toString().padStart(2, '0') }}
-                        </div>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -137,28 +129,32 @@
                     }"
                   >
                     <template v-if="activeTab === 'week'">
-                      <div
+                      <button
                         v-for="day in weekDays"
                         :key="day.value"
+                        type="button"
                         class="specific-item"
                         :class="{ active: specificValues.week?.includes(parseInt(day.value)) }"
+                        :aria-pressed="specificValues.week?.includes(parseInt(day.value))"
                         @click="toggleSpecific('week', parseInt(day.value))"
                       >
                         {{ t(day.label) }}
-                      </div>
+                      </button>
                     </template>
                     <template v-else>
-                      <div
+                      <button
                         v-for="n in FIELD_CONFIG[activeTab]?.max - FIELD_CONFIG[activeTab]?.min + 1"
                         :key="n"
+                        type="button"
                         class="specific-item"
                         :class="{
                           active: specificValues[activeTab]?.includes(n - 1 + FIELD_CONFIG[activeTab]?.min)
                         }"
+                        :aria-pressed="specificValues[activeTab]?.includes(n - 1 + FIELD_CONFIG[activeTab]?.min)"
                         @click="toggleSpecific(activeTab, n - 1 + FIELD_CONFIG[activeTab]?.min)"
                       >
                         {{ activeTab === 'month' ? t(MONTH_NAMES[n]) : n - 1 + FIELD_CONFIG[activeTab]?.min }}
-                      </div>
+                      </button>
                     </template>
                   </div>
                 </template>
@@ -166,48 +162,33 @@
 
               <template v-else-if="currentFieldType === 'workDay'">
                 <span class="interval-label">{{ t('每月') }}</span>
-                <input
-                  v-model.number="workDayValue"
-                  type="number"
-                  class="input-field"
-                  min="1"
-                  max="31"
-                  @input="generateExpression"
-                />
+                <AppInput v-model.number="workDayValue" type="number" min="1" max="31" @input="generateExpression" />
                 <span class="interval-label">{{ t('号最近的工作日') }}</span>
               </template>
 
               <template v-else-if="currentFieldType === 'nth'">
                 <div class="inline-row">
                   <span class="interval-label">{{ t('每月第') }}</span>
-                  <select v-model="weekNth" class="select-field" @change="generateExpression">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
+                  <AppSelect v-model="weekNth" :options="weekNthOptions" @change="generateExpression" />
                   <span class="interval-label">{{ t('个') }}</span>
-                  <select v-model="weekNthDay" class="select-field" @change="generateExpression">
-                    <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                      {{ t(day.label) }}
-                    </option>
-                  </select>
+                  <AppSelect v-model="weekNthDay" :options="weekDayOptions" @change="generateExpression" />
                 </div>
               </template>
 
               <template v-else-if="currentFieldType === 'last'">
                 <div class="inline-row">
                   <span class="interval-label">{{ t('每月最后一个') }}</span>
-                  <select v-model="weekLastDay" class="select-field" @change="generateExpression">
-                    <option v-for="day in weekDays" :key="day.value" :value="day.value">
-                      {{ t(day.label) }}
-                    </option>
-                  </select>
+                  <AppSelect v-model="weekLastDay" :options="weekDayOptions" @change="generateExpression" />
                 </div>
               </template>
             </div>
-            <div v-else class="panel-empty config-empty">{{ t('当前规则无需额外参数，表达式已应用通配符') }}</div>
+            <EmptyState
+              v-else
+              bordered
+              class="config-empty"
+              size="sm"
+              :description="t('当前规则无需额外参数，表达式已应用通配符')"
+            />
           </div>
         </section>
 
@@ -253,9 +234,15 @@
             <div class="expression-row">
               <label class="field-label">{{ t('Cron 表达式') }}</label>
               <div class="expression-input-wrapper">
-                <input v-model="cronExpression" type="text" class="expression-input" @blur="onExpressionBlur" />
+                <AppInput
+                  v-model="cronExpression"
+                  class="expression-input"
+                  mono
+                  spellcheck="false"
+                  @blur="onExpressionBlur"
+                />
                 <button class="btn btn-secondary" @click="parseExpression">{{ t('反解析') }}</button>
-                <button class="btn btn-primary" @click="copyExpression">{{ t('复制') }}</button>
+                <CopyButton :text="cronExpression" :label="t('复制')" variant="primary" />
               </div>
             </div>
             <div class="expression-desc">{{ expressionDesc }}</div>
@@ -269,9 +256,13 @@
           </div>
           <div class="panel-body">
             <div class="schedule-list">
-              <div v-if="scheduleList.length === 0" class="panel-empty schedule-empty">
-                {{ t('请输入表达式查看执行计划') }}
-              </div>
+              <EmptyState
+                v-if="scheduleList.length === 0"
+                bordered
+                class="schedule-empty"
+                size="sm"
+                :description="t('请输入表达式查看执行计划')"
+              />
               <div v-for="(item, index) in scheduleList" :key="index" class="schedule-item">
                 <span class="index">{{ index + 1 }}</span>
                 <span class="time">{{ item.time }}</span>
@@ -282,11 +273,17 @@
         </section>
 
         <section class="panel help-panel">
-          <div class="panel-header">
+          <button
+            type="button"
+            class="panel-header help-toggle"
+            :aria-expanded="helpOpen"
+            @click="helpOpen = !helpOpen"
+          >
             <span class="panel-title">{{ t('说明') }}</span>
             <span class="panel-hint">{{ t('Cron 语法速查') }}</span>
-          </div>
-          <div class="panel-body help-content">
+            <AppIcon name="chevron-down" class="help-caret" :class="{ open: helpOpen }" />
+          </button>
+          <div v-show="helpOpen" class="panel-body help-content">
             <p class="help-intro">
               {{ t('Cron 表达式由 6-7 个字段组成，依次表示秒、分钟、小时、天数、月份、星期几和年份（可选）。') }}
             </p>
@@ -335,22 +332,24 @@
         </section>
       </div>
     </div>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from '@/composables'
-import { copyToClipboard, formatDateTime } from '@/utils'
-import Toast from '@/components/Toast.vue'
+import { formatDateTime } from '@/utils/format'
 import PageLayout from '@/layouts/PageLayout.vue'
 import TabBar from '@/components/TabBar.vue'
 import RadioOption from '@/components/RadioOption.vue'
+import AppSelect from '@/components/AppSelect.vue'
+import AppIcon from '@/components/AppIcon.vue'
+import CopyButton from '@/components/CopyButton.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { t } from '@/i18n'
+import AppInput from '@/components/AppInput.vue'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
+const { showSuccess, showError, showWarning } = useToast()
 
 const FIELD_CONFIG = {
   second: {
@@ -505,6 +504,9 @@ const weekDays = [
     }
   }
 ]
+
+const weekDayOptions = computed(() => weekDays.map((day) => ({ value: day.value, label: day.label })))
+const weekNthOptions = ['1', '2', '3', '4', '5']
 
 const tabs = [
   {
@@ -662,6 +664,7 @@ const weekNthDay = ref('1')
 const weekLastDay = ref('1')
 const yearSpecificInput = ref('')
 
+const helpOpen = ref(false)
 const cronExpression = ref('* * * * * ?')
 const expressionDesc = ref('')
 const scheduleList = ref([])
@@ -1331,18 +1334,6 @@ function onExpressionBlur() {
   updateScheduleList()
 }
 
-async function copyExpression() {
-  const text = cronExpression.value
-  if (!text) return
-
-  const success = await copyToClipboard(text)
-  if (success) {
-    showSuccess(t('已复制到剪贴板'))
-  } else {
-    showError(t('复制失败，请手动复制'))
-  }
-}
-
 onMounted(() => {
   generateExpression()
 })
@@ -1389,11 +1380,7 @@ onMounted(() => {
 
 .help-panel {
   grid-area: help;
-}
-
-.field-hint {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
+  align-self: start;
 }
 
 /* ---------- 规则类型 ---------- */
@@ -1410,18 +1397,18 @@ onMounted(() => {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  padding: 14px;
+  padding: 12px;
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
 }
 
-.value-config .input-field {
+.value-config .input-field[type='number'] {
   width: 76px;
   text-align: center;
 }
 
-.value-config .select-field {
+.value-config .app-select {
   width: 92px;
 }
 
@@ -1473,8 +1460,8 @@ onMounted(() => {
 
 .specific-grid.week-grid .specific-item {
   width: auto;
-  min-width: 56px;
-  padding: 0 10px;
+  min-width: 48px;
+  padding: 0 8px;
 }
 
 .hour-grid-container {
@@ -1496,17 +1483,20 @@ onMounted(() => {
 }
 
 .specific-item {
-  width: 34px;
-  height: 30px;
-  display: flex;
+  width: auto;
+  min-width: 36px;
+  height: var(--control-height-sm);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--font-size-xs);
   color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
   transition: var(--transition-fast);
 }
 
@@ -1515,23 +1505,23 @@ onMounted(() => {
   color: var(--text-primary);
 }
 
+.specific-item:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 1px;
+}
+
 .specific-item.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: var(--text-inverse);
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--btn-primary-text);
 }
 
 /* ---------- 表达式 ---------- */
 .expression-row {
-  margin-bottom: 14px;
-}
-
-.field-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .field-tags {
@@ -1545,14 +1535,14 @@ onMounted(() => {
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;
-  min-width: 56px;
-  padding: 6px 10px;
+  min-width: 44px;
+  padding: 4px 8px;
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: var(--font-size-base);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -1565,37 +1555,23 @@ onMounted(() => {
 
 .expression-input-wrapper {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
 .expression-input {
   flex: 1;
   min-width: 0;
-  height: 38px;
-  padding: 0 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: var(--font-size-md);
-  letter-spacing: 0.5px;
-}
-
-.expression-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: var(--shadow-glow);
 }
 
 .expression-desc {
-  padding: 10px 12px;
-  background: rgba(var(--accent-rgb), 0.06);
-  border-left: 3px solid var(--accent-color);
+  padding: 8px 10px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 /* ---------- 执行计划 ---------- */
@@ -1637,7 +1613,7 @@ onMounted(() => {
 .schedule-item .time {
   flex: 1;
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   white-space: nowrap;
 }
@@ -1647,7 +1623,7 @@ onMounted(() => {
   padding: 2px 8px;
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
   white-space: nowrap;
@@ -1689,10 +1665,10 @@ onMounted(() => {
 
 .help-content code {
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--inset-bg);
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
 }
 
@@ -1707,7 +1683,7 @@ onMounted(() => {
 .cron-structure pre {
   margin: 0;
   color: var(--text-secondary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   line-height: 1.7;
 }

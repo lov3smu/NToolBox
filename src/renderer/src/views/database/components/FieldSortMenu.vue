@@ -1,44 +1,34 @@
 <template>
   <div
     v-if="fieldSortMenu.show"
+    ref="menuRef"
     v-clamp-viewport
     class="context-menu"
+    role="menu"
     :style="{ left: fieldSortMenu.x + 'px', top: fieldSortMenu.y + 'px' }"
     @click.stop
+    @keydown="onMenuKeydown"
   >
-    <div class="menu-item" @click="sortFieldAsc()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="18 15 12 9 6 15" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="sortFieldAsc()">
+      <AppIcon name="chevron-up" />
       {{ t('升序排序') }}
     </div>
-    <div class="menu-item" @click="sortFieldDesc()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="sortFieldDesc()">
+      <AppIcon name="chevron-down" />
       {{ t('降序排序') }}
     </div>
-    <div class="menu-divider" />
-    <div class="menu-item" @click="appendFieldSortAsc()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="18 15 12 9 6 15" />
-        <line x1="4" y1="20" x2="20" y2="20" />
-      </svg>
+    <div class="menu-divider" role="separator" />
+    <div role="menuitem" class="menu-item" @click="appendFieldSortAsc()">
+      <AppIcon name="sort-ascending" />
       {{ t('追加升序排序') }}
     </div>
-    <div class="menu-item" @click="appendFieldSortDesc()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="6 9 12 15 18 9" />
-        <line x1="4" y1="20" x2="20" y2="20" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="appendFieldSortDesc()">
+      <AppIcon name="sort-descending" />
       {{ t('追加降序排序') }}
     </div>
-    <div class="menu-divider" />
-    <div class="menu-item" @click="clearFieldSort()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="6" x2="6" y2="18" />
-        <line x1="6" y1="6" x2="18" y2="18" />
-      </svg>
+    <div class="menu-divider" role="separator" />
+    <div role="menuitem" class="menu-item" @click="clearFieldSort()">
+      <AppIcon name="close" />
       {{ t('移除所有排序') }}
     </div>
   </div>
@@ -46,9 +36,31 @@
 
 <script setup>
 import { t } from '@/i18n'
-import { inject } from 'vue'
+import { inject, nextTick, ref, watch } from 'vue'
+import { focusFirstMenuItem, handleMenuKeydown } from '@/utils/menuKeyboard'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
-const { appendFieldSortAsc, appendFieldSortDesc, clearFieldSort, fieldSortMenu, sortFieldAsc, sortFieldDesc } =
-  databaseStore
+const {
+  appendFieldSortAsc,
+  appendFieldSortDesc,
+  clearFieldSort,
+  fieldSortMenu,
+  hideFieldSortMenu,
+  sortFieldAsc,
+  sortFieldDesc
+} = databaseStore
+
+const menuRef = ref(null)
+
+watch(
+  () => fieldSortMenu.value.show,
+  (show) => {
+    if (show) nextTick(() => focusFirstMenuItem(menuRef.value))
+  }
+)
+
+function onMenuKeydown(event) {
+  handleMenuKeydown(event, menuRef.value, hideFieldSortMenu)
+}
 </script>

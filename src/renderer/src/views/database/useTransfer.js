@@ -17,6 +17,8 @@ import {
   getConfig,
   patchConfig
 } from '@/api'
+import { logError } from '@/utils/log'
+import { applyDataMasking, normalizeMaskPresetKeys } from '@shared/dataMasking'
 import {
   DEFAULT_BATCH_SIZE,
   applyNameCase,
@@ -36,6 +38,23 @@ import {
 } from './transferPlan'
 
 const EXPORT_FORMATS = ['csv', 'json', 'sql', 'markdown']
+const MASK_STORAGE_KEY = 'ntb_db_mask_presets'
+
+function loadStoredMaskPresets() {
+  try {
+    return normalizeMaskPresetKeys(JSON.parse(localStorage.getItem(MASK_STORAGE_KEY) || '[]'))
+  } catch {
+    return []
+  }
+}
+
+function storeMaskPresets(presets) {
+  try {
+    localStorage.setItem(MASK_STORAGE_KEY, JSON.stringify(normalizeMaskPresetKeys(presets)))
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 function timestamp() {
   const now = new Date()
@@ -166,8 +185,8 @@ function quoteIdentifier(name) {
   return `\`${String(name).replace(/`/g, '``')}\``
 }
 
-function buildExportContent(tab, format) {
-  const rows = tab.queryResult?.rows || []
+function buildExportContent(tab, format, maskPresets = []) {
+  const rows = applyDataMasking(tab.queryResult?.rows || [], maskPresets).rows
   const fields = (tab.queryResult?.fields || []).map((field) => field.name)
   const tableRef = tab.tableName ? quoteIdentifier(tab.tableName) : 'query_result'
 
@@ -375,6 +394,7 @@ export function createTransfer(state, api, options = {}) {
       format: 'csv',
       scope: tab.type === 'table' ? 'all' : 'page',
       includeStructure: false,
+      maskPresets: loadStoredMaskPresets(),
       exporting: false
     }
   }
@@ -390,6 +410,8 @@ export function createTransfer(state, api, options = {}) {
     const tab = dialog.tab
     const format = EXPORT_FORMATS.includes(dialog.format) ? dialog.format : 'csv'
     const extension = format === 'markdown' ? 'md' : format
+    const maskPresets = normalizeMaskPresetKeys(dialog.maskPresets)
+    storeMaskPresets(maskPresets)
 
     dialog.exporting = true
     try {
@@ -402,6 +424,7 @@ export function createTransfer(state, api, options = {}) {
           const result = await dbExportTable(tab.connectionName, tab.database, tab.tableName, {
             format,
             includeStructure: dialog.includeStructure,
+            maskPresets,
             maxRows: 100000
           })
           if (!result.success) {
@@ -412,12 +435,12 @@ export function createTransfer(state, api, options = {}) {
           rowCount = result.rowCount
           truncated = result.truncated
         } else {
-          const built = buildExportContent(tab, format)
+          const built = buildExportContent(tab, format, maskPresets)
           content = built.content
           rowCount = built.rowCount
         }
       } else {
-        const built = buildExportContent(tab, format)
+        const built = buildExportContent(tab, format, maskPresets)
         content = built.content
         rowCount = built.rowCount
       }
@@ -636,6 +659,7 @@ export function createTransfer(state, api, options = {}) {
       columnNameCase: 'keep',
       batchSize: options.defaultBatchSize?.value ?? DEFAULT_BATCH_SIZE,
       timeoutMode: 'inherit',
+      maskPresets: [],
       tasks: previousTasks,
       taskKeyword: ''
     }
@@ -660,7 +684,7 @@ export function createTransfer(state, api, options = {}) {
       const tasks = Array.isArray(config.database?.transfer_tasks) ? config.database.transfer_tasks : []
       dataTransferDialog.value.tasks = tasks.map(normalizeTransferTask).filter((task) => task.name)
     } catch (error) {
-      console.error('加载数据传输任务失败:', error)
+      logError('加载数据传输任务失败:', error)
     }
   }
 
@@ -879,7 +903,8 @@ export function createTransfer(state, api, options = {}) {
       tableNameCase: settings.tableNameCase,
       columnNameCase: settings.columnNameCase,
       batchSize: settings.batchSize,
-      timeoutMode: settings.timeoutMode
+      timeoutMode: settings.timeoutMode,
+      maskPresets: settings.maskPresets
     })
 
     if (!dialog.sourceDatabase) {
@@ -958,7 +983,8 @@ export function createTransfer(state, api, options = {}) {
         return { status: 'failed', error: data.error || t('读取源表数据失败'), rows: copied }
       }
 
-      const rows = (data.rows || []).map((row) => remapRow(row, targetFields)).filter(Boolean)
+      const mapped = (data.rows || []).map((row) => remapRow(row, targetFields)).filter(Boolean)
+      const rows = applyDataMasking(mapped, context.maskPresets).rows
       if (rows.length) {
         const inserted = await dbInsertRows(dialog.targetConnection, dialog.targetDatabase, targetName, rows, {
           timeout: targetTimeout
@@ -1148,6 +1174,7 @@ export function createTransfer(state, api, options = {}) {
       tableNameCase: settings.tableNameCase,
       columnNameCase: settings.columnNameCase,
       batchSize: settings.batchSize,
+      maskPresets: settings.maskPresets,
       sourceTimeout,
       targetTimeout,
       targetExisting: new Map(),

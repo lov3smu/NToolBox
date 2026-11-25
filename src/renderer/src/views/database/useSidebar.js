@@ -1,5 +1,14 @@
 import { t } from '@/i18n'
-import { dbExecuteQuery, dbQueryDatabases, dbQueryTables } from '@/api'
+import { dbQueryDatabases, dbQueryObjects, dbQueryTables } from '@/api'
+import { logError } from '@/utils/log'
+
+const CATEGORY_OBJECT_TYPES = {
+  functions: 'function',
+  procedures: 'procedure',
+  triggers: 'trigger',
+  events: 'event'
+}
+
 export function createSidebar(state, api) {
   const {
     connectionDatabases,
@@ -11,15 +20,13 @@ export function createSidebar(state, api) {
     expandedConnections,
     expandedDatabases,
     expandedObjectCategories,
-    newConnection,
     objectCategoryLoading,
     openedDatabases,
     selectedCategory,
     selectedConnection,
     selectedDatabase,
     selectedInfoType,
-    selectedObject,
-    showCreateDialog
+    selectedObject
   } = state
 
   function onDragStartConnection(conn) {
@@ -99,7 +106,7 @@ export function createSidebar(state, api) {
         connectionDatabases.value[connName] = result.databases
       }
     } catch (error) {
-      console.error('加载数据库列表失败:', error)
+      logError('加载数据库列表失败:', error)
     }
   }
 
@@ -202,11 +209,6 @@ export function createSidebar(state, api) {
     databaseObjectsMap.value[key] = { ...(databaseObjectsMap.value[key] || {}), ...patch }
   }
 
-  function objectNames(result) {
-    if (!result?.success || !Array.isArray(result.rows)) return []
-    return result.rows.map((row) => row.name)
-  }
-
   async function loadDatabaseCategory(connName, dbName, categoryType, options = {}) {
     if (!categoryType) return
     if (!options.force && isObjectCategoryLoaded(connName, dbName, categoryType)) return
@@ -225,30 +227,15 @@ export function createSidebar(state, api) {
         return
       }
 
-      const categoryQueries = {
-        functions: {
-          sql: "SELECT ROUTINE_NAME AS name FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'FUNCTION'",
-          params: [dbName]
-        },
-        procedures: {
-          sql: "SELECT ROUTINE_NAME AS name FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'PROCEDURE'",
-          params: [dbName]
-        },
-        triggers: {
-          sql: 'SELECT TRIGGER_NAME AS name FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?',
-          params: [dbName]
-        },
-        events: {
-          sql: 'SELECT EVENT_NAME AS name FROM information_schema.EVENTS WHERE EVENT_SCHEMA = ?',
-          params: [dbName]
-        }
-      }
-      const query = categoryQueries[categoryType]
-      if (!query) return
-      const result = await dbExecuteQuery(connName, query.sql, query.params, { autoLimit: false })
-      mergeDatabaseObjects(key, { [categoryType]: objectNames(result) })
+      const objectType = CATEGORY_OBJECT_TYPES[categoryType]
+      if (!objectType) return
+      const result = await dbQueryObjects(connName, dbName)
+      const items = result?.success && Array.isArray(result.items) ? result.items : []
+      mergeDatabaseObjects(key, {
+        [categoryType]: items.filter((item) => item.type === objectType).map((item) => item.name)
+      })
     } catch (error) {
-      console.error('加载数据库对象失败:', error)
+      logError('加载数据库对象失败:', error)
       mergeDatabaseObjects(key, { [categoryType]: [] })
     } finally {
       const next = { ...objectCategoryLoading.value }
@@ -364,8 +351,7 @@ export function createSidebar(state, api) {
   }
 
   function handleNewConnectionAndHide() {
-    newConnection.value.group = ''
-    showCreateDialog.value = true
+    api.openCreateDialog()
     api.hideContextMenu()
   }
 
@@ -397,8 +383,7 @@ export function createSidebar(state, api) {
   }
 
   function handleNewConnectionInGroupAndHide() {
-    newConnection.value.group = contextMenu.value.target.group || ''
-    showCreateDialog.value = true
+    api.openCreateDialog(contextMenu.value.target.group || '')
     api.hideContextMenu()
   }
 
@@ -424,8 +409,7 @@ export function createSidebar(state, api) {
   }
 
   function handleNewConnectionInNamedGroupAndHide() {
-    newConnection.value.group = contextMenu.value.target.name
-    showCreateDialog.value = true
+    api.openCreateDialog(contextMenu.value.target.name)
     api.hideContextMenu()
   }
 

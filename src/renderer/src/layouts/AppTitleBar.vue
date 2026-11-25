@@ -8,20 +8,7 @@
         :aria-label="collapsed ? t('展开侧边栏') : t('收起侧边栏')"
         @click="toggleSidebar"
       >
-        <svg
-          class="titlebar-collapse-icon"
-          :class="{ collapsed }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <rect x="3" y="4" width="18" height="16" rx="2.5" />
-          <path d="M9.5 4v16" />
-          <path d="m15.5 9.5-2.5 2.5 2.5 2.5" />
-        </svg>
+        <AppIcon name="panel-left" class="titlebar-collapse-icon" :class="{ collapsed }" :stroke-width="2.2" />
       </button>
       <button
         type="button"
@@ -31,17 +18,7 @@
         :disabled="!canGoBack"
         @click="goBack"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M19 12H5" />
-          <path d="m12 19-7-7 7-7" />
-        </svg>
+        <AppIcon name="arrow-left" :stroke-width="2.2" />
       </button>
       <button
         type="button"
@@ -51,17 +28,7 @@
         :disabled="!canGoForward"
         @click="goForward"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M5 12h14" />
-          <path d="m12 5 7 7-7 7" />
-        </svg>
+        <AppIcon name="arrow-right" :stroke-width="2.2" />
       </button>
     </div>
 
@@ -104,6 +71,8 @@
 
     <span class="titlebar-spacer" aria-hidden="true" />
 
+    <NotificationCenter />
+
     <WindowControls
       v-if="!isMac"
       :fullscreen="isFullscreen"
@@ -116,6 +85,7 @@
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -131,10 +101,11 @@ import {
   windowToggleMaximize
 } from '@/api'
 import { openUpdateCenter } from '@/composables'
-import { useSidebar } from '@/composables/useSidebar'
+import { useSidebar } from '@/composables'
 import { t } from '@/i18n'
-import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '@shared/tools'
+import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '@shared/navTools'
 import WindowControls from '@/components/WindowControls.vue'
+import NotificationCenter from '@/components/NotificationCenter.vue'
 
 const isMac = platform === 'darwin'
 const isDev = import.meta.env.DEV
@@ -489,7 +460,7 @@ async function selectItem(item) {
 .menu-trigger {
   padding: 5px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -517,13 +488,13 @@ async function selectItem(item) {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 30;
+  z-index: 1200;
   min-width: 232px;
   max-height: calc(100vh - 56px);
   overflow-y: auto;
   padding: 6px;
   border: 1px solid var(--shell-menu-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--shell-menu-bg);
   box-shadow: var(--shell-shadow);
 }
@@ -560,7 +531,7 @@ async function selectItem(item) {
   width: 100%;
   padding: 7px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--shell-menu-text);
   font: inherit;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeSkillParams, renderPromptTemplate } from '../src/main/services/skillSchema.js'
+import { normalizeSkillParams, renderPromptTemplate } from '../src/main/services/extensions/skillSchema.js'
 
 const schema = {
   type: 'object',
@@ -49,8 +49,8 @@ describe('normalizeSkillParams', () => {
 
 describe('renderPromptTemplate', () => {
   it('replaces placeholders without interpreting replacement patterns', () => {
-    const result = renderPromptTemplate('代码：{{code}}', { code: 'price $& $` $\'' })
-    expect(result.content).toBe('代码：price $& $` $\'')
+    const result = renderPromptTemplate('代码：{{code}}', { code: "price $& $` $'" })
+    expect(result.content).toBe("代码：price $& $` $'")
   })
 
   it('renders false and 0 instead of dropping them', () => {

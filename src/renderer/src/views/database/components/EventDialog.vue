@@ -1,13 +1,14 @@
 <template>
-  <div v-if="eventDialog.show" class="dialog-overlay">
+  <div
+    v-if="eventDialog.show"
+    v-modal-shell="{ onClose: closeEventDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
     <div class="dialog dialog-wide event-dialog">
       <div class="dialog-header">
         <h3>{{ t('MySQL 事件') }}</h3>
         <button class="btn-icon btn-sm" :title="t('关闭')" :disabled="eventDialog.saving" @click="closeEventDialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
 
@@ -28,11 +29,11 @@
         <div v-else-if="eventDialog.tab === 'definition'" class="event-form">
           <label class="event-field">
             <span>{{ t('名称') }}</span>
-            <input :value="eventDialog.name" class="input-field" readonly />
+            <AppInput :value="eventDialog.name" readonly />
           </label>
           <label class="event-field event-field-grow">
             <span>{{ t('定义') }}</span>
-            <textarea
+            <AppTextarea
               v-model="eventDialog.definition"
               class="event-textarea"
               spellcheck="false"
@@ -60,13 +61,13 @@
 
             <label v-if="eventDialog.scheduleType === 'ONCE'" class="event-field">
               <span>{{ t('执行时间') }}</span>
-              <input v-model="eventDialog.starts" type="datetime-local" class="input-field" />
+              <AppInput v-model="eventDialog.starts" type="datetime-local" />
             </label>
             <template v-else>
               <label class="event-field">
                 <span>{{ t('间隔') }}</span>
                 <div class="event-interval">
-                  <input v-model="eventDialog.intervalValue" type="number" min="1" class="input-field" />
+                  <AppInput v-model="eventDialog.intervalValue" type="number" min="1" />
                   <select v-model="eventDialog.intervalField" class="input-field">
                     <option v-for="field in intervalFields" :key="field.value" :value="field.value">
                       {{ field.label }}
@@ -76,11 +77,11 @@
               </label>
               <label class="event-field">
                 <span>{{ t('开始时间') }}</span>
-                <input v-model="eventDialog.starts" type="datetime-local" class="input-field" />
+                <AppInput v-model="eventDialog.starts" type="datetime-local" />
               </label>
               <label class="event-field">
                 <span>{{ t('结束时间') }}</span>
-                <input v-model="eventDialog.ends" type="datetime-local" class="input-field" />
+                <AppInput v-model="eventDialog.ends" type="datetime-local" />
               </label>
             </template>
 
@@ -97,7 +98,7 @@
         <div v-else-if="eventDialog.tab === 'comment'" class="event-form">
           <label class="event-field event-field-grow">
             <span>{{ t('注释') }}</span>
-            <textarea v-model="eventDialog.comment" class="event-textarea" spellcheck="false" />
+            <AppTextarea v-model="eventDialog.comment" class="event-textarea" spellcheck="false" />
           </label>
         </div>
 
@@ -125,6 +126,9 @@ import { t } from '@/i18n'
 import { inject } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 const databaseStore = inject('database')
 const { closeEventDialog, eventDialog, eventSqlPreview, saveEventDialog } = databaseStore
 

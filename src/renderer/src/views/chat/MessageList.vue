@@ -1,11 +1,17 @@
 <template>
-  <div ref="messagesContainer" class="messages-container" @scroll="$emit('scroll')">
+  <div
+    ref="messagesContainer"
+    class="messages-container"
+    :class="{ 'is-motion': animateEntry }"
+    role="log"
+    aria-live="polite"
+    aria-relevant="additions text"
+    :aria-label="t('对话消息')"
+    @scroll="$emit('scroll')"
+  >
     <div v-if="messages.length === 0" class="messages-empty">
       <div class="empty-orb" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" />
-          <path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" />
-        </svg>
+        <AppIcon name="sparkles" :stroke-width="1.6" />
       </div>
       <p class="empty-title">{{ t('开始与 AI 助手协作') }}</p>
       <p class="hint">
@@ -25,41 +31,42 @@
         </button>
       </div>
     </div>
-    <div v-for="(msg, index) in messages" :key="index" class="message" :class="msg.role" :data-message-index="index">
+    <div
+      v-for="(msg, index) in messages"
+      :key="msg.id || index"
+      class="message"
+      :class="[msg.role, { 'is-enter': animateEntry && Boolean(enterMessageId) && msg.id === enterMessageId }]"
+      :data-message-index="index"
+    >
       <div class="message-avatar">
         <span v-if="msg.role === 'user'">{{ t('你') }}</span>
         <span v-else>AI</span>
       </div>
-      <div class="message-content">
+      <div class="chat-message-content">
         <div
           v-if="hasThoughtChain(msg)"
           class="thought-chain"
-          :class="{ streaming: msg.isStreaming, collapsed: !isThoughtExpanded(index, msg) }"
+          :class="{
+            streaming: msg.isStreaming,
+            collapsed: !isThoughtExpanded(index, msg),
+            'is-done': !msg.isStreaming,
+            'is-open': isThoughtExpanded(index, msg)
+          }"
         >
           <button type="button" class="thought-chain-head" @click="toggleThought(index, msg)">
             <span class="thought-chain-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="6" cy="6" r="2" />
-                <circle cx="18" cy="18" r="2" />
-                <path d="M6 8v4a4 4 0 0 0 4 4h4" />
-                <path d="M14 4h3a1 1 0 0 1 1 1v3" />
-              </svg>
+              <AppIcon name="network" />
             </span>
             <span class="thought-chain-copy">
               <span class="thought-chain-title">{{ t('思维链') }}</span>
               <span class="thought-chain-summary">{{ thoughtSummary(msg) }}</span>
             </span>
             <span v-if="msg.isStreaming" class="thought-live"><span />{{ t('实时') }}</span>
-            <svg
+            <AppIcon
+              name="chevron-down"
               class="thought-chain-chevron"
               :class="{ expanded: isThoughtExpanded(index, msg) }"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            />
           </button>
           <div v-show="isThoughtExpanded(index, msg)" class="thought-chain-body">
             <div v-if="msg.plan && msg.plan.steps && msg.plan.steps.length" class="agent-plan">
@@ -68,19 +75,18 @@
                 <span class="agent-plan-goal">{{ msg.plan.goal }}</span>
               </div>
               <ol class="agent-plan-list">
-                <li
-                  v-for="(step, stepIndex) in msg.plan.steps"
-                  :key="stepIndex"
-                  class="agent-plan-step"
-                  :class="`is-${planStepState(step)}`"
-                >
-                  <span class="agent-plan-index">
-                    <span v-if="planStepState(step) === 'running'" class="mini-spinner" />
-                    <template v-else-if="planStepState(step) === 'done'">✓</template>
-                    <template v-else-if="planStepState(step) === 'failed'">!</template>
-                    <template v-else>{{ stepIndex + 1 }}</template>
-                  </span>
-                  <span class="agent-plan-text">{{ planStepText(step) }}</span>
+                <li v-for="(step, stepIndex) in msg.plan.steps" :key="stepIndex" class="plan-reveal">
+                  <div class="agent-plan-step" :class="`is-${planStepState(step)}`">
+                    <span class="agent-plan-index">
+                      <Transition name="dot-swap" mode="out-in">
+                        <span v-if="planStepState(step) === 'running'" key="running" class="chat-mini-spinner" />
+                        <span v-else-if="planStepState(step) === 'done'" key="done">✓</span>
+                        <span v-else-if="planStepState(step) === 'failed'" key="failed">!</span>
+                        <span v-else key="idle">{{ stepIndex + 1 }}</span>
+                      </Transition>
+                    </span>
+                    <span class="agent-plan-text">{{ planStepText(step) }}</span>
+                  </div>
                 </li>
               </ol>
             </div>
@@ -111,18 +117,12 @@
                   :aria-expanded="isStepsExpanded(index)"
                   @click="toggleSteps(index)"
                 >
-                  <svg
+                  <AppIcon
+                    name="chevron-down"
+                    :size="12"
                     class="steps-more-chevron"
                     :class="{ expanded: isStepsExpanded(index) }"
-                    viewBox="0 0 24 24"
-                    width="12"
-                    height="12"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
+                  />
                   <span>{{
                     isStepsExpanded(index)
                       ? t('收起更早的 {count} 条工具调用', { count: hiddenStepCount(msg) })
@@ -133,76 +133,70 @@
                   v-for="(step, stepIndex) in msg.steps"
                   v-show="isStepVisible(index, stepIndex, msg)"
                   :key="step.id || `${stepIndex}-${step.name}`"
-                  class="agent-step"
-                  :class="step.status"
+                  class="step-reveal"
                 >
-                  <div class="agent-step-rail">
-                    <span class="agent-step-dot">
-                      <span v-if="step.status === 'running'" class="mini-spinner" />
-                      <svg
-                        v-else-if="step.status === 'success'"
-                        viewBox="0 0 24 24"
-                        width="11"
-                        height="11"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      <svg
-                        v-else
-                        viewBox="0 0 24 24"
-                        width="11"
-                        height="11"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </span>
-                  </div>
-                  <div class="agent-step-main">
-                    <button type="button" class="agent-step-head" @click="toggleStep(index, step)">
-                      <span class="agent-step-name">{{ step.name }}</span>
-                      <span class="agent-step-status">{{ step.statusText }}</span>
-                      <span v-if="step.duration" class="agent-step-duration">{{ formatDuration(step.duration) }}</span>
-                      <span v-if="step.truncated" class="agent-step-truncated">{{ t('已截断') }}</span>
-                      <span v-if="step.untrusted" class="agent-step-tag">{{ t('不可信') }}</span>
-                      <span v-if="step.injectionSuspected" class="agent-step-tag warning">{{ t('疑似注入') }}</span>
-                      <svg
-                        class="agent-step-chevron"
-                        :class="{ expanded: isStepExpanded(index, step) }"
-                        viewBox="0 0 24 24"
-                        width="12"
-                        height="12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                    <div v-if="isStepExpanded(index, step)" class="agent-step-body">
-                      <div v-if="step.arguments" class="step-block">
-                        <div class="step-label">{{ t('参数') }}</div>
-                        <pre>{{ pretty(step.arguments) }}</pre>
-                      </div>
-                      <div v-if="step.metadata && (step.metadata.path || step.metadata.finalUrl)" class="step-block">
-                        <div class="step-label">{{ step.metadata.finalUrl ? t('来源') : t('产出') }}</div>
-                        <pre>{{ step.metadata.finalUrl || step.metadata.destination || step.metadata.path }}</pre>
-                      </div>
-                      <ChatResultCard v-if="step.metadata" :metadata="step.metadata" />
-                      <div v-if="step.result" class="step-block">
-                        <div class="step-label">{{ t('结果') }}</div>
-                        <pre>{{ step.result }}</pre>
-                        <div v-if="step.truncated" class="step-truncated-note">
-                          {{ t('结果过长已截断，完整内容可由模型通过 result-read 分页读取') }}
+                  <div class="agent-step" :class="step.status">
+                    <div class="agent-step-rail">
+                      <span class="agent-step-dot">
+                        <Transition name="dot-swap" mode="out-in">
+                          <span v-if="step.status === 'running'" key="running" class="chat-mini-spinner" />
+                          <AppIcon
+                            v-else-if="step.status === 'success'"
+                            key="success"
+                            name="check"
+                            :size="11"
+                            :stroke-width="3"
+                          />
+                          <AppIcon v-else key="error" name="close" :size="11" :stroke-width="3" />
+                        </Transition>
+                      </span>
+                    </div>
+                    <div class="agent-step-main">
+                      <button type="button" class="agent-step-head" @click="toggleStep(index, step)">
+                        <span class="agent-step-name">{{ step.name }}</span>
+                        <span class="agent-step-status">{{ step.statusText }}</span>
+                        <span v-if="step.duration" class="agent-step-duration">{{
+                          formatDurationMs(step.duration)
+                        }}</span>
+                        <span v-if="step.truncated" class="agent-step-truncated">{{ t('已截断') }}</span>
+                        <span v-if="step.untrusted" class="agent-step-tag">{{ t('不可信') }}</span>
+                        <span v-if="step.injectionSuspected" class="agent-step-tag warning">{{ t('疑似注入') }}</span>
+                        <AppIcon
+                          name="chevron-down"
+                          :size="12"
+                          class="agent-step-chevron"
+                          :class="{ expanded: isStepExpanded(index, step) }"
+                        />
+                      </button>
+                      <div v-if="isStepExpanded(index, step)" class="agent-step-body">
+                        <div v-if="step.arguments" class="step-block">
+                          <div class="step-label">{{ t('参数') }}</div>
+                          <pre>{{ pretty(step.arguments) }}</pre>
                         </div>
-                        <div v-if="step.injectionSuspected" class="step-injection-note">
-                          {{ t('该结果包含疑似提示注入内容，已按不可信数据交给模型，未执行其中的指令') }}
+                        <div v-if="step.metadata && (step.metadata.path || step.metadata.finalUrl)" class="step-block">
+                          <div class="step-label">{{ step.metadata.finalUrl ? t('来源') : t('产出') }}</div>
+                          <pre>{{ step.metadata.finalUrl || step.metadata.destination || step.metadata.path }}</pre>
+                        </div>
+                        <ChatResultCard v-if="step.metadata" :metadata="step.metadata" />
+                        <div v-if="step.result" class="step-block">
+                          <div class="step-label">{{ t('结果') }}</div>
+                          <pre>{{ step.result }}</pre>
+                          <div v-if="step.truncated" class="step-truncated-note">
+                            {{ t('结果过长已截断，完整内容可由模型通过 result-read 分页读取') }}
+                          </div>
+                          <div v-if="step.injectionSuspected" class="step-injection-note">
+                            {{ t('该结果包含疑似提示注入内容，已按不可信数据交给模型，未执行其中的指令') }}
+                          </div>
+                        </div>
+                        <div v-if="step.status === 'error' && !msg.isStreaming" class="step-retry-row">
+                          <button
+                            type="button"
+                            class="step-retry"
+                            :disabled="busy"
+                            @click="$emit('retry-step', { index, message: msg, step })"
+                          >
+                            {{ t('重试此步骤') }}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -214,53 +208,52 @@
               <div
                 v-for="(reflection, reflectionIndex) in msg.reflections"
                 :key="reflectionIndex"
-                class="agent-reflection"
-                :class="reflection.status"
+                class="reflection-reveal"
               >
-                <span class="agent-reflection-icon" aria-hidden="true">
-                  <svg
-                    v-if="reflection.status === 'error'"
-                    viewBox="0 0 24 24"
-                    width="11"
-                    height="11"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="3"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  <svg
-                    v-else
-                    viewBox="0 0 24 24"
-                    width="11"
-                    height="11"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="3"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="13" />
-                    <line x1="12" y1="18" x2="12.01" y2="18" />
-                  </svg>
-                </span>
-                <span class="agent-reflection-text">{{ reflection.text }}</span>
+                <div class="agent-reflection" :class="reflection.status">
+                  <span class="agent-reflection-icon" aria-hidden="true">
+                    <AppIcon v-if="reflection.status === 'error'" name="close" :size="11" :stroke-width="3" />
+                    <AppIcon v-else name="alert-circle" :size="11" :stroke-width="3" />
+                  </span>
+                  <span class="agent-reflection-text">{{ reflection.text }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div v-if="handledApprovals(msg).length" class="approval-list">
-          <ChatApprovalCard
-            v-for="approval in handledApprovals(msg)"
-            :key="approval.approvalId"
-            :approval="approval"
-            @respond="$emit('respond-approval', $event)"
-          />
+        <div
+          v-if="handledApprovals(msg).length"
+          class="approval-history"
+          :class="{ 'is-open': isApprovalsOpen(index) }"
+        >
+          <button
+            type="button"
+            class="approval-history-head"
+            :aria-expanded="isApprovalsOpen(index)"
+            @click="toggleApprovals(index)"
+          >
+            <span class="approval-history-icon">
+              <AppIcon name="lock" :size="13" />
+            </span>
+            <span class="approval-history-copy">
+              <span class="approval-history-title">{{ t('授权记录') }}</span>
+              <span class="approval-history-summary">{{ approvalHistorySummary(msg) }}</span>
+            </span>
+            <AppIcon
+              name="chevron-down"
+              :size="13"
+              class="approval-history-chevron"
+              :class="{ expanded: isApprovalsOpen(index) }"
+            />
+          </button>
+          <TransitionGroup v-show="isApprovalsOpen(index)" name="approval-item" tag="div" class="approval-list">
+            <div v-for="approval in handledApprovals(msg)" :key="approval.approvalId" class="approval-reveal">
+              <ChatApprovalCard :approval="approval" compact @respond="$emit('respond-approval', $event)" />
+            </div>
+          </TransitionGroup>
         </div>
         <div v-if="msg.contextNote" class="agent-context-note">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 1 1-3-6.7" />
-            <polyline points="21 3 21 9 15 9" />
-          </svg>
+          <AppIcon name="rotate-ccw" :size="12" />
           <span>{{ msg.contextNote }}</span>
         </div>
         <div v-if="msg.notices && msg.notices.length" class="agent-notices">
@@ -268,12 +261,18 @@
         </div>
         <div v-if="msg.attachments && msg.attachments.length" class="message-attachments">
           <template v-for="att in msg.attachments" :key="att.id || att.name">
-            <img v-if="att.kind === 'image'" :src="att.dataUrl" :alt="att.name" class="message-image" />
+            <button
+              v-if="att.kind === 'image'"
+              type="button"
+              class="message-image-btn"
+              :title="att.name"
+              :aria-label="t('图片预览')"
+              @click="previewImage(att.dataUrl, att.name)"
+            >
+              <img :src="att.dataUrl" :alt="att.name" class="message-image" />
+            </button>
             <div v-else class="message-file">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
+              <AppIcon name="file" :size="13" />
               <span>{{ att.name }}</span>
             </div>
           </template>
@@ -281,7 +280,7 @@
         <div v-if="msg.content || (msg.isStreaming && !hasThoughtChain(msg))" class="message-bubble">
           <div
             v-if="msg.content"
-            class="message-text"
+            class="chat-message-text"
             :class="{ 'is-clamped': isContentClamped(index, msg) }"
             v-html="messageHtml(msg)"
           />
@@ -293,49 +292,105 @@
           </button>
           <button
             v-if="msg.role === 'assistant' && msg.content && !msg.isStreaming"
-            class="copy-btn"
+            class="chat-copy-btn"
             :title="t('复制')"
             @click="$emit('copy', msg.content)"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
+            <AppIcon name="copy" :size="14" />
           </button>
         </div>
-        <div v-if="msg.summary" class="agent-summary">
+        <div v-if="msg.role === 'user' && !msg.isStreaming" class="user-message-actions">
+          <span v-if="msg.createdAt" class="message-action-time">{{ formatDateTime(msg.createdAt, 'datetime') }}</span>
+          <button
+            v-if="msg.content"
+            type="button"
+            class="message-action-btn"
+            :title="t('复制')"
+            :aria-label="t('复制')"
+            @click="$emit('copy', msg.content)"
+          >
+            <AppIcon name="copy" :size="12" />
+          </button>
+          <button
+            type="button"
+            class="message-action-btn"
+            :title="t('编辑')"
+            :aria-label="t('编辑')"
+            :disabled="busy"
+            @click="$emit('edit', { index, message: msg })"
+          >
+            <AppIcon name="edit" :size="12" />
+          </button>
+        </div>
+        <div v-if="msg.summary" class="agent-summary" :class="{ 'is-open': isSummaryOpen(index) }">
           <div class="agent-summary-head">
-            <span class="agent-summary-title">{{ t('执行摘要') }}</span>
-            <span class="agent-summary-badge" :class="msg.summary.termination">
-              {{ msg.summary.terminationText }}
-            </span>
+            <button
+              type="button"
+              class="agent-summary-toggle"
+              :aria-expanded="isSummaryOpen(index)"
+              @click="toggleSummary(index)"
+            >
+              <span class="agent-summary-title">{{ t('执行摘要') }}</span>
+              <span class="agent-summary-badge" :class="msg.summary.termination">
+                {{ msg.summary.terminationText }}
+              </span>
+              <span class="agent-summary-overview">{{ summaryOverview(msg.summary) }}</span>
+              <AppIcon
+                name="chevron-down"
+                :size="13"
+                class="agent-summary-chevron"
+                :class="{ expanded: isSummaryOpen(index) }"
+              />
+            </button>
+            <button
+              v-if="msg.summary.canContinue"
+              type="button"
+              class="agent-summary-continue"
+              :disabled="busy"
+              @click="$emit('continue', msg)"
+            >
+              {{ t('继续 {count} 步', { count: msg.summary.remainingSteps.length }) }}
+            </button>
             <button type="button" class="agent-summary-trace" @click="$emit('open-trace', msg)">
               {{ t('运行轨迹') }}
             </button>
           </div>
-          <div class="agent-summary-metrics">
-            <span>{{ t('轮次 {count}', { count: msg.summary.iterations }) }}</span>
-            <span>{{ t('工具 {count} 次', { count: msg.summary.toolCalls }) }}</span>
-            <span>{{
-              t('成功 {success} / 失败 {failed}', {
-                success: msg.summary.toolSuccess,
-                failed: msg.summary.toolFailed
-              })
-            }}</span>
-            <span>{{ t('耗时 {duration}', { duration: formatDuration(msg.summary.duration) || '0ms' }) }}</span>
+          <div v-show="isSummaryOpen(index)" class="agent-summary-body">
+            <div class="agent-summary-metrics">
+              <span v-if="msg.summary.iterationBudget">{{
+                t('轮次 {used}/{budget}', {
+                  used: msg.summary.iterations,
+                  budget: msg.summary.iterationBudget
+                })
+              }}</span>
+              <span v-else>{{ t('轮次 {count}', { count: msg.summary.iterations }) }}</span>
+              <span>{{ t('工具 {count} 次', { count: msg.summary.toolCalls }) }}</span>
+              <span>{{
+                t('成功 {success} / 失败 {failed}', {
+                  success: msg.summary.toolSuccess,
+                  failed: msg.summary.toolFailed
+                })
+              }}</span>
+              <span>{{ t('耗时 {duration}', { duration: formatDurationMs(msg.summary.duration) || '0ms' }) }}</span>
+            </div>
+            <div v-if="msg.summary.tools && msg.summary.tools.length" class="agent-summary-tools">
+              {{ t('使用工具：{tools}', { tools: msg.summary.tools.join(t('、')) }) }}
+            </div>
+            <ul v-if="msg.summary.limitations && msg.summary.limitations.length" class="agent-summary-limitations">
+              <li v-for="(item, itemIndex) in msg.summary.limitations" :key="itemIndex">{{ item }}</li>
+            </ul>
+            <div v-if="msg.summary.canContinue" class="agent-summary-remaining">
+              <div class="agent-summary-remaining-title">{{ t('未完成的步骤') }}</div>
+              <ol>
+                <li v-for="(stepText, stepIndex) in msg.summary.remainingSteps" :key="stepIndex">
+                  {{ stepText }}
+                </li>
+              </ol>
+            </div>
           </div>
-          <div v-if="msg.summary.tools && msg.summary.tools.length" class="agent-summary-tools">
-            {{ t('使用工具：{tools}', { tools: msg.summary.tools.join(t('、')) }) }}
-          </div>
-          <ul v-if="msg.summary.limitations && msg.summary.limitations.length" class="agent-summary-limitations">
-            <li v-for="(item, itemIndex) in msg.summary.limitations" :key="itemIndex">{{ item }}</li>
-          </ul>
         </div>
         <div v-if="msg.fileChanges && msg.fileChanges.length" class="run-changes">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12a9 9 0 1 0 3-6.7" />
-            <polyline points="3 3 3 9 9 9" />
-          </svg>
+          <AppIcon name="rotate-ccw" :size="14" />
           <span class="run-changes-text">{{ t('本次共修改 {count} 个文件', { count: msg.fileChanges.length }) }}</span>
           <span v-if="msg.rolledBack" class="run-changes-done">{{ t('已撤销') }}</span>
           <button v-else type="button" class="run-changes-btn" :disabled="rollbackBusy" @click="$emit('rollback', msg)">
@@ -355,28 +410,74 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { t } from '@/i18n'
+import { formatDurationMs } from '@shared/format'
+import { formatDateTime } from '@/utils/format'
 import { renderMarkdown } from '@/utils/markdown'
-import ChatApprovalCard from '@/components/ChatApprovalCard.vue'
+import ChatApprovalCard from './components/ChatApprovalCard.vue'
+import { previewImage } from '@/composables'
 import ChatResultCard from './ChatResultCard.vue'
 
-defineProps({
+import AppIcon from '@/components/AppIcon.vue'
+const props = defineProps({
   messages: { type: Array, default: () => [] },
   starterPrompts: { type: Array, default: () => [] },
   emptyLabel: { type: String, default: '' },
   rollbackBusy: { type: Boolean, default: false },
+  busy: { type: Boolean, default: false },
+  animateEntry: { type: Boolean, default: true },
   formatTokens: { type: Function, required: true }
 })
 
-const emit = defineEmits(['use-starter', 'respond-approval', 'open-trace', 'copy', 'rollback', 'scroll'])
+const emit = defineEmits([
+  'use-starter',
+  'respond-approval',
+  'open-trace',
+  'copy',
+  'edit',
+  'rollback',
+  'continue',
+  'retry-step',
+  'scroll'
+])
 
 const messagesContainer = ref(null)
+const enterMessageId = ref('')
+let previousMessageList = null
+let previousMessageCount = 0
+let previousTailId = ''
+
+watch(
+  () => [props.messages.length, props.messages[props.messages.length - 1]?.id],
+  ([count, tailId]) => {
+    const appended =
+      props.messages === previousMessageList &&
+      count === previousMessageCount + 1 &&
+      Boolean(tailId) &&
+      tailId !== previousTailId
+    if (appended) enterMessageId.value = tailId
+    else if (props.messages !== previousMessageList) enterMessageId.value = ''
+    previousMessageList = props.messages
+    previousMessageCount = count
+    previousTailId = tailId || ''
+  },
+  { immediate: true, flush: 'sync' }
+)
+
+watch(
+  () => props.animateEntry,
+  (value) => {
+    if (!value) enterMessageId.value = ''
+  }
+)
 const expandedSteps = ref({})
 const thoughtExpanded = ref({})
 const moreStepsExpanded = ref({})
 const thinkingExpanded = ref({})
 const contentExpanded = ref({})
+const approvalsExpanded = ref({})
+const summaryExpanded = ref({})
 
 const VISIBLE_STEPS = 3
 const THINKING_CLAMP_CHARS = 600
@@ -390,6 +491,26 @@ function useStarter(starter) {
 
 function handledApprovals(message) {
   return (message.approvals || []).filter((approval) => approval.status !== 'pending')
+}
+
+function isApprovalsOpen(index) {
+  return Boolean(approvalsExpanded.value[index])
+}
+
+function toggleApprovals(index) {
+  approvalsExpanded.value = { ...approvalsExpanded.value, [index]: !isApprovalsOpen(index) }
+}
+
+function approvalHistorySummary(message) {
+  const list = handledApprovals(message)
+  const allowed = list.filter((approval) => approval.status === 'allowed' || approval.status === 'always').length
+  const denied = list.filter((approval) => approval.status === 'denied').length
+  const expired = list.filter((approval) => approval.status === 'expired').length
+  const parts = [t('{count} 项已处理', { count: list.length })]
+  if (allowed) parts.push(t('允许 {count}', { count: allowed }))
+  if (denied) parts.push(t('拒绝 {count}', { count: denied }))
+  if (expired) parts.push(t('失效 {count}', { count: expired }))
+  return parts.join(' · ')
 }
 
 function hasThoughtChain(message) {
@@ -448,6 +569,22 @@ function toggleContent(index) {
   contentExpanded.value = { ...contentExpanded.value, [index]: !contentExpanded.value[index] }
 }
 
+function isSummaryOpen(index) {
+  return Boolean(summaryExpanded.value[index])
+}
+
+function toggleSummary(index) {
+  summaryExpanded.value = { ...summaryExpanded.value, [index]: !isSummaryOpen(index) }
+}
+
+function summaryOverview(summary) {
+  return [
+    t('轮次 {count}', { count: summary.iterations }),
+    t('工具 {count} 次', { count: summary.toolCalls }),
+    t('耗时 {duration}', { duration: formatDurationMs(summary.duration) || '0ms' })
+  ].join(' · ')
+}
+
 function isThoughtExpanded(index, message) {
   const explicit = thoughtExpanded.value[index]
   if (explicit !== undefined) return explicit
@@ -462,6 +599,14 @@ function thoughtSummary(message) {
   const parts = []
   if (message.isStreaming) {
     if (message.thinking) parts.push(t('思考中'))
+    if (message.progress?.maxIterations) {
+      parts.push(
+        t('轮次 {used}/{budget}', {
+          used: message.progress.iteration,
+          budget: message.progress.maxIterations
+        })
+      )
+    }
     const running = (message.steps || []).filter((step) => step.status === 'running').length
     if (running > 0) parts.push(t('{count} 个步骤执行中', { count: running }))
     if (message.plan?.steps?.length) parts.push(t('计划 {count} 步', { count: message.plan.steps.length }))
@@ -490,11 +635,6 @@ function chainSummary(steps) {
   if (running > 0) return t('{total} 步 · {running} 个执行中', { total, running })
   if (failed > 0) return t('{total} 步 · {failed} 个失败', { total, failed })
   return t('{total} 步 · 全部完成', { total })
-}
-
-function formatDuration(ms) {
-  if (!ms) return ''
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`
 }
 
 function stepKey(index, step) {
@@ -531,9 +671,19 @@ function pretty(value) {
 }
 
 const STREAM_CARET = '<span class="stream-caret" aria-hidden="true"></span>'
+const htmlCache = new WeakMap()
 
 function messageHtml(msg) {
-  const html = renderMarkdown(msg.content)
+  let html = ''
+  if (msg.content) {
+    const cached = htmlCache.get(msg)
+    if (cached && cached.content === msg.content) {
+      html = cached.html
+    } else {
+      html = renderMarkdown(msg.content)
+      htmlCache.set(msg, { content: msg.content, html })
+    }
+  }
   if (!msg.isStreaming || msg.role !== 'assistant' || !html) return html
   return html.endsWith('<br>') ? `${html.slice(0, -4)}${STREAM_CARET}<br>` : `${html}${STREAM_CARET}`
 }

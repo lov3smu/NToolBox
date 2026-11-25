@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { formatBytes } from '../../shared/format.js'
 
 // 旧版把配置、数据库、Agent 产物与 Chromium profile 全部平铺在 userData 根目录；
 // 这里按角色把已知条目搬到新布局，未知文件一律留在原处
@@ -186,12 +187,6 @@ function directoryBytes(target, limit = 200000) {
     }
   }
   return total
-}
-
-function formatBytes(bytes) {
-  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`
-  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`
-  return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
 const KNOWN_CHROMIUM_ITEMS = new Set([...CHROMIUM_CACHE_ITEMS, ...CHROMIUM_STATE_ITEMS])

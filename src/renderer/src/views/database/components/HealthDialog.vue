@@ -1,6 +1,11 @@
 <template>
-  <div v-if="healthDialog.show" class="dialog-overlay" @click.self="closeHealthDialog">
-    <div class="dialog health-dialog">
+  <div
+    v-if="healthDialog.show"
+    v-modal-shell="closeHealthDialog"
+    class="dialog-overlay"
+    @click.self="closeHealthDialog"
+  >
+    <div class="dialog dialog-wide">
       <div class="dialog-header">
         <h3>{{ t('容量与健康 ·') }} {{ healthDialog.connectionName }}</h3>
         <div class="health-toolbar">
@@ -16,10 +21,7 @@
             {{ healthDialog.loading ? t('检查中...') : t('重新检查') }}
           </button>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeHealthDialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -188,8 +190,10 @@
 
 <script setup>
 import { t } from '@/i18n'
+import { formatBytes } from '@shared/format'
 import { computed, inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const { changeHealthDatabase, closeHealthDialog, healthDialog, loadHealth, optimizeHealthTable } = databaseStore
 
@@ -199,14 +203,6 @@ const infoCount = computed(() => (healthResult.value?.issues || []).filter((issu
 
 function needsOptimize(table) {
   return table.dataFree > 1048576 && table.freeRatio >= 0.2
-}
-
-function formatBytes(bytes) {
-  const value = Number(bytes) || 0
-  if (value >= 1024 ** 3) return `${(value / 1024 ** 3).toFixed(2)} GB`
-  if (value >= 1024 ** 2) return `${(value / 1024 ** 2).toFixed(2)} MB`
-  if (value >= 1024) return `${(value / 1024).toFixed(1)} KB`
-  return `${Math.round(value)} B`
 }
 
 function formatCount(value) {

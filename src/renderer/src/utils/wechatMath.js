@@ -4,6 +4,7 @@ import { SVG } from 'mathjax-full/js/output/svg.js'
 import { liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js'
 import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js'
 import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages.js'
+import { logError, logWarn } from '@/utils/log'
 
 const CACHE_LIMIT = 300
 const cache = new Map()
@@ -28,7 +29,7 @@ function getDocumentRenderer() {
     }
   } catch (error) {
     initFailed = true
-    console.error('[wechat] MathJax 初始化失败:', error)
+    logError('[wechat] MathJax 初始化失败:', error)
   }
   return documentRenderer
 }
@@ -57,7 +58,7 @@ export function renderMathToSvg(tex, display = false) {
       const node = renderer.document.convert(source, { display })
       html = decorateSvg(renderer.adaptor.outerHTML(node))
     } catch (error) {
-      console.warn('[wechat] 公式渲染失败:', error)
+      logWarn('[wechat] 公式渲染失败:', error)
     }
   }
 

@@ -1,6 +1,10 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="recorder-overlay" @click.self="emit('cancel')">
+    <div
+      v-if="visible"
+      v-modal-shell="{ onClose: () => emit('cancel'), closeOnOutside: false }"
+      class="recorder-overlay"
+    >
       <section class="recorder-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcut-recorder-title">
         <header class="recorder-header">
           <div>
@@ -8,10 +12,7 @@
             <span class="recorder-sub">{{ name }}</span>
           </div>
           <button type="button" class="btn-icon" :title="t('关闭')" @click="emit('cancel')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" :size="14" />
           </button>
         </header>
 
@@ -45,6 +46,7 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { captureAccelerator, formatAccelerator } from '@/utils/shortcut'
 import { t } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
 const props = defineProps({
   visible: { type: Boolean, default: false },
   name: { type: String, default: '' },
@@ -184,7 +186,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
   border-radius: var(--radius-sm);
   background: var(--surface-muted);
   color: var(--text-primary);
-  font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
 }
 
@@ -219,7 +221,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
 .capture-keys {
   color: var(--text-primary);
-  font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
+  font-family: var(--font-mono);
   font-size: var(--font-size-lg);
   font-weight: 600;
   letter-spacing: 1px;

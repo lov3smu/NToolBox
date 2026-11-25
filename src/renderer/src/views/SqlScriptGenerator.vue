@@ -27,13 +27,7 @@
             <div class="form-grid">
               <div class="field field-wide">
                 <label>{{ t('脚本用途') }}</label>
-                <input
-                  v-model="usage"
-                  type="text"
-                  :placeholder="t('请输入脚本用途')"
-                  class="input-field"
-                  @input="handleUsageInput"
-                />
+                <AppInput v-model="usage" type="text" :placeholder="t('请输入脚本用途')" @input="handleUsageInput" />
                 <span class="field-hint">{{ t('用于生成文件名与脚本历史记录备注') }}</span>
               </div>
 
@@ -61,21 +55,17 @@
               <div class="field field-wide">
                 <label>{{ t('目录名') }}</label>
                 <div class="dir-name-row">
-                  <input
+                  <AppInput
                     v-model="dirName"
                     type="text"
                     :placeholder="t('留空自动生成')"
-                    class="input-field"
                     @input="handleDirNameInput"
                   />
                 </div>
                 <div v-if="lastDirName" class="dir-name-extra">
                   <span class="dir-name-last" :title="lastDirName">{{ t('上次：{name}', { name: lastDirName }) }}</span>
-                  <label class="dir-name-option" :class="{ active: useLastDirName }">
-                    <input type="checkbox" :checked="useLastDirName" @change="toggleUseLastDirName" />
-                    <span class="dir-name-option-track" aria-hidden="true">
-                      <span class="dir-name-option-thumb" />
-                    </span>
+                  <label class="dir-name-option">
+                    <input type="checkbox" class="switch" :checked="useLastDirName" @change="toggleUseLastDirName" />
                     <span>{{ t('使用上次目录') }}</span>
                   </label>
                 </div>
@@ -144,9 +134,7 @@
           <template v-if="result.success">
             <div class="result-summary">
               <span class="result-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+                <AppIcon name="check" />
               </span>
               <div class="result-copy">
                 <div class="result-message success">{{ t('脚本生成成功') }}</div>
@@ -173,10 +161,7 @@
 
           <div v-else class="result-summary">
             <span class="result-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 8v4M12 16h.01" stroke-linecap="round" />
-              </svg>
+              <AppIcon name="alert-circle" />
             </span>
             <div class="result-copy">
               <div class="result-message error">{{ t('生成失败') }}</div>
@@ -186,11 +171,19 @@
         </div>
       </section>
 
-      <ScriptManager
+      <FileExplorer
         ref="scriptManagerRef"
         class="script-manager-panel"
+        variant="panel"
         :root-path="config?.sql_generator.base_path || ''"
-      />
+        :unset-description="t('请先配置脚本根目录。')"
+        :empty-description="t('生成脚本后可在这里查看和管理。')"
+      >
+        <template #title>
+          <span class="panel-title">{{ t('脚本管理') }}</span>
+          <span class="panel-hint">{{ t('浏览并管理脚本根目录下的文件') }}</span>
+        </template>
+      </FileExplorer>
     </div>
   </PageLayout>
 </template>
@@ -199,10 +192,11 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAutoDirName, useConfig } from '@/composables'
 import PageLayout from '@/layouts/PageLayout.vue'
-import ScriptManager from '@/components/ScriptManager.vue'
+import FileExplorer from '@/components/FileExplorer.vue'
 import { joinPath } from '@/utils/path'
 import { generateScript, openFile as apiOpenFile, openFolder as apiOpenFolder } from '@/api'
 import { t } from '@/i18n'
+import AppInput from '@/components/AppInput.vue'
 
 const LAST_DIR_NAME_KEY = 'sqlGeneratorLastDirName'
 
@@ -436,7 +430,7 @@ watch(config, () => {
   bottom: 10px;
   left: 0;
   width: 3px;
-  border-radius: 0 3px 3px 0;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   background: transparent;
   transition: background var(--motion-fast) var(--motion-ease);
 }
@@ -545,7 +539,7 @@ watch(config, () => {
   height: 26px;
   padding: 0 9px;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: var(--surface-muted);
   color: var(--text-tertiary);
@@ -556,76 +550,14 @@ watch(config, () => {
 }
 
 .dir-name-option {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  height: 26px;
-  padding: 0 10px 0 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--surface);
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
   cursor: pointer;
   user-select: none;
-  transition: var(--transition-fast);
-}
-
-.dir-name-option:hover {
-  border-color: var(--border-strong);
-}
-
-.dir-name-option.active {
-  border-color: rgba(var(--accent-rgb), 0.45);
-  background: rgba(var(--accent-rgb), 0.07);
-  color: var(--text-primary);
-}
-
-.dir-name-option input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.dir-name-option-track {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  width: 26px;
-  height: 15px;
-  border-radius: 999px;
-  background: var(--border-strong);
-  transition: background var(--motion-fast) var(--motion-ease);
-}
-
-.dir-name-option-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--motion-fast) var(--motion-ease);
-}
-
-.dir-name-option.active .dir-name-option-track {
-  background: var(--accent-color);
-}
-
-.dir-name-option.active .dir-name-option-thumb {
-  transform: translateX(11px);
-}
-
-.dir-name-option input:focus-visible + .dir-name-option-track {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
 }
 
 .form-footer {
@@ -644,7 +576,7 @@ watch(config, () => {
   min-width: 0;
   overflow: hidden;
   color: var(--text-tertiary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -660,8 +592,8 @@ watch(config, () => {
 .generate-spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.45);
-  border-top-color: #fff;
+  border: 2px solid var(--spinner-on-accent-track);
+  border-top-color: var(--spinner-on-accent-head);
   border-radius: 50%;
   animation: generate-spin 0.7s linear infinite;
 }
@@ -682,7 +614,7 @@ watch(config, () => {
 
 .preview-badge {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent-color);
   font-size: var(--font-size-xs);
@@ -708,7 +640,7 @@ watch(config, () => {
   overflow: hidden;
   background: var(--surface);
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -751,10 +683,10 @@ watch(config, () => {
 
 .preview-item code {
   padding: 0 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--surface-muted);
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
 }
 
@@ -772,7 +704,7 @@ watch(config, () => {
 
 .preview-root-value {
   color: var(--text-secondary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   line-height: 1.5;
   word-break: break-all;
@@ -801,7 +733,7 @@ watch(config, () => {
 
 .result-badge {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
@@ -895,7 +827,7 @@ watch(config, () => {
 
 .result-row code {
   color: var(--text-secondary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   word-break: break-all;
 }

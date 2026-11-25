@@ -45,7 +45,7 @@ import {
 } from '@marimo-team/codemirror-sql'
 import commonKeywords from '@marimo-team/codemirror-sql/data/common-keywords.json'
 import { getResolvedTheme } from '@/utils/theme'
-import { isRoutineDdl, splitSqlStatementRanges } from '@/utils/sqlStatements'
+import { isRoutineDdl, splitSqlStatementRanges } from '@shared/sqlStatements'
 import { normalizeDatabaseEditorConfig } from '@shared/databaseEditor'
 import { highlightSqlToHtml } from '@/utils/sqlHighlight'
 import { dbGetTableMeta } from '@/api'
@@ -1196,6 +1196,16 @@ defineExpose({
       return editorView.state.doc.toString()
     }
     return editorView.state.doc.sliceString(selection.from, selection.to)
+  },
+  replaceSelection: (text) => {
+    if (!editorView) return
+    const selection = editorView.state.selection.main
+    editorView.dispatch({
+      changes: { from: selection.from, to: selection.to, insert: text },
+      selection: { anchor: selection.from + text.length },
+      scrollIntoView: true
+    })
+    editorView.focus()
   },
   setContent,
   focus: () => editorView?.focus(),

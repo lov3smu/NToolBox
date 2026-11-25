@@ -1,5 +1,5 @@
 <template>
-  <div ref="barRef" class="tab-bar" role="tablist" :aria-label="ariaLabel">
+  <div ref="barRef" class="tab-bar" :class="`is-${sizeClass}`" role="tablist" :aria-label="ariaLabel">
     <button
       v-for="tab in tabs"
       :key="tab.key"
@@ -20,15 +20,20 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+const SIZES = ['xl', 'lg', 'md', 'sm', 'xs']
 
 const props = defineProps({
   modelValue: { type: String, required: true },
   tabs: { type: Array, required: true },
+  size: { type: String, default: 'md' },
   ariaLabel: { type: String, default: '' }
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+const sizeClass = computed(() => (SIZES.includes(props.size) ? props.size : 'md'))
 
 const barRef = ref(null)
 const indicatorStyle = ref({ width: '0px', transform: 'translateX(0)', opacity: 0 })
@@ -90,23 +95,51 @@ watch(
 
 <style scoped>
 .tab-bar {
+  --tab-height: 30px;
+  --tab-padding: 12px;
+  --tab-font: var(--font-size-sm);
+  --tab-indicator: 2px;
   position: relative;
   display: flex;
   align-items: center;
   gap: 2px;
-  height: 30px;
+  height: var(--tab-height);
   flex-shrink: 0;
 }
 
+.tab-bar.is-xl {
+  --tab-height: var(--control-height-xl);
+  --tab-padding: 18px;
+  --tab-font: var(--font-size-base);
+  --tab-indicator: 3px;
+}
+
+.tab-bar.is-lg {
+  --tab-height: var(--control-height-lg);
+  --tab-padding: 15px;
+  --tab-font: var(--font-size-base);
+}
+
+.tab-bar.is-sm {
+  --tab-height: var(--control-height-sm);
+  --tab-padding: 10px;
+}
+
+.tab-bar.is-xs {
+  --tab-height: var(--control-height-xs);
+  --tab-padding: 8px;
+  --tab-font: var(--font-size-xs);
+}
+
 .tab-bar-item {
-  height: 30px;
-  padding: 0 12px;
+  height: var(--tab-height);
+  padding: 0 var(--tab-padding);
   border: none;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   background: transparent;
   color: var(--text-secondary);
   font: inherit;
-  font-size: var(--font-size-sm);
+  font-size: var(--tab-font);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -133,8 +166,8 @@ watch(
   position: absolute;
   left: 0;
   bottom: 0;
-  height: 2px;
-  border-radius: 2px;
+  height: var(--tab-indicator);
+  border-radius: var(--radius-xs);
   background: var(--accent-color);
   pointer-events: none;
   transition:

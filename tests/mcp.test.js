@@ -20,7 +20,7 @@ import {
   initMcp,
   isMcpToolName,
   stopMcp
-} from '../src/main/services/mcp.js'
+} from '../src/main/services/extensions/mcp.js'
 import { buildMcpToolName, normalizeMcpServers, parseMcpToolName, splitCommandLine } from '../src/shared/mcp.js'
 
 const fixtureServer = path.join(__dirname, 'fixtures', 'mcpEchoServer.cjs')

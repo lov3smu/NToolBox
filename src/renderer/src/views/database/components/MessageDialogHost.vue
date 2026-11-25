@@ -4,6 +4,9 @@
     :type="messageDialog.type"
     :title="messageDialog.title"
     :message="messageDialog.message"
+    :prompt="Boolean(messageDialog.prompt)"
+    :input-value="messageDialog.inputValue"
+    @update:input-value="messageDialog.inputValue = $event"
     @confirm="onMessageConfirm"
     @cancel="onMessageCancel"
   />

@@ -105,6 +105,13 @@ describe('transfer plan', () => {
     })
   })
 
+  it('normalizes mask presets in settings and tasks', () => {
+    const settings = normalizeTransferSettings({ maskPresets: ['phone', 'bad', 'phone', 'email'] })
+    expect(settings.maskPresets).toEqual(['phone', 'email'])
+    expect(normalizeTransferSettings({}).maskPresets).toEqual([])
+    expect(normalizeTransferTask({ name: '迁移', maskPresets: ['name'] }).maskPresets).toEqual(['name'])
+  })
+
   it('transforms create table DDL for target name and column case', () => {
     const ddl = [
       'CREATE TABLE `orders` (',

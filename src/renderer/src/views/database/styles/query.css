@@ -155,14 +155,19 @@
   .toolbar-right {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+    row-gap: 6px;
+    min-width: 0;
   }
 
   .query-toolbar {
     flex-shrink: 0;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+    row-gap: 6px;
     padding: 8px 12px;
     background: var(--panel);
     border: 1px solid var(--border-color);
@@ -172,8 +177,6 @@
   .table-query-toolbar {
     border-bottom: 1px solid var(--border-color);
     justify-content: flex-start;
-    flex-wrap: wrap;
-    row-gap: 6px;
   }
 
   .table-query-toolbar .toolbar-btn {
@@ -258,7 +261,7 @@
     cursor: pointer;
     opacity: 0;
     transition: var(--transition-normal);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
   }
 
   .th-actions svg {
@@ -298,7 +301,10 @@
   .toolbar-left {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 14px;
+    row-gap: 6px;
+    min-width: 0;
   }
 
   .toolbar-select-group {

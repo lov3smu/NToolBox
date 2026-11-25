@@ -12,10 +12,12 @@ import knowledgeSearch from './knowledge-search/handler.js'
 import memory from './memory/handler.js'
 import password from './password/handler.js'
 import resultRead from './result-read/handler.js'
+import runCommand from './run-command/handler.js'
 import sqlConfig from './sql-config/handler.js'
 import sqlScript from './sql-script/handler.js'
 import subagent from './subagent/handler.js'
 import timestamp from './timestamp/handler.js'
+import toolbox from './toolbox/handler.js'
 import webFetch from './web-fetch/handler.js'
 import webSearch from './web-search/handler.js'
 import yamlValidate from './yaml-validate/handler.js'
@@ -36,10 +38,12 @@ export const builtinHandlers = {
   memory,
   password,
   'result-read': resultRead,
+  'run-command': runCommand,
   'sql-config': sqlConfig,
   'sql-script': sqlScript,
   subagent,
   timestamp,
+  toolbox,
   'web-fetch': webFetch,
   'web-search': webSearch,
   'yaml-validate': yamlValidate

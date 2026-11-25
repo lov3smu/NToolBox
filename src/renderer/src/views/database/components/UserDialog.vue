@@ -1,5 +1,9 @@
 <template>
-  <div v-if="userDialog.show" class="dialog-overlay">
+  <div
+    v-if="userDialog.show"
+    v-modal-shell="{ onClose: closeUserDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
     <div class="dialog dialog-wide user-dialog">
       <div class="dialog-header">
         <h3>
@@ -15,10 +19,7 @@
             {{ t('新建用户') }}
           </button>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeUserDialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -32,10 +33,10 @@
         <div v-if="userDialog.error" class="dialog-alert error">{{ userDialog.error }}</div>
         <div class="user-dialog-body">
           <div class="user-pane">
-            <input
+            <AppInput
               v-model="userDialog.keyword"
               type="text"
-              class="input-field user-search"
+              class="user-search"
               :placeholder="t('筛选用户名或主机')"
               autofocus
             />
@@ -100,37 +101,22 @@
                 <div v-if="userDialog.form.mode === 'create'" class="user-form-grid">
                   <label class="user-form-field">
                     <span>{{ t('用户名') }}</span>
-                    <input
-                      v-model="userDialog.form.user"
-                      type="text"
-                      class="input-field"
-                      :placeholder="t('如 app_user')"
-                    />
+                    <AppInput v-model="userDialog.form.user" type="text" :placeholder="t('如 app_user')" />
                   </label>
                   <label class="user-form-field">
                     <span>{{ t('主机') }}</span>
-                    <input v-model="userDialog.form.host" type="text" class="input-field" placeholder="%" />
+                    <AppInput v-model="userDialog.form.host" type="text" placeholder="%" />
                   </label>
                   <label class="user-form-field">
                     <span>{{ t('密码') }}</span>
-                    <input
-                      v-model="userDialog.form.password"
-                      type="password"
-                      class="input-field"
-                      autocomplete="new-password"
-                    />
+                    <AppInput v-model="userDialog.form.password" type="password" autocomplete="new-password" />
                   </label>
                 </div>
 
                 <div v-else-if="userDialog.form.mode === 'password'" class="user-form-grid">
                   <label class="user-form-field">
                     <span>{{ t('新密码') }}</span>
-                    <input
-                      v-model="userDialog.form.password"
-                      type="password"
-                      class="input-field"
-                      autocomplete="new-password"
-                    />
+                    <AppInput v-model="userDialog.form.password" type="password" autocomplete="new-password" />
                   </label>
                 </div>
 
@@ -146,17 +132,16 @@
                     </label>
                     <label v-if="userDialog.form.scope !== 'global'" class="user-form-field">
                       <span>{{ t('数据库') }}</span>
-                      <input
+                      <AppInput
                         v-model="userDialog.form.database"
                         type="text"
-                        class="input-field"
                         list="user-db-options"
                         :placeholder="t('数据库名')"
                       />
                     </label>
                     <label v-if="userDialog.form.scope === 'table'" class="user-form-field">
                       <span>{{ t('表') }}</span>
-                      <input v-model="userDialog.form.table" type="text" class="input-field" :placeholder="t('表名')" />
+                      <AppInput v-model="userDialog.form.table" type="text" :placeholder="t('表名')" />
                     </label>
                   </div>
                   <div class="user-privilege-grid">
@@ -235,6 +220,8 @@
 import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const {
   userDialog,

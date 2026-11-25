@@ -1,178 +1,151 @@
 <template>
   <Teleport to="body">
-    <Transition name="plugin-dialog">
-      <div v-if="visible" class="plugin-dialog-overlay">
-        <section class="plugin-dialog" role="dialog" aria-modal="true" aria-labelledby="plugin-install-title">
-          <header class="plugin-dialog-header">
-            <div class="plugin-dialog-heading">
-              <h2 id="plugin-install-title">{{ t('安装{kind}', { kind: installNoun }) }}</h2>
-              <p>{{ installDescription }}</p>
-            </div>
+    <div v-if="visible" class="plugin-dialog-overlay" :class="`is-${sizeClass}`">
+      <section class="plugin-dialog" role="dialog" aria-modal="true" aria-labelledby="plugin-install-title">
+        <header class="plugin-dialog-header">
+          <div class="plugin-dialog-heading">
+            <h2 id="plugin-install-title">{{ t('安装{kind}', { kind: installNoun }) }}</h2>
+            <p>{{ installDescription }}</p>
+          </div>
+          <button
+            type="button"
+            class="plugin-dialog-close"
+            :title="t('关闭')"
+            :disabled="submitting"
+            @click="requestClose"
+          >
+            <AppIcon name="close" />
+          </button>
+        </header>
+
+        <div class="plugin-dialog-body">
+          <input
+            ref="inputRef"
+            v-model="query"
+            class="plugin-dialog-input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            :placeholder="inputPlaceholder"
+            :disabled="submitting"
+            @keydown.enter.prevent="submit"
+          />
+
+          <div class="plugin-dialog-row">
             <button
               type="button"
-              class="plugin-dialog-close"
-              :title="t('关闭')"
-              :disabled="submitting"
-              @click="requestClose"
+              class="plugin-guide-toggle"
+              :aria-expanded="guideOpen"
+              @click="guideOpen = !guideOpen"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <AppIcon name="chevron-right" class="plugin-guide-chevron" :class="{ open: guideOpen }" />
+              {{ t('安装引导和示例') }}
             </button>
-          </header>
 
-          <div class="plugin-dialog-body">
-            <input
-              ref="inputRef"
-              v-model="query"
-              class="plugin-dialog-input"
-              type="text"
-              spellcheck="false"
-              autocomplete="off"
-              :placeholder="inputPlaceholder"
-              :disabled="submitting"
-              @keydown.enter.prevent="submit"
-            />
-
-            <div class="plugin-dialog-row">
+            <div class="plugin-source">
               <button
                 type="button"
-                class="plugin-guide-toggle"
-                :aria-expanded="guideOpen"
-                @click="guideOpen = !guideOpen"
+                class="plugin-source-trigger"
+                :class="{ open: sourceOpen }"
+                aria-haspopup="true"
+                :aria-expanded="sourceOpen"
+                @click="sourceOpen = !sourceOpen"
               >
-                <svg
-                  class="plugin-guide-chevron"
-                  :class="{ open: guideOpen }"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="m9 6 6 6-6 6" />
-                </svg>
-                {{ t('安装引导和示例') }}
+                <span class="plugin-source-label">{{ t('安装源') }}</span>
+                <span class="plugin-source-current">{{ t(sourceLabel) }}</span>
+                <AppIcon name="chevron-down" class="plugin-source-caret" :class="{ open: sourceOpen }" />
               </button>
-
-              <div class="plugin-source">
-                <button
-                  type="button"
-                  class="plugin-source-trigger"
-                  :class="{ open: sourceOpen }"
-                  aria-haspopup="true"
-                  :aria-expanded="sourceOpen"
-                  @click="sourceOpen = !sourceOpen"
-                >
-                  <span class="plugin-source-label">{{ t('安装源') }}</span>
-                  <span class="plugin-source-current">{{ t(sourceLabel) }}</span>
-                  <svg
-                    class="plugin-source-caret"
-                    :class="{ open: sourceOpen }"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-              </div>
             </div>
-
-            <Transition name="plugin-source-pop">
-              <div v-if="sourceOpen" class="plugin-source-menu" role="radiogroup" :aria-label="t('选择安装源')">
-                <RadioOption
-                  v-model="sourceMode"
-                  class="plugin-source-option"
-                  variant="block"
-                  name="plugin-source"
-                  value="default"
-                  @change="sourceOpen = false"
-                >
-                  <span class="plugin-source-option-body">
-                    <span class="plugin-source-option-title">{{ t('默认安装源') }}</span>
-                    <code>registry.npmjs.org</code>
-                  </span>
-                </RadioOption>
-                <RadioOption
-                  v-model="sourceMode"
-                  class="plugin-source-option"
-                  variant="block"
-                  name="plugin-source"
-                  value="mirror"
-                  @change="sourceOpen = false"
-                >
-                  <span class="plugin-source-option-body">
-                    <span class="plugin-source-option-title">{{ t('中国大陆镜像源') }}</span>
-                    <code>registry.npmmirror.com</code>
-                  </span>
-                </RadioOption>
-                <RadioOption
-                  v-model="sourceMode"
-                  class="plugin-source-option"
-                  :class="{ active: sourceMode === 'custom' }"
-                  variant="block"
-                  name="plugin-source"
-                  value="custom"
-                >
-                  <span class="plugin-source-option-body">
-                    <span class="plugin-source-option-title">{{ t('自定义地址') }}</span>
-                    <input
-                      v-model="customRegistry"
-                      class="plugin-source-custom"
-                      type="url"
-                      spellcheck="false"
-                      autocomplete="off"
-                      placeholder="https://npm.example.com/"
-                      @focus="sourceMode = 'custom'"
-                      @click.stop
-                    />
-                  </span>
-                </RadioOption>
-                <p class="plugin-source-hint">
-                  {{
-                    t(
-                      '填写内网或私有 npm 源地址，以 http:// 或 https:// 开头。若为需要登录的源，请把凭据放在本机的 ~/.npmrc 里。'
-                    )
-                  }}
-                </p>
-                <p v-if="customRegistryError" class="plugin-source-error">{{ t(customRegistryError) }}</p>
-              </div>
-            </Transition>
-
-            <div v-if="guideOpen" class="plugin-guide">
-              <button
-                v-for="example in examples"
-                :key="example.value"
-                type="button"
-                class="plugin-guide-example"
-                @click="useExample(example.value)"
-              >
-                <code>{{ example.value }}</code>
-                <span>{{ t(example.hint) }}</span>
-              </button>
-              <p class="plugin-guide-note">{{ t(guideNote) }}</p>
-            </div>
-
-            <p v-if="error" class="plugin-dialog-error" role="alert">{{ error }}</p>
           </div>
 
-          <footer class="plugin-dialog-footer">
-            <button type="button" class="btn btn-secondary" :disabled="submitting" @click="requestClose">
-              {{ t('取消') }}
+          <Transition name="plugin-source-pop">
+            <div v-if="sourceOpen" class="plugin-source-menu" role="radiogroup" :aria-label="t('选择安装源')">
+              <RadioOption
+                v-model="sourceMode"
+                class="plugin-source-option"
+                variant="block"
+                name="plugin-source"
+                value="default"
+                @change="sourceOpen = false"
+              >
+                <span class="plugin-source-option-body">
+                  <span class="plugin-source-option-title">{{ t('默认安装源') }}</span>
+                  <code>registry.npmjs.org</code>
+                </span>
+              </RadioOption>
+              <RadioOption
+                v-model="sourceMode"
+                class="plugin-source-option"
+                variant="block"
+                name="plugin-source"
+                value="mirror"
+                @change="sourceOpen = false"
+              >
+                <span class="plugin-source-option-body">
+                  <span class="plugin-source-option-title">{{ t('中国大陆镜像源') }}</span>
+                  <code>registry.npmmirror.com</code>
+                </span>
+              </RadioOption>
+              <RadioOption
+                v-model="sourceMode"
+                class="plugin-source-option"
+                :class="{ active: sourceMode === 'custom' }"
+                variant="block"
+                name="plugin-source"
+                value="custom"
+              >
+                <span class="plugin-source-option-body">
+                  <span class="plugin-source-option-title">{{ t('自定义地址') }}</span>
+                  <input
+                    v-model="customRegistry"
+                    class="plugin-source-custom"
+                    type="url"
+                    spellcheck="false"
+                    autocomplete="off"
+                    placeholder="https://npm.example.com/"
+                    @focus="sourceMode = 'custom'"
+                    @click.stop
+                  />
+                </span>
+              </RadioOption>
+              <p class="plugin-source-hint">
+                {{
+                  t(
+                    '填写内网或私有 npm 源地址，以 http:// 或 https:// 开头。若为需要登录的源，请把凭据放在本机的 ~/.npmrc 里。'
+                  )
+                }}
+              </p>
+              <p v-if="customRegistryError" class="plugin-source-error">{{ t(customRegistryError) }}</p>
+            </div>
+          </Transition>
+
+          <div v-if="guideOpen" class="plugin-guide">
+            <button
+              v-for="example in examples"
+              :key="example.value"
+              type="button"
+              class="plugin-guide-example"
+              @click="useExample(example.value)"
+            >
+              <code>{{ example.value }}</code>
+              <span>{{ t(example.hint) }}</span>
             </button>
-            <button type="button" class="btn btn-primary" :disabled="!canSubmit" @click="submit">
-              {{ submitting ? t('安装中…') : t('安装') }}
-            </button>
-          </footer>
-        </section>
-      </div>
-    </Transition>
+            <p class="plugin-guide-note">{{ t(guideNote) }}</p>
+          </div>
+
+          <p v-if="error" class="plugin-dialog-error" role="alert">{{ error }}</p>
+        </div>
+
+        <footer class="plugin-dialog-footer">
+          <button type="button" class="btn btn-secondary" :disabled="submitting" @click="requestClose">
+            {{ t('取消') }}
+          </button>
+          <button type="button" class="btn btn-primary" :disabled="!canSubmit" @click="submit">
+            {{ submitting ? t('安装中…') : t('安装') }}
+          </button>
+        </footer>
+      </section>
+    </div>
   </Teleport>
 </template>
 
@@ -182,13 +155,19 @@ import { extensionsInstallSource, pluginsInstallSource } from '@/api'
 import { t } from '@/i18n'
 import RadioOption from '@/components/RadioOption.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org'
 const MIRROR_REGISTRY = 'https://registry.npmmirror.com'
 
+const SIZES = ['xl', 'lg', 'md', 'sm', 'xs']
+
 const props = defineProps({
   visible: { type: Boolean, default: false },
-  kind: { type: String, default: 'skill' }
+  kind: { type: String, default: 'skill' },
+  size: { type: String, default: 'md' }
 })
+
+const sizeClass = computed(() => (SIZES.includes(props.size) ? props.size : 'md'))
 
 const emit = defineEmits(['close', 'installed'])
 
@@ -395,6 +374,64 @@ onUnmounted(() => document.removeEventListener('keydown', onDocumentKeyDown))
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
+  animation: plugin-dialog-in var(--motion-panel) var(--motion-ease);
+}
+
+.plugin-dialog-overlay.is-xl .plugin-dialog {
+  width: min(640px, 100%);
+}
+
+.plugin-dialog-overlay.is-xl .plugin-dialog-heading h2 {
+  font-size: var(--font-size-lg);
+}
+
+.plugin-dialog-overlay.is-xl .plugin-dialog-input {
+  height: var(--control-height-xl);
+}
+
+.plugin-dialog-overlay.is-lg .plugin-dialog {
+  width: min(600px, 100%);
+}
+
+.plugin-dialog-overlay.is-lg .plugin-dialog-input {
+  height: var(--control-height-lg);
+}
+
+.plugin-dialog-overlay.is-sm .plugin-dialog {
+  width: min(500px, 100%);
+}
+
+.plugin-dialog-overlay.is-sm .plugin-dialog-header {
+  padding: 14px 16px 10px;
+}
+
+.plugin-dialog-overlay.is-sm .plugin-dialog-body {
+  padding: 0 16px;
+}
+
+.plugin-dialog-overlay.is-sm .plugin-dialog-input {
+  height: var(--control-height);
+}
+
+.plugin-dialog-overlay.is-xs .plugin-dialog {
+  width: min(440px, 100%);
+}
+
+.plugin-dialog-overlay.is-xs .plugin-dialog-header {
+  padding: 10px 12px 8px;
+}
+
+.plugin-dialog-overlay.is-xs .plugin-dialog-heading h2 {
+  font-size: var(--font-size-base);
+}
+
+.plugin-dialog-overlay.is-xs .plugin-dialog-body {
+  padding: 0 12px;
+}
+
+.plugin-dialog-overlay.is-xs .plugin-dialog-input {
+  height: var(--control-height-sm);
+  font-size: var(--font-size-sm);
 }
 
 .plugin-dialog-header {
@@ -590,7 +627,7 @@ onUnmounted(() => document.removeEventListener('keydown', onDocumentKeyDown))
   align-items: flex-start;
   gap: 9px;
   padding: 8px 9px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.12s;
 }
@@ -625,7 +662,7 @@ onUnmounted(() => document.removeEventListener('keydown', onDocumentKeyDown))
   margin-top: 2px;
   padding: 0 8px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-primary);
   font-family: var(--font-mono, monospace);
@@ -668,7 +705,7 @@ onUnmounted(() => document.removeEventListener('keydown', onDocumentKeyDown))
   gap: 2px;
   padding: 7px 9px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   text-align: left;
   font: inherit;
@@ -735,26 +772,17 @@ onUnmounted(() => document.removeEventListener('keydown', onDocumentKeyDown))
   transform: translateY(-4px);
 }
 
-.plugin-dialog-enter-active,
-.plugin-dialog-leave-active {
-  transition: opacity 0.16s ease;
+/* 入场动画只作用于卡片：遮罩层始终不透明，动画帧被节流时也不会留下不可见却拦截点击的全屏层 */
+@keyframes plugin-dialog-in {
+  from {
+    transform: scale(0.97) translateY(4px);
+    opacity: 0.85;
+  }
 }
 
-.plugin-dialog-enter-active .plugin-dialog,
-.plugin-dialog-leave-active .plugin-dialog {
-  transition:
-    transform 0.16s ease,
-    opacity 0.16s ease;
-}
-
-.plugin-dialog-enter-from,
-.plugin-dialog-leave-to {
-  opacity: 0;
-}
-
-.plugin-dialog-enter-from .plugin-dialog,
-.plugin-dialog-leave-to .plugin-dialog {
-  transform: scale(0.97) translateY(4px);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .plugin-dialog {
+    animation: none;
+  }
 }
 </style>

@@ -14,7 +14,7 @@ vi.mock('../src/main/utils/index.js', () => ({
 }))
 
 const { createRunTrace, listRunTraces, readRunTrace, writeRunTraceFile } =
-  await import('../src/main/services/runTrace.js')
+  await import('../src/main/services/agent/runTrace.js')
 
 beforeAll(() => {
   fs.mkdirSync(testUserData, { recursive: true })
@@ -126,7 +126,7 @@ describe('运行轨迹', () => {
   })
 
   it('按工作区统计轨迹数量', async () => {
-    const { countRunTracesByWorkspace } = await import('../src/main/services/runTrace.js')
+    const { countRunTracesByWorkspace } = await import('../src/main/services/agent/runTrace.js')
     const first = createRunTrace('run-stats-1', { workspacePath: '/tmp/stats-workspace' })
     const second = createRunTrace('run-stats-2', { workspacePath: '/tmp/stats-workspace' })
     await first.finish({ status: 'goal_reached', termination: 'goal_reached' })

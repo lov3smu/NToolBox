@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootRef" class="setting-select" :class="{ 'is-open': open, 'is-disabled': disabled }">
+  <div ref="rootRef" class="setting-select" :class="[`is-${sizeClass}`, { 'is-open': open, 'is-disabled': disabled }]">
     <button
       type="button"
       class="setting-select-trigger"
@@ -12,18 +12,7 @@
       <span class="setting-select-value" :class="{ placeholder: !selectedOption }">
         {{ selectedOption ? t(selectedOption.label, { p0: selectedOption.value }) : t(placeholder) }}
       </span>
-      <svg
-        class="setting-select-chevron"
-        :class="{ open }"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
+      <AppIcon name="chevron-down" class="setting-select-chevron" :class="{ open }" />
     </button>
     <Teleport to="body">
       <div v-if="open" ref="panelRef" class="setting-select-panel" role="listbox" :style="panelStyle">
@@ -45,18 +34,7 @@
               {{ t(option.hint, { p0: option.value }) }}
             </span>
           </span>
-          <svg
-            v-if="option.value === modelValue"
-            class="setting-select-check"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <AppIcon v-if="option.value === modelValue" name="check" :stroke-width="2.4" class="setting-select-check" />
         </button>
       </div>
     </Teleport>
@@ -67,9 +45,13 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { t } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
+const SIZES = ['xl', 'lg', 'md', 'sm', 'xs']
+
 const props = defineProps({
   modelValue: { type: String, default: '' },
   options: { type: Array, default: () => [] },
+  size: { type: String, default: 'md' },
   placeholder: {
     type: String,
     get default() {
@@ -88,6 +70,7 @@ const highlighted = ref(-1)
 const panelStyle = ref({})
 
 const selectedOption = computed(() => props.options.find((option) => option.value === props.modelValue))
+const sizeClass = computed(() => (SIZES.includes(props.size) ? props.size : 'md'))
 
 function measure() {
   const trigger = rootRef.value?.getBoundingClientRect()
@@ -143,7 +126,8 @@ function onWindowPointerdown(event) {
 }
 
 function onWindowScroll(event) {
-  if (panelRef.value?.contains(event.target)) return
+  const target = event.target
+  if (target && target.nodeType && panelRef.value?.contains(target)) return
   closePanel()
 }
 
@@ -189,10 +173,59 @@ onBeforeUnmount(closePanel)
 
 <style scoped>
 .setting-select {
+  --select-height: var(--control-height);
+  --select-font: var(--font-size-sm);
+  --select-pad-left: 10px;
+  --select-pad-right: 30px;
+  --select-chevron: var(--icon-size-2xs);
+  --select-option-pad-y: 7px;
+  --select-option-pad-x: 8px;
+  --select-option-font: var(--font-size-sm);
+  --select-hint-font: var(--font-size-xs);
   position: relative;
   width: 100%;
   min-width: 0;
   flex: 1 1 auto;
+}
+
+.setting-select.is-xl {
+  --select-height: var(--control-height-xl);
+  --select-font: var(--font-size-base);
+  --select-pad-left: 12px;
+  --select-pad-right: 34px;
+  --select-chevron: var(--icon-size-sm);
+  --select-option-pad-y: 9px;
+  --select-option-pad-x: 10px;
+  --select-option-font: var(--font-size-base);
+  --select-hint-font: var(--font-size-sm);
+}
+
+.setting-select.is-lg {
+  --select-height: var(--control-height-lg);
+  --select-font: var(--font-size-base);
+  --select-pad-left: 12px;
+  --select-pad-right: 32px;
+  --select-chevron: var(--icon-size-xs);
+  --select-option-pad-y: 8px;
+  --select-option-pad-x: 9px;
+  --select-option-font: var(--font-size-base);
+  --select-hint-font: var(--font-size-sm);
+}
+
+.setting-select.is-sm {
+  --select-height: var(--control-height-sm);
+  --select-pad-right: 28px;
+  --select-option-pad-y: 6px;
+}
+
+.setting-select.is-xs {
+  --select-height: var(--control-height-xs);
+  --select-font: var(--font-size-xs);
+  --select-pad-left: 8px;
+  --select-pad-right: 24px;
+  --select-option-pad-y: 5px;
+  --select-option-pad-x: 6px;
+  --select-option-font: var(--font-size-xs);
 }
 
 .setting-select-trigger {
@@ -200,13 +233,13 @@ onBeforeUnmount(closePanel)
   display: flex;
   align-items: center;
   width: 100%;
-  height: var(--control-height);
-  padding: 0 30px 0 10px;
+  height: var(--select-height);
+  padding: 0 var(--select-pad-right) 0 var(--select-pad-left);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--select-font);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -247,15 +280,15 @@ onBeforeUnmount(closePanel)
   position: absolute;
   right: 9px;
   top: 50%;
-  width: 14px;
-  height: 14px;
-  margin-top: -7px;
+  width: var(--select-chevron);
+  height: var(--select-chevron);
+  transform: translateY(-50%);
   color: var(--text-tertiary);
   transition: transform 0.15s ease;
 }
 
 .setting-select-chevron.open {
-  transform: rotate(180deg);
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .setting-select-panel {
@@ -275,12 +308,12 @@ onBeforeUnmount(closePanel)
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 8px;
+  padding: var(--select-option-pad-y, 7px) var(--select-option-pad-x, 8px);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--select-option-font, var(--font-size-sm));
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -309,14 +342,14 @@ onBeforeUnmount(closePanel)
 }
 
 .setting-select-option-hint {
-  font-size: var(--font-size-xs);
+  font-size: var(--select-hint-font, var(--font-size-xs));
   color: var(--text-tertiary);
   white-space: normal;
 }
 
 .setting-select-check {
-  width: 14px;
-  height: 14px;
+  width: var(--select-chevron, var(--icon-size-2xs));
+  height: var(--select-chevron, var(--icon-size-2xs));
   flex-shrink: 0;
   color: var(--accent-color);
 }

@@ -1,6 +1,6 @@
 import { getStorage } from './index.js'
 
-const DRAFT_KINDS = ['markdown', 'wechat', 'wechat-draft']
+const DRAFT_KINDS = ['markdown', 'wechat', 'wechat-draft', 'json', 'yaml', 'html']
 const MAX_PAGE_SIZE = 200
 
 let writeQueue = Promise.resolve()

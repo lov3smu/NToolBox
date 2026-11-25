@@ -1,4 +1,4 @@
-import { tools } from './tools.js'
+import { tools } from './navTools.js'
 
 export const SHORTCUT_ACTION_KEYS = Object.freeze(['chat_send', 'database_run', 'global_search'])
 

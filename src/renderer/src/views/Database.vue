@@ -2,103 +2,97 @@
   <PageLayout tool-path="/database" page-class="database-page">
     <template #actions>
       <div class="header-shortcuts">
-        <div class="shortcut-item" :title="t('新建连接')" @click="showAddConnectionModal">
-          <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-            <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-            <line x1="6" y1="6" x2="6.01" y2="6" />
-            <line x1="6" y1="18" x2="6.01" y2="18" />
-            <line x1="12" y1="12" x2="12" y2="12.01" />
-          </svg>
+        <button type="button" class="shortcut-item" :title="t('新建连接')" @click="showAddConnectionModal">
+          <AppIcon name="database-plus" class="shortcut-icon" />
           <span class="shortcut-text">{{ t('新建连接') }}</span>
-        </div>
-        <div
+        </button>
+        <button
+          type="button"
           class="shortcut-item"
           :title="t('新建查询')"
           @click="createQueryTab(selectedConnection?.name || '', selectedDatabase || '')"
         >
-          <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-          </svg>
+          <AppIcon name="file-text" class="shortcut-icon" />
           <span class="shortcut-text">{{ t('新建查询') }}</span>
-        </div>
-        <div class="shortcut-item" :title="t('数据传输')" @click="openDataTransferDialog">
-          <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 7h13" />
-            <path d="m14 4 3 3-3 3" />
-            <path d="M20 17H7" />
-            <path d="m10 20-3-3 3-3" />
-          </svg>
+        </button>
+        <button type="button" class="shortcut-item" :title="t('数据传输')" @click="openDataTransferDialog">
+          <AppIcon name="swap-horizontal" class="shortcut-icon" />
           <span class="shortcut-text">{{ t('数据传输') }}</span>
-        </div>
+        </button>
         <div class="header-ops" :class="{ open: headerOpsOpen }">
-          <div
+          <button
+            type="button"
             class="shortcut-item"
             :class="{ active: headerOpsOpen }"
             :title="t('运维与诊断')"
-            @click.stop="headerOpsOpen = !headerOpsOpen"
+            aria-haspopup="menu"
+            :aria-expanded="headerOpsOpen"
+            @click.stop="toggleHeaderOps"
           >
-            <svg class="shortcut-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path
-                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-              />
-            </svg>
+            <AppIcon name="wrench" class="shortcut-icon" />
             <span class="shortcut-text">{{ t('运维') }}</span>
-            <svg class="shortcut-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-          <div v-if="headerOpsOpen" v-clamp-viewport class="header-ops-menu" @click.stop>
-            <div class="header-ops-item" @click="runHeaderAction(openSessionDialog)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
+            <AppIcon name="chevron-down" class="shortcut-chevron" />
+          </button>
+          <div
+            v-if="headerOpsOpen"
+            ref="headerOpsMenuRef"
+            v-clamp-viewport
+            class="header-ops-menu"
+            role="menu"
+            @click.stop
+            @keydown="onHeaderOpsMenuKeydown"
+          >
+            <button
+              v-if="engineCapabilities.sessions"
+              type="button"
+              role="menuitem"
+              class="header-ops-item"
+              @click="runHeaderAction(openSessionDialog)"
+            >
+              <AppIcon name="lock" />
               <span>{{ t('会话与锁') }}</span>
-            </div>
-            <div class="header-ops-item" @click="runHeaderAction(openServerStatusDialog)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 12h4l2-6 4 12 2-6h6" />
-              </svg>
+            </button>
+            <button
+              v-if="engineCapabilities.serverStatus"
+              type="button"
+              role="menuitem"
+              class="header-ops-item"
+              @click="runHeaderAction(openServerStatusDialog)"
+            >
+              <AppIcon name="activity" />
               <span>{{ t('实例状态') }}</span>
-            </div>
-            <div class="header-ops-item" @click="runHeaderAction(openHealthDialog)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <ellipse cx="12" cy="5" rx="8" ry="3" />
-                <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
-                <path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
-              </svg>
+            </button>
+            <button
+              v-if="engineCapabilities.health"
+              type="button"
+              role="menuitem"
+              class="header-ops-item"
+              @click="runHeaderAction(openHealthDialog)"
+            >
+              <AppIcon name="database" />
               <span>{{ t('容量与健康检查') }}</span>
-            </div>
-            <div class="header-ops-item" @click="runHeaderAction(openBackupDialog)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+            </button>
+            <button
+              v-if="engineCapabilities.backup"
+              type="button"
+              role="menuitem"
+              class="header-ops-item"
+              @click="runHeaderAction(openBackupDialog)"
+            >
+              <AppIcon name="download" />
               <span>{{ t('定时备份与导出') }}</span>
-            </div>
-            <div class="header-ops-item" @click="runHeaderAction(openOperationLog)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
+            </button>
+            <button type="button" role="menuitem" class="header-ops-item" @click="runHeaderAction(openOperationLog)">
+              <AppIcon name="list" />
               <span>{{ t('数据库操作日志') }}</span>
-            </div>
-            <div class="header-ops-divider" />
-            <div class="header-ops-item" @click="runHeaderAction(openUserDialog)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <span>{{ t('用户与权限') }}</span>
-            </div>
+            </button>
+            <template v-if="engineCapabilities.users">
+              <div class="header-ops-divider" />
+              <button type="button" role="menuitem" class="header-ops-item" @click="runHeaderAction(openUserDialog)">
+                <AppIcon name="user" />
+                <span>{{ t('用户与权限') }}</span>
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -139,8 +133,6 @@
     <CellFilterMenu />
 
     <MessageDialogHost />
-
-    <PromptDialog />
 
     <SqlParamsDialog />
 
@@ -194,7 +186,7 @@
 
 <script setup>
 import { t } from '@/i18n'
-import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { useConfig } from '@/composables'
 import { normalizeDatabaseEditorConfig } from '@shared/databaseEditor'
@@ -214,7 +206,6 @@ import TabContextMenu from './database/components/TabContextMenu.vue'
 import FieldSortMenu from './database/components/FieldSortMenu.vue'
 import CellFilterMenu from './database/components/CellFilterMenu.vue'
 import MessageDialogHost from './database/components/MessageDialogHost.vue'
-import PromptDialog from './database/components/PromptDialog.vue'
 import SqlParamsDialog from './database/components/SqlParamsDialog.vue'
 import ImportDialog from './database/components/ImportDialog.vue'
 import ExportDialog from './database/components/ExportDialog.vue'
@@ -239,6 +230,8 @@ import SqlPreviewDialog from './database/components/SqlPreviewDialog.vue'
 import CreateTableDialog from './database/components/CreateTableDialog.vue'
 import SchemaDiffDialog from './database/components/SchemaDiffDialog.vue'
 import CellViewerDialog from './database/components/CellViewerDialog.vue'
+import AppIcon from '@/components/AppIcon.vue'
+import { focusFirstMenuItem, handleMenuKeydown } from '@/utils/menuKeyboard'
 import './database/styles/page.css'
 import './database/styles/sidebar.css'
 import './database/styles/menus.css'
@@ -270,10 +263,12 @@ const {
   openBackupDialog,
   openOperationLog,
   selectedConnection,
-  selectedDatabase
+  selectedDatabase,
+  engineCapabilities
 } = databaseStore
 
 const headerOpsOpen = ref(false)
+const headerOpsMenuRef = ref(null)
 
 function onHeaderOpsOutsideClick(event) {
   if (!event.target?.closest?.('.header-ops')) headerOpsOpen.value = false
@@ -281,6 +276,19 @@ function onHeaderOpsOutsideClick(event) {
 
 function onHeaderOpsKeydown(event) {
   if (event.key === 'Escape') headerOpsOpen.value = false
+}
+
+async function toggleHeaderOps() {
+  headerOpsOpen.value = !headerOpsOpen.value
+  if (!headerOpsOpen.value) return
+  await nextTick()
+  focusFirstMenuItem(headerOpsMenuRef.value)
+}
+
+function onHeaderOpsMenuKeydown(event) {
+  handleMenuKeydown(event, headerOpsMenuRef.value, () => {
+    headerOpsOpen.value = false
+  })
 }
 
 function runHeaderAction(action) {

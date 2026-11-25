@@ -2,11 +2,16 @@ import { app, nativeTheme } from 'electron'
 import { log, initLogger, getIconPath } from './utils'
 import { prepareStorageLayout } from './utils/storageLayout'
 import { APP_ID } from './constants'
-import { loadConfig, startAutoUpdateCheck, promptAutoStartOnFirstLaunch, checkForUpdates } from './services'
+import { loadConfig } from './services/config.js'
+import { initManagedProfile } from './services/managedProfile.js'
+import { startAutoUpdateCheck, checkForUpdates } from './services/updater.js'
+import { promptAutoStartOnFirstLaunch } from './services/autostart.js'
 import { initClipboardHistory, stopClipboardHistory } from './services/clipboard.js'
-import { closeAllSshTunnels } from './services/sshTunnel.js'
-import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler.js'
-import { initMcp, stopMcp } from './services/mcp.js'
+import { closeAllSshTunnels } from './services/database/sshTunnel.js'
+import { startBackupScheduler, stopBackupScheduler } from './services/database/backupScheduler.js'
+import { startScheduledTasks, stopScheduledTasks } from './services/scheduledTasks.js'
+import { initMcp, stopMcp } from './services/extensions/mcp.js'
+import { startCliServer, stopCliServer } from './services/cliServer.js'
 import { applyNetworkConfig } from './services/network.js'
 import { setLocale } from './services/i18n.js'
 import { setupIPCHandlers } from './ipc'
@@ -50,6 +55,8 @@ if (process.platform === 'win32') {
 app.on('before-quit', () => {
   app.isQuitting = true
   stopBackupScheduler()
+  stopScheduledTasks()
+  stopCliServer()
   closeAllSshTunnels()
   stopMcp()
   stopClipboardHistory()
@@ -60,7 +67,7 @@ app.whenReady().then(async () => {
   try {
     await initLogger()
   } catch (e) {
-    console.error('初始化日志失败:', e)
+    process.stderr.write(`初始化日志失败: ${e?.stack || e}\n`)
   }
 
   log.info('========================================')
@@ -75,6 +82,8 @@ app.whenReady().then(async () => {
 
   const shouldHide = process.argv.includes('--hidden')
   log.info('启动模式:', shouldHide ? '隐藏' : '正常')
+
+  await initManagedProfile()
 
   const loadedConfig = await loadConfig()
   if (!loadedConfig) {
@@ -93,7 +102,7 @@ app.whenReady().then(async () => {
   }
 
   // 开发模式下 macOS 的 Dock 图标是 Electron 默认图标，需要手动替换；打包后由 .icns 提供
-  if (process.platform === 'darwin' && !app.isPackaged && app.dock) {
+  if (process.platform === 'darwin' && process.env.ELECTRON_RENDERER_URL && app.dock) {
     const devIcon = getIconPath()
     if (devIcon) app.dock.setIcon(devIcon)
   }
@@ -101,15 +110,18 @@ app.whenReady().then(async () => {
   setupIPCHandlers()
   await initClipboardHistory()
   startBackupScheduler()
+  startScheduledTasks()
 
   initMcp().catch((error) => log.warn('初始化 MCP 服务失败:', error.message))
+
+  startCliServer({ version: app.getVersion() }).catch((error) => log.warn('启动 CLI 伴生服务失败:', error.message))
 
   const { mainWindow, createSettingsWindow } = initWindows()
   createAppMenu(mainWindow, checkForUpdates, createSettingsWindow)
   createTray(mainWindow, checkForUpdates, createSettingsWindow)
   startAutoUpdateCheck(mainWindow)
 
-  setTimeout(() => promptAutoStartOnFirstLaunch(getMainWindow()), 1000)
+  if (!shouldHide) setTimeout(() => promptAutoStartOnFirstLaunch(getMainWindow()), 1000)
 
   log.info('应用启动完成')
 })

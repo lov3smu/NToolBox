@@ -4,50 +4,30 @@
       <div class="vault-toolbar">
         <template v-if="!vaultLocked">
           <button class="btn btn-primary btn-sm" @click="openCreateEntry()">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <AppIcon name="plus" size="14" />
             {{ t('新建密码') }}
           </button>
           <button class="btn btn-secondary btn-sm" @click="openGenerator()">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path
-                d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"
-              />
-            </svg>
+            <AppIcon name="key-generate" size="14" />
             {{ t('生成密码') }}
           </button>
           <button class="btn btn-secondary btn-sm" @click="startCreateGroup()">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <path d="M12 11v6M9 14h6" />
-            </svg>
+            <AppIcon name="folder-plus" size="14" />
             {{ t('新建分组') }}
           </button>
           <span class="toolbar-divider" />
           <button class="btn btn-secondary btn-sm" :disabled="!selectedEntry" @click="openEditEntry()">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-            </svg>
+            <AppIcon name="edit" size="14" />
             {{ t('编辑') }}
           </button>
           <button class="btn btn-danger btn-sm" :disabled="!selectedEntry" @click="confirmDeleteEntry(selectedEntry)">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18" />
-              <path d="M8 6V4h8v2" />
-              <path d="M19 6l-1 14H6L5 6" />
-              <path d="M10 11v5M14 11v5" />
-            </svg>
+            <AppIcon name="trash" :size="14" />
             {{ t('删除') }}
           </button>
         </template>
         <span class="toolbar-spacer" />
         <label v-if="!vaultLocked" class="vault-search">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
+          <AppIcon name="search" :size="14" />
           <input
             ref="searchInput"
             v-model="searchText"
@@ -55,10 +35,7 @@
             @keyup.esc="searchText = ''"
           />
           <button v-if="searchText" type="button" class="search-clear" @click="searchText = ''">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" :size="12" />
           </button>
         </label>
       </div>
@@ -83,10 +60,9 @@
         </p>
         <label class="vault-lock-field">
           <span>{{ t('管理密码') }}</span>
-          <input
+          <AppInput
             ref="masterInput"
             v-model="masterPassword"
-            class="input-field"
             type="password"
             :maxlength="MAX_MASTER_PASSWORD_LENGTH"
             :autocomplete="vaultInitialized ? 'current-password' : 'new-password'"
@@ -96,9 +72,8 @@
         </label>
         <label v-if="!vaultInitialized" class="vault-lock-field">
           <span>{{ t('确认管理密码') }}</span>
-          <input
+          <AppInput
             v-model="masterConfirm"
-            class="input-field"
             type="password"
             :maxlength="MAX_MASTER_PASSWORD_LENGTH"
             autocomplete="new-password"
@@ -129,21 +104,11 @@
                 :aria-expanded="rootExpanded"
                 @click="rootExpanded = !rootExpanded"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  :class="{ open: rootExpanded }"
-                >
-                  <polyline points="9 6 15 12 9 18" />
-                </svg>
+                <AppIcon name="chevron-right" :class="{ open: rootExpanded }" />
               </button>
               <button type="button" class="tree-label" @click="selectGroup(null)">
                 <span class="node-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
-                  </svg>
+                  <AppIcon name="home" />
                 </span>
                 <span class="node-name">{{ t('根分组') }}</span>
                 <span class="node-count">{{ rootCount }}</span>
@@ -166,44 +131,26 @@
                   :aria-expanded="!isGroupCollapsed(node.group.id)"
                   @click="toggleGroupExpanded(node.group.id)"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    :class="{ open: !isGroupCollapsed(node.group.id) }"
-                  >
-                    <polyline points="9 6 15 12 9 18" />
-                  </svg>
+                  <AppIcon name="chevron-right" :class="{ open: !isGroupCollapsed(node.group.id) }" />
                 </button>
                 <span v-else class="tree-toggle-spacer" />
                 <button type="button" class="tree-label" @click="selectGroup(node.group.id)">
                   <span class="node-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    </svg>
+                    <AppIcon name="folder" />
                   </span>
                   <span class="node-name">{{ node.group.name }}</span>
                   <span class="node-count">{{ groupEntryCount(node.group.id) }}</span>
                 </button>
                 <div class="node-actions">
                   <button class="btn-icon btn-sm" :title="t('编辑分组')" @click.stop="startEditGroup(node.group)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                    </svg>
+                    <AppIcon name="edit" size="14" />
                   </button>
                   <button
                     class="btn-icon btn-sm btn-icon-danger"
                     :title="t('删除分组')"
                     @click.stop="confirmDeleteGroup(node.group)"
                   >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4h8v2" />
-                      <path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v5M14 11v5" />
-                    </svg>
+                    <AppIcon name="trash" :size="14" />
                   </button>
                 </div>
               </div>
@@ -220,18 +167,11 @@
               :disabled="!hasFilter"
               @click="clearFilters"
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-                <path d="m8.5 8.5 5 5M13.5 8.5l-5 5" />
-              </svg>
+              <AppIcon name="search-x" :size="14" />
               <span class="filter-label">{{ t('清除搜索') }}</span>
             </button>
             <button type="button" class="filter-item" :class="{ active: showAll }" @click="selectAllEntries">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 6h13M8 12h13M8 18h13" />
-                <path d="M3 6h.01M3 12h.01M3 18h.01" />
-              </svg>
+              <AppIcon name="list" size="14" />
               <span class="filter-label">{{ t('所有条目') }}</span>
               <span class="filter-count">{{ entries.length }}</span>
             </button>
@@ -246,10 +186,7 @@
                 :class="{ active: activeTag === tag }"
                 @click="toggleTag(tag)"
               >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.6 13.4 12 22l-9-9V4h9l8.6 8.6a1.4 1.4 0 0 1 0 2z" />
-                  <circle cx="8" cy="8" r="1.5" />
-                </svg>
+                <AppIcon name="tag" size="14" />
                 <span class="filter-label">{{ tag }}</span>
                 <span class="filter-count">{{ tagCounts.get(tag) }}</span>
               </button>
@@ -257,10 +194,7 @@
           </div>
 
           <div class="vault-note">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="4" y="10" width="16" height="10" rx="2" />
-              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg>
+            <AppIcon name="lock" size="13" />
             {{ t('全部数据加密保存在本机') }}
           </div>
         </aside>
@@ -280,17 +214,7 @@
                 <tr>
                   <th scope="col" class="sortable" :title="t('排序')" @click="toggleSort('title')">
                     <span class="th-label">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="13"
-                        height="13"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="4" y="10" width="16" height="10" rx="2" />
-                        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                      </svg>
+                      <AppIcon name="lock" size="13" />
                       {{ t('标题') }}
                     </span>
                     <span v-if="sortKey === 'title'" class="sort-arrow" :class="{ desc: sortDir === 'desc' }"> ▲ </span>
@@ -329,10 +253,7 @@
                   <td>
                     <div class="cell-title">
                       <span class="cell-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <circle cx="8" cy="12" r="3" />
-                          <path d="M11 12h10M17 12v3M20 12v2" />
-                        </svg>
+                        <AppIcon name="key" />
                       </span>
                       <span class="cell-text" :title="entry.title">{{ entry.title }}</span>
                     </div>
@@ -362,17 +283,7 @@
                         :disabled="!entry.username"
                         @click="copyText(entry.username)"
                       >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="14"
-                          height="14"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
+                        <AppIcon name="user" size="14" />
                       </button>
                       <button
                         class="btn-icon btn-sm"
@@ -380,49 +291,17 @@
                         :disabled="!entry.hasPassword"
                         @click="copyEntryPassword(entry)"
                       >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="14"
-                          height="14"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <circle cx="8" cy="12" r="3" />
-                          <path d="M11 12h10M17 12v3M20 12v2" />
-                        </svg>
+                        <AppIcon name="key" size="14" />
                       </button>
                       <button class="btn-icon btn-sm" :title="t('编辑')" @click="openEditEntry(entry)">
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="14"
-                          height="14"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path d="M12 20h9" />
-                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                        </svg>
+                        <AppIcon name="edit" size="14" />
                       </button>
                       <button
                         class="btn-icon btn-sm btn-icon-danger"
                         :title="t('删除')"
                         @click="confirmDeleteEntry(entry)"
                       >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="14"
-                          height="14"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path d="M3 6h18" />
-                          <path d="M8 6V4h8v2" />
-                          <path d="M19 6l-1 14H6L5 6" />
-                          <path d="M10 11v5M14 11v5" />
-                        </svg>
+                        <AppIcon name="trash" :size="14" />
                       </button>
                     </div>
                   </td>
@@ -431,11 +310,7 @@
             </table>
 
             <div v-if="!visibleEntries.length" class="list-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                <rect x="4" y="10" width="16" height="10" rx="2" />
-                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                <circle cx="12" cy="15" r="1.6" />
-              </svg>
+              <AppIcon name="lock" :stroke-width="1.6" />
               <p>{{ entries.length ? t('没有匹配的密码') : t('暂无密码条目') }}</p>
               <button v-if="!entries.length" class="btn btn-primary btn-sm" @click="openCreateEntry()">
                 {{ t('新建密码') }}
@@ -453,268 +328,163 @@
     </div>
 
     <Teleport to="body">
-      <Transition name="vault-modal">
-        <div v-if="editorVisible" class="vault-modal-overlay">
-          <div class="vault-modal" role="dialog" aria-modal="true">
-            <header class="vault-modal-header">
-              <div class="vault-modal-heading">
-                <h2>{{ creating ? t('新建密码') : t('编辑密码') }}</h2>
-                <span class="vault-modal-sub">{{ editorGroupName }}</span>
+      <div v-if="editorVisible" class="vault-modal-overlay">
+        <div class="vault-modal" role="dialog" aria-modal="true">
+          <header class="vault-modal-header">
+            <div class="vault-modal-heading">
+              <h2>{{ creating ? t('新建密码') : t('编辑密码') }}</h2>
+              <span class="vault-modal-sub">{{ editorGroupName }}</span>
+            </div>
+            <button type="button" class="btn-icon" :title="t('取消')" @click="closeEditor">
+              <AppIcon name="close" :size="16" />
+            </button>
+          </header>
+
+          <div class="vault-modal-body">
+            <div class="form-grid">
+              <div class="field field-wide">
+                <label class="field-label">{{ t('标题') }}</label>
+                <AppInput ref="titleInput" v-model="form.title" maxlength="120" :placeholder="t('例如：GitHub')" />
               </div>
-              <button type="button" class="btn-icon" :title="t('取消')" @click="closeEditor">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </header>
 
-            <div class="vault-modal-body">
-              <div class="form-grid">
-                <div class="field field-wide">
-                  <label class="field-label">{{ t('标题') }}</label>
-                  <input
-                    ref="titleInput"
-                    v-model="form.title"
-                    class="input-field"
-                    maxlength="120"
-                    :placeholder="t('例如：GitHub')"
+              <div class="field">
+                <label class="field-label">{{ t('用户名') }}</label>
+                <div class="inline-control">
+                  <AppInput v-model="form.username" maxlength="200" autocomplete="off" :placeholder="t('用户名')" />
+                  <button
+                    class="btn-icon"
+                    :title="t('复制')"
+                    :disabled="!form.username"
+                    @click="copyText(form.username)"
+                  >
+                    <AppIcon name="copy" :size="14" />
+                  </button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="field-label">{{ t('密码') }}</label>
+                <div class="inline-control">
+                  <AppInput
+                    v-model="form.password"
+                    :type="formPasswordVisible ? 'text' : 'password'"
+                    maxlength="512"
+                    autocomplete="new-password"
+                    :placeholder="form.id ? '' : t('设置密码')"
                   />
+                  <button class="btn-icon" :title="t('生成密码')" @click="openGenerator(true)">
+                    <AppIcon name="key-generate" size="14" />
+                  </button>
+                  <button
+                    class="btn-icon"
+                    :title="formPasswordVisible ? t('隐藏密码') : t('显示密码')"
+                    :disabled="!form.id && !form.password"
+                    @click="toggleFormPassword"
+                  >
+                    <AppIcon v-if="formPasswordVisible" name="eye" :size="14" />
+                    <AppIcon v-else name="eye-off" size="14" />
+                  </button>
+                  <button
+                    class="btn-icon"
+                    :title="t('复制密码')"
+                    :disabled="!form.id && !form.password"
+                    @click="copyFormPassword"
+                  >
+                    <AppIcon name="copy" :size="14" />
+                  </button>
                 </div>
+                <div class="field-hint">
+                  {{ form.id ? t('留空则保持原密码') : t('密码将使用本机密钥加密存储') }}
+                </div>
+              </div>
 
-                <div class="field">
-                  <label class="field-label">{{ t('用户名') }}</label>
-                  <div class="inline-control">
-                    <input
-                      v-model="form.username"
-                      class="input-field"
-                      maxlength="200"
-                      autocomplete="off"
-                      :placeholder="t('用户名')"
-                    />
-                    <button
-                      class="btn-icon"
-                      :title="t('复制')"
-                      :disabled="!form.username"
-                      @click="copyText(form.username)"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                    </button>
-                  </div>
+              <div class="field field-wide">
+                <label class="field-label">{{ t('URL 地址') }}</label>
+                <div class="inline-control">
+                  <AppInput v-model="form.url" maxlength="1024" autocomplete="off" placeholder="https://example.com" />
+                  <button class="btn-icon" :title="t('打开链接')" :disabled="!form.url" @click="openUrl(form.url)">
+                    <AppIcon name="external-link" size="14" />
+                  </button>
+                  <button class="btn-icon" :title="t('复制')" :disabled="!form.url" @click="copyText(form.url)">
+                    <AppIcon name="copy" :size="14" />
+                  </button>
                 </div>
+              </div>
 
-                <div class="field">
-                  <label class="field-label">{{ t('密码') }}</label>
-                  <div class="inline-control">
-                    <input
-                      v-model="form.password"
-                      :type="formPasswordVisible ? 'text' : 'password'"
-                      class="input-field"
-                      maxlength="512"
-                      autocomplete="new-password"
-                      :placeholder="form.id ? '' : t('设置密码')"
-                    />
-                    <button class="btn-icon" :title="t('生成密码')" @click="openGenerator(true)">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      class="btn-icon"
-                      :title="formPasswordVisible ? t('隐藏密码') : t('显示密码')"
-                      :disabled="!form.id && !form.password"
-                      @click="toggleFormPassword"
-                    >
-                      <svg
-                        v-if="formPasswordVisible"
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                      <svg
-                        v-else
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      class="btn-icon"
-                      :title="t('复制密码')"
-                      :disabled="!form.id && !form.password"
-                      @click="copyFormPassword"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div class="field-hint">
-                    {{ form.id ? t('留空则保持原密码') : t('密码将使用本机密钥加密存储') }}
-                  </div>
+              <div class="field field-wide">
+                <label class="field-label">{{ t('标签') }}</label>
+                <AppInput v-model="form.tagsText" :placeholder="t('多个标签用逗号分隔')" />
+                <div v-if="parsedTags.length" class="entry-tags tag-preview">
+                  <span v-for="tag in parsedTags" :key="tag" class="mini-tag">{{ tag }}</span>
                 </div>
+              </div>
 
-                <div class="field field-wide">
-                  <label class="field-label">{{ t('URL 地址') }}</label>
-                  <div class="inline-control">
-                    <input
-                      v-model="form.url"
-                      class="input-field"
-                      maxlength="1024"
-                      autocomplete="off"
-                      placeholder="https://example.com"
-                    />
-                    <button class="btn-icon" :title="t('打开链接')" :disabled="!form.url" @click="openUrl(form.url)">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </button>
-                    <button class="btn-icon" :title="t('复制')" :disabled="!form.url" @click="copyText(form.url)">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="field field-wide">
-                  <label class="field-label">{{ t('标签') }}</label>
-                  <input v-model="form.tagsText" class="input-field" :placeholder="t('多个标签用逗号分隔')" />
-                  <div v-if="parsedTags.length" class="entry-tags tag-preview">
-                    <span v-for="tag in parsedTags" :key="tag" class="mini-tag">{{ tag }}</span>
-                  </div>
-                </div>
-
-                <div class="field field-wide">
-                  <label class="field-label">{{ t('备注') }}</label>
-                  <textarea v-model="form.notes" class="input-field vault-textarea" maxlength="4000" />
-                </div>
+              <div class="field field-wide">
+                <label class="field-label">{{ t('备注') }}</label>
+                <AppTextarea v-model="form.notes" class="vault-textarea" maxlength="4000" />
               </div>
             </div>
-
-            <footer class="vault-modal-footer">
-              <button
-                v-if="!creating"
-                class="btn btn-danger btn-sm"
-                :disabled="saving"
-                @click="confirmDeleteEntry(selectedEntry)"
-              >
-                {{ t('删除') }}
-              </button>
-              <span class="footer-spacer" />
-              <button class="btn btn-secondary" :disabled="saving" @click="closeEditor">{{ t('取消') }}</button>
-              <button class="btn btn-primary" :disabled="saving" @click="saveEntry">{{ t('保存') }}</button>
-            </footer>
           </div>
+
+          <footer class="vault-modal-footer">
+            <button
+              v-if="!creating"
+              class="btn btn-danger btn-sm"
+              :disabled="saving"
+              @click="confirmDeleteEntry(selectedEntry)"
+            >
+              {{ t('删除') }}
+            </button>
+            <span class="footer-spacer" />
+            <button class="btn btn-secondary" :disabled="saving" @click="closeEditor">{{ t('取消') }}</button>
+            <button class="btn btn-primary" :disabled="saving" @click="saveEntry">{{ t('保存') }}</button>
+          </footer>
         </div>
-      </Transition>
+      </div>
     </Teleport>
 
     <Teleport to="body">
-      <Transition name="vault-modal">
-        <div v-if="groupEditorVisible" class="vault-modal-overlay">
-          <div class="vault-modal" role="dialog" aria-modal="true">
-            <header class="vault-modal-header">
-              <div class="vault-modal-heading">
-                <h2>{{ groupModalTitle }}</h2>
-                <span class="vault-modal-sub">{{ t('上级分组：{name}', { name: groupParentLabel }) }}</span>
+      <div v-if="groupEditorVisible" class="vault-modal-overlay">
+        <div class="vault-modal" role="dialog" aria-modal="true">
+          <header class="vault-modal-header">
+            <div class="vault-modal-heading">
+              <h2>{{ groupModalTitle }}</h2>
+              <span class="vault-modal-sub">{{ t('上级分组：{name}', { name: groupParentLabel }) }}</span>
+            </div>
+            <button type="button" class="btn-icon" :title="t('取消')" @click="closeGroupEditor">
+              <AppIcon name="close" :size="16" />
+            </button>
+          </header>
+
+          <div class="vault-modal-body">
+            <div class="form-grid">
+              <div class="field field-wide">
+                <label class="field-label">{{ t('名称') }}</label>
+                <AppInput
+                  ref="groupNameInput"
+                  v-model="groupForm.name"
+                  maxlength="60"
+                  :placeholder="t('分组名称')"
+                  @keyup.enter="saveGroup"
+                />
               </div>
-              <button type="button" class="btn-icon" :title="t('取消')" @click="closeGroupEditor">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </header>
 
-            <div class="vault-modal-body">
-              <div class="form-grid">
-                <div class="field field-wide">
-                  <label class="field-label">{{ t('名称') }}</label>
-                  <input
-                    ref="groupNameInput"
-                    v-model="groupForm.name"
-                    class="input-field"
-                    maxlength="60"
-                    :placeholder="t('分组名称')"
-                    @keyup.enter="saveGroup"
-                  />
-                </div>
-
-                <div class="field field-wide">
-                  <label class="field-label">{{ t('备注') }}</label>
-                  <textarea v-model="groupForm.notes" class="input-field vault-textarea" maxlength="4000" />
-                </div>
+              <div class="field field-wide">
+                <label class="field-label">{{ t('备注') }}</label>
+                <AppTextarea v-model="groupForm.notes" class="vault-textarea" maxlength="4000" />
               </div>
             </div>
-
-            <footer class="vault-modal-footer">
-              <span class="footer-spacer" />
-              <button class="btn btn-secondary" :disabled="groupSaving" @click="closeGroupEditor">
-                {{ t('取消') }}
-              </button>
-              <button class="btn btn-primary" :disabled="groupSaving" @click="saveGroup">{{ t('保存') }}</button>
-            </footer>
           </div>
+
+          <footer class="vault-modal-footer">
+            <span class="footer-spacer" />
+            <button class="btn btn-secondary" :disabled="groupSaving" @click="closeGroupEditor">
+              {{ t('取消') }}
+            </button>
+            <button class="btn btn-primary" :disabled="groupSaving" @click="saveGroup">{{ t('保存') }}</button>
+          </footer>
         </div>
-      </Transition>
+      </div>
     </Teleport>
 
     <Teleport to="body">
@@ -739,42 +509,25 @@
           role="menuitem"
           @click="handleContextAction('subgroup')"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <path d="M12 11v6M9 14h6" />
-          </svg>
+          <AppIcon name="folder-plus" size="14" />
           {{ t('新建子分组') }}
         </button>
         <button v-else type="button" class="context-item" role="menuitem" @click="handleContextAction('group')">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <path d="M12 11v6M9 14h6" />
-          </svg>
+          <AppIcon name="folder-plus" size="14" />
           {{ t('新建分组') }}
         </button>
         <button type="button" class="context-item" role="menuitem" @click="handleContextAction('entry')">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="8" cy="12" r="3" />
-            <path d="M11 12h10M17 12v3M20 12v2" />
-          </svg>
+          <AppIcon name="key" size="14" />
           {{ t('新建密码') }}
         </button>
         <template v-if="contextMenuGroup">
           <div class="context-divider" />
           <button type="button" class="context-item" role="menuitem" @click="handleContextAction('edit')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-            </svg>
+            <AppIcon name="edit" size="14" />
             {{ t('编辑分组') }}
           </button>
           <button type="button" class="context-item danger" role="menuitem" @click="handleContextAction('delete')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18" />
-              <path d="M8 6V4h8v2" />
-              <path d="M19 6l-1 14H6L5 6" />
-              <path d="M10 11v5M14 11v5" />
-            </svg>
+            <AppIcon name="trash" :size="14" />
             {{ t('删除分组') }}
           </button>
         </template>
@@ -798,14 +551,14 @@
       @cancel="closeConfirm"
       @close="closeConfirm"
     />
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </PageLayout>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from '@/composables'
-import { copyToClipboard, formatDateTime } from '@/utils'
+import { copyToClipboard } from '@/utils/clipboard'
+import { formatDateTime } from '@/utils/format'
 import {
   MAX_MASTER_PASSWORD_LENGTH,
   MIN_MASTER_PASSWORD_LENGTH,
@@ -813,7 +566,6 @@ import {
   normalizeTags
 } from '@shared/passwordVault'
 import PageLayout from '@/layouts/PageLayout.vue'
-import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import PasswordGeneratorDialog from '@/components/PasswordGeneratorDialog.vue'
 import { t } from '@/i18n'
@@ -830,7 +582,10 @@ import {
   passwordVaultUnlock
 } from '@/api'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
+const { showSuccess, showError, showWarning } = useToast()
 
 const groups = ref([])
 const entries = ref([])
@@ -1664,6 +1419,13 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.tree-toggle:focus-visible,
+.tree-label:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+  border-radius: var(--radius-xs);
+}
+
 .tree-toggle svg {
   width: 12px;
   height: 12px;
@@ -1729,7 +1491,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   min-width: 18px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
@@ -1773,12 +1535,13 @@ onUnmounted(() => {
 .context-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1299;
+  /* 垫在右键菜单(2000)下方，只负责捕获外部点击 */
+  z-index: 1200;
 }
 
 .context-menu {
   position: fixed;
-  z-index: 1300;
+  z-index: 2000;
   min-width: 180px;
   padding: 4px;
   border: 1px solid var(--border-color);
@@ -1992,7 +1755,7 @@ onUnmounted(() => {
 .sort-arrow {
   display: inline-block;
   margin-left: 3px;
-  font-size: 9px;
+  font-size: calc(9px * var(--font-scale));
   color: var(--accent-color);
   transition: transform var(--motion-fast) ease;
 }
@@ -2167,7 +1930,7 @@ onUnmounted(() => {
 .vault-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2188,6 +1951,7 @@ onUnmounted(() => {
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  animation: vault-modal-in var(--motion-panel) var(--motion-ease);
 }
 
 .vault-modal-header {
@@ -2244,18 +2008,12 @@ onUnmounted(() => {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
 .field-wide {
   grid-column: 1 / -1;
-}
-
-.field-label {
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
 }
 
 .field-hint {
@@ -2280,9 +2038,6 @@ onUnmounted(() => {
 
 .vault-textarea {
   min-height: 90px;
-  padding: 8px 10px;
-  resize: vertical;
-  line-height: 1.5;
 }
 
 .entry-tags {
@@ -2300,31 +2055,22 @@ onUnmounted(() => {
   border-radius: var(--radius-sm);
   background: var(--surface-muted);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   line-height: 18px;
 }
 
-.vault-modal-enter-active,
-.vault-modal-leave-active {
-  transition: opacity var(--motion-base) var(--motion-ease);
+/* 入场动画只作用于卡片：遮罩层始终不透明，动画帧被节流时也不会留下不可见却拦截点击的全屏层 */
+@keyframes vault-modal-in {
+  from {
+    transform: translateY(6px) scale(0.98);
+    opacity: 0.85;
+  }
 }
 
-.vault-modal-enter-active .vault-modal,
-.vault-modal-leave-active .vault-modal {
-  transition:
-    transform var(--motion-panel) var(--motion-ease),
-    opacity var(--motion-panel) var(--motion-ease);
-}
-
-.vault-modal-enter-from,
-.vault-modal-leave-to {
-  opacity: 0;
-}
-
-.vault-modal-enter-from .vault-modal,
-.vault-modal-leave-to .vault-modal {
-  transform: translateY(6px) scale(0.98);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .vault-modal {
+    animation: none;
+  }
 }
 
 @media (max-width: 980px) {

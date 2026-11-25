@@ -1,5 +1,9 @@
 <template>
-  <div v-if="tableDesignerDialog.show" class="dialog-overlay">
+  <div
+    v-if="tableDesignerDialog.show"
+    v-modal-shell="{ onClose: closeTableDesigner, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
     <div class="dialog dialog-wide table-designer-dialog">
       <div class="dialog-header">
         <h3>
@@ -9,10 +13,7 @@
           >
         </h3>
         <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeTableDesigner">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="dialog-content create-table-body" @input="invalidatePreview" @change="invalidatePreview">
@@ -21,7 +22,7 @@
           <div class="create-table-meta">
             <div class="form-group">
               <label>{{ t('表注释') }}</label>
-              <input v-model="draft.comment" type="text" class="input-field" maxlength="120" />
+              <AppInput v-model="draft.comment" type="text" maxlength="120" />
             </div>
             <div class="form-group">
               <label>{{ t('默认字符集') }}</label>
@@ -56,14 +57,8 @@
               :key="index"
               :class="['create-column-grid', { 'table-designer-row-deleted': column.deleted }]"
             >
-              <input v-model="column.name" type="text" class="input-field" :placeholder="t('字段名')" />
-              <input
-                v-model="column.type"
-                type="text"
-                class="input-field"
-                list="table-designer-types"
-                placeholder="INT"
-              />
+              <AppInput v-model="column.name" type="text" :placeholder="t('字段名')" />
+              <AppInput v-model="column.type" type="text" list="table-designer-types" placeholder="INT" />
               <label class="create-column-check">
                 <input
                   v-model="column.nullable"
@@ -83,8 +78,8 @@
               <label class="create-column-check">
                 <input v-model="column.autoIncrement" type="checkbox" @change="onAutoIncrementChange(column)" />
               </label>
-              <input v-model="column.defaultValue" type="text" class="input-field" :placeholder="t('无')" />
-              <input v-model="column.comment" type="text" class="input-field" :placeholder="t('可选')" />
+              <AppInput v-model="column.defaultValue" type="text" :placeholder="t('无')" />
+              <AppInput v-model="column.comment" type="text" :placeholder="t('可选')" />
               <label class="create-column-check" :title="t('删除字段')">
                 <input v-model="column.deleted" type="checkbox" />
               </label>
@@ -111,8 +106,8 @@
               :key="index"
               :class="['create-index-row', { 'table-designer-row-deleted': indexItem.deleted }]"
             >
-              <input v-model="indexItem.name" type="text" class="input-field" :placeholder="t('留空自动生成')" />
-              <input v-model="indexItem.columns" type="text" class="input-field" :placeholder="t('字段，逗号分隔')" />
+              <AppInput v-model="indexItem.name" type="text" :placeholder="t('留空自动生成')" />
+              <AppInput v-model="indexItem.columns" type="text" :placeholder="t('字段，逗号分隔')" />
               <label class="create-column-check create-index-unique">
                 <input v-model="indexItem.unique" type="checkbox" />
                 <span>{{ t('唯一') }}</span>
@@ -149,13 +144,13 @@
               :key="`new-fk-${index}`"
               class="table-designer-fk-row"
             >
-              <input v-model="foreignKey.name" type="text" class="input-field" :placeholder="t('约束名（可留空）')" />
+              <AppInput v-model="foreignKey.name" type="text" :placeholder="t('约束名（可留空）')" />
               <select v-model="foreignKey.column" class="select-field">
                 <option value="">{{ t('本表字段') }}</option>
                 <option v-for="column in activeColumnNames" :key="column" :value="column">{{ column }}</option>
               </select>
-              <input v-model="foreignKey.refTable" type="text" class="input-field" :placeholder="t('引用表 / 库.表')" />
-              <input v-model="foreignKey.refColumns" type="text" class="input-field" :placeholder="t('引用字段')" />
+              <AppInput v-model="foreignKey.refTable" type="text" :placeholder="t('引用表 / 库.表')" />
+              <AppInput v-model="foreignKey.refColumns" type="text" :placeholder="t('引用字段')" />
               <select v-model="foreignKey.onDelete" class="select-field">
                 <option v-for="rule in fkRules" :key="rule" :value="rule">{{ rule }}</option>
               </select>
@@ -163,10 +158,7 @@
                 <option v-for="rule in fkRules" :key="rule" :value="rule">{{ rule }}</option>
               </select>
               <button class="btn-icon btn-sm" :title="t('移除')" @click="draft.newForeignKeys.splice(index, 1)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <AppIcon name="close" />
               </button>
             </div>
           </div>
@@ -210,6 +202,8 @@ import { t } from '@/i18n'
 import { computed, inject, ref, watch } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const {
   applyTableDesigner,

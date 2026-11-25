@@ -58,7 +58,7 @@ export function createFallbackProviders(config, primaryType, primaryModel) {
   for (const target of resolveFallbackTargets(config, primaryType, primaryModel)) {
     if (!PROVIDER_INFO[target.provider]) continue
     const runtime = resolveProviderRuntimeConfig(target.provider, config)
-    if (!runtime.apiKey) continue
+    if (!runtime.apiKey && PROVIDER_INFO[target.provider].requiresApiKey !== false) continue
     const provider = createProvider(target.provider, runtime)
     if (!provider || !provider.validateConfig().valid) continue
     const model = target.model || provider.getDefaultModel()

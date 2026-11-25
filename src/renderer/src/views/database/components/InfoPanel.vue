@@ -7,11 +7,7 @@
         :title="t('信息')"
         @click="tableInfoMode = 'info'"
       >
-        <svg class="info-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
+        <AppIcon name="info" class="info-tab-icon" />
       </button>
       <button
         v-if="selectedInfoType === 'table'"
@@ -27,64 +23,12 @@
 
     <div v-if="selectedInfoType" class="info-header">
       <div class="info-header-icon">
-        <svg v-if="selectedInfoType === 'group'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-        </svg>
-        <svg
-          v-else-if="selectedInfoType === 'connection'"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-          <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-          <line x1="6" y1="6" x2="6.01" y2="6" />
-          <line x1="6" y1="18" x2="6.01" y2="18" />
-        </svg>
-        <svg
-          v-else-if="selectedInfoType === 'database'"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-        </svg>
-        <svg
-          v-else-if="selectedInfoType === 'table'"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-        </svg>
-        <svg
-          v-else-if="selectedInfoType === 'category'"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-        </svg>
-        <svg
-          v-else-if="selectedInfoType === 'object'"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <polyline points="16 18 22 12 16 6" />
-          <polyline points="8 6 2 12 8 18" />
-        </svg>
+        <AppIcon v-if="selectedInfoType === 'group'" name="folder-open" />
+        <AppIcon v-else-if="selectedInfoType === 'connection'" name="layers" />
+        <AppIcon v-else-if="selectedInfoType === 'database'" name="database" />
+        <AppIcon v-else-if="selectedInfoType === 'table'" name="table" />
+        <AppIcon v-else-if="selectedInfoType === 'category'" name="table" />
+        <AppIcon v-else-if="selectedInfoType === 'object'" name="code" />
       </div>
       <div class="info-header-text">
         <span class="info-header-name">{{ getInfoHeaderName() }}</span>
@@ -163,29 +107,8 @@
           class="info-category-item"
           @click="handleCategoryItemClick(item)"
         >
-          <svg
-            v-if="selectedCategory?.type === 'tables'"
-            class="category-item-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="21" x2="9" y2="9" />
-          </svg>
-          <svg
-            v-else-if="selectedCategory?.type === 'views'"
-            class="category-item-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+          <AppIcon v-if="selectedCategory?.type === 'tables'" name="table" class="category-item-icon" />
+          <AppIcon v-else-if="selectedCategory?.type === 'views'" name="eye" class="category-item-icon" />
           <svg
             v-else-if="selectedCategory?.type === 'functions'"
             class="category-item-icon function-icon"
@@ -196,38 +119,21 @@
             <text x="0" y="14" font-size="12" font-style="italic" font-weight="600">f</text>
             <text x="14" y="17" font-size="8">(x)</text>
           </svg>
-          <svg
+          <AppIcon
             v-else-if="selectedCategory?.type === 'procedures'"
+            name="procedure"
             class="category-item-icon procedure-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <polygon points="10 9 15 12 10 15" />
-          </svg>
-          <svg
+          />
+          <AppIcon
             v-else-if="selectedCategory?.type === 'triggers'"
+            name="zap"
             class="category-item-icon trigger-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-          </svg>
-          <svg
+          />
+          <AppIcon
             v-else-if="selectedCategory?.type === 'events'"
+            name="history"
             class="category-item-icon event-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
+          />
           <span class="category-item-name">{{ item }}</span>
         </div>
       </div>
@@ -326,6 +232,7 @@ import { t } from '@/i18n'
 import { inject } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const {
   connectionInfo,

@@ -12,7 +12,7 @@ import {
   respondChatApproval,
   rollbackChatRun
 } from '@/api'
-import { applyStreamingContent, finalizeContent, toApiMessage } from '@/utils/chatContent'
+import { applyStreamingContent, createMessageId, finalizeContent, toApiMessage } from '@/views/chat/chatContent'
 import { formatTokens } from './useChatUsage'
 
 export function useChatStream({
@@ -20,6 +20,7 @@ export function useChatStream({
   currentSessionId,
   currentSession,
   inputText,
+  editingMessageIndex,
   attachments,
   hasCurrentApiKey,
   currentProvider,
@@ -57,6 +58,25 @@ export function useChatStream({
   let removeChunkListener = null
   let removeEndListener = null
   let removeApprovalListener = null
+  let pendingChunks = []
+  let chunkTimer = null
+
+  function clearPendingChunks() {
+    if (chunkTimer) clearTimeout(chunkTimer)
+    chunkTimer = null
+    pendingChunks = []
+  }
+
+  function flushPendingChunks() {
+    if (chunkTimer) {
+      clearTimeout(chunkTimer)
+      chunkTimer = null
+    }
+    if (!pendingChunks.length) return
+    const batch = pendingChunks
+    pendingChunks = []
+    for (const item of batch) handleStreamChunk(item.message, item.payload, item.sessionId)
+  }
 
   function updateSessionTitle(sessionId, firstMessage) {
     const session = sessions.value.find((s) => s.id === sessionId)
@@ -84,6 +104,27 @@ export function useChatStream({
     target.cached_tokens = (Number(target.cached_tokens) || 0) + (Number(usage.cached_tokens) || 0)
     target.calls += Number(usage.calls) || 0
     if (usage.estimated) target.estimated = true
+  }
+
+  function applyEditedMessage(session) {
+    const index = editingMessageIndex?.value
+    if (!Number.isInteger(index) || index < 0 || index >= session.messages.length) return
+    const removed = session.messages.splice(index)
+    if (session.context && (Number(session.context.upToIndex) || 0) > index) delete session.context
+    if (!session.usage) return
+    const target = session.usage
+    for (const message of removed) {
+      const usage = message.usage
+      if (!usage) continue
+      target.prompt_tokens = Math.max(0, (Number(target.prompt_tokens) || 0) - (Number(usage.prompt_tokens) || 0))
+      target.completion_tokens = Math.max(
+        0,
+        (Number(target.completion_tokens) || 0) - (Number(usage.completion_tokens) || 0)
+      )
+      target.total_tokens = Math.max(0, (Number(target.total_tokens) || 0) - (Number(usage.total_tokens) || 0))
+      target.cached_tokens = Math.max(0, (Number(target.cached_tokens) || 0) - (Number(usage.cached_tokens) || 0))
+      target.calls = Math.max(0, (Number(target.calls) || 0) - (Number(usage.calls) || 0))
+    }
   }
 
   function handleStreamChunk(message, payload, sessionId) {
@@ -149,6 +190,12 @@ export function useChatStream({
       message.summary = event.summary || null
     } else if (event.kind === 'usage') {
       message.usage = event.usage || null
+    } else if (event.kind === 'progress') {
+      message.progress = {
+        iteration: Number(event.iteration) || 0,
+        maxIterations: Number(event.maxIterations) || 0,
+        remainingSteps: Number(event.remainingSteps) || 0
+      }
     } else if (event.kind === 'status') {
       if (!message.notices) message.notices = []
       message.notices.push(event.text)
@@ -214,10 +261,13 @@ export function useChatStream({
     if (removeChunkListener) removeChunkListener()
     if (removeEndListener) removeEndListener()
     if (removeApprovalListener) removeApprovalListener()
+    clearPendingChunks()
 
+    // 流式分片按帧间隔批量合并，避免每个 token 触发整棵消息列表重渲染
     removeChunkListener = onChatStreamChunk((payload) => {
       if (!payload || payload.requestId !== requestId) return
-      handleStreamChunk(assistantMessage, payload, session.id)
+      pendingChunks.push({ payload, message: assistantMessage, sessionId: session.id })
+      if (!chunkTimer) chunkTimer = setTimeout(flushPendingChunks, 48)
     })
 
     removeApprovalListener = onChatApprovalRequest((payload) => {
@@ -231,6 +281,7 @@ export function useChatStream({
         summary: payload.summary || '',
         arguments: payload.arguments || {},
         preview: payload.preview || null,
+        allowRemember: payload.allowRemember !== false,
         status: 'pending'
       })
       if (currentSessionId.value === session.id) scrollToBottom()
@@ -238,6 +289,7 @@ export function useChatStream({
 
     removeEndListener = onChatStreamEnd((result) => {
       if (!result || result.requestId !== requestId) return
+      flushPendingChunks()
       currentRequestId.value = ''
       loading.value = false
       assistantMessage.isStreaming = false
@@ -386,6 +438,9 @@ export function useChatStream({
     const session = sessions.value.find((s) => s.id === currentSessionId.value)
     if (!session) return
 
+    applyEditedMessage(session)
+    if (editingMessageIndex) editingMessageIndex.value = null
+
     inputText.value = ''
     attachments.value = []
     clearDraft(session.id)
@@ -395,7 +450,13 @@ export function useChatStream({
     session.provider = selectedProvider.value
     session.model = selectedModel.value
     session.unread = false
-    session.messages.push({ role: 'user', content: text, attachments: files })
+    session.messages.push({
+      id: createMessageId(),
+      role: 'user',
+      content: text,
+      attachments: files,
+      createdAt: Date.now()
+    })
     session.updatedAt = Date.now()
     updateSessionTitle(currentSessionId.value, text || files[0]?.name || t('附件消息'))
     saveSessions(session.id)
@@ -405,7 +466,14 @@ export function useChatStream({
     loading.value = true
     scrollToBottom()
 
-    session.messages.push({ role: 'assistant', content: '', thinking: '', steps: [], notices: [] })
+    session.messages.push({
+      id: createMessageId(),
+      role: 'assistant',
+      content: '',
+      thinking: '',
+      steps: [],
+      notices: []
+    })
     const assistantMessage = session.messages[session.messages.length - 1]
     assistantMessage.isStreaming = true
     assistantMessage.startedAt = Date.now()
@@ -431,18 +499,21 @@ export function useChatStream({
       const chatMessages = history.slice(startIndex).map(toApiMessage)
       const thinking =
         modelSupportsThinking.value && thinkingMode.value !== 'auto' ? thinkingMode.value === 'on' : undefined
-      await chatStream(chatMessages, {
+      const result = await chatStream(chatMessages, {
         provider: selectedProvider.value,
         model: selectedModel.value,
         requestId,
         conversationId: session.id,
         toolsEnabled: approvalMode.value !== 'chat',
         approvalPolicy: approvalMode.value === 'chat' ? 'auto' : approvalMode.value,
-        allowedTools: Array.isArray(session.toolAllowlist) ? session.toolAllowlist : [],
+        allowedTools: Array.isArray(session.toolAllowlist) ? session.toolAllowlist.slice() : [],
         thinking,
         workspacePath: session.workspace || '',
         contextSummary: session.context?.summary || ''
       })
+      if (result && result.success === false && !result.cancelled) {
+        throw new Error(result.error || t('请求失败'))
+      }
     } catch (error) {
       currentRequestId.value = ''
       loading.value = false
@@ -456,6 +527,18 @@ export function useChatStream({
     }
   }
 
+  async function continueRun(remainingSteps = []) {
+    if (loading.value) return
+    const steps = (Array.isArray(remainingSteps) ? remainingSteps : [])
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+    const text = steps.length
+      ? `${t('继续执行未完成的步骤：')}\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}`
+      : t('继续执行未完成的步骤')
+    inputText.value = text
+    await sendMessage()
+  }
+
   async function stopResponse() {
     if (!currentRequestId.value) return
     const stopped = await cancelChatStream(currentRequestId.value)
@@ -467,6 +550,7 @@ export function useChatStream({
   }
 
   onUnmounted(() => {
+    clearPendingChunks()
     if (removeChunkListener) removeChunkListener()
     if (removeEndListener) removeEndListener()
     if (removeApprovalListener) removeApprovalListener()
@@ -487,6 +571,7 @@ export function useChatStream({
     confirmRollback,
     resumePendingStream,
     sendMessage,
+    continueRun,
     stopResponse
   }
 }

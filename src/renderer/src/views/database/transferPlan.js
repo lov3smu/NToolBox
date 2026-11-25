@@ -1,4 +1,5 @@
 import { t } from '@/i18n'
+import { normalizeMaskPresetKeys } from '@shared/dataMasking'
 
 export const TRANSFER_TYPES = [
   {
@@ -165,7 +166,8 @@ export function normalizeTransferSettings(raw = {}) {
     tableNameCase: NAME_CASES.includes(raw.tableNameCase) ? raw.tableNameCase : 'keep',
     columnNameCase: NAME_CASES.includes(raw.columnNameCase) ? raw.columnNameCase : 'keep',
     batchSize,
-    timeoutMode: normalizeTimeoutMode(raw.timeoutMode)
+    timeoutMode: normalizeTimeoutMode(raw.timeoutMode),
+    maskPresets: normalizeMaskPresetKeys(raw.maskPresets)
   }
 }
 

@@ -1,6 +1,7 @@
 import { t } from '@/i18n'
 import { dbExecuteQuery } from '@/api'
 import { copyToClipboard } from '@/utils/clipboard'
+import { logError } from '@/utils/log'
 export function createPagination(state, api) {
   const { lastExecutedSql, lastExecutedTime, limitCount } = state
 
@@ -88,7 +89,7 @@ export function createPagination(state, api) {
         jumpPage: page
       })
     } catch (error) {
-      console.error('分页查询失败:', error)
+      logError('分页查询失败:', error)
       if (tab.queryResult) {
         Object.assign(tab.queryResult, { success: false, error: error.message })
       }

@@ -3,12 +3,7 @@
   <div class="query-toolbar">
     <div class="toolbar-left">
       <div class="toolbar-select-group">
-        <svg class="toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-          <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-          <line x1="6" y1="6" x2="6.01" y2="6" />
-          <line x1="6" y1="18" x2="6.01" y2="18" />
-        </svg>
+        <AppIcon name="layers" class="toolbar-icon" />
         <select v-model="tab.connectionName" class="toolbar-select" @change="onTabConnectionChange(tab)">
           <option value="" />
           <option v-for="conn in connections" :key="conn.name" :value="conn.name">
@@ -17,11 +12,7 @@
         </select>
       </div>
       <div class="toolbar-select-group">
-        <svg class="toolbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-        </svg>
+        <AppIcon name="database" class="toolbar-icon" />
         <select v-model="tab.database" class="toolbar-select" @change="onTabDatabaseChange(tab)">
           <option value="" />
           <option v-for="db in getTabDatabases(tab)" :key="db" :value="db">
@@ -35,9 +26,7 @@
         :title="t('运行')"
         @click="executeQueryForTab(tab)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
+        <AppIcon name="run" />
         {{ t('运行') }}
       </button>
       <button
@@ -46,9 +35,7 @@
         :title="t('停止')"
         @click="stopQueryForTab(tab)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="6" y="6" width="12" height="12" />
-        </svg>
+        <AppIcon name="stop" />
         {{ t('停止') }}
       </button>
       <div class="toolbar-divider" />
@@ -62,25 +49,15 @@
         </button>
       </template>
       <button v-else class="toolbar-icon-btn" :title="t('开始事务')" @click="beginTransactionForTab(tab)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 4v6h6" />
-          <path d="M20 20v-6h-6" />
-          <path d="M4 10a8 8 0 0 1 14-5l2 2" />
-          <path d="M20 14a8 8 0 0 1-14 5l-2-2" />
-        </svg>
+        <AppIcon name="refresh" />
       </button>
     </div>
     <div class="toolbar-right">
       <button class="toolbar-icon-btn" :title="t('查询历史')" @click="openHistoryDialog('history')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="9" />
-          <polyline points="12 7 12 12 15.5 14" />
-        </svg>
+        <AppIcon name="history" />
       </button>
       <button class="toolbar-icon-btn" :title="t('SQL 片段')" @click="openHistoryDialog('snippets')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
-        </svg>
+        <AppIcon name="bookmark" />
       </button>
       <button
         class="toolbar-icon-btn"
@@ -88,17 +65,13 @@
         :title="t('存为片段')"
         @click="saveSnippetFromTab(tab)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 3h9l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
-          <line x1="12" y1="11" x2="12" y2="17" />
-          <line x1="9" y1="14" x2="15" y2="14" />
-        </svg>
+        <AppIcon name="file-plus" />
       </button>
       <button class="toolbar-icon-btn" :title="t('AI 生成 SQL')" @click="openAiDialog(tab)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
-          <path d="M19 16l.9 2.1L22 19l-2.1.9L19 22l-.9-2.1L16 19l2.1-.9z" />
-        </svg>
+        <AppIcon name="sparkles" />
+      </button>
+      <button class="toolbar-icon-btn" :title="t('AI 处理选中 SQL')" @click="openInlineAiForTab(tab)">
+        <AppIcon name="bot" />
       </button>
       <button
         class="toolbar-icon-btn"
@@ -106,14 +79,7 @@
         :title="t('执行计划')"
         @click="explainQueryForTab(tab)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="6" cy="6" r="2" />
-          <circle cx="18" cy="6" r="2" />
-          <circle cx="12" cy="18" r="2" />
-          <path d="M8 6h8" />
-          <path d="M7 8l4 8" />
-          <path d="M17 8l-4 8" />
-        </svg>
+        <AppIcon name="network" />
       </button>
       <button
         class="toolbar-icon-btn"
@@ -121,10 +87,16 @@
         :title="t('复制结果为 CSV')"
         @click="copyResultCsv(tab)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
+        <AppIcon name="copy" />
+      </button>
+      <button
+        class="toolbar-icon-btn"
+        :disabled="!tab.queryResult"
+        :title="t('发送到…')"
+        :aria-label="t('发送到…')"
+        @click="openSendMenuForResult($event, tab)"
+      >
+        <AppIcon name="shuffle" />
       </button>
       <button
         class="toolbar-icon-btn"
@@ -132,26 +104,14 @@
         :title="t('导出查询结果')"
         @click="openExportDialog(tab)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
+        <AppIcon name="download" />
       </button>
       <div class="toolbar-divider" />
       <button class="toolbar-icon-btn" :disabled="!tab.sqlQuery" :title="t('美化 SQL')" @click="formatSqlForTab(tab)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="21" y1="10" x2="3" y2="10" />
-          <line x1="21" y1="6" x2="3" y2="6" />
-          <line x1="21" y1="14" x2="3" y2="14" />
-          <line x1="21" y1="18" x2="3" y2="18" />
-        </svg>
+        <AppIcon name="align-justify" />
       </button>
       <button class="toolbar-icon-btn" :title="t('清空')" @click="clearQueryForTab(tab)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
+        <AppIcon name="trash" />
       </button>
     </div>
   </div>
@@ -249,13 +209,41 @@
             >
               {{ tab.queryResult.editMode ? t('退出编辑') : t('编辑结果') }}
             </button>
+            <div
+              v-if="
+                tab.queryResult.success &&
+                tab.queryResult.rows &&
+                tab.queryResult.rows.length > 0 &&
+                !tab.queryResult.editMode
+              "
+              class="result-view-switch"
+            >
+              <button
+                :class="['btn btn-xs', resultViewOf(tab) === 'table' ? 'btn-primary' : 'btn-secondary']"
+                @click="tab.resultView = 'table'"
+              >
+                {{ t('表格') }}
+              </button>
+              <button
+                :class="['btn btn-xs', resultViewOf(tab) === 'chart' ? 'btn-primary' : 'btn-secondary']"
+                @click="showChartView(tab)"
+              >
+                {{ t('图表') }}
+              </button>
+            </div>
             <span class="result-info">
               {{ tab.queryResult.success ? t('成功 - 耗时: {p0}ms', { p0: tab.queryResult.duration }) : t('失败') }}
             </span>
           </div>
         </div>
         <div v-if="tab.queryResult.success" class="query-result-content">
-          <div v-if="tab.queryResult.rows && tab.queryResult.rows.length > 0" class="result-table-wrapper">
+          <div
+            v-if="tab.queryResult.rows && tab.queryResult.rows.length > 0 && resultViewOf(tab) === 'chart'"
+            class="result-chart-wrapper"
+          >
+            <QueryChart :fields="tab.queryResult.fields" :rows="tab.queryResult.rows" />
+          </div>
+          <div v-else-if="tab.queryResult.rows && tab.queryResult.rows.length > 0" class="result-table-wrapper">
             <div class="result-table-scroll">
               <table :class="['result-table', { 'editable-table': tab.queryResult.editMode }]">
                 <thead>
@@ -327,10 +315,7 @@
                         :title="t('撤销删除')"
                         @click="restoreResultDeletedRow(tab.queryResult, row)"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="1 4 1 10 7 10" />
-                          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-                        </svg>
+                        <AppIcon name="refresh" />
                       </button>
                       <button
                         v-else
@@ -338,10 +323,7 @@
                         :title="t('删除行')"
                         @click="deleteResultRow(tab.queryResult, row)"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
+                        <AppIcon name="trash" />
                       </button>
                     </td>
                   </tr>
@@ -366,10 +348,7 @@
                         :title="t('移除新增行')"
                         @click="removeResultNewRow(tab.queryResult, index)"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
+                        <AppIcon name="close" />
                       </button>
                     </td>
                   </tr>
@@ -443,10 +422,7 @@
               :title="t('首页')"
               @click="firstPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="11 17 6 12 11 7" />
-                <polyline points="18 17 13 12 18 7" />
-              </svg>
+              <AppIcon name="chevrons-left" />
             </button>
             <button
               class="pagination-btn"
@@ -454,9 +430,7 @@
               :title="t('上一页')"
               @click="prevPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
+              <AppIcon name="chevron-left" />
             </button>
             <input
               v-model.number="tab.queryResult.jumpPage"
@@ -477,9 +451,7 @@
               :title="t('下一页')"
               @click="nextPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <AppIcon name="chevron-right" />
             </button>
             <button
               class="pagination-btn"
@@ -489,10 +461,7 @@
               :title="t('末页')"
               @click="lastPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="13 17 18 12 13 7" />
-                <polyline points="6 17 11 12 6 7" />
-              </svg>
+              <AppIcon name="chevrons-right" />
             </button>
           </div>
         </div>
@@ -517,26 +486,44 @@
             :title="t('设置')"
             @click="toggleLimitSettingsDialog(tab)"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3" />
-              <path
-                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-              />
-            </svg>
+            <AppIcon name="settings" />
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <SendToMenu
+    :visible="sendMenu.show"
+    :x="sendMenu.x"
+    :y="sendMenu.y"
+    :resource="sendResource"
+    @close="sendMenu.show = false"
+    @sent="onSendDone"
+  />
+
+  <InlineAiDialog
+    :visible="inlineAiVisible"
+    :text="inlineAiText"
+    context="code"
+    :apply-label="t('替换选中 SQL')"
+    @apply="applyInlineAi"
+    @close="inlineAiVisible = false"
+  />
 </template>
 
 <script setup>
 import { t } from '@/i18n'
 import SqlEditor from '@/components/SqlEditor.vue'
+import QueryChart from '@/components/QueryChart.vue'
+import SendToMenu from '@/components/SendToMenu.vue'
+import InlineAiDialog from '@/components/InlineAiDialog.vue'
 import { copyToClipboard } from '@/utils/clipboard'
 import { inject, ref, watch } from 'vue'
 import { formatCellInput, isBinaryColumn } from '../cellFormat'
+import { buildRowsText } from '@shared/sendTo'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const databaseEditor = inject('databaseEditor', null)
 const {
@@ -612,6 +599,25 @@ watch(
 )
 
 const resizingTabId = ref(null)
+const inlineAiVisible = ref(false)
+const inlineAiText = ref('')
+const inlineAiEditor = ref(null)
+
+function openInlineAiForTab(tab) {
+  const selected = tab.editorRef?.getSelection?.() || ''
+  if (!selected.trim()) {
+    showMessage(t('请先在编辑器中选择要处理的 SQL'), 'warning')
+    return
+  }
+  inlineAiText.value = selected
+  inlineAiEditor.value = tab.editorRef
+  inlineAiVisible.value = true
+}
+
+function applyInlineAi(result) {
+  inlineAiEditor.value?.replaceSelection?.(result)
+  showMessage(t('已替换选中 SQL'), 'success')
+}
 
 function executeEditorStatement(tab, sql) {
   if (tab.executing) return
@@ -622,6 +628,25 @@ function escapeCsvCell(value) {
   if (value === null || value === undefined) return ''
   const text = String(value)
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+const sendMenu = ref({ show: false, x: 0, y: 0 })
+const sendResource = ref(null)
+
+async function openSendMenuForResult(event, tab) {
+  const result = tab.queryResult
+  const text = buildRowsText(result?.fields || [], result?.rows || [])
+  if (!text) {
+    await showMessage(t('当前结果没有可发送的数据'), 'warning')
+    return
+  }
+  sendResource.value = { kind: 'text', title: t('查询结果'), text }
+  const rect = event.currentTarget.getBoundingClientRect()
+  sendMenu.value = { show: true, x: rect.right - 252, y: rect.bottom + 6 }
+}
+
+async function onSendDone(target) {
+  await showMessage(t('已发送到 {name}', { name: t(target.name) }), 'success')
 }
 
 function isEditableResultField(result, fieldName) {
@@ -660,6 +685,16 @@ async function copyResultCsv(tab) {
   }
   const copied = await copyToClipboard(lines.join('\n'))
   await showMessage(copied ? t('已复制 {p0} 行 CSV', { p0: rows.length }) : t('复制失败'), copied ? 'success' : 'error')
+}
+
+function resultViewOf(tab) {
+  if (tab.queryResult?.editMode) return 'table'
+  return tab.resultView === 'chart' ? 'chart' : 'table'
+}
+
+function showChartView(tab) {
+  tab.resultView = 'chart'
+  if ((tab.editorRatio ?? 50) > 40) tab.editorRatio = 40
 }
 
 function editorRatio(tab) {

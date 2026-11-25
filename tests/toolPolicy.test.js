@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyToolRisk, needsApproval } from '../src/main/services/toolPolicy.js'
+import { classifyToolRisk, needsApproval } from '../src/main/services/agent/toolPolicy.js'
 
 describe('classifyToolRisk', () => {
   it('classifies file reads as read', () => {
@@ -12,6 +12,14 @@ describe('classifyToolRisk', () => {
     expect(result.level).toBe('write')
     expect(result.key).toBe('file-ops:write')
     expect(needsApproval(result.level)).toBe(true)
+    expect(classifyToolRisk('file-ops', { action: 'edit' }).level).toBe('write')
+  })
+
+  it('always treats run-command as destructive and summarizes the command line', () => {
+    const result = classifyToolRisk('run-command', { command: 'npm', args: ['test', '--runInBand'] })
+    expect(result.level).toBe('destructive')
+    expect(result.key).toBe('run-command:*')
+    expect(result.summary).toContain('npm test --runInBand')
   })
 
   it('classifies delete and move as destructive', () => {
@@ -22,6 +30,7 @@ describe('classifyToolRisk', () => {
   it('classifies database and web access as read', () => {
     expect(classifyToolRisk('db-query', { action: 'execute' }).level).toBe('read')
     expect(classifyToolRisk('web-fetch', { url: 'https://example.com' }).level).toBe('read')
+    expect(classifyToolRisk('toolbox', { action: 'codec' }).level).toBe('read')
   })
 
   it('classifies memory mutations as write and clear as destructive', () => {

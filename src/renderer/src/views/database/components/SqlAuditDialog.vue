@@ -1,6 +1,11 @@
 <template>
-  <div v-if="sqlAuditDialog.show" class="dialog-overlay" @click.self="closeSqlAuditDialog(false)">
-    <div class="dialog sql-audit-dialog">
+  <div
+    v-if="sqlAuditDialog.show"
+    v-modal-shell="() => closeSqlAuditDialog(false)"
+    class="dialog-overlay"
+    @click.self="closeSqlAuditDialog(false)"
+  >
+    <div class="dialog dialog-wide">
       <div class="dialog-header">
         <h3>{{ t('SQL 审核') }}</h3>
         <div class="audit-summary">
@@ -8,10 +13,7 @@
           <span v-if="warnCount" class="audit-level warn">{{ t('警告') }} {{ warnCount }}</span>
         </div>
         <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeSqlAuditDialog(false)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="dialog-content">
@@ -44,6 +46,7 @@
 import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const { closeSqlAuditDialog, sqlAuditDialog } = databaseStore
 

@@ -42,10 +42,10 @@
           </div>
           <div class="panel-body">
             <div class="input-row">
-              <input
+              <AppInput
                 v-model="timestampInput"
                 type="text"
-                class="input-field mono"
+                mono
                 :placeholder="t('输入时间戳（10 位或 13 位）')"
                 @input="onTimestampInput"
               />
@@ -55,12 +55,7 @@
               <div class="ts-result">
                 <span class="ts-result-label">{{ t('北京时间') }}</span>
                 <span class="ts-result-value">{{ datetimeResult }}</span>
-                <button class="btn-icon btn-sm" :title="t('复制时间')" @click="copyResult(datetimeResult)">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
+                <CopyButton :text="datetimeResult" :title="t('复制时间')" size="sm" />
               </div>
             </div>
           </div>
@@ -75,59 +70,31 @@
             <div class="datetime-grid">
               <label class="datetime-field">
                 <span class="field-label">{{ t('年') }}</span>
-                <select v-model="yearValue" class="select-field">
-                  <option v-for="y in yearOptions" :key="y" :value="y">
-                    {{ y }}
-                  </option>
-                </select>
+                <AppSelect v-model="yearValue" :options="yearOptions" />
               </label>
               <label class="datetime-field">
                 <span class="field-label">{{ t('月') }}</span>
-                <select v-model="monthValue" class="select-field">
-                  <option v-for="m in 12" :key="m" :value="m">
-                    {{ m }}
-                  </option>
-                </select>
+                <AppSelect v-model="monthValue" :options="monthOptions" />
               </label>
               <label class="datetime-field">
                 <span class="field-label">{{ t('日') }}</span>
-                <select v-model="dayValue" class="select-field">
-                  <option v-for="d in dayOptions" :key="d" :value="d">
-                    {{ d }}
-                  </option>
-                </select>
+                <AppSelect v-model="dayValue" :options="dayOptions" />
               </label>
               <label class="datetime-field">
                 <span class="field-label">{{ t('时') }}</span>
-                <select v-model="hourValue" class="select-field">
-                  <option v-for="h in 24" :key="h - 1" :value="h - 1">
-                    {{ (h - 1).toString().padStart(2, '0') }}
-                  </option>
-                </select>
+                <AppSelect v-model="hourValue" :options="hourOptions" />
               </label>
               <label class="datetime-field">
                 <span class="field-label">{{ t('分') }}</span>
-                <select v-model="minuteValue" class="select-field">
-                  <option v-for="m in 60" :key="m - 1" :value="m - 1">
-                    {{ (m - 1).toString().padStart(2, '0') }}
-                  </option>
-                </select>
+                <AppSelect v-model="minuteValue" :options="minuteOptions" />
               </label>
               <label class="datetime-field">
                 <span class="field-label">{{ t('秒') }}</span>
-                <select v-model="secondValue" class="select-field">
-                  <option v-for="s in 60" :key="s - 1" :value="s - 1">
-                    {{ (s - 1).toString().padStart(2, '0') }}
-                  </option>
-                </select>
+                <AppSelect v-model="secondValue" :options="minuteOptions" />
               </label>
               <label class="datetime-field">
                 <span class="field-label">{{ t('毫秒') }}</span>
-                <select v-model="millisecondValue" class="select-field">
-                  <option v-for="ms in 1000" :key="ms - 1" :value="ms - 1">
-                    {{ (ms - 1).toString().padStart(3, '0') }}
-                  </option>
-                </select>
+                <AppInput type="number" min="0" max="999" mono :value="millisecondValue" @input="onMillisecondInput" />
               </label>
             </div>
             <div class="form-actions">
@@ -137,22 +104,12 @@
               <div class="ts-result">
                 <span class="ts-result-label">{{ t('10 位') }}</span>
                 <span class="ts-result-value">{{ timestampResult10 }}</span>
-                <button class="btn-icon btn-sm" :title="t('复制 10 位时间戳')" @click="copyResult(timestampResult10)">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
+                <CopyButton :text="timestampResult10" :title="t('复制 10 位时间戳')" size="sm" />
               </div>
               <div class="ts-result">
                 <span class="ts-result-label">{{ t('13 位') }}</span>
                 <span class="ts-result-value">{{ timestampResult13 }}</span>
-                <button class="btn-icon btn-sm" :title="t('复制 13 位时间戳')" @click="copyResult(timestampResult13)">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
+                <CopyButton :text="timestampResult13" :title="t('复制 13 位时间戳')" size="sm" />
               </div>
             </div>
           </div>
@@ -165,10 +122,10 @@
           </div>
           <div class="panel-body">
             <div class="input-row">
-              <input
+              <AppInput
                 v-model="quickInput"
                 type="text"
-                class="input-field mono"
+                mono
                 :placeholder="t('例如：20240101120000')"
                 @input="onQuickInput"
               />
@@ -179,30 +136,12 @@
               <div class="ts-result">
                 <span class="ts-result-label">{{ t('10 位') }}</span>
                 <span class="ts-result-value">{{ quickTimestampResult10 }}</span>
-                <button
-                  class="btn-icon btn-sm"
-                  :title="t('复制 10 位时间戳')"
-                  @click="copyResult(quickTimestampResult10)"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
+                <CopyButton :text="quickTimestampResult10" :title="t('复制 10 位时间戳')" size="sm" />
               </div>
               <div class="ts-result">
                 <span class="ts-result-label">{{ t('13 位') }}</span>
                 <span class="ts-result-value">{{ quickTimestampResult13 }}</span>
-                <button
-                  class="btn-icon btn-sm"
-                  :title="t('复制 13 位时间戳')"
-                  @click="copyResult(quickTimestampResult13)"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
+                <CopyButton :text="quickTimestampResult13" :title="t('复制 13 位时间戳')" size="sm" />
               </div>
             </div>
           </div>
@@ -231,20 +170,18 @@
         </section>
       </div>
     </div>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useToast } from '@/composables'
-import { copyToClipboard } from '@/utils'
-import Toast from '@/components/Toast.vue'
+import { takeSendResource, useToast } from '@/composables'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { t } from '@/i18n'
-
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning } = useToast()
+import AppSelect from '@/components/AppSelect.vue'
+import CopyButton from '@/components/CopyButton.vue'
+import AppInput from '@/components/AppInput.vue'
+const { showSuccess, showError, showWarning } = useToast()
 
 const currentTimestamp10 = ref('')
 const currentTimestamp13 = ref('')
@@ -287,6 +224,20 @@ const dayOptions = computed(() => {
   }
   return days
 })
+
+const monthOptions = computed(() => Array.from({ length: 12 }, (_, index) => index + 1))
+const hourOptions = computed(() =>
+  Array.from({ length: 24 }, (_, hour) => ({ value: hour, label: String(hour).padStart(2, '0') }))
+)
+const minuteOptions = computed(() =>
+  Array.from({ length: 60 }, (_, minute) => ({ value: minute, label: String(minute).padStart(2, '0') }))
+)
+
+function onMillisecondInput(event) {
+  const value = Number(event.target.value)
+  if (!Number.isFinite(value)) return
+  millisecondValue.value = Math.min(999, Math.max(0, Math.trunc(value)))
+}
 
 function updateCurrentTimestamp() {
   const now = new Date()
@@ -418,19 +369,14 @@ function convertQuickInput() {
   showSuccess(t('转换成功'))
 }
 
-async function copyResult(text) {
-  if (!text) return
-  const success = await copyToClipboard(text)
-  if (success) {
-    showSuccess(t('已复制到剪贴板'))
-  } else {
-    showError(t('复制失败，请手动复制'))
-  }
-}
-
 onMounted(() => {
   updateCurrentTimestamp()
   timer = setInterval(updateCurrentTimestamp, 1000)
+  const incoming = takeSendResource('/unixtimestamp')
+  if (incoming?.kind === 'text') {
+    timestampInput.value = incoming.text.trim()
+    convertTimestampToDatetime()
+  }
 })
 
 onUnmounted(() => {
@@ -543,7 +489,7 @@ onUnmounted(() => {
 
 .timestamp-value {
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xl);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -561,7 +507,7 @@ onUnmounted(() => {
 
 .datetime-label {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent-color);
   font-size: var(--font-size-xs);
@@ -570,7 +516,7 @@ onUnmounted(() => {
 
 .datetime-value {
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
@@ -588,7 +534,7 @@ onUnmounted(() => {
 }
 
 .input-field.mono {
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
 }
 
 .datetime-grid {
@@ -602,19 +548,6 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-}
-
-.field-label {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-
-.datetime-field .select-field {
-  width: 100%;
-  padding-right: 20px;
-  background-position: right 5px center;
-  background-size: 12px;
 }
 
 .form-actions {
@@ -650,7 +583,7 @@ onUnmounted(() => {
 .ts-result-label {
   flex-shrink: 0;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--success-rgb), 0.12);
   color: var(--success-dark);
   font-size: var(--font-size-xs);
@@ -662,7 +595,7 @@ onUnmounted(() => {
   min-width: 0;
   overflow: hidden;
   color: var(--success-dark);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-overflow: ellipsis;

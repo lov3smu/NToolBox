@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { fetchMcpRegistryServers, normalizeRegistryServer } from '../src/main/services/mcpRegistry.js'
+import { fetchMcpRegistryServers, normalizeRegistryServer } from '../src/main/services/extensions/mcpRegistry.js'
 
 function jsonResponse(data, status = 200) {
   return {

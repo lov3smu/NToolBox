@@ -2,41 +2,27 @@
   <PageLayout tool-path="/html-viewer">
     <template #actions>
       <button class="btn-icon btn-sm" :title="t('格式化')" @click="formatHtml">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 4v3c0 2-1 2-1 4s1 2 1 4v3M18 4v3c0 2 1 2 1 4s-1 2-1 4v3" />
-        </svg>
+        <AppIcon name="unfold-vertical" />
       </button>
       <button class="btn-icon btn-sm" :title="t('压缩')" @click="minifyHtml">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 4v6M8 7l4-3l4 3M12 20v-6M8 17l4 3l4-3" />
-        </svg>
+        <AppIcon name="fold-vertical" />
       </button>
       <button class="btn-icon btn-sm" :title="t('复制输入')" @click="copyInput">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6v4H9V2z" />
-        </svg>
+        <AppIcon name="copy" />
       </button>
       <button class="btn-icon btn-sm" :title="t('清空')" @click="clearInput">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12" />
-        </svg>
+        <AppIcon name="close" />
       </button>
       <span class="toolbar-sep" />
       <button class="btn btn-primary btn-sm" :title="t('运行预览')" @click="runPreview">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <path d="M8 5v14l11-7z" />
-        </svg>
+        <AppIcon name="play" />
         {{ t('运行预览') }}
       </button>
       <button class="btn-icon btn-sm" :title="t('复制输出')" @click="copyOutput">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M8 17H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2M9 11l3 3 3-3M12 14V2" />
-        </svg>
+        <AppIcon name="copy" />
       </button>
       <button class="btn-icon btn-sm" :title="t('下载')" @click="downloadHtml">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-        </svg>
+        <AppIcon name="download" />
       </button>
       <span class="toolbar-sep" />
       <label class="auto-update-label">
@@ -45,10 +31,7 @@
       </label>
       <div class="indent-control">
         <span class="toolbar-label">{{ t('缩进') }}</span>
-        <select v-model="indentSize" class="select-field-sm indent-select">
-          <option :value="2">2</option>
-          <option :value="4">4</option>
-        </select>
+        <AppSelect v-model="indentSize" :options="indentOptions" size="sm" class="indent-select" />
       </div>
     </template>
 
@@ -59,6 +42,7 @@
             <span class="panel-title">HTML</span>
             <div class="panel-actions size-info">
               {{ t('{chars} 字符 · {lines} 行', { chars: inputSize, lines: lineCount }) }}
+              <template v-if="draftSavedTime"> · {{ t('已自动保存 {time}', { time: draftSavedTime }) }}</template>
             </div>
           </div>
           <div class="editor-wrapper">
@@ -98,22 +82,24 @@
         </div>
       </div>
     </div>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { usePaneResize, useToast } from '@/composables'
-import Toast from '@/components/Toast.vue'
+import { useAutoDraft, usePaneResize, useSendReceiver, useToast } from '@/composables'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { t } from '@/i18n'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
+import AppIcon from '@/components/AppIcon.vue'
+import AppSelect from '@/components/AppSelect.vue'
+const { showSuccess, showError, showWarning, showInfo } = useToast()
 
 const htmlInput = ref('')
+const { savedTime: draftSavedTime, ready: draftReady } = useAutoDraft('html', htmlInput, {
+  onRestore: () => onEditorInput()
+})
 const previewContent = ref('')
 const previewAppearance = ref({
   theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
@@ -121,6 +107,7 @@ const previewAppearance = ref({
 })
 const autoUpdate = ref(true)
 const indentSize = ref(2)
+const indentOptions = [2, 4]
 const displayLineCount = ref(1)
 
 const editorRef = ref(null)
@@ -438,6 +425,11 @@ onMounted(() => {
   window.addEventListener('ntb-theme-changed', handleThemeChange)
 })
 
+useSendReceiver('/html-viewer', draftReady, (resource) => {
+  htmlInput.value = resource.text
+  nextTick(updatePreview)
+})
+
 onUnmounted(() => {
   clearTimeout(updateTimeout)
   window.removeEventListener('ntb-theme-changed', handleThemeChange)
@@ -526,7 +518,7 @@ onUnmounted(() => {
   border-right: 1px solid var(--border-color);
   background: var(--surface-muted);
   color: var(--text-tertiary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 20.8px;
   text-align: right;
@@ -546,7 +538,7 @@ onUnmounted(() => {
   resize: none;
   background: var(--surface);
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 20.8px;
   white-space: pre;

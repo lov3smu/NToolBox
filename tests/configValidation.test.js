@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateConfig, normalizeShortcuts, VALID_SHORTCUT_KEYS } from '../src/main/services/configValidation.js'
-import { tools } from '../src/shared/tools.js'
+import { tools } from '../src/shared/navTools.js'
 import { SHORTCUT_ACTION_KEYS } from '../src/shared/shortcutActions.js'
 
 function createConfig(overrides = {}) {
@@ -310,8 +310,9 @@ describe('validateConfig', () => {
       'notifications.unknown 不是有效的通知项'
     )
     expect(validateConfig(createConfig({ notifications: { upload_done: 'yes' } }))).toBe(
-      'notifications.upload_done 必须是布尔值'
+      'notifications.upload_done 必须是布尔值或通知方式'
     )
+    expect(validateConfig(createConfig({ notifications: { upload_done: 'panel', backup_done: 'off' } }))).toBeNull()
     expect(validateConfig(createConfig({ clipboard_history: { persist: false, max_entries: 50 } }))).toBeNull()
     expect(validateConfig(createConfig({ clipboard_history: { persist: false, max_entries: 200 } }))).toBeNull()
     expect(validateConfig(createConfig({ clipboard_history: 'nope' }))).toBe('clipboard_history 必须是对象')
@@ -446,6 +447,21 @@ describe('validateConfig', () => {
       'database.audit.rules.bogus 不是有效的审核规则'
     )
     expect(validateConfig(createConfig(withDatabase({ safe_mode: 'yes' })))).toBe('database.safe_mode 必须是布尔值')
+  })
+
+  it('validates connection engines', () => {
+    const conn = (overrides) => withDatabase({ connections: [{ name: 'main', ...overrides }] })
+    expect(validateConfig(createConfig(conn({ engine: 'postgres', host: 'db', database: 'app' })))).toBeNull()
+    expect(validateConfig(createConfig(conn({ engine: 'sqlite', filePath: '/tmp/app.db' })))).toBeNull()
+    expect(validateConfig(createConfig(conn({ engine: 'oracle' })))).toBe(
+      'database.connections.main 的数据库类型不合法'
+    )
+    expect(validateConfig(createConfig(conn({ engine: 'sqlite' })))).toBe(
+      'database.connections.main 缺少 SQLite 文件路径'
+    )
+    expect(validateConfig(createConfig(conn({ engine: 'sqlite', filePath: '/tmp/app.db', host: 'db' })))).toBe(
+      'database.connections.main 的 SQLite 连接不能填写主机'
+    )
   })
 })
 

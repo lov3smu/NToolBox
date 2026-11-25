@@ -12,6 +12,8 @@ export default {
   '无法连接到服务器 ({p0})，请检查网络连接':
     'Unable to connect to the server ({p0}), please check your network connection',
   '连接被拒绝，服务器可能不可用': 'Connection refused; the server may be unavailable',
+  '无法连接本地服务（{p0}），请确认服务已启动':
+    'Unable to connect to the local service ({p0}); make sure it is running',
   '连接超时，请检查网络或稍后重试': 'Connection timed out, check your network or try again later',
   '{p0} 不支持在线获取模型列表': '{p0} does not support fetching the model list online',
   服务商未返回可用的对话模型: 'The provider did not return any usable chat models',
@@ -187,6 +189,17 @@ export default {
   导出数据库失败: 'Failed to export database',
   当前连接已在事务中: 'The current connection is already in a transaction',
   当前连接没有进行中的事务: 'The current connection has no active transaction',
+  当前数据库引擎暂不支持该功能: 'The current database engine does not support this feature',
+  '当前运行环境不支持内置 SQLite 驱动': 'The current runtime does not support the built-in SQLite driver',
+  '请选择 SQLite 数据库文件': 'Please select a SQLite database file',
+  '选择 SQLite 数据库文件': 'Select a SQLite database file',
+  'SQLite 数据库': 'SQLite database',
+  '数据库文件不存在: {p0}': 'Database file does not exist: {p0}',
+  '数据库目录不存在: {p0}': 'Database directory does not exist: {p0}',
+  读取连接信息失败: 'Failed to read connection information',
+  读取数据库信息失败: 'Failed to read database information',
+  读取表详情失败: 'Failed to read table details',
+  读取表信息失败: 'Failed to read table information',
 
   读取数据库操作日志失败: 'Failed to read database operation log',
   清空数据库操作日志失败: 'Failed to clear database operation log',
@@ -375,6 +388,10 @@ export default {
   'database.connection_groups 必须是数组': 'database.connection_groups must be an array',
   'database.connections 中的每项必须是对象': 'Each item in database.connections must be an object',
   'database.connections 中的连接缺少名称': 'A connection in database.connections is missing a name',
+  'database.connections.{p0} 的数据库类型不合法': 'database.connections.{p0} has an invalid database engine',
+  'database.connections.{p0} 缺少 SQLite 文件路径': 'database.connections.{p0} is missing the SQLite file path',
+  'database.connections.{p0} 的 SQLite 连接不能填写主机':
+    'SQLite connections in database.connections.{p0} cannot specify a host',
   'database.connections 必须是数组': 'database.connections must be an array',
   'database.editor 必须是对象': 'database.editor must be an object',
   'database.editor.theme 值不合法': 'database.editor.theme has an invalid value',
@@ -443,7 +460,7 @@ export default {
   'extensions.skill_overrides.{p0} 必须是对象': 'extensions.skill_overrides.{p0} must be an object',
   'extensions.skill_overrides.{p0}.description 必须是字符串':
     'extensions.skill_overrides.{p0}.description must be a string',
-  'notifications.{p0} 必须是布尔值': 'notifications.{p0} must be a boolean',
+  'notifications.{p0} 必须是布尔值或通知方式': 'notifications.{p0} must be a boolean or a notification channel',
   '、': ', ',
   '；': '; ',
 
@@ -584,6 +601,8 @@ export default {
     'Notify when a new version is found in the background; click to view release notes',
   'AI 长任务完成': 'AI long task completed',
   'AI 助手任务执行超过 1 分钟结束时提醒': 'Notify when an AI assistant task running longer than 1 minute finishes',
+  'HTTP 请求、Recipe 或剪贴板清理任务执行后提醒':
+    'Notify after scheduled HTTP request, Recipe or clipboard cleanup tasks run',
   'UPDATE/DELETE 缺少 WHERE': 'UPDATE/DELETE without WHERE',
   '全表更新或删除风险极高，请补充 WHERE 条件或用 LIMIT 限制范围':
     'Updating or deleting a whole table is extremely risky; add a WHERE clause or LIMIT the range',
@@ -638,5 +657,27 @@ export default {
     'After cumulative tool output exceeds {p0} KB in a task, later results are truncated',
   '落盘的完整工具结果保留 {p0} 天后自动清理': 'Spilled full tool results are cleaned up after {p0} days',
   '最多保留最近 {p0} 条上传记录': 'Keep the latest {p0} upload records',
-  '首页「最近使用」最多保留 {p0} 个工具': 'Keep up to {p0} tools in Recent on the home page'
+  '首页「最近使用」最多保留 {p0} 个工具': 'Keep up to {p0} tools in Recent on the home page',
+  'AI 未返回内容': 'AI returned no content',
+  '未知的 AI 操作': 'Unknown AI action',
+  请先选中要处理的内容: 'Select some content first',
+  '选中内容超过 {p0} 字符上限，请缩小范围': 'Selection exceeds the {p0}-character limit; narrow the range',
+
+  '未知命令：{p0}': 'Unknown command: {p0}',
+  '参数 {p0} 必须是字符串': 'Argument {p0} must be a string',
+  '参数 {p0} 必须是整数': 'Argument {p0} must be an integer',
+  '参数 {p0} 超过长度上限（{p1} 字符）': 'Argument {p0} exceeds the {p1}-character limit',
+  '未找到可打开的工具或页面：{p0}': 'No tool or page found to open: {p0}',
+  工具执行失败: 'Tool execution failed',
+  主窗口未就绪: 'The main window is not ready',
+  '已在 NToolBox 中打开：{p0}': 'Opened in NToolBox: {p0}',
+  'NToolBox {p0} 正在运行（PID {p1}）': 'NToolBox {p0} is running (PID {p1})',
+  接口不存在: 'Endpoint not found',
+  仅接受本机请求: 'Only local requests are accepted',
+  未授权的请求: 'Unauthorized request',
+  请求体过大: 'Request body is too large',
+  请求格式错误: 'Invalid request format',
+  请求处理失败: 'Failed to process the request',
+  '未找到数据库连接：{p0}': 'Database connection not found: {p0}',
+  数据库连接失败: 'Failed to connect to the database'
 }

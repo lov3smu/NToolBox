@@ -12,6 +12,7 @@ import {
   writeFile
 } from '@/api'
 import { copyToClipboard } from '@/utils/clipboard'
+import { logError } from '@/utils/log'
 export function createDatabaseOps(state, api) {
   const {
     activeTabId,
@@ -286,7 +287,7 @@ export function createDatabaseOps(state, api) {
         await api.showMessage(t('SQL文件执行失败: ') + execResult.error, 'error')
       }
     } catch (error) {
-      console.error('运行SQL文件失败:', error)
+      logError('运行SQL文件失败:', error)
       await api.showMessage(t('运行SQL文件失败: ') + error.message, 'error')
     }
   }
@@ -368,7 +369,7 @@ export function createDatabaseOps(state, api) {
         await api.showMessage(t('保存文件失败: ') + writeResult.error, 'error')
       }
     } catch (error) {
-      console.error('转储数据库失败:', error)
+      logError('转储数据库失败:', error)
       await api.showMessage(t('转储数据库失败: ') + error.message, 'error')
     }
   }

@@ -20,12 +20,14 @@ class BaseProvider {
     this.defaultHostname = config.hostname
     this.defaultPath = config.path
     this.defaultModelsPath = config.modelsPath || ''
-    this.defaultProtocol = 'https:'
-    this.defaultPort = 443
+    this.defaultProtocol = config.protocol === 'http:' ? 'http:' : 'https:'
+    this.defaultPort = Number.isInteger(config.port) ? config.port : this.defaultProtocol === 'http:' ? 80 : 443
     this.validateModel = config.validateModel || this.defaultModel
     this.thinkingStyle = config.thinkingStyle || ''
     this.streamUsage = config.streamUsage === true
     this.temperatureFixed = config.temperatureFixed === true
+    // 本地服务（Ollama / LM Studio）无需 API Key，配置校验与模型列表都不依赖密钥
+    this.requiresApiKey = config.requiresApiKey !== false
     // 部分网关（如 OpenCode）的模型列表接口公开，只能通过实际对话校验密钥
     this.validateWithChat = config.validateWithChat === true
     this.timeout = config.timeout || 60000
@@ -95,11 +97,10 @@ class BaseProvider {
 
   // 子类可扩展 options（如会话 id）覆盖请求头
   getHeaders(extra = {}, apiKey = this.apiKey) {
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      ...extra
-    }
+    const headers = { 'Content-Type': 'application/json', ...extra }
+    const key = typeof apiKey === 'string' ? apiKey.trim() : ''
+    if (key) headers.Authorization = `Bearer ${key}`
+    return headers
   }
 
   buildRequestBody(messages, tools, options) {
@@ -506,7 +507,7 @@ class BaseProvider {
   }
 
   async listRemoteModels(apiKey = this.apiKey) {
-    if (!apiKey || !apiKey.trim()) {
+    if (this.requiresApiKey && (!apiKey || !apiKey.trim())) {
       return { success: false, models: [], error: t('API Key 未配置') }
     }
     if (!this.modelsPath) {

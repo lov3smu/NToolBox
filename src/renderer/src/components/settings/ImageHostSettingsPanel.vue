@@ -87,19 +87,12 @@
                 @click.stop="toggleExpanded(provider.id)"
               >
                 {{ isExpanded(provider.id) ? t('收起') : t('编辑') }}
-                <svg
+                <AppIcon
+                  name="chevron-down"
+                  :size="13"
                   class="provider-chevron"
                   :class="{ rotated: isExpanded(provider.id) }"
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
+                />
               </button>
             </div>
           </div>
@@ -136,9 +129,8 @@
                       </label>
 
                       <div v-else-if="field.type === 'password'" class="api-key-input-group">
-                        <input
+                        <AppInput
                           v-model="settings.providers[provider.id][field.key]"
-                          class="input-field"
                           :type="secretsVisible[provider.id] ? 'text' : 'password'"
                           :placeholder="t(field.placeholder || '')"
                           spellcheck="false"
@@ -148,19 +140,18 @@
                         </button>
                       </div>
 
-                      <textarea
+                      <AppTextarea
                         v-else-if="field.type === 'textarea'"
                         v-model="settings.providers[provider.id][field.key]"
-                        class="input-field ihs-textarea"
+                        class="ihs-textarea"
                         :placeholder="t(field.placeholder || '')"
                         rows="3"
                         spellcheck="false"
                       />
 
-                      <input
+                      <AppInput
                         v-else
                         v-model="settings.providers[provider.id][field.key]"
-                        class="input-field"
                         :placeholder="t(field.placeholder || '')"
                         spellcheck="false"
                       />
@@ -211,8 +202,6 @@
         </div>
       </div>
     </template>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
@@ -230,16 +219,18 @@ import {
   normalizeImageHostSettings
 } from '@shared/imageHosts'
 import { t } from '@/i18n'
-import Toast from '@/components/Toast.vue'
 import SettingSelect from '@/components/settings/SettingSelect.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 const providers = IMAGE_HOST_PROVIDERS
 const historyLimitOptions = IMAGE_HOST_HISTORY_LIMIT_OPTIONS.map((option) => ({
   ...option,
   value: String(option.value)
 }))
 const maxFileMbOptions = IMAGE_HOST_MAX_FILE_MB_OPTIONS.map((option) => ({ ...option, value: String(option.value) }))
-const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
+const { showSuccess, showError } = useToast()
 
 const settings = ref(createDefaultImageHostSettings())
 const savedSettings = ref(createDefaultImageHostSettings())
@@ -614,7 +605,7 @@ onMounted(load)
 }
 
 .provider-id {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
@@ -639,7 +630,7 @@ onMounted(load)
   flex-shrink: 0;
   padding: 1px 6px;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
@@ -684,7 +675,7 @@ onMounted(load)
   gap: 4px;
   padding: 3px 9px;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-secondary);
   font: inherit;
@@ -791,7 +782,7 @@ onMounted(load)
 
 .ihs-textarea {
   resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
 }
 

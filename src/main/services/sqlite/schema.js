@@ -181,5 +181,19 @@ export const MIGRATIONS = [
   CREATE UNIQUE INDEX IF NOT EXISTS idx_app_state_id ON app_state (id);
   ALTER TABLE app_state ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0;
   UPDATE app_state SET created_at = updated_at;
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL DEFAULT '',
+    level TEXT NOT NULL DEFAULT 'info',
+    title TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications (created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications (read);
   `
 ]

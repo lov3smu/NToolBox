@@ -8,7 +8,7 @@ import { SQL_AUDIT_RULES } from '../../shared/sqlAudit.js'
 import { normalizeBackupTask } from '../../shared/backupTasks.js'
 import { normalizeDisabledSkills, normalizeSkillOverrides, isValidSkillName } from '../../shared/skillOverrides.js'
 import { PROXY_MODES, isHttpUrl, isProxyUrl } from '../../shared/network.js'
-import { NOTIFICATION_KEYS } from '../../shared/notifications.js'
+import { NOTIFICATION_CHANNELS, NOTIFICATION_KEYS } from '../../shared/notifications.js'
 import { CLIPBOARD_HISTORY_LIMITS } from '../../shared/clipboardSettings.js'
 import { SCENARIO_MODEL_KEYS, TOOL_POLICIES, parseScenarioModel } from '../../shared/aiBehavior.js'
 import {
@@ -17,8 +17,9 @@ import {
   DATABASE_REFRESH_INTERVALS,
   DATABASE_TRANSFER_BATCH_SIZES
 } from '../../shared/databaseClient.js'
-import { RECENT_TOOLS_LIMIT_MAX, RECENT_TOOLS_LIMIT_MIN } from '../../shared/tools.js'
+import { RECENT_TOOLS_LIMIT_MAX, RECENT_TOOLS_LIMIT_MIN } from '../../shared/navTools.js'
 import { UPDATE_CHECK_INTERVALS } from '../../shared/updater.js'
+import { DATABASE_ENGINES } from '../../shared/databaseEngines.js'
 
 export const VALID_SHORTCUT_KEYS = [...ALL_SHORTCUT_KEYS]
 
@@ -184,6 +185,15 @@ function validateDatabase(database) {
       if (typeof conn.name !== 'string' || !conn.name.trim()) return t('database.connections 中的连接缺少名称')
       if (names.has(conn.name)) return t('database.connections 连接名重复：{p0}', { p0: conn.name })
       names.add(conn.name)
+      if (conn.engine !== undefined && !DATABASE_ENGINES.includes(conn.engine)) {
+        return t('database.connections.{p0} 的数据库类型不合法', { p0: conn.name })
+      }
+      if (conn.engine === 'sqlite') {
+        if (typeof conn.filePath !== 'string' || !conn.filePath.trim()) {
+          return t('database.connections.{p0} 缺少 SQLite 文件路径', { p0: conn.name })
+        }
+        if (conn.host) return t('database.connections.{p0} 的 SQLite 连接不能填写主机', { p0: conn.name })
+      }
     }
   }
   if (database.connection_groups !== undefined) {
@@ -414,7 +424,9 @@ function validateNotifications(notifications) {
   if (!isPlainObject(notifications)) return t('notifications 必须是对象')
   for (const [key, value] of Object.entries(notifications)) {
     if (!NOTIFICATION_KEYS.includes(key)) return t('notifications.{p0} 不是有效的通知项', { p0: key })
-    if (typeof value !== 'boolean') return t('notifications.{p0} 必须是布尔值', { p0: key })
+    if (typeof value !== 'boolean' && !NOTIFICATION_CHANNELS.includes(value)) {
+      return t('notifications.{p0} 必须是布尔值或通知方式', { p0: key })
+    }
   }
   return null
 }

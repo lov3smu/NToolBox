@@ -1,13 +1,15 @@
 <template>
-  <div v-if="historyDialog.show" class="dialog-overlay" @click.self="closeHistoryDialog">
+  <div
+    v-if="historyDialog.show"
+    v-modal-shell="closeHistoryDialog"
+    class="dialog-overlay"
+    @click.self="closeHistoryDialog"
+  >
     <div class="dialog dialog-wide">
       <div class="dialog-header">
         <h3>{{ t('查询历史与片段') }}</h3>
         <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeHistoryDialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="dialog-tabs">
@@ -25,12 +27,7 @@
         </div>
       </div>
       <div class="dialog-content history-dialog-content">
-        <input
-          v-model="historyDialog.keyword"
-          type="text"
-          class="input-field"
-          :placeholder="t('筛选 SQL、注释或数据库名')"
-        />
+        <AppInput v-model="historyDialog.keyword" type="text" :placeholder="t('筛选 SQL、注释或数据库名')" />
         <div v-if="historyDialog.section === 'history'" class="history-list">
           <div v-if="filteredHistory.length === 0" class="history-empty">{{ t('暂无查询历史') }}</div>
           <div v-for="item in filteredHistory" :key="item.id" class="history-item">
@@ -131,6 +128,8 @@
 import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const {
   clearHistory,

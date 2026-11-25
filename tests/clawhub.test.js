@@ -5,7 +5,7 @@ import {
   normalizeSkillName,
   parseSkillFrontmatter,
   searchClawHubSkills
-} from '../src/main/services/clawhub.js'
+} from '../src/main/services/extensions/clawhub.js'
 
 function jsonResponse(data, status = 200) {
   return {
@@ -148,7 +148,10 @@ describe('clawhub client', () => {
   })
 
   it('rejects non-success responses', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({}, 500)))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({}, 500))
+    )
 
     await expect(fetchClawHubMarket()).rejects.toThrow('HTTP 500')
   })

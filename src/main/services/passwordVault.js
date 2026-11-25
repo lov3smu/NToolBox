@@ -156,6 +156,23 @@ export function lockPasswordVault() {
   return { success: true }
 }
 
+export function isPasswordVaultUnlocked() {
+  return vaultUnlocked
+}
+
+export async function getPasswordVaultEntryIndex() {
+  if (!vaultUnlocked) return []
+  const { vault } = await loadVaultData()
+  return vault.entries.map((entry) => ({ id: entry.id, title: entry.title, groupId: entry.groupId }))
+}
+
+export async function getPasswordVaultEntrySecret(id) {
+  if (!vaultUnlocked) return null
+  const { vault } = await loadVaultData()
+  const entry = vault.entries.find((item) => item.id === id)
+  return entry ? entry.password : null
+}
+
 export async function savePasswordGroup(input = {}) {
   return withWriteLock(async () => {
     if (!vaultUnlocked) return { success: false, error: PASSWORD_VAULT_ERRORS.VAULT_LOCKED }

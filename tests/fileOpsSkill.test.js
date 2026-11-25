@@ -86,6 +86,52 @@ describe('file-ops write and read', () => {
     expect(read.content).toBe('覆盖')
   })
 
+  it('edits with a unique match and reports duplicate or missing matches', async () => {
+    fs.writeFileSync(path.join(baseDir, 'edit-me.txt'), 'const timeout = 5000\nconst retry = 2\n')
+
+    const edited = await run({
+      action: 'edit',
+      path: 'edit-me.txt',
+      old_string: 'const timeout = 5000',
+      new_string: 'const timeout = 10000'
+    })
+    expect(edited.success).toBe(true)
+    expect(edited.metadata.replacements).toBe(1)
+    expect(fs.readFileSync(path.join(baseDir, 'edit-me.txt'), 'utf8')).toContain('const timeout = 10000')
+
+    const missing = await run({ action: 'edit', path: 'edit-me.txt', old_string: 'not there', new_string: 'x' })
+    expect(missing.success).toBe(false)
+    expect(missing.error).toContain('未找到')
+
+    fs.writeFileSync(path.join(baseDir, 'edit-me.txt'), 'same\nsame\n')
+    const duplicated = await run({ action: 'edit', path: 'edit-me.txt', old_string: 'same', new_string: 'next' })
+    expect(duplicated.success).toBe(false)
+    expect(duplicated.error).toContain('匹配 2 处')
+
+    const replacedAll = await run({
+      action: 'edit',
+      path: 'edit-me.txt',
+      old_string: 'same',
+      new_string: 'next',
+      replace_all: true
+    })
+    expect(replacedAll.success).toBe(true)
+    expect(replacedAll.metadata.replacements).toBe(2)
+  })
+
+  it('previews edits as a diff in dry-run mode without writing', async () => {
+    fs.writeFileSync(path.join(baseDir, 'preview.txt'), 'alpha\nbeta\n')
+    const preview = await fileOps(
+      { action: 'edit', path: 'preview.txt', old_string: 'beta', new_string: 'gamma' },
+      { ...context, dryRun: true }
+    )
+    expect(preview.success).toBe(true)
+    expect(preview.preview.kind).toBe('diff')
+    expect(preview.preview.added).toBe(1)
+    expect(preview.preview.removed).toBe(1)
+    expect(fs.readFileSync(path.join(baseDir, 'preview.txt'), 'utf8')).toBe('alpha\nbeta\n')
+  })
+
   it('rejects binary files and truncates oversized reads', async () => {
     fs.writeFileSync(path.join(baseDir, 'binary.bin'), Buffer.from([0, 1, 2, 3]))
     const binary = await run({ action: 'read', path: 'binary.bin' })

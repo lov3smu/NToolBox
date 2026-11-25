@@ -38,33 +38,3 @@ export function formatRelativeTime(timestamp) {
   if (diff < day * 7) return Math.floor(diff / day) + t('天前')
   return formatDateTime(timestamp, 'date')
 }
-
-export function formatFileSize(bytes) {
-  if (!bytes || bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const k = 1024
-  let size = bytes
-  let i = 0
-
-  while (size >= k && i < units.length - 1) {
-    size /= k
-    i++
-  }
-
-  return `${size.toFixed(i === 0 ? 0 : 2)} ${units[i]}`
-}
-
-export function formatDuration(seconds) {
-  if (!seconds || seconds < 0) return t('0秒')
-
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
-
-  const parts = []
-  if (h > 0) parts.push(t('{p0}小时', { p0: h }))
-  if (m > 0) parts.push(t('{p0}分钟', { p0: m }))
-  if (s > 0 || parts.length === 0) parts.push(t('{p0}秒', { p0: s }))
-
-  return parts.join('')
-}

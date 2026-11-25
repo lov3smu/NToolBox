@@ -98,7 +98,7 @@ function startMockServer() {
   return { server, requests }
 }
 
-const { chatStream } = await import('../src/main/services/chat.js')
+const { chatStream } = await import('../src/main/services/agent/chat.js')
 
 async function waitFor(predicate, timeout = 4000) {
   const started = Date.now()

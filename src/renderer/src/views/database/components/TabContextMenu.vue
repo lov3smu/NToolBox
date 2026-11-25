@@ -1,45 +1,32 @@
 <template>
   <div
     v-if="tabContextMenu.show"
+    ref="menuRef"
     v-clamp-viewport
     class="context-menu"
+    role="menu"
     :style="{ left: tabContextMenu.x + 'px', top: tabContextMenu.y + 'px' }"
     @click.stop
+    @keydown="onMenuKeydown"
   >
-    <div class="menu-item" @click="closeCurrentTab()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="6" x2="6" y2="18" />
-        <line x1="6" y1="6" x2="18" y2="18" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="closeCurrentTab()">
+      <AppIcon name="close" />
       {{ t('关闭') }}
     </div>
-    <div class="menu-item" @click="closeOtherTabs(tabContextMenu.tab.id)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <line x1="9" y1="3" x2="9" y2="21" />
-        <line x1="15" y1="3" x2="15" y2="21" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="closeOtherTabs(tabContextMenu.tab.id)">
+      <AppIcon name="columns" />
       {{ t('关闭其他') }}
     </div>
-    <div class="menu-item" @click="closeAllTabs()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6" />
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="closeAllTabs()">
+      <AppIcon name="trash" />
       {{ t('关闭全部') }}
     </div>
-    <div class="menu-item" @click="closeTabsToRight(tabContextMenu.tab.id)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="9 18 15 12 9 6" />
-        <rect x="3" y="3" width="6" height="18" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="closeTabsToRight(tabContextMenu.tab.id)">
+      <AppIcon name="chevrons-right" />
       {{ t('关闭右侧') }}
     </div>
-    <div class="menu-item" @click="closeTabsToLeft(tabContextMenu.tab.id)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="15 18 9 12 15 6" />
-        <rect x="15" y="3" width="6" height="18" />
-      </svg>
+    <div role="menuitem" class="menu-item" @click="closeTabsToLeft(tabContextMenu.tab.id)">
+      <AppIcon name="chevrons-left" />
       {{ t('关闭左侧') }}
     </div>
   </div>
@@ -47,8 +34,10 @@
 
 <script setup>
 import { t } from '@/i18n'
-import { inject } from 'vue'
+import { inject, nextTick, ref, watch } from 'vue'
+import { focusFirstMenuItem, handleMenuKeydown } from '@/utils/menuKeyboard'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const {
   closeAllTabs,
@@ -59,6 +48,19 @@ const {
   hideTabContextMenu,
   tabContextMenu
 } = databaseStore
+
+const menuRef = ref(null)
+
+watch(
+  () => tabContextMenu.value.show,
+  (show) => {
+    if (show) nextTick(() => focusFirstMenuItem(menuRef.value))
+  }
+)
+
+function onMenuKeydown(event) {
+  handleMenuKeydown(event, menuRef.value, hideTabContextMenu)
+}
 
 function closeCurrentTab() {
   const tab = tabContextMenu.value.tab

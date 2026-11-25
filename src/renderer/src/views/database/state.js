@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { t } from '@/i18n'
 import { DEFAULT_DATABASE_PAGE_SIZE, DEFAULT_DATABASE_REFRESH_INTERVAL } from '@shared/databaseClient'
+import { getEngineCapabilities } from '@shared/databaseEngines'
+import { createDefaultConnection } from './connectionDefaults'
 
 export function createState(options = {}) {
   const defaultPageSize = options.defaultPageSize || ref(DEFAULT_DATABASE_PAGE_SIZE)
@@ -8,21 +10,13 @@ export function createState(options = {}) {
 
   const messageDialog = ref({
     visible: false,
+    prompt: false,
     type: 'info',
     title: '',
     message: '',
+    inputValue: '',
     resolve: null
   })
-
-  const promptDialog = ref({
-    visible: false,
-    title: '',
-    value: '',
-    defaultValue: '',
-    resolve: null
-  })
-
-  const promptInputRef = ref(null)
 
   const sqlParamsDialog = ref({
     show: false,
@@ -63,9 +57,9 @@ export function createState(options = {}) {
 
   const showManageDialog = ref(false)
 
-  const createDialogTab = ref('basic')
+  const createDialogStep = ref('type')
 
-  const editDialogTab = ref('basic')
+  const editDialogStep = ref('form')
 
   const connecting = ref(false)
 
@@ -78,6 +72,8 @@ export function createState(options = {}) {
   const tables = ref([])
 
   const selectedDatabase = ref('')
+
+  const engineCapabilities = computed(() => getEngineCapabilities(selectedConnection.value?.engine))
 
   const autoLimit = ref(true)
 
@@ -376,6 +372,7 @@ export function createState(options = {}) {
     columnNameCase: 'keep',
     batchSize: 1000,
     timeoutMode: 'inherit',
+    maskPresets: [],
     tasks: [],
     taskKeyword: ''
   })
@@ -513,26 +510,7 @@ export function createState(options = {}) {
 
   const dragOverGroup = ref(null)
 
-  const newConnection = ref({
-    name: '',
-    group: '',
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: '',
-    savePassword: true,
-    charset: '',
-    enableKeepAlive: true,
-    keepAliveInterval: 240,
-    enableConnectTimeout: true,
-    connectTimeout: 30,
-    enableReadTimeout: false,
-    readTimeout: 30,
-    enableWriteTimeout: true,
-    writeTimeout: 30,
-    autoConnect: false,
-    readOnly: false
-  })
+  const newConnection = ref(createDefaultConnection())
 
   const editingConnection = ref(null)
 
@@ -564,8 +542,6 @@ export function createState(options = {}) {
     defaultPageSize,
     refreshInterval,
     messageDialog,
-    promptDialog,
-    promptInputRef,
     sqlParamsDialog,
     connections,
     groups,
@@ -583,14 +559,15 @@ export function createState(options = {}) {
     showEditDialog,
     showGroupDialog,
     showManageDialog,
-    createDialogTab,
-    editDialogTab,
+    createDialogStep,
+    editDialogStep,
     connecting,
     testingNewConn,
     testingEditConn,
     databases,
     tables,
     selectedDatabase,
+    engineCapabilities,
     autoLimit,
     limitCount,
     layoutMode,
