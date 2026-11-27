@@ -1,6 +1,10 @@
 <template>
-  <div v-if="backupDialog.show" class="dialog-overlay" @click.self="closeBackupDialog">
-    <div class="dialog backup-dialog">
+  <div
+    v-if="backupDialog.show"
+    v-modal-shell="{ onClose: closeBackupDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
+    <div class="dialog dialog-wide">
       <div class="dialog-header">
         <h3>{{ t('定时备份与导出') }}</h3>
         <div class="health-toolbar">
@@ -8,10 +12,7 @@
             {{ backupDialog.loading ? t('加载中...') : t('刷新') }}
           </button>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeBackupDialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -79,7 +80,7 @@
             <div class="backup-form-grid">
               <div class="backup-field">
                 <label>{{ t('任务名称') }}</label>
-                <input
+                <AppInput
                   v-model="backupDialog.form.name"
                   class="input-field-inline"
                   :placeholder="t('例如：订单库每日备份')"
@@ -94,11 +95,15 @@
               </div>
               <div class="backup-field">
                 <label>{{ t('数据库') }}</label>
-                <input v-model="backupDialog.form.database" class="input-field-inline" :placeholder="t('数据库名')" />
+                <AppInput
+                  v-model="backupDialog.form.database"
+                  class="input-field-inline"
+                  :placeholder="t('数据库名')"
+                />
               </div>
               <div class="backup-field">
                 <label>{{ t('表（可选）') }}</label>
-                <input
+                <AppInput
                   v-model="backupDialog.form.table"
                   class="input-field-inline"
                   :placeholder="t('留空表示整个数据库')"
@@ -120,7 +125,7 @@
               </div>
               <div class="backup-field">
                 <label>{{ backupDialog.form.mode === 'interval' ? t('间隔（分钟）') : t('执行时间') }}</label>
-                <input
+                <AppInput
                   v-if="backupDialog.form.mode === 'interval'"
                   v-model.number="backupDialog.form.intervalMinutes"
                   type="number"
@@ -128,11 +133,11 @@
                   max="10080"
                   class="input-field-inline"
                 />
-                <input v-else v-model="backupDialog.form.time" type="time" class="input-field-inline" />
+                <AppInput v-else v-model="backupDialog.form.time" type="time" class="input-field-inline" />
               </div>
               <div class="backup-field">
                 <label>{{ t('单表最大行数') }}</label>
-                <input
+                <AppInput
                   v-model.number="backupDialog.form.maxRows"
                   type="number"
                   min="100"
@@ -143,7 +148,7 @@
               <div class="backup-field wide">
                 <label>{{ t('备份目录') }}</label>
                 <div class="backup-field-row">
-                  <input
+                  <AppInput
                     v-model="backupDialog.form.directory"
                     class="input-field-inline"
                     :placeholder="backupDialog.defaultDirectory"
@@ -179,6 +184,8 @@ import { t } from '@/i18n'
 import { inject } from 'vue'
 import { BACKUP_FORMATS, BACKUP_SCHEDULE_MODES } from '@shared/backupTasks'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const {
   backupDialog,

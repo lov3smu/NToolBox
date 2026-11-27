@@ -50,8 +50,11 @@ import {
   normalizeDatabaseRefreshInterval,
   normalizeDatabaseTransferBatchSize
 } from '../../shared/databaseClient.js'
-import { normalizeRecentToolsLimit } from '../../shared/tools.js'
+import { normalizeRecentToolsLimit } from '../../shared/navTools.js'
+import { getDefaultShortcuts } from '../../shared/shortcutActions.js'
 import { normalizeUpdateCheckInterval } from '../../shared/updater.js'
+import { applyManagedSettings } from '../../shared/managedProfile.js'
+import { getManagedSettings } from './managedProfile'
 
 export { validateConfig }
 
@@ -218,19 +221,11 @@ function getDefaultConfigContent() {
   return {
     config_version: CONFIG_VERSION,
     app: {
-      base_path: defaultBasePath,
-      developer: {
-        ch_name: '张三',
-        en_name: 'zhangsan'
-      },
-      text_edit_app: '',
       auto_start: true,
       first_launch_done: false,
       close_action: 'ask',
       recent_tools_limit: normalizeRecentToolsLimit(),
-      shortcuts: {
-        settings: 'CmdOrCtrl+,'
-      }
+      shortcuts: getDefaultShortcuts()
     },
     appearance: {
       theme: 'system',
@@ -265,6 +260,12 @@ function getDefaultConfigContent() {
       editor: normalizeDatabaseEditorConfig()
     },
     sql_generator: {
+      base_path: defaultBasePath,
+      developer: {
+        ch_name: '张三',
+        en_name: 'zhangsan'
+      },
+      text_edit_app: '',
       databases: [
         'order_db',
         'product_db',
@@ -358,12 +359,6 @@ function getDefaultConfigContent() {
 function normalizeAppConfig(raw, defaults) {
   const source = isPlainObject(raw) ? raw : {}
   const appConfig = {
-    base_path: typeof source.base_path === 'string' ? source.base_path : defaults.base_path,
-    developer: {
-      ch_name: typeof source.developer?.ch_name === 'string' ? source.developer.ch_name : defaults.developer.ch_name,
-      en_name: typeof source.developer?.en_name === 'string' ? source.developer.en_name : defaults.developer.en_name
-    },
-    text_edit_app: typeof source.text_edit_app === 'string' ? source.text_edit_app : defaults.text_edit_app,
     auto_start: typeof source.auto_start === 'boolean' ? source.auto_start : defaults.auto_start,
     first_launch_done:
       typeof source.first_launch_done === 'boolean' ? source.first_launch_done : defaults.first_launch_done,
@@ -409,6 +404,7 @@ function normalizeDatabaseConfig(raw, defaults) {
 
 function normalizeSqlGeneratorConfig(raw, defaults) {
   const source = isPlainObject(raw) ? raw : {}
+  const developer = isPlainObject(source.developer) ? source.developer : {}
   const databases = Array.isArray(source.databases)
     ? source.databases.filter((name) => typeof name === 'string')
     : defaults.databases
@@ -420,7 +416,16 @@ function normalizeSqlGeneratorConfig(raw, defaults) {
           description: typeof item.description === 'string' ? item.description : ''
         }))
     : defaults.script_types
-  return { databases, script_types: scriptTypes }
+  return {
+    base_path: typeof source.base_path === 'string' ? source.base_path : defaults.base_path,
+    developer: {
+      ch_name: typeof developer.ch_name === 'string' ? developer.ch_name : defaults.developer.ch_name,
+      en_name: typeof developer.en_name === 'string' ? developer.en_name : defaults.developer.en_name
+    },
+    text_edit_app: typeof source.text_edit_app === 'string' ? source.text_edit_app : defaults.text_edit_app,
+    databases,
+    script_types: scriptTypes
+  }
 }
 
 function normalizeAiConfig(raw, defaults) {
@@ -473,7 +478,7 @@ function normalizeAiConfig(raw, defaults) {
   }
 }
 
-function normalizeConfig(raw) {
+export function normalizeConfig(raw) {
   const defaults = getDefaultConfigContent()
   const merged = mergeConfig(defaults, isPlainObject(raw) ? raw : {})
   const appearance = isPlainObject(merged.appearance) ? merged.appearance : {}
@@ -552,7 +557,7 @@ async function createDefaultConfig() {
   try {
     const defaultConfig = getDefaultConfigContent()
     const configPath = getConfigPath()
-    await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2), 'utf8')
+    await writeFileAtomic(configPath, JSON.stringify(defaultConfig, null, 2), 'utf8')
     log.info('已创建默认配置文件:', configPath)
     return defaultConfig
   } catch (error) {
@@ -582,6 +587,7 @@ export async function loadConfig() {
     const migration = migrateConfig(parsed.data)
     config = normalizeConfig(migration.config)
     decryptSecrets(config)
+    applyManagedSettings(config, getManagedSettings())
 
     if (migration.migrated) {
       await persistConfig(config)
@@ -615,6 +621,7 @@ async function saveConfigNow(newConfig) {
       keys: restoreMaskedAiApiKeys(mergedConfig.ai?.keys, config.ai?.keys)
     }
     mergedConfig.image_hosting = restoreMaskedImageHostSettings(mergedConfig.image_hosting, config.image_hosting)
+    applyManagedSettings(mergedConfig, getManagedSettings())
     const error = validateConfig(mergedConfig)
     if (error) {
       log.error('配置校验失败:', error)

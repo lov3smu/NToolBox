@@ -45,7 +45,7 @@
 
   .readonly-badge {
     padding: 1px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--surface-muted);
     color: var(--text-tertiary);
     font-size: var(--font-size-xs);
@@ -227,6 +227,20 @@
     gap: 8px;
   }
 
+  .result-view-switch {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .result-chart-wrapper {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .result-edit-hint {
     color: var(--text-tertiary);
     font-size: var(--font-size-xs);
@@ -236,7 +250,7 @@
   .result-edit-badge,
   .result-readonly-badge {
     padding: 1px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: var(--font-size-xs);
     white-space: nowrap;
     cursor: default;
@@ -304,7 +318,7 @@
 
   .result-table-scroll::-webkit-scrollbar-thumb {
     background: var(--shell-scrollbar);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
   }
 
   .result-table-scroll::-webkit-scrollbar-corner {
@@ -402,7 +416,7 @@
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
-    z-index: 30;
+    z-index: 1200;
     min-width: 160px;
     padding: 4px;
     display: flex;
@@ -457,7 +471,7 @@
 
   .editable-table td > .cell-text.is-json {
     color: var(--info-dark);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: var(--font-size-xs);
   }
 
@@ -481,7 +495,7 @@
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: rgba(var(--accent-rgb), 0.18);
     color: var(--accent-color);
     font-size: var(--font-size-xs);
@@ -734,7 +748,7 @@
 
   .sort-direction-group button.active {
     background: var(--accent-color);
-    color: #fff;
+    color: var(--text-inverse);
   }
 
   .sort-direction-group button:disabled {
@@ -837,7 +851,6 @@
     width: 14px;
     height: 14px;
     margin: 0;
-    accent-color: var(--accent-color);
     cursor: pointer;
   }
 
@@ -897,7 +910,7 @@
   .pk-badge {
     flex-shrink: 0;
     padding: 0 4px;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     background: rgba(var(--accent-rgb), 0.15);
     color: var(--accent-color);
     font-size: calc(9px * var(--font-scale));
@@ -1026,7 +1039,7 @@
 
   .pending-change-chip {
     padding: 1px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: rgba(var(--accent-rgb), 0.12);
     color: var(--accent-color);
     font-size: var(--font-size-xs);
@@ -1129,7 +1142,7 @@
     margin-right: 4px;
     border-radius: 50%;
     background: var(--accent-color);
-    color: #fff;
+    color: var(--text-inverse);
     font-size: var(--font-size-xs);
     line-height: 1;
   }

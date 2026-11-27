@@ -1,0 +1,45 @@
+{
+  "name": "web-search",
+  "version": "1.0.0",
+  "description": "联网搜索公开网页：输入关键词返回标题、链接与摘要，用于查找最新资料、新闻、文档和解决方案。需要正文时再用 web-fetch 打开具体链接。",
+  "author": "system",
+  "type": "builtin",
+  "category": "general",
+  "tags": ["搜索", "联网", "网页", "最新", "资料"],
+  "icon": "search",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "搜索关键词或问题"
+      },
+      "count": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "default": 5,
+        "description": "返回结果数量"
+      },
+      "engine": {
+        "type": "string",
+        "enum": ["bing", "duckduckgo"],
+        "default": "bing",
+        "description": "搜索引擎；默认 Bing"
+      }
+    },
+    "required": ["query"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "query: Electron 最新稳定版本",
+      "output": "返回若干条搜索结果，包含标题、链接和摘要"
+    },
+    {
+      "input": "query: node permission model, count: 3",
+      "output": "返回 3 条搜索结果，可继续用 web-fetch 读取正文"
+    }
+  ]
+}

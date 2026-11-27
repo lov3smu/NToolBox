@@ -1,55 +1,50 @@
 <template>
   <Teleport to="body">
-    <Transition name="about-dialog">
-      <div v-if="visible" class="about-overlay" @click.self="emit('close')">
-        <section class="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-dialog-title">
-          <header class="about-header">
-            <div class="about-header-title">
-              <h2 id="about-dialog-title">{{ t('关于软件') }}</h2>
-              <span v-if="version" class="about-badge">v{{ version }}</span>
-            </div>
-            <button type="button" class="about-close" :aria-label="t('关闭')" @click="emit('close')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </header>
-
-          <div class="about-body">
-            <div class="about-logo-wrap">
-              <img :src="iconUrl" alt="NToolBox" class="about-logo" />
-            </div>
-            <p class="about-name">NToolBox</p>
-            <p class="about-description">{{ descriptionText }}</p>
-
-            <dl class="about-meta">
-              <div class="about-meta-row">
-                <dt>{{ t('版本') }}</dt>
-                <dd v-if="version">v{{ version }}</dd>
-                <dd v-else>--</dd>
-              </div>
-              <div class="about-meta-row">
-                <dt>{{ t('作者') }}</dt>
-                <dd>{{ author }}</dd>
-              </div>
-              <div class="about-meta-row">
-                <dt>{{ t('版权') }}</dt>
-                <dd>{{ copyright }}</dd>
-              </div>
-            </dl>
+    <div v-if="visible" class="about-overlay" @click.self="emit('close')">
+      <section class="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-dialog-title">
+        <header class="about-header">
+          <div class="about-header-title">
+            <h2 id="about-dialog-title">{{ t('关于软件') }}</h2>
+            <span v-if="version" class="about-badge">v{{ version }}</span>
           </div>
+          <button type="button" class="about-close" :aria-label="t('关闭')" @click="emit('close')">
+            <AppIcon name="close" />
+          </button>
+        </header>
 
-          <footer class="about-footer">
-            <button type="button" class="btn btn-secondary btn-sm" @click="openReleasePage">
-              {{ t('打开发布页') }}
-            </button>
-            <span class="about-footer-spacer" />
-            <button type="button" class="btn btn-primary btn-sm" @click="emit('close')">{{ t('关闭') }}</button>
-          </footer>
-        </section>
-      </div>
-    </Transition>
+        <div class="about-body">
+          <div class="about-logo-wrap">
+            <img :src="iconUrl" alt="NToolBox" class="about-logo" />
+          </div>
+          <p class="about-name">NToolBox</p>
+          <p class="about-description">{{ descriptionText }}</p>
+
+          <dl class="about-meta">
+            <div class="about-meta-row">
+              <dt>{{ t('版本') }}</dt>
+              <dd v-if="version">v{{ version }}</dd>
+              <dd v-else>--</dd>
+            </div>
+            <div class="about-meta-row">
+              <dt>{{ t('作者') }}</dt>
+              <dd>{{ author }}</dd>
+            </div>
+            <div class="about-meta-row">
+              <dt>{{ t('版权') }}</dt>
+              <dd>{{ copyright }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <footer class="about-footer">
+          <button type="button" class="btn btn-secondary btn-sm" @click="openReleasePage">
+            {{ t('打开发布页') }}
+          </button>
+          <span class="about-footer-spacer" />
+          <button type="button" class="btn btn-primary btn-sm" @click="emit('close')">{{ t('关闭') }}</button>
+        </footer>
+      </section>
+    </div>
   </Teleport>
 </template>
 
@@ -59,6 +54,7 @@ import { getPackageInfo, openExternal } from '@/api'
 import { t, getLocale } from '@/i18n'
 import iconUrl from '@assets/icon.png'
 
+import AppIcon from '@/components/AppIcon.vue'
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -135,6 +131,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 48px);
   overflow: hidden;
+  animation: about-dialog-in var(--motion-panel) var(--motion-ease);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -168,7 +165,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .about-badge {
   flex-shrink: 0;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent-color);
   font-size: var(--font-size-xs);
@@ -218,7 +215,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   width: 72px;
   height: 72px;
   margin-bottom: 12px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   background: var(--surface-muted);
   box-shadow: inset 0 0 0 1px var(--border-color);
 }
@@ -294,26 +291,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   min-width: 8px;
 }
 
-.about-dialog-enter-active,
-.about-dialog-leave-active {
-  transition: opacity var(--motion-base) var(--motion-ease);
+/* 入场动画只作用于卡片：遮罩层始终不透明，动画帧被节流时也不会留下不可见却拦截点击的全屏层 */
+@keyframes about-dialog-in {
+  from {
+    transform: scale(0.97) translateY(4px);
+    opacity: 0.85;
+  }
 }
 
-.about-dialog-enter-active .about-dialog,
-.about-dialog-leave-active .about-dialog {
-  transition:
-    transform var(--motion-panel) var(--motion-ease),
-    opacity var(--motion-panel) var(--motion-ease);
-}
-
-.about-dialog-enter-from,
-.about-dialog-leave-to {
-  opacity: 0;
-}
-
-.about-dialog-enter-from .about-dialog,
-.about-dialog-leave-to .about-dialog {
-  transform: scale(0.97) translateY(4px);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .about-dialog {
+    animation: none;
+  }
 }
 </style>

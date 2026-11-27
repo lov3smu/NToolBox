@@ -73,11 +73,7 @@
               @click="selectTableObject(table.name)"
             >
               <span class="col-name">
-                <svg class="table-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="3" y1="9" x2="21" y2="9" />
-                  <line x1="9" y1="21" x2="9" y2="9" />
-                </svg>
+                <AppIcon name="table" class="table-icon-small" />
                 {{ table.name }}
               </span>
               <span class="col-rows">{{ table.rows }}</span>
@@ -133,6 +129,9 @@
         </div>
       </div>
     </div>
+    <div v-else class="object-empty">
+      <EmptyState size="sm" :title="t('从左侧选择连接或对象查看详情')" />
+    </div>
   </div>
 </template>
 
@@ -141,6 +140,8 @@ import { t } from '@/i18n'
 import { inject } from 'vue'
 import SqlHighlight from '@/components/SqlHighlight.vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
 const databaseStore = inject('database')
 const {
   activeTabId,

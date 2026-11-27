@@ -1,13 +1,10 @@
 <template>
-  <div v-if="cellViewer.show" class="dialog-overlay" @click.self="closeCellViewer">
-    <div class="dialog dialog-large cell-viewer-dialog">
+  <div v-if="cellViewer.show" v-modal-shell="closeCellViewer" class="dialog-overlay" @click.self="closeCellViewer">
+    <div class="dialog dialog-large">
       <div class="dialog-header">
         <h3>{{ cellViewer.field || t('单元格') }}</h3>
         <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeCellViewer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="dialog-content">
@@ -20,13 +17,13 @@
         <pre class="cell-viewer-content" :class="{ 'is-binary': isBinary }">{{ displayValue }}</pre>
       </div>
       <div class="dialog-footer">
-        <button
-          class="btn btn-secondary"
+        <CopyButton
+          :text="displayValue"
+          :label="t('复制内容')"
+          :success-message="t('已复制单元格内容')"
           :disabled="isNull || cellViewer.loading || Boolean(cellViewer.error)"
-          @click="copyValue"
-        >
-          {{ t('复制内容') }}
-        </button>
+          variant="secondary"
+        />
         <button class="btn btn-primary" @click="closeCellViewer">{{ t('关闭') }}</button>
       </div>
     </div>
@@ -36,11 +33,12 @@
 <script setup>
 import { t } from '@/i18n'
 import { computed, inject } from 'vue'
-import { copyToClipboard } from '@/utils/clipboard'
 import { binaryByteLength, formatBytes, formatCellViewerText, isBinaryValue } from '../cellFormat'
 
+import AppIcon from '@/components/AppIcon.vue'
+import CopyButton from '@/components/CopyButton.vue'
 const databaseStore = inject('database')
-const { cellViewer, closeCellViewer, showMessage } = databaseStore
+const { cellViewer, closeCellViewer } = databaseStore
 
 const isNull = computed(
   () => !cellViewer.value.loading && (cellViewer.value.value === null || cellViewer.value.value === undefined)
@@ -60,9 +58,4 @@ const sizeLabel = computed(() => {
   if (isBinary.value) return t('二进制 · {p0}', { p0: formatBytes(binaryByteLength(cellViewer.value.value)) })
   return t('{p0} 字符', { p0: displayValue.value.length })
 })
-
-async function copyValue() {
-  const copied = await copyToClipboard(displayValue.value)
-  await showMessage(copied ? t('已复制单元格内容') : t('复制失败'), copied ? 'success' : 'error')
-}
 </script>

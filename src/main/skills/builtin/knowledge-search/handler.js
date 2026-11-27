@@ -1,4 +1,4 @@
-import { searchKnowledge } from '../../../services/memory.js'
+import { searchKnowledge } from '../../../services/agent/memory.js'
 
 export default async function handler(params, context) {
   const result = await searchKnowledge({ query: params.query, topK: params.top_k })

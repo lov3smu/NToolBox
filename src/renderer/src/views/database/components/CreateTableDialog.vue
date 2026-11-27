@@ -1,26 +1,21 @@
 <template>
-  <div v-if="createTableDialog.show" class="dialog-overlay" @click.self="closeCreateTableDialog">
+  <div
+    v-if="createTableDialog.show"
+    v-modal-shell="{ onClose: closeCreateTableDialog, closeOnOutside: false }"
+    class="dialog-overlay"
+  >
     <div class="dialog dialog-wide create-table-dialog">
       <div class="dialog-header">
         <h3>{{ t('新建表 ·') }} {{ createTableDialog.database }}</h3>
         <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeCreateTableDialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="dialog-content create-table-body">
         <div class="create-table-meta">
           <div class="form-group">
             <label>{{ t('表名') }}</label>
-            <input
-              v-model="form.tableName"
-              type="text"
-              class="input-field"
-              maxlength="64"
-              :placeholder="t('例如 user_profile')"
-            />
+            <AppInput v-model="form.tableName" type="text" maxlength="64" :placeholder="t('例如 user_profile')" />
           </div>
           <div class="form-group">
             <label>{{ t('字符集') }}</label>
@@ -31,7 +26,7 @@
         </div>
         <div class="form-group">
           <label>{{ t('表注释') }}</label>
-          <input v-model="form.comment" type="text" class="input-field" maxlength="120" :placeholder="t('可选')" />
+          <AppInput v-model="form.comment" type="text" maxlength="120" :placeholder="t('可选')" />
         </div>
 
         <div class="create-table-section">
@@ -50,8 +45,8 @@
             <span />
           </div>
           <div v-for="(column, index) in form.columns" :key="index" class="create-column-grid">
-            <input v-model="column.name" type="text" class="input-field" :placeholder="t('字段名')" />
-            <input v-model="column.type" type="text" class="input-field" list="create-table-types" placeholder="INT" />
+            <AppInput v-model="column.name" type="text" :placeholder="t('字段名')" />
+            <AppInput v-model="column.type" type="text" list="create-table-types" placeholder="INT" />
             <label class="create-column-check">
               <input v-model="column.nullable" type="checkbox" :disabled="column.primaryKey" />
             </label>
@@ -61,13 +56,10 @@
             <label class="create-column-check">
               <input v-model="column.autoIncrement" type="checkbox" @change="onAutoIncrementChange(column)" />
             </label>
-            <input v-model="column.defaultValue" type="text" class="input-field" :placeholder="t('无')" />
-            <input v-model="column.comment" type="text" class="input-field" :placeholder="t('可选')" />
+            <AppInput v-model="column.defaultValue" type="text" :placeholder="t('无')" />
+            <AppInput v-model="column.comment" type="text" :placeholder="t('可选')" />
             <button class="btn-icon btn-sm" :title="t('删除字段')" @click="removeColumn(index)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <AppIcon name="close" />
             </button>
           </div>
           <datalist id="create-table-types">
@@ -82,17 +74,14 @@
           </div>
           <div v-if="!form.indexes.length" class="create-table-empty">{{ t('可选，主键无需重复添加') }}</div>
           <div v-for="(index, indexPosition) in form.indexes" :key="indexPosition" class="create-index-row">
-            <input v-model="index.name" type="text" class="input-field" :placeholder="t('索引名（留空自动生成）')" />
-            <input v-model="index.columns" type="text" class="input-field" :placeholder="t('字段，逗号分隔')" />
+            <AppInput v-model="index.name" type="text" :placeholder="t('索引名（留空自动生成）')" />
+            <AppInput v-model="index.columns" type="text" :placeholder="t('字段，逗号分隔')" />
             <label class="create-column-check create-index-unique">
               <input v-model="index.unique" type="checkbox" />
               <span>{{ t('唯一') }}</span>
             </label>
             <button class="btn-icon btn-sm" :title="t('删除索引')" @click="form.indexes.splice(indexPosition, 1)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <AppIcon name="close" />
             </button>
           </div>
         </div>
@@ -113,6 +102,8 @@
 import { t } from '@/i18n'
 import { inject, ref, watch } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const { closeCreateTableDialog, createTableDialog, submitCreateTable } = databaseStore
 

@@ -1,14 +1,14 @@
 import { VALID_CLOSE_ACTIONS, VALID_THEMES, VALID_THEME_STYLES, VALID_FONT_SIZES } from '../constants'
 import { t } from './i18n.js'
 import { LOCALE_VALUES } from '../../shared/i18n.js'
-import { tools } from '../../shared/tools.js'
+import { ALL_SHORTCUT_KEYS } from '../../shared/shortcutActions.js'
 import { DATABASE_EDITOR_THEMES, DATABASE_EDITOR_BOOLEAN_KEYS } from '../../shared/databaseEditor.js'
 import { normalizeMcpServer } from '../../shared/mcp.js'
 import { SQL_AUDIT_RULES } from '../../shared/sqlAudit.js'
 import { normalizeBackupTask } from '../../shared/backupTasks.js'
 import { normalizeDisabledSkills, normalizeSkillOverrides, isValidSkillName } from '../../shared/skillOverrides.js'
 import { PROXY_MODES, isHttpUrl, isProxyUrl } from '../../shared/network.js'
-import { NOTIFICATION_KEYS } from '../../shared/notifications.js'
+import { NOTIFICATION_CHANNELS, NOTIFICATION_KEYS } from '../../shared/notifications.js'
 import { CLIPBOARD_HISTORY_LIMITS } from '../../shared/clipboardSettings.js'
 import { SCENARIO_MODEL_KEYS, TOOL_POLICIES, parseScenarioModel } from '../../shared/aiBehavior.js'
 import {
@@ -17,10 +17,11 @@ import {
   DATABASE_REFRESH_INTERVALS,
   DATABASE_TRANSFER_BATCH_SIZES
 } from '../../shared/databaseClient.js'
-import { RECENT_TOOLS_LIMIT_MAX, RECENT_TOOLS_LIMIT_MIN } from '../../shared/tools.js'
+import { RECENT_TOOLS_LIMIT_MAX, RECENT_TOOLS_LIMIT_MIN } from '../../shared/navTools.js'
 import { UPDATE_CHECK_INTERVALS } from '../../shared/updater.js'
+import { DATABASE_ENGINES } from '../../shared/databaseEngines.js'
 
-export const VALID_SHORTCUT_KEYS = tools.filter((tool) => tool.shortcutKey).map((tool) => tool.shortcutKey)
+export const VALID_SHORTCUT_KEYS = [...ALL_SHORTCUT_KEYS]
 
 const SQL_AUDIT_RULE_IDS = SQL_AUDIT_RULES.map((rule) => rule.id)
 
@@ -39,13 +40,6 @@ export function normalizeShortcuts(raw, defaults) {
 
 function validateApp(app) {
   if (!isPlainObject(app)) return t('app 必须是对象')
-  if (typeof app.base_path !== 'string') return t('app.base_path 必须是字符串')
-  if (!isPlainObject(app.developer)) return t('app.developer 必须是对象')
-  if (typeof app.developer.ch_name !== 'string') return t('app.developer.ch_name 必须是字符串')
-  if (typeof app.developer.en_name !== 'string') return t('app.developer.en_name 必须是字符串')
-  if (app.text_edit_app !== undefined && typeof app.text_edit_app !== 'string') {
-    return t('app.text_edit_app 必须是字符串')
-  }
   if (app.auto_start !== undefined && typeof app.auto_start !== 'boolean') return t('app.auto_start 必须是布尔值')
   if (app.first_launch_done !== undefined && typeof app.first_launch_done !== 'boolean') {
     return t('app.first_launch_done 必须是布尔值')
@@ -191,6 +185,15 @@ function validateDatabase(database) {
       if (typeof conn.name !== 'string' || !conn.name.trim()) return t('database.connections 中的连接缺少名称')
       if (names.has(conn.name)) return t('database.connections 连接名重复：{p0}', { p0: conn.name })
       names.add(conn.name)
+      if (conn.engine !== undefined && !DATABASE_ENGINES.includes(conn.engine)) {
+        return t('database.connections.{p0} 的数据库类型不合法', { p0: conn.name })
+      }
+      if (conn.engine === 'sqlite') {
+        if (typeof conn.filePath !== 'string' || !conn.filePath.trim()) {
+          return t('database.connections.{p0} 缺少 SQLite 文件路径', { p0: conn.name })
+        }
+        if (conn.host) return t('database.connections.{p0} 的 SQLite 连接不能填写主机', { p0: conn.name })
+      }
     }
   }
   if (database.connection_groups !== undefined) {
@@ -219,6 +222,13 @@ function validateDatabase(database) {
 
 function validateSqlGenerator(sqlGenerator) {
   if (!isPlainObject(sqlGenerator)) return t('sql_generator 必须是对象')
+  if (typeof sqlGenerator.base_path !== 'string') return t('sql_generator.base_path 必须是字符串')
+  if (!isPlainObject(sqlGenerator.developer)) return t('sql_generator.developer 必须是对象')
+  if (typeof sqlGenerator.developer.ch_name !== 'string') return t('sql_generator.developer.ch_name 必须是字符串')
+  if (typeof sqlGenerator.developer.en_name !== 'string') return t('sql_generator.developer.en_name 必须是字符串')
+  if (sqlGenerator.text_edit_app !== undefined && typeof sqlGenerator.text_edit_app !== 'string') {
+    return t('sql_generator.text_edit_app 必须是字符串')
+  }
   if (sqlGenerator.databases !== undefined) {
     if (!Array.isArray(sqlGenerator.databases)) return t('sql_generator.databases 必须是数组')
     for (const name of sqlGenerator.databases) {
@@ -414,7 +424,9 @@ function validateNotifications(notifications) {
   if (!isPlainObject(notifications)) return t('notifications 必须是对象')
   for (const [key, value] of Object.entries(notifications)) {
     if (!NOTIFICATION_KEYS.includes(key)) return t('notifications.{p0} 不是有效的通知项', { p0: key })
-    if (typeof value !== 'boolean') return t('notifications.{p0} 必须是布尔值', { p0: key })
+    if (typeof value !== 'boolean' && !NOTIFICATION_CHANNELS.includes(value)) {
+      return t('notifications.{p0} 必须是布尔值或通知方式', { p0: key })
+    }
   }
   return null
 }

@@ -2,36 +2,24 @@
   <PageLayout tool-path="/image-viewer">
     <template #actions>
       <button class="btn btn-secondary btn-sm" @click="pickFile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="m21 15-5-5L5 21" />
-        </svg>
+        <AppIcon name="image" />
         {{ t('打开图片') }}
       </button>
       <button class="btn btn-secondary btn-sm" @click="pickFolder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-        </svg>
+        <AppIcon name="folder-open" />
         {{ t('打开文件夹') }}
       </button>
 
       <span class="toolbar-sep" />
 
       <button class="btn-icon btn-sm" :title="t('缩小（-）')" :disabled="!current" @click="zoomBy(1 / 1.25)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5M8 11h6" />
-        </svg>
+        <AppIcon name="zoom-out" />
       </button>
       <button class="zoom-value" :disabled="!current" :title="t('点击恢复 100%')" @click="setZoom(1)">
         {{ zoomLabel }}
       </button>
       <button class="btn-icon btn-sm" :title="t('放大（+）')" :disabled="!current" @click="zoomBy(1.25)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5M8 11h6M11 8v6" />
-        </svg>
+        <AppIcon name="zoom-in" />
       </button>
 
       <button class="btn btn-secondary btn-sm" :title="t('适应窗口（0）')" :disabled="!current" @click="fit">
@@ -41,10 +29,7 @@
         1:1
       </button>
       <button class="btn-icon btn-sm" :title="t('顺时针旋转 90°（R）')" :disabled="!current" @click="rotate">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-          <path d="M21 3v6h-6" />
-        </svg>
+        <AppIcon name="rotate-cw" />
       </button>
 
       <span class="toolbar-spacer" />
@@ -119,9 +104,7 @@
               @dblclick.stop
               @click.stop="step(-1)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
+              <AppIcon name="chevron-left" />
             </button>
             <button
               type="button"
@@ -134,29 +117,21 @@
               @dblclick.stop
               @click.stop="step(1)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
+              <AppIcon name="chevron-right" />
             </button>
           </template>
 
-          <div v-if="!imageUrl" class="empty-state">
-            <span class="empty-state-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="m21 15-5-5L5 21" />
-              </svg>
-            </span>
-            <p class="empty-state-title">{{ errorText || t('打开图片开始浏览') }}</p>
-            <p class="empty-state-hint">
-              {{ t('支持 PNG / JPEG / GIF / WebP / BMP / SVG / ICO / AVIF，也可以直接把图片或文件夹拖入窗口') }}
-            </p>
-            <div class="empty-state-actions">
+          <EmptyState
+            v-if="!imageUrl"
+            icon="image"
+            :title="errorText || t('打开图片开始浏览')"
+            :description="t('支持 PNG / JPEG / GIF / WebP / BMP / SVG / ICO / AVIF，也可以直接把图片或文件夹拖入窗口')"
+          >
+            <template #actions>
               <button class="btn btn-primary btn-sm" @click="pickFile">{{ t('打开图片') }}</button>
               <button class="btn btn-secondary btn-sm" @click="pickFolder">{{ t('打开文件夹') }}</button>
-            </div>
-          </div>
+            </template>
+          </EmptyState>
 
           <Transition name="fade">
             <div v-if="dragActive" class="drop-overlay">{{ t('松开以打开图片') }}</div>
@@ -170,20 +145,28 @@
         <footer v-if="current" class="info-bar">
           <span class="info-name" :title="current.path">{{ current.name }}</span>
           <span class="info-meta">{{ dimensionsText }}</span>
-          <span class="info-meta">{{ formatFileSize(current.size) }}</span>
+          <span class="info-meta">{{ formatBytes(current.size) }}</span>
           <span class="info-meta">{{ modifiedText }}</span>
           <span class="info-path" :title="current.path">{{ current.path }}</span>
           <button class="btn-icon btn-sm" :title="t('复制路径')" @click.stop="copyPath">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="12" height="12" rx="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
+            <AppIcon name="copy" />
+          </button>
+          <button class="btn-icon btn-sm" :title="t('发送到…')" :aria-label="t('发送到…')" @click.stop="openSendMenu">
+            <AppIcon name="shuffle" />
           </button>
         </footer>
       </section>
     </div>
 
-    <Toast :visible="toast.visible" :message="toast.message" :type="toast.type" />
+    <SendToMenu
+      :visible="sendMenu.show"
+      :x="sendMenu.x"
+      :y="sendMenu.y"
+      :resource="sendResource"
+      exclude-path="/image-viewer"
+      @close="sendMenu.show = false"
+      @sent="onSendDone"
+    />
   </PageLayout>
 </template>
 
@@ -192,13 +175,16 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import PageLayout from '@/layouts/PageLayout.vue'
 import SplitHandle from '@/components/SplitHandle.vue'
 import ImageThumb from '@/components/ImageThumb.vue'
-import Toast from '@/components/Toast.vue'
-import { usePaneResize } from '@/composables/usePaneResize'
-import { formatDateTime, formatFileSize } from '@/utils/format'
+import SendToMenu from '@/components/SendToMenu.vue'
+import { takeSendResource, usePaneResize, useToast } from '@/composables'
+import { formatBytes } from '@shared/format'
+import { formatDateTime } from '@/utils/format'
 import { copyToClipboard as copyText } from '@/utils/clipboard'
 import { getPathForFile, imageAcceptDropped, imageListDir, imageOpenDialog, imageOpenFolder, imageRead } from '@/api'
 import { t } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
 const MIN_SCALE = 0.02
 const MAX_SCALE = 32
 const ZOOM_STEP = 1.25
@@ -219,6 +205,7 @@ const fitMode = ref(true)
 const rotation = ref(0)
 const scale = ref(1)
 const offset = reactive({ x: 0, y: 0 })
+const sendMenu = ref({ show: false, x: 0, y: 0 })
 
 let objectUrl = ''
 let loadToken = 0
@@ -226,8 +213,7 @@ let dragDepth = 0
 let panStart = null
 let resizeObserver = null
 
-const toast = reactive({ visible: false, message: '', type: 'success' })
-let toastTimer = null
+const { showToast } = useToast()
 
 const {
   size: railWidth,
@@ -272,16 +258,6 @@ const modifiedText = computed(() => (current.value ? formatDateTime(current.valu
 const imageStyle = computed(() => ({
   transform: `translate(${offset.x}px, ${offset.y}px) rotate(${rotation.value}deg) scale(${scale.value})`
 }))
-
-function showToast(message, type = 'success') {
-  toast.message = message
-  toast.type = type
-  toast.visible = true
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toast.visible = false
-  }, 2600)
-}
 
 function clampScale(value) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value))
@@ -484,6 +460,15 @@ async function onDrop(event) {
   await openDirectory(res.dir, res.filePath)
 }
 
+async function openIncomingImage(filePath) {
+  const res = await imageAcceptDropped([filePath])
+  if (!res?.success || !res.dir) {
+    showToast(res?.error || t('未找到可打开的图片'), 'error')
+    return
+  }
+  await openDirectory(res.dir, res.filePath)
+}
+
 async function openDirectory(dirPath, selectPath) {
   const res = await imageListDir(dirPath)
   if (!res?.success) {
@@ -530,6 +515,20 @@ async function copyPath() {
   if (!current.value) return
   const success = await copyText(current.value.path)
   showToast(success ? t('路径已复制') : t('复制路径失败'), success ? 'success' : 'error')
+}
+
+const sendResource = computed(() =>
+  currentPath.value ? { kind: 'image', title: current.value?.name || '', path: currentPath.value } : null
+)
+
+function openSendMenu(event) {
+  if (!currentPath.value) return
+  const rect = event.currentTarget.getBoundingClientRect()
+  sendMenu.value = { show: true, x: rect.left - 208, y: rect.bottom + 6 }
+}
+
+function onSendDone(target) {
+  showToast(t('已发送到 {name}', { name: t(target.name) }), 'success')
 }
 
 function onKeydown(event) {
@@ -587,6 +586,9 @@ onMounted(() => {
     resizeObserver = new ObserverImpl(onResize)
     resizeObserver.observe(canvasRef.value)
   })
+
+  const incoming = takeSendResource('/image-viewer')
+  if (incoming?.kind === 'image') void openIncomingImage(incoming.path)
 })
 
 onBeforeUnmount(() => {
@@ -594,7 +596,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
   resizeObserver?.disconnect()
   resizeObserver = null
-  clearTimeout(toastTimer)
   revokeObjectUrl()
 })
 </script>
@@ -742,7 +743,7 @@ onBeforeUnmount(() => {
 }
 
 .stage-nav-btn:focus-visible {
-  outline: 2px solid rgba(var(--accent-rgb), 0.55);
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
 
@@ -792,7 +793,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.empty-state-hint {
+.empty-state :deep(.empty-state-hint) {
   max-width: 440px;
 }
 
@@ -803,7 +804,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border: 2px dashed rgba(var(--accent-rgb), 0.55);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: rgba(var(--accent-rgb), 0.08);
   color: var(--accent-color);
   font-size: var(--font-size-base);

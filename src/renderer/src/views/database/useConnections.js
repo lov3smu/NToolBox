@@ -1,29 +1,18 @@
 import { t } from '@/i18n'
 import { dbGetActiveConnections, getConfig, patchConfig } from '@/api'
-
-function normalizeSsh(raw = {}) {
-  return {
-    enabled: raw.enabled === true,
-    host: raw.host || '',
-    port: Number(raw.port) || 22,
-    user: raw.user || '',
-    keyPath: raw.keyPath || ''
-  }
-}
-
-function normalizeSsl(raw = {}) {
-  return {
-    enabled: raw.enabled === true,
-    verify: raw.verify !== false,
-    caPath: raw.caPath || ''
-  }
-}
+import {
+  createDefaultConnection,
+  generateConnectionName,
+  normalizeConnectionRecord,
+  toPlainRecord
+} from './connectionDefaults'
+import { logError } from '@/utils/log'
 
 export function createConnections(state, api) {
   const {
     connections,
-    createDialogTab,
-    editDialogTab,
+    createDialogStep,
+    editDialogStep,
     editingConnection,
     expandedGroups,
     groups,
@@ -41,21 +30,7 @@ export function createConnections(state, api) {
       const activeConnections = await dbGetActiveConnections()
 
       connections.value = savedConnections.map((conn) => ({
-        ...conn,
-        savePassword: conn.savePassword ?? true,
-        charset: conn.charset ?? '',
-        enableKeepAlive: conn.enableKeepAlive ?? true,
-        keepAliveInterval: conn.keepAliveInterval ?? 240,
-        enableConnectTimeout: conn.enableConnectTimeout ?? true,
-        connectTimeout: conn.connectTimeout ?? 30,
-        enableReadTimeout: conn.enableReadTimeout ?? false,
-        readTimeout: conn.readTimeout ?? 30,
-        enableWriteTimeout: conn.enableWriteTimeout ?? true,
-        writeTimeout: conn.writeTimeout ?? 30,
-        autoConnect: conn.autoConnect ?? false,
-        readOnly: conn.readOnly === true,
-        ssh: normalizeSsh(conn.ssh),
-        ssl: normalizeSsl(conn.ssl),
+        ...normalizeConnectionRecord(conn),
         active: activeConnections.includes(conn.name)
       }))
       groups.value = savedGroups
@@ -71,7 +46,7 @@ export function createConnections(state, api) {
         }
       }
     } catch (error) {
-      console.error('加载连接配置失败:', error)
+      logError('加载连接配置失败:', error)
     }
   }
 
@@ -84,158 +59,168 @@ export function createConnections(state, api) {
     }
   }
 
-  async function saveConnection() {
-    if (!newConnection.value.name) {
-      await api.showMessage(t('请输入连接名称'), 'warning')
-      return
-    }
-
-    const connection = { ...newConnection.value }
+  async function saveConnection(connectAfterSave = false) {
+    const connection = toPlainRecord(newConnection.value)
 
     if (!connection.savePassword) {
       connection.password = ''
+    }
+    if (connection.engine !== 'mysql') {
+      connection.charset = ''
     }
 
     try {
       const config = await getConfig()
       const dbConnections = config.database?.connections || []
-      const existingIndex = dbConnections.findIndex((c) => c.name === connection.name)
 
-      if (existingIndex >= 0) {
-        await api.showMessage(t('连接名称已存在'), 'error')
-        return
+      if (!String(connection.name || '').trim()) {
+        connection.name = generateConnectionName(
+          connection,
+          dbConnections.map((c) => c.name)
+        )
+      } else {
+        connection.name = connection.name.trim()
+        if (dbConnections.some((c) => c.name === connection.name)) {
+          await api.showMessage(t('连接名称已存在'), 'error')
+          return
+        }
       }
 
       dbConnections.push(connection)
-      await patchConfig({ database: { connections: dbConnections } })
+      const persisted = await patchConfig({ database: { connections: dbConnections } })
+      if (!persisted) {
+        await api.showMessage(t('保存连接失败'), 'error')
+        return
+      }
 
       showCreateDialog.value = false
       resetNewConnection()
       await loadConnections()
+
+      if (!connectAfterSave) return
+      const saved = connections.value.find((c) => c.name === connection.name)
+      if (!saved) return
+      selectedConnection.value = saved
+      await api.connectToDatabase()
+      if (saved.active) await api.showMessage(t('连接成功！'), 'success')
     } catch (error) {
-      console.error('保存连接失败:', error)
+      logError('保存连接失败:', error)
       await api.showMessage(t('保存连接失败: ') + error.message, 'error')
     }
   }
 
-  function onHostBlur() {
-    if (!newConnection.value.name && newConnection.value.host) {
-      newConnection.value.name = newConnection.value.host
-    }
-  }
-
   function resetNewConnection() {
-    newConnection.value = {
-      name: '',
-      group: '',
-      host: 'localhost',
-      port: 3306,
-      user: 'root',
-      password: '',
-      savePassword: true,
-      charset: '',
-      enableKeepAlive: true,
-      keepAliveInterval: 240,
-      enableConnectTimeout: true,
-      connectTimeout: 30,
-      enableReadTimeout: false,
-      readTimeout: 30,
-      enableWriteTimeout: true,
-      writeTimeout: 30,
-      autoConnect: false,
-      readOnly: false,
-      ssh: normalizeSsh({}),
-      ssl: normalizeSsl({})
-    }
-    createDialogTab.value = 'basic'
+    newConnection.value = createDefaultConnection()
+    createDialogStep.value = 'type'
+    createDialogBaseline = ''
   }
 
-  function closeCreateDialog() {
+  let createDialogBaseline = ''
+  let editDialogBaseline = ''
+  let editingOriginalName = ''
+  let closingConnectionDialog = false
+
+  async function confirmDiscard(baseline, current) {
+    if (!baseline || JSON.stringify(current) === baseline) return true
+    if (closingConnectionDialog) return false
+    closingConnectionDialog = true
+    const confirmed = await api.showConfirm(t('此操作会丢弃未保存的修改，是否继续？'))
+    closingConnectionDialog = false
+    return confirmed
+  }
+
+  async function closeCreateDialog() {
+    if (!(await confirmDiscard(createDialogBaseline, newConnection.value))) return
     showCreateDialog.value = false
     resetNewConnection()
   }
 
   function editConnection(conn) {
-    editingConnection.value = {
-      ...conn,
-      savePassword: conn.savePassword ?? true,
-      charset: conn.charset ?? '',
-      enableKeepAlive: conn.enableKeepAlive ?? true,
-      keepAliveInterval: conn.keepAliveInterval ?? 240,
-      enableConnectTimeout: conn.enableConnectTimeout ?? true,
-      connectTimeout: conn.connectTimeout ?? 30,
-      enableReadTimeout: conn.enableReadTimeout ?? false,
-      readTimeout: conn.readTimeout ?? 30,
-      enableWriteTimeout: conn.enableWriteTimeout ?? true,
-      writeTimeout: conn.writeTimeout ?? 30,
-      autoConnect: conn.autoConnect ?? false,
-      readOnly: conn.readOnly === true,
-      ssh: normalizeSsh(conn.ssh),
-      ssl: normalizeSsl(conn.ssl)
-    }
-    editDialogTab.value = 'basic'
+    editingConnection.value = normalizeConnectionRecord(conn)
+    editingOriginalName = conn.name
+    editDialogStep.value = 'form'
+    editDialogBaseline = JSON.stringify(editingConnection.value)
     showEditDialog.value = true
   }
 
-  function closeEditDialog() {
+  async function closeEditDialog() {
+    if (!(await confirmDiscard(editDialogBaseline, editingConnection.value))) return
     showEditDialog.value = false
     editingConnection.value = null
+    editDialogBaseline = ''
+    editingOriginalName = ''
   }
 
   async function updateConnection() {
-    if (!editingConnection.value.name) {
+    const name = String(editingConnection.value?.name || '').trim()
+    if (!name) {
       await api.showMessage(t('请输入连接名称'), 'warning')
       return
     }
 
-    const oldName = selectedConnection.value?.name
-    const connection = { ...editingConnection.value }
+    const oldName = editingOriginalName
+    const connection = toPlainRecord(editingConnection.value)
+    connection.name = name
 
     if (!connection.savePassword) {
       connection.password = ''
+    }
+    if (connection.engine !== 'mysql') {
+      connection.charset = ''
     }
 
     try {
       const config = await getConfig()
       const dbConnections = config.database?.connections || []
       const index = dbConnections.findIndex((c) => c.name === oldName)
+      if (index < 0) {
+        await api.showMessage(t('保存连接失败'), 'error')
+        return
+      }
 
-      if (index >= 0) {
-        if (editingConnection.value.name !== oldName) {
-          const existing = dbConnections.findIndex((c) => c.name === editingConnection.value.name)
-          if (existing >= 0) {
-            await api.showMessage(t('连接名称已存在'), 'error')
-            return
-          }
-        }
-        dbConnections[index] = connection
-        await patchConfig({ database: { connections: dbConnections } })
+      if (dbConnections.some((c, i) => i !== index && c.name === name)) {
+        await api.showMessage(t('连接名称已存在'), 'error')
+        return
+      }
+      dbConnections[index] = connection
+      const persisted = await patchConfig({ database: { connections: dbConnections } })
+      if (!persisted) {
+        await api.showMessage(t('保存连接失败'), 'error')
+        return
       }
 
       showEditDialog.value = false
       editingConnection.value = null
+      editDialogBaseline = ''
+      editingOriginalName = ''
       await loadConnections()
 
       if (selectedConnection.value?.name === oldName) {
-        selectedConnection.value = connections.value.find((c) => c.name === editingConnection.value?.name) || null
+        selectedConnection.value = connections.value.find((c) => c.name === name) || null
       }
     } catch (error) {
-      console.error('更新连接失败:', error)
+      logError('更新连接失败:', error)
       await api.showMessage(t('更新连接失败: ') + error.message, 'error')
     }
   }
 
-  function showAddConnectionModal() {
-    newConnection.value.group = ''
+  function openCreateDialog(group = '') {
+    resetNewConnection()
+    newConnection.value.group = group
+    createDialogBaseline = JSON.stringify(newConnection.value)
     showCreateDialog.value = true
+  }
+
+  function showAddConnectionModal() {
+    openCreateDialog()
   }
 
   return {
     loadConnections,
     toggleGroup,
     saveConnection,
-    onHostBlur,
     resetNewConnection,
+    openCreateDialog,
     closeCreateDialog,
     editConnection,
     closeEditDialog,

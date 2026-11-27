@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="generator-overlay" @click.self="emit('close')">
+    <div v-if="visible" class="generator-overlay">
       <section class="generator-dialog" role="dialog" aria-modal="true" aria-labelledby="password-generator-title">
         <header class="generator-header">
           <div>
@@ -8,10 +8,7 @@
             <span class="generator-sub">{{ t('密码仅在本地生成，不会上传到任何服务器') }}</span>
           </div>
           <button type="button" class="btn-icon" :title="t('关闭')" @click="emit('close')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" :size="14" />
           </button>
         </header>
 
@@ -25,29 +22,11 @@
               :placeholder="t('点击「生成密码」创建密码')"
             />
             <button class="btn-icon" :title="t('显示/隐藏')" @click="revealed = !revealed">
-              <svg
-                v-if="revealed"
-                viewBox="0 0 24 24"
-                width="15"
-                height="15"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              <svg v-else viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.45 3.55M1 1l22 22"
-                />
-              </svg>
+              <AppIcon v-if="revealed" name="eye" :size="15" />
+              <AppIcon v-else name="eye-off" size="15" />
             </button>
             <button class="btn-icon" :title="t('复制密码')" :disabled="!password" @click="copyPassword">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
+              <AppIcon name="copy" :size="15" />
             </button>
           </div>
 
@@ -133,10 +112,7 @@
                 <span class="generator-history-text">{{ maskPassword(item) }}</span>
                 <span class="generator-history-length">{{ t('{count} 位', { count: item.length }) }}</span>
                 <button class="btn-icon btn-sm" :title="t('复制')" @click="copyText(item)">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
+                  <AppIcon name="copy" :size="13" />
                 </button>
               </div>
             </div>
@@ -156,12 +132,7 @@
             {{ t('使用此密码') }}
           </button>
           <button type="button" class="btn" :class="allowApply ? 'btn-secondary' : 'btn-primary'" @click="generate">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-              <path d="M16 21h5v-5" />
-            </svg>
+            <AppIcon name="refresh" :size="14" />
             {{ t('生成密码') }}
           </button>
         </footer>
@@ -172,9 +143,10 @@
 
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
-import { copyToClipboard } from '@/utils'
+import { copyToClipboard } from '@/utils/clipboard'
 import { t } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
 const props = defineProps({
   visible: { type: Boolean, default: false },
   allowApply: { type: Boolean, default: false }
@@ -396,7 +368,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 .generator-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -464,7 +436,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
   height: 40px;
   padding: 0 14px;
   font-size: var(--font-size-md);
-  font-family: var(--font-mono, 'Consolas', 'Monaco', monospace);
+  font-family: var(--font-mono);
   letter-spacing: 1.5px;
   text-align: center;
   color: var(--text-primary);
@@ -507,7 +479,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 .length-number {
   font-size: var(--font-size-md);
   font-weight: 600;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   color: var(--text-primary);
 }
 
@@ -534,7 +506,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
 .generator-slider::-webkit-slider-runnable-track {
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: linear-gradient(
     to right,
     var(--slider-fill) 0%,
@@ -621,14 +593,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 .strength-track {
   height: 6px;
   background: var(--surface-muted);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .strength-progress {
   height: 100%;
   width: 0%;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   transition:
     width 0.25s ease,
     background-color 0.25s ease;
@@ -661,7 +633,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
 .strength-badge {
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
@@ -739,7 +711,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
 }

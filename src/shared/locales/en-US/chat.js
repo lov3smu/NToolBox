@@ -35,8 +35,16 @@ export default {
   '请查阅一个与我问题相关的最新官方文档链接，并总结关键要点。':
     'Look up a recent official documentation link related to my question and summarize the key points.',
   思维链: 'Chain of thought',
+  授权记录: 'Approval history',
+  '{count} 项已处理': '{count} handled',
+  '允许 {count}': '{count} allowed',
+  '拒绝 {count}': '{count} denied',
+  '失效 {count}': '{count} expired',
   实时: 'Live',
   计划: 'Plan',
+  目标: 'Goal',
+  '目标：': 'Goal: ',
+  '计划：': 'Plan: ',
   思考过程: 'Thinking',
   生成中: 'Generating',
   执行步骤: 'Steps',
@@ -52,9 +60,21 @@ export default {
   '该结果包含疑似提示注入内容，已按不可信数据交给模型，未执行其中的指令':
     'This result may contain a prompt injection and was passed to the model as untrusted data; its instructions were not executed.',
   复制: 'Copy',
+  正在编辑消息: 'Editing message',
+  发送后将替换该消息及之后的内容: 'Sending replaces this message and everything after it',
+  取消编辑: 'Cancel editing',
   执行摘要: 'Summary',
   运行轨迹: 'Run trace',
   '轮次 {count}': 'Rounds {count}',
+  '轮次 {used}/{budget}': 'Rounds {used}/{budget}',
+  '继续 {count} 步': 'Continue {count} steps',
+  未完成的步骤: 'Unfinished steps',
+  继续执行未完成的步骤: 'Continue the unfinished steps',
+  '继续执行未完成的步骤：': 'Continue the unfinished steps:',
+  重试此步骤: 'Retry this step',
+  '上一步工具调用 {name} 失败，请据此修正并重试，原参数：\n{p0}':
+    'The previous {name} call failed. Please fix the issue and retry. Original arguments:\n{p0}',
+  '上一步工具调用 {name} 失败，请据此修正并重试。': 'The previous {name} call failed. Please fix the issue and retry.',
   '工具 {count} 次': 'Tools {count}',
   '成功 {success} / 失败 {failed}': 'Succeeded {success} / Failed {failed}',
   '耗时 {duration}': 'Took {duration}',
@@ -110,7 +130,10 @@ export default {
   移除: 'Remove',
   'Enter 发送 · Shift+Enter 换行 · 支持图片与文本文件':
     'Enter to send · Shift+Enter for a new line · Images and text files supported',
+  '{shortcut} 发送 · Enter 换行 · 支持图片与文本文件':
+    '{shortcut} to send · Enter for a new line · Images and text files supported',
   添加附件: 'Add attachment',
+  快捷指令: 'Quick command',
   添加图片: 'Add image',
   当前模型未启用图片输入: 'Image input is disabled for the current model',
   添加文件: 'Add file',
@@ -134,8 +157,6 @@ export default {
   深度思考: 'Deep thinking',
   低: 'Low',
   快速响应: 'Fast responses',
-  停止语音输入: 'Stop voice input',
-  语音输入: 'Voice input',
   发送: 'Send',
   停止: 'Stop',
   '为当前会话绑定工作区，绑定后不可更换': 'Bind a workspace to this chat; it cannot be changed later',
@@ -278,7 +299,13 @@ export default {
   工作区信息保存失败: 'Failed to save workspace info',
   工作区已置顶: 'Workspace pinned',
   工作区已归档: 'Workspace archived',
+  记忆范围切换: 'Memory scope',
   '已删除工作区 {name}': 'Workspace {name} deleted',
+  '已删除工作区 {name}，并清空项目记忆': 'Workspace {name} deleted and its project memories cleared',
+  '工作区已删除，但项目记忆清空失败': 'Workspace deleted, but clearing project memories failed',
+  绑定工作区: 'Bind workspace',
+  '项目记忆保存在工作区目录中，绑定后可查看与清理':
+    'Project memories are stored in the workspace folder; bind one to view and clear them',
   请选择项目目录: 'Select a project directory',
   请填写工作区名称: 'Enter a workspace name',
   该目录已添加为工作区: 'This directory is already a workspace',
@@ -300,9 +327,6 @@ export default {
   '无法读取图片 {name}': 'Unable to read image {name}',
   '{name} 超过 {size}KB，已跳过': '{name} exceeds {size}KB and was skipped',
   '无法读取文件 {name}': 'Unable to read file {name}',
-  当前环境不支持语音输入: 'Voice input is not supported in this environment',
-  '语音识别失败: {error}': 'Speech recognition failed: {error}',
-  '无法启动语音识别: {message}': 'Unable to start speech recognition: {message}',
 
   // Approval card
   收起明细: 'Hide details',
@@ -394,6 +418,8 @@ export default {
   '请求失败: {p0}': 'Request failed: {p0}',
   '会话保存失败：附件体积过大，请删除部分图片后重试':
     'Failed to save the session: attachments are too large. Remove some images and try again.',
+  '会话保存失败，请稍后重试': 'Failed to save the session. Try again later.',
+  '会话删除失败，请稍后重试': 'Failed to delete the session. Try again later.',
   '{p0} · 分叉': '{p0} · Fork',
   已创建分叉会话: 'Forked session created',
   '已复制 Session ID': 'Session ID copied',
@@ -409,5 +435,15 @@ export default {
   '{p0}秒': '{p0}s',
 
   '上下文已压缩：{p0} → {p1} tokens（保留最近 {p2} 条消息）':
-    'Context compressed: {p0} → {p1} tokens (kept the last {p2} messages)'
+    'Context compressed: {p0} → {p1} tokens (kept the last {p2} messages)',
+  搜索结果: 'Search results',
+  '执行结果与计划不符，已调整剩余步骤': 'Execution diverged from the plan; remaining steps were adjusted',
+  '已调整执行计划：{p0}': 'Execution plan adjusted: {p0}',
+  产出文件: 'Output files',
+  '{count} 行': '{count} rows',
+  '耗时 {value}': 'Took {value}',
+  '{count} 条结果': '{count} results',
+  '退出码 {value}': 'Exit code {value}',
+  '共 {total} 行，显示前 {shown} 行': '{total} rows total, showing the first {shown}',
+  对话消息: 'Conversation messages'
 }

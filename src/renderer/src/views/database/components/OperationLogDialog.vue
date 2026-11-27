@@ -1,6 +1,11 @@
 <template>
-  <div v-if="operationLogDialog.show" class="dialog-overlay" @click.self="closeOperationLog">
-    <div class="dialog oplog-dialog">
+  <div
+    v-if="operationLogDialog.show"
+    v-modal-shell="closeOperationLog"
+    class="dialog-overlay"
+    @click.self="closeOperationLog"
+  >
+    <div class="dialog dialog-wide">
       <div class="dialog-header">
         <h3>{{ t('数据库操作日志') }}</h3>
         <div class="health-toolbar">
@@ -8,10 +13,7 @@
             {{ operationLogDialog.loading ? t('读取中...') : t('刷新') }}
           </button>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeOperationLog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -25,7 +27,7 @@
             <option value="">{{ t('全部连接') }}</option>
             <option v-for="conn in connections" :key="conn.name" :value="conn.name">{{ conn.name }}</option>
           </select>
-          <input
+          <AppInput
             v-model="operationLogDialog.keyword"
             class="input-field-inline oplog-search"
             :placeholder="t('搜索 SQL / 数据库 / 表')"
@@ -102,6 +104,8 @@
 import { t } from '@/i18n'
 import { inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const { operationLogDialog, connections, clearOperationLog, closeOperationLog, loadOperationLog } = databaseStore
 

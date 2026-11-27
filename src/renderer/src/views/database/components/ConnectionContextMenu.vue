@@ -1,312 +1,204 @@
 <template>
   <div
     v-if="contextMenu.show"
+    ref="menuRef"
     v-clamp-viewport
     class="context-menu"
+    role="menu"
     :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
     @click.stop
+    @keydown="onMenuKeydown"
   >
     <template v-if="contextMenu.type === 'header'">
-      <div class="menu-item" @click="handleNewConnectionAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleNewConnectionAndHide()">
+        <AppIcon name="plus" />
         {{ t('新建连接') }}
       </div>
-      <div class="menu-item" @click="handleOpenManageAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-          />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleOpenManageAndHide()">
+        <AppIcon name="settings" />
         {{ t('连接管理') }}
       </div>
-      <div class="menu-item" @click="handleCloseAllConnectionsAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleCloseAllConnectionsAndHide()">
+        <AppIcon name="power" />
         {{ t('关闭所有连接') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleOpenNewGroupAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          <line x1="12" y1="11" x2="12" y2="17" />
-          <line x1="9" y1="14" x2="15" y2="14" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleOpenNewGroupAndHide()">
+        <AppIcon name="folder-plus" />
         {{ t('新建分组') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleLoadConnectionsAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleLoadConnectionsAndHide()">
+        <AppIcon name="refresh" />
         {{ t('刷新') }}
       </div>
     </template>
     <template v-if="contextMenu.type === 'connection'">
-      <div v-if="!contextMenu.target.active" class="menu-item" @click="handleConnectAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
+      <div v-if="!contextMenu.target.active" role="menuitem" class="menu-item" @click="handleConnectAndHide()">
+        <AppIcon name="power" />
         {{ t('连接') }}
       </div>
-      <div v-if="contextMenu.target.active" class="menu-item" @click="handleDisconnectAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
+      <div v-if="contextMenu.target.active" role="menuitem" class="menu-item" @click="handleDisconnectAndHide()">
+        <AppIcon name="power" />
         {{ t('断开连接') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleNewConnectionInGroupAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleNewConnectionInGroupAndHide()">
+        <AppIcon name="plus" />
         {{ t('新建连接') }}
       </div>
-      <div class="menu-item" @click="handleLoadConnectionsAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleLoadConnectionsAndHide()">
+        <AppIcon name="file-text" />
         {{ t('新建查询') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleEditConnectionAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleEditConnectionAndHide()">
+        <AppIcon name="edit" />
         {{ t('编辑连接') }}
       </div>
-      <div class="menu-item" @click="handleDuplicateConnectionAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleDuplicateConnectionAndHide()">
+        <AppIcon name="copy" />
         {{ t('复制连接') }}
       </div>
-      <div class="menu-item danger" @click="handleDeleteConnectionAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
+      <div role="menuitem" class="menu-item danger" @click="handleDeleteConnectionAndHide()">
+        <AppIcon name="trash" />
         {{ t('删除连接') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item has-submenu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-          />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item has-submenu">
+        <AppIcon name="settings" />
         {{ t('管理组') }}
-        <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-        <div class="submenu">
-          <div class="menu-item" @click.stop="handleOpenNewGroupAndHide()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              <line x1="12" y1="11" x2="12" y2="17" />
-              <line x1="9" y1="14" x2="15" y2="14" />
-            </svg>
+        <AppIcon name="chevron-right" class="submenu-arrow" />
+        <div class="submenu" role="menu">
+          <div role="menuitem" class="menu-item" @click.stop="handleOpenNewGroupAndHide()">
+            <AppIcon name="folder-plus" />
             {{ t('新建组') }}
           </div>
-          <div class="menu-divider" />
+          <div class="menu-divider" role="separator" />
           <div
+            role="menuitem"
             class="menu-item"
             :class="{ disabled: !contextMenu.target.group }"
             @click.stop="handleRemoveFromGroupAndHide()"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-            </svg>
+            <AppIcon name="trash" />
             {{ t('从组中删除') }}
           </div>
-          <div class="menu-divider" />
-          <div class="submenu-header">{{ t('移动到') }}</div>
+          <div class="menu-divider" role="separator" />
+          <div class="submenu-header" role="presentation">{{ t('移动到') }}</div>
           <div
             v-for="g in groups"
             :key="g"
+            role="menuitem"
             :class="['menu-item', { disabled: g === contextMenu.target.group }]"
             @click.stop="handleMoveToGroupAndHide(g)"
           >
             {{ g }}
           </div>
-          <div v-if="groups.length === 0" class="menu-item disabled">{{ t('暂无分组') }}</div>
+          <div v-if="groups.length === 0" role="menuitem" class="menu-item disabled">{{ t('暂无分组') }}</div>
         </div>
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleLoadConnectionsAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleLoadConnectionsAndHide()">
+        <AppIcon name="refresh" />
         {{ t('刷新') }}
       </div>
     </template>
     <template v-if="contextMenu.type === 'group'">
-      <div class="menu-item" @click="handleNewConnectionInNamedGroupAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleNewConnectionInNamedGroupAndHide()">
+        <AppIcon name="plus" />
         {{ t('新建连接') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleEditGroupAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleEditGroupAndHide()">
+        <AppIcon name="edit" />
         {{ t('编辑分组') }}
       </div>
-      <div class="menu-item danger" @click="handleDeleteGroupAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
+      <div role="menuitem" class="menu-item danger" @click="handleDeleteGroupAndHide()">
+        <AppIcon name="trash" />
         {{ t('删除分组') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleLoadConnectionsAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleLoadConnectionsAndHide()">
+        <AppIcon name="refresh" />
         {{ t('刷新') }}
       </div>
     </template>
     <template v-if="contextMenu.type === 'database'">
       <div
         v-if="!openedDatabases.includes(`${contextMenu.target.connection.name}_${contextMenu.target.database}`)"
+        role="menuitem"
         class="menu-item"
         @click="handleOpenDatabaseAndHide()"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-        </svg>
+        <AppIcon name="database" />
         {{ t('打开数据库') }}
       </div>
       <div
         v-if="openedDatabases.includes(`${contextMenu.target.connection.name}_${contextMenu.target.database}`)"
+        role="menuitem"
         class="menu-item"
         @click="handleCloseDatabaseAndHide()"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
+        <AppIcon name="power" />
         {{ t('关闭数据库') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleEditDatabaseAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleEditDatabaseAndHide()">
+        <AppIcon name="edit" />
         {{ t('编辑数据库') }}
       </div>
-      <div class="menu-item danger" @click="handleDeleteDatabaseAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
+      <div role="menuitem" class="menu-item danger" @click="handleDeleteDatabaseAndHide()">
+        <AppIcon name="trash" />
         {{ t('删除数据库') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleNewQueryForDatabaseAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleNewQueryForDatabaseAndHide()">
+        <AppIcon name="file-text" />
         {{ t('新建查询') }}
       </div>
-      <div class="menu-item" @click="handleOpenCreateTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-          <line x1="15" y1="14" x2="15" y2="20" />
-          <line x1="12" y1="17" x2="18" y2="17" />
-        </svg>
+      <div v-if="canUse('createTable')" role="menuitem" class="menu-item" @click="handleOpenCreateTableAndHide()">
+        <AppIcon name="table-plus" />
         {{ t('新建表') }}
       </div>
-      <div class="menu-item" @click="handleOpenSchemaDiffAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="18" rx="1" />
-          <rect x="14" y="3" width="7" height="18" rx="1" />
-          <line x1="10" y1="8" x2="14" y2="8" />
-          <line x1="10" y1="16" x2="14" y2="16" />
-        </svg>
+      <div v-if="canUse('schemaDiff')" role="menuitem" class="menu-item" @click="handleOpenSchemaDiffAndHide()">
+        <AppIcon name="columns" />
         {{ t('结构对比') }}
       </div>
-      <div class="menu-item" @click="handleRunSqlFileAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <polyline points="10 12 8 12 8 16" />
-          <polyline points="16 12 14 12 14 16" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleRunSqlFileAndHide()">
+        <AppIcon name="file-code" />
         {{ t('运行SQL文件') }}
       </div>
-      <div class="menu-item has-submenu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
+      <div v-if="canUse('backup')" role="menuitem" class="menu-item has-submenu">
+        <AppIcon name="download" />
         {{ t('转存储SQL文件') }}
-        <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-        <div class="submenu">
-          <div class="menu-item" @click.stop="handleDumpDatabaseStructureAndHide()">{{ t('结构和数据') }}</div>
-          <div class="menu-item" @click.stop="handleDumpDatabaseDataAndHide()">{{ t('仅数据') }}</div>
+        <AppIcon name="chevron-right" class="submenu-arrow" />
+        <div class="submenu" role="menu">
+          <div role="menuitem" class="menu-item" @click.stop="handleDumpDatabaseStructureAndHide()">
+            {{ t('结构和数据') }}
+          </div>
+          <div role="menuitem" class="menu-item" @click.stop="handleDumpDatabaseDataAndHide()">{{ t('仅数据') }}</div>
         </div>
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleRefreshDatabaseAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div role="menuitem" class="menu-item" @click="handleRefreshDatabaseAndHide()">
+        <AppIcon name="refresh" />
         {{ t('刷新') }}
       </div>
     </template>
     <template v-if="contextMenu.type === 'category'">
-      <div v-if="contextMenu.target.category === 'tables'" class="menu-item" @click="handleOpenCreateTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-          <line x1="15" y1="14" x2="15" y2="20" />
-          <line x1="12" y1="17" x2="18" y2="17" />
-        </svg>
+      <div
+        v-if="contextMenu.target.category === 'tables' && canUse('createTable')"
+        role="menuitem"
+        class="menu-item"
+        @click="handleOpenCreateTableAndHide()"
+      >
+        <AppIcon name="table-plus" />
         {{ t('新建表') }}
       </div>
-      <div v-if="contextMenu.target.category === 'tables'" class="menu-divider" />
-      <div class="menu-item" @click="handleRefreshCategoryAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
+      <div v-if="contextMenu.target.category === 'tables' && canUse('createTable')" class="menu-divider" />
+      <div role="menuitem" class="menu-item" @click="handleRefreshCategoryAndHide()">
+        <AppIcon name="refresh" />
         {{ t('刷新')
         }}{{
           contextMenu.target.category === 'tables'
@@ -318,90 +210,61 @@
       </div>
     </template>
     <template v-if="contextMenu.type === 'table'">
-      <div class="menu-item" @click="handleOpenTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleOpenTableAndHide()">
+        <AppIcon name="table" />
         {{ t('打开表') }}
       </div>
-      <div class="menu-item" @click="handleOpenTableDesignerAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path
-            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-          />
-        </svg>
+      <div v-if="canUse('tableDesigner')" role="menuitem" class="menu-item" @click="handleOpenTableDesignerAndHide()">
+        <AppIcon name="wrench" />
         {{ t('设计表') }}
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item danger" @click="handleDeleteTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
-        {{ t('删除表') }}
-      </div>
-      <div class="menu-item danger" @click="handleEmptyTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18" />
-          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-          <path d="M12 11v11" />
-          <line x1="8" y1="11" x2="8.01" y2="11" />
-          <line x1="16" y1="11" x2="16.01" y2="11" />
-        </svg>
-        {{ t('清空表') }}
-      </div>
-      <div class="menu-item danger" @click="handleTruncateTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18" />
-          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-          <rect x="8" y="11" width="8" height="10" />
-        </svg>
-        {{ t('截断表') }}
-      </div>
-      <div class="menu-divider" />
-      <div class="menu-item has-submenu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-        {{ t('复制表') }}
-        <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-        <div class="submenu">
-          <div class="menu-item" @click.stop="handleCopyTableStructureDataAndHide()">{{ t('结构和数据') }}</div>
-          <div class="menu-item" @click.stop="handleCopyTableStructureAndHide()">{{ t('仅结构') }}</div>
+      <template v-if="canUse('createTable')">
+        <div class="menu-divider" role="separator" />
+        <div role="menuitem" class="menu-item danger" @click="handleDeleteTableAndHide()">
+          <AppIcon name="trash" />
+          {{ t('删除表') }}
         </div>
-      </div>
-      <div class="menu-item has-submenu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
+        <div role="menuitem" class="menu-item danger" @click="handleEmptyTableAndHide()">
+          <AppIcon name="eraser" />
+          {{ t('清空表') }}
+        </div>
+        <div role="menuitem" class="menu-item danger" @click="handleTruncateTableAndHide()">
+          <AppIcon name="trash" />
+          {{ t('截断表') }}
+        </div>
+        <div class="menu-divider" role="separator" />
+        <div role="menuitem" class="menu-item has-submenu">
+          <AppIcon name="copy" />
+          {{ t('复制表') }}
+          <AppIcon name="chevron-right" class="submenu-arrow" />
+          <div class="submenu" role="menu">
+            <div role="menuitem" class="menu-item" @click.stop="handleCopyTableStructureDataAndHide()">
+              {{ t('结构和数据') }}
+            </div>
+            <div role="menuitem" class="menu-item" @click.stop="handleCopyTableStructureAndHide()">
+              {{ t('仅结构') }}
+            </div>
+          </div>
+        </div>
+      </template>
+      <div v-if="canUse('backup')" role="menuitem" class="menu-item has-submenu">
+        <AppIcon name="download" />
         {{ t('转储SQL文件') }}
-        <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-        <div class="submenu">
-          <div class="menu-item" @click.stop="handleDumpTableStructureDataAndHide()">{{ t('结构和数据') }}</div>
-          <div class="menu-item" @click.stop="handleDumpTableStructureAndHide()">{{ t('仅结构') }}</div>
+        <AppIcon name="chevron-right" class="submenu-arrow" />
+        <div class="submenu" role="menu">
+          <div role="menuitem" class="menu-item" @click.stop="handleDumpTableStructureDataAndHide()">
+            {{ t('结构和数据') }}
+          </div>
+          <div role="menuitem" class="menu-item" @click.stop="handleDumpTableStructureAndHide()">{{ t('仅结构') }}</div>
         </div>
       </div>
-      <div class="menu-divider" />
-      <div class="menu-item" @click="handleRenameTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-        </svg>
+      <div class="menu-divider" role="separator" />
+      <div v-if="canUse('createTable')" role="menuitem" class="menu-item" @click="handleRenameTableAndHide()">
+        <AppIcon name="pencil" />
         {{ t('重命名') }}
       </div>
-      <div class="menu-item" @click="handleRefreshTableAndHide()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
+      <div role="menuitem" class="menu-item" @click="handleRefreshTableAndHide()">
+        <AppIcon name="refresh" />
         {{ t('刷新') }}
       </div>
     </template>
@@ -410,9 +273,14 @@
 
 <script setup>
 import { t } from '@/i18n'
-import { inject } from 'vue'
+import { inject, nextTick, ref, watch } from 'vue'
+import { getEngineCapabilities } from '@shared/databaseEngines'
+import { focusFirstMenuItem, handleMenuKeydown } from '@/utils/menuKeyboard'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
+const menuRef = ref(null)
+
 const {
   contextMenu,
   groups,
@@ -435,6 +303,7 @@ const {
   handleEditDatabaseAndHide,
   handleEditGroupAndHide,
   handleEmptyTableAndHide,
+  hideContextMenu,
   handleLoadConnectionsAndHide,
   handleMoveToGroupAndHide,
   handleNewConnectionAndHide,
@@ -457,4 +326,20 @@ const {
   handleTruncateTableAndHide,
   openedDatabases
 } = databaseStore
+
+function canUse(capability) {
+  const engine = contextMenu.value.target?.connection?.engine
+  return getEngineCapabilities(engine)[capability] === true
+}
+
+watch(
+  () => contextMenu.value.show,
+  (show) => {
+    if (show) nextTick(() => focusFirstMenuItem(menuRef.value))
+  }
+)
+
+function onMenuKeydown(event) {
+  handleMenuKeydown(event, menuRef.value, hideContextMenu)
+}
 </script>

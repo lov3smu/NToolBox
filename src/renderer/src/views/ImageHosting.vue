@@ -42,11 +42,7 @@
               @drop.prevent="onDrop"
             >
               <div class="drop-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                  <path d="M12 16V4" />
-                  <path d="m7 9 5-5 5 5" />
-                  <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                </svg>
+                <AppIcon name="upload" :stroke-width="1.6" />
               </div>
               <div class="drop-title">
                 {{ dragging ? t('松开即可上传') : uploading ? t('正在上传图片…') : t('拖拽图片到这里，或点击选择') }}
@@ -89,11 +85,7 @@
                     @click="previewImage(task.url, task.name)"
                   >
                     <img v-if="task.url && !task.broken" :src="task.url" alt="" @error="task.broken = true" />
-                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <path d="m21 15-5-5L5 21" />
-                    </svg>
+                    <AppIcon v-else name="image" :stroke-width="1.6" />
                   </button>
                   <div class="task-info">
                     <span class="task-name" :title="task.name">{{ task.name }}</span>
@@ -118,10 +110,7 @@
                     :title="t('复制链接')"
                     @click="copyTask(task)"
                   >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
+                    <AppIcon name="copy" :size="14" />
                   </button>
                 </div>
               </div>
@@ -132,7 +121,7 @@
         <section class="panel history-panel">
           <div class="panel-header">
             <span class="panel-title">{{ t('上传记录') }}</span>
-            <span class="history-count">{{ history.length }}</span>
+            <span class="history-count">{{ historyTotal }}</span>
             <div class="panel-actions history-actions">
               <div class="segmented link-format">
                 <button
@@ -146,23 +135,20 @@
                   {{ format.label }}
                 </button>
               </div>
-              <button v-if="history.length" class="btn btn-danger btn-sm" @click="requestClearHistory">
+              <button v-if="historyTotal" class="btn btn-danger btn-sm" @click="requestClearHistory">
                 {{ t('清空') }}
               </button>
             </div>
           </div>
           <div class="panel-body history-body">
-            <div v-if="!history.length" class="panel-empty history-empty">
-              <span class="empty-state-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="m21 15-5-5L5 21" />
-                </svg>
-              </span>
-              <span class="empty-state-title">{{ t('暂无上传记录') }}</span>
-              <span class="empty-state-hint">{{ t('上传成功的图片会显示在这里，点击复制按钮即可获取链接') }}</span>
-            </div>
+            <EmptyState
+              v-if="!history.length"
+              bordered
+              class="history-empty"
+              icon="image"
+              :title="t('暂无上传记录')"
+              :description="t('上传成功的图片会显示在这里，点击复制按钮即可获取链接')"
+            />
             <div v-else class="history-list">
               <article v-for="record in history" :key="record.id" class="history-item">
                 <button
@@ -180,16 +166,12 @@
                     loading="lazy"
                     @error="record.broken = true"
                   />
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <path d="m21 15-5-5L5 21" />
-                  </svg>
+                  <AppIcon v-else name="image" :stroke-width="1.6" />
                 </button>
                 <div class="history-info">
                   <span class="history-name" :title="record.name">{{ record.name }}</span>
                   <span class="history-meta">
-                    {{ record.providerName || record.provider }} · {{ formatFileSize(record.size) }} ·
+                    {{ record.providerName || record.provider }} · {{ formatBytes(record.size) }} ·
                     {{ record.uploadedAt ? formatRelativeTime(record.uploadedAt) : t('未知时间') }}
                   </span>
                 </div>
@@ -200,38 +182,33 @@
                     :title="t('复制链接')"
                     @click="copyRecord(record)"
                   >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
+                    <AppIcon name="copy" :size="14" />
                   </button>
                   <button class="btn-icon btn-sm" :title="t('打开链接')" @click="openRecord(record)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
+                    <AppIcon name="external-link" size="14" />
                   </button>
                   <button
                     class="btn-icon btn-sm btn-icon-danger"
                     :title="t('删除记录')"
                     @click="requestRemoveRecord(record)"
                   >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4h8v2" />
-                      <path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v5M14 11v5" />
-                    </svg>
+                    <AppIcon name="trash" :size="14" />
                   </button>
                 </div>
               </article>
+              <button
+                v-if="historyHasMore"
+                class="btn btn-sm history-more"
+                :disabled="historyLoading"
+                @click="loadMoreHistory"
+              >
+                {{ historyLoading ? t('加载中…') : t('加载更多') }}
+              </button>
             </div>
           </div>
         </section>
       </div>
     </div>
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
     <MessageDialog
       :visible="confirmVisible"
       type="confirm"
@@ -247,13 +224,13 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
-import Toast from '@/components/Toast.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import SettingSelect from '@/components/settings/SettingSelect.vue'
 import { previewImage, useToast } from '@/composables'
 import { getLocale, t } from '@/i18n'
-import { copyToClipboard } from '@/utils'
-import { formatFileSize, formatRelativeTime } from '@/utils/format'
+import { copyToClipboard } from '@/utils/clipboard'
+import { formatBytes } from '@shared/format'
+import { formatRelativeTime } from '@/utils/format'
 import {
   getPathForFile,
   imageHostClearHistory,
@@ -279,15 +256,20 @@ import {
   normalizeImageHostSettings
 } from '@shared/imageHosts'
 
+import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
 const providers = IMAGE_HOST_PROVIDERS
 const linkFormats = IMAGE_HOST_LINK_FORMATS
 const maxSizeLabel = computed(() => `${normalizeImageHostMaxFileMb(settings.value.maxFileMb)}MB`)
 const imagePathPattern = new RegExp(`\\.(${IMAGE_HOST_EXTENSIONS.join('|')})$`, 'i')
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
+const { showSuccess, showError, showWarning, showInfo } = useToast()
 
 const settings = ref(createDefaultImageHostSettings())
 const history = ref([])
+const historyTotal = ref(0)
+const historyHasMore = ref(false)
+const historyLoading = ref(false)
 const tasks = ref([])
 const loading = ref(true)
 const uploading = ref(false)
@@ -342,10 +324,28 @@ async function applySettings(next) {
   settings.value = normalizeImageHostSettings(next)
 }
 
+function applyHistoryPage(page, append = false) {
+  if (!page || !Array.isArray(page.items)) return
+  history.value = append ? [...history.value, ...page.items] : page.items
+  historyTotal.value = Number(page.total) || 0
+  historyHasMore.value = page.hasMore === true
+}
+
 async function loadState() {
-  const state = await imageHostState()
+  const state = await imageHostState({ offset: 0 })
   if (state?.settings) await applySettings(state.settings)
-  history.value = Array.isArray(state?.history) ? state.history : []
+  applyHistoryPage(state?.history)
+}
+
+async function loadMoreHistory() {
+  if (historyLoading.value || !historyHasMore.value) return
+  historyLoading.value = true
+  try {
+    const state = await imageHostState({ offset: history.value.length })
+    applyHistoryPage(state?.history, true)
+  } finally {
+    historyLoading.value = false
+  }
 }
 
 function updateTask(id, patch) {
@@ -377,13 +377,14 @@ async function persistSettings(options = {}) {
 
   if (response?.success) {
     await applySettings(response.settings)
-    if (Array.isArray(response.history)) history.value = response.history
+    applyHistoryPage(response.history)
     if (options.successMessage) showInfo(options.successMessage)
     return true
   }
 
-  const state = await imageHostState()
+  const state = await imageHostState({ offset: 0 })
   if (state?.settings) await applySettings(state.settings)
+  applyHistoryPage(state?.history)
   showError(t('保存图床配置失败'))
   return false
 }
@@ -453,7 +454,7 @@ function requestRemoveRecord(record) {
 async function removeRecord(id) {
   const response = await imageHostRemoveHistory(id)
   if (response?.success) {
-    history.value = response.history
+    applyHistoryPage(response.history)
     showInfo(t('已删除该条上传记录'))
   } else {
     showError(t('删除记录失败'))
@@ -461,7 +462,7 @@ async function removeRecord(id) {
 }
 
 function requestClearHistory() {
-  if (!history.value.length) return
+  if (!historyTotal.value) return
   pendingConfirm.value = {
     kind: 'clear',
     message: t('确定要清空全部上传记录吗？该操作不会删除图床上的图片。')
@@ -471,7 +472,7 @@ function requestClearHistory() {
 async function clearHistory() {
   const response = await imageHostClearHistory()
   if (response?.success) {
-    history.value = response.history
+    applyHistoryPage(response.history)
     showInfo(t('已清空上传记录'))
   } else {
     showError(t('清空记录失败'))
@@ -527,7 +528,7 @@ async function startUpload(paths) {
       }
     })
 
-    if (Array.isArray(response?.history)) history.value = response.history
+    applyHistoryPage(response?.history)
 
     const successCount = results.filter((result) => result?.success).length
     if (successCount > 0) {
@@ -570,7 +571,7 @@ async function uploadClipboard() {
       }
     }
 
-    if (Array.isArray(response?.history)) history.value = response.history
+    applyHistoryPage(response?.history)
   } catch (error) {
     updateTask(task.id, { status: 'error', error: error?.message || t('上传失败') })
     showError(error?.message || t('上传失败'))
@@ -798,7 +799,7 @@ onUnmounted(() => {
   justify-content: center;
   width: 50px;
   height: 50px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent-color);
 }
@@ -896,7 +897,7 @@ onUnmounted(() => {
   min-width: 20px;
   height: 18px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
   color: var(--text-tertiary);
@@ -933,7 +934,7 @@ onUnmounted(() => {
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface-muted);
   color: var(--text-tertiary);
 }
@@ -977,7 +978,7 @@ button.history-thumb:not(:disabled):hover {
 
 button.task-thumb:focus-visible,
 button.history-thumb:focus-visible {
-  outline: 2px solid rgba(var(--accent-rgb), 0.55);
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
 
@@ -1018,7 +1019,7 @@ button.history-thumb:focus-visible {
   gap: 5px;
   flex-shrink: 0;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   white-space: nowrap;
 }
@@ -1069,7 +1070,7 @@ button.history-thumb:focus-visible {
   min-height: 220px;
 }
 
-.history-empty .empty-state-hint {
+.history-empty :deep(.empty-state-hint) {
   max-width: 240px;
 }
 
@@ -1077,6 +1078,11 @@ button.history-thumb:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.history-more {
+  align-self: center;
+  margin: 4px 0 2px;
 }
 
 .history-item {
@@ -1119,7 +1125,7 @@ button.history-thumb:focus-visible {
   opacity: 1;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 960px) {
   .image-host-grid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:

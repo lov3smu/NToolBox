@@ -27,55 +27,48 @@
       <section class="hero-panel">
         <span class="hero-glow" aria-hidden="true" />
         <div class="hero-copy">
-          <span class="hero-badge">{{ t('一站式开发工具箱') }}</span>
-          <h2>{{ t('常用工具，一个入口就够了') }}</h2>
-          <p>{{ t('AI 助手、数据库客户端、图床与内容排版，开发日常在一个窗口完成。') }}</p>
-          <div class="hero-tags">
-            <span class="hero-tag">{{ t('Agent 闭环') }}</span>
-            <span class="hero-tag">{{ t('多模型 AI') }}</span>
-            <span class="hero-tag">{{ t('MCP 连接器') }}</span>
-            <span class="hero-tag">{{ t('中英双语') }}</span>
+          <div class="hero-heading">
+            <span class="hero-badge">{{ t('一站式开发工具箱') }}</span>
+            <h2>{{ t('常用工具，一个入口就够了') }}</h2>
           </div>
+          <p>{{ t('AI 助手、数据库客户端、图床与内容排版，开发日常在一个窗口完成。') }}</p>
           <div class="hero-actions">
-            <button type="button" class="btn btn-primary" @click="navigateTo('/chat')">{{ t('打开 AI 助手') }}</button>
-            <button type="button" class="btn btn-secondary" @click="navigateTo('/database')">
+            <button type="button" class="btn btn-primary btn-sm" @click="navigateTo('/chat')">
+              {{ t('打开 AI 助手') }}
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="navigateTo('/database')">
               {{ t('数据库客户端') }}
             </button>
-            <button type="button" class="btn btn-secondary" @click="navigateTo('/wechat-formatter')">
+            <button type="button" class="btn btn-secondary btn-sm" @click="navigateTo('/wechat-formatter')">
               {{ t('开始文章排版') }}
+            </button>
+            <button
+              type="button"
+              class="hero-continue"
+              :title="t(heroTool.description)"
+              @click="navigateTo(heroTool.path)"
+            >
+              <span class="hero-continue-label">{{ recentTools.length ? t('继续上次使用') : t('推荐上手') }}</span>
+              <span class="hero-continue-icon" v-html="heroTool.icon" />
+              <span class="hero-continue-name">{{ t(heroTool.name) }}</span>
+              <span class="hero-continue-arrow" v-html="ARROW_ICON" />
             </button>
           </div>
         </div>
-        <button type="button" class="hero-continue" @click="navigateTo(heroTool.path)">
-          <span class="hero-continue-label">{{ recentTools.length ? t('继续上次使用') : t('推荐上手') }}</span>
-          <span class="hero-continue-main">
-            <span class="hero-continue-icon" v-html="heroTool.icon" />
-            <span class="hero-continue-info">
-              <strong>{{ t(heroTool.name) }}</strong>
-              <span>{{ t(heroTool.description) }}</span>
-            </span>
-            <span class="hero-continue-arrow" v-html="ARROW_ICON" />
-          </span>
-        </button>
-      </section>
-
-      <section class="stats-section">
-        <div class="stats-grid">
+        <div class="hero-stats">
           <button
             v-for="stat in stats"
             :key="stat.key"
             type="button"
-            class="stat-card"
+            class="hero-stat"
             :class="stat.tone"
-            :title="stat.actionLabel"
+            :title="`${stat.actionLabel} · ${stat.hint}`"
+            :aria-label="stat.actionLabel"
             @click="stat.action()"
           >
-            <span class="stat-icon" v-html="stat.icon" />
-            <div class="stat-info">
-              <span class="stat-label">{{ stat.label }}</span>
-              <span class="stat-value">{{ stat.value }}</span>
-              <span class="stat-hint">{{ stat.hint }}</span>
-            </div>
+            <span class="hero-stat-icon" v-html="stat.icon" />
+            <span class="hero-stat-value">{{ stat.value }}</span>
+            <span class="hero-stat-label">{{ stat.label }}</span>
           </button>
         </div>
       </section>
@@ -121,7 +114,7 @@
         </div>
         <div v-else class="recent-empty">
           <span>{{ t('暂无最近使用记录') }}</span>
-          <span>{{ t('从下方选择一个工具开始使用吧') }}</span>
+          <span class="recent-empty-hint">{{ t('从下方选择一个工具开始使用吧') }}</span>
           <button type="button" class="btn btn-secondary btn-sm recent-empty-action" @click="emit('open-search')">
             {{ t('搜索工具') }}
           </button>
@@ -175,6 +168,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getConfig, getPackageInfo, onConfigChanged, openSettings, platform, skillsList } from '@/api'
 import { t, getLocale } from '@/i18n'
+import { iconSvg } from '@/icons'
 import {
   MARKET_PATH,
   SETTINGS_PATH,
@@ -185,7 +179,8 @@ import {
   normalizeRecentToolsLimit,
   setRecentToolsLimit,
   tools as allTools
-} from '@shared/tools'
+} from '@shared/navTools'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
 
 const emit = defineEmits(['open-search'])
 
@@ -200,12 +195,30 @@ const TOOL_GROUPS = [
     }
   },
   {
-    key: 'utilities',
+    key: 'dev',
     get title() {
-      return t('日常工具')
+      return t('开发工具')
     },
     get description() {
-      return t('转换、生成与内容处理')
+      return t('格式转换、解析与请求调试')
+    }
+  },
+  {
+    key: 'content',
+    get title() {
+      return t('文本与内容')
+    },
+    get description() {
+      return t('写作、排版与模板复用')
+    }
+  },
+  {
+    key: 'system',
+    get title() {
+      return t('系统与资源')
+    },
+    get description() {
+      return t('剪贴板、密码与系统诊断')
     }
   },
   {
@@ -219,21 +232,12 @@ const TOOL_GROUPS = [
   }
 ]
 const PICK_TOOL_PATHS = ['/image-hosting', '/markdown-editor', '/json-parser', '/clipboard']
-const SEARCH_ACCELERATOR = 'CmdOrCtrl+K'
 
-const SEARCH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-  <circle cx="11" cy="11" r="7"/>
-  <line x1="20" y1="20" x2="16.65" y2="16.65"/>
-</svg>`
+const SEARCH_ICON = iconSvg('search')
 
-const SETTINGS_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-  <circle cx="12" cy="12" r="3"/>
-  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-</svg>`
+const SETTINGS_ICON = iconSvg('settings')
 
-const ARROW_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-  <path d="M5 12h14M13 6l6 6-6 6"/>
-</svg>`
+const ARROW_ICON = iconSvg('arrow-right')
 
 const router = useRouter()
 const isMac = platform === 'darwin'
@@ -286,12 +290,7 @@ const stats = computed(() => [
     tone: 'accent',
     actionLabel: t('搜索工具'),
     action: () => emit('open-search'),
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-      <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-      <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-      <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-    </svg>`
+    icon: iconSvg('layout-grid')
   },
   {
     key: 'skills',
@@ -306,11 +305,7 @@ const stats = computed(() => [
     tone: 'info',
     actionLabel: t('管理技能'),
     action: () => openSettings('extensions'),
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="m12 2 9 5-9 5-9-5 9-5z"/>
-      <path d="m3 12 9 5 9-5"/>
-      <path d="m3 17 9 5 9-5"/>
-    </svg>`
+    icon: iconSvg('layers')
   },
   {
     key: 'connectors',
@@ -320,11 +315,7 @@ const stats = computed(() => [
     tone: 'success',
     actionLabel: t('管理连接器'),
     action: () => openSettings('extensions'),
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M9 7V3M15 7V3"/>
-      <path d="M7 7h10v4a5 5 0 0 1-5 5 5 5 0 0 1-5-5z"/>
-      <path d="M12 16v5"/>
-    </svg>`
+    icon: iconSvg('connector')
   },
   {
     key: 'database',
@@ -334,11 +325,7 @@ const stats = computed(() => [
     tone: 'warning',
     actionLabel: t('打开数据库客户端'),
     action: () => router.push('/database'),
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <ellipse cx="12" cy="5" rx="9" ry="3"/>
-      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-    </svg>`
+    icon: iconSvg('database')
   },
   {
     key: 'ai',
@@ -348,10 +335,7 @@ const stats = computed(() => [
     tone: 'neutral',
     actionLabel: t('配置模型服务商'),
     action: () => openSettings('api'),
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>
-      <path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/>
-    </svg>`
+    icon: iconSvg('sparkles')
   }
 ])
 
@@ -359,7 +343,9 @@ const platformLabel = computed(() => {
   return { darwin: 'macOS', win32: 'Windows', linux: 'Linux' }[platform] || 'Web'
 })
 
-const searchShortcut = computed(() => formatAccelerator(SEARCH_ACCELERATOR))
+const searchShortcut = computed(() =>
+  formatAccelerator(config.value?.app?.shortcuts?.global_search || DEFAULT_SHORTCUT_ACTIONS.global_search)
+)
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -541,12 +527,12 @@ onUnmounted(() => {
 
 .dash-search kbd {
   padding: 2px 6px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: calc(10px * var(--font-scale));
   color: var(--text-tertiary);
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .btn-inline-icon {
@@ -559,7 +545,7 @@ onUnmounted(() => {
 
 .tool-card:focus-visible,
 .recent-card:focus-visible,
-.stat-card:focus-visible,
+.hero-stat:focus-visible,
 .pick-card:focus-visible,
 .hero-continue:focus-visible,
 .dash-search:focus-visible {
@@ -575,7 +561,7 @@ onUnmounted(() => {
 }
 
 .dashboard-main section {
-  margin-bottom: 26px;
+  margin-bottom: 20px;
 }
 
 .dashboard-main section:last-child {
@@ -586,9 +572,8 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
-  padding: 24px;
+  padding: 16px 20px;
   overflow: hidden;
   background:
     radial-gradient(circle at 8% 12%, rgba(var(--accent-rgb), 0.24), transparent 46%),
@@ -611,70 +596,64 @@ onUnmounted(() => {
 .hero-copy {
   position: relative;
   z-index: 1;
+  flex: 1 1 0;
   min-width: 0;
+}
+
+.hero-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .hero-badge {
   display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--accent-rgb), 0.14);
   color: var(--accent-color);
   font-size: var(--font-size-xs);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .hero-copy h2 {
-  margin: 10px 0 6px;
-  font-size: calc(22px * var(--font-scale));
+  margin: 0;
+  font-size: calc(20px * var(--font-scale));
   font-weight: 700;
   line-height: 1.3;
   color: var(--text-primary);
 }
 
 .hero-copy p {
-  max-width: 480px;
+  max-width: 520px;
+  margin-top: 6px;
   font-size: var(--font-size-sm);
   line-height: 1.6;
   color: var(--text-secondary);
 }
 
-.hero-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.hero-tag {
-  padding: 2px 8px;
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  background: var(--surface-muted);
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-}
-
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .hero-continue {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-  width: 278px;
-  padding: 12px 14px;
-  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  height: var(--control-height-sm);
+  padding: 0 10px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -684,58 +663,36 @@ onUnmounted(() => {
 .hero-continue:hover {
   background: var(--glass-bg-hover);
   border-color: rgba(var(--accent-rgb), 0.45);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
 }
 
 .hero-continue-label {
+  flex-shrink: 0;
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-}
-
-.hero-continue-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
 }
 
 .hero-continue-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--primary-gradient);
   color: var(--text-inverse);
 }
 
 .hero-continue-icon :deep(svg) {
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
+  width: 12px;
+  height: 12px;
 }
 
-.hero-continue-info {
-  display: flex;
-  flex-direction: column;
+.hero-continue-name {
   min-width: 0;
-  flex: 1;
-}
-
-.hero-continue-info strong {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.hero-continue-info span {
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -757,24 +714,23 @@ onUnmounted(() => {
   transform: translateX(2px);
 }
 
-.stats-section {
-  container-type: inline-size;
-}
-
-.stats-grid {
+.hero-stats {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  flex: 0 0 540px;
 }
 
-.stat-card {
+.hero-stat {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 14px;
-  background: var(--panel);
-  border: 1px solid var(--border-color);
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: inherit;
   font: inherit;
@@ -783,97 +739,72 @@ onUnmounted(() => {
   transition: var(--transition-fast);
 }
 
-.stat-card:hover {
+.hero-stat:hover {
+  background: var(--glass-bg-hover);
   border-color: rgba(var(--accent-rgb), 0.32);
-  box-shadow: var(--shadow-sm);
 }
 
-.stat-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+.hero-stat-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.stat-icon :deep(svg) {
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
+.hero-stat-icon :deep(svg) {
+  width: 14px;
+  height: 14px;
 }
 
-.stat-card.accent .stat-icon {
+.hero-stat.accent .hero-stat-icon {
   color: var(--accent-color);
   background: rgba(var(--accent-rgb), 0.12);
 }
 
-.stat-card.success .stat-icon {
+.hero-stat.success .hero-stat-icon {
   color: var(--success-color);
   background: rgba(var(--success-rgb), 0.12);
 }
 
-.stat-card.warning .stat-icon {
+.hero-stat.warning .hero-stat-icon {
   color: var(--warning-color);
   background: rgba(var(--warning-rgb), 0.14);
 }
 
-.stat-card.neutral .stat-icon {
+.hero-stat.neutral .hero-stat-icon {
   color: var(--neutral-color);
   background: rgba(var(--neutral-rgb), 0.14);
 }
 
-.stat-card.info .stat-icon {
+.hero-stat.info .hero-stat-icon {
   color: var(--info-color);
   background: rgba(var(--info-rgb), 0.12);
 }
 
-.stat-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.stat-label {
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
-}
-
-.stat-value {
-  font-size: var(--font-size-xl);
+.hero-stat-value {
+  font-size: var(--font-size-base);
   font-weight: 650;
   line-height: 1.2;
   color: var(--text-primary);
 }
 
-.stat-hint {
+.hero-stat-label {
+  min-width: 0;
   font-size: var(--font-size-xs);
-  line-height: 1.35;
   color: var(--text-tertiary);
-  word-break: keep-all;
-}
-
-/* 容器无法容纳五张等宽卡片时改为 3+2 两行，避免第五张卡片单独落单 */
-@container (max-width: 852px) {
-  .stats-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .stat-card {
-    grid-column: span 2;
-  }
-
-  .stat-card:nth-child(4),
-  .stat-card:nth-child(5) {
-    grid-column: span 3;
-  }
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .section-head {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .section-head h2 {
@@ -892,7 +823,7 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--accent-color);
   background: rgba(var(--accent-rgb), 0.1);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .section-meta {
@@ -907,7 +838,7 @@ onUnmounted(() => {
 .picks-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 @container (min-width: 996px) {
@@ -919,9 +850,9 @@ onUnmounted(() => {
 .pick-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.09), transparent 70%), var(--panel);
   border: 1px solid rgba(var(--accent-rgb), 0.22);
   border-radius: var(--radius-md);
@@ -942,10 +873,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--primary-gradient);
   color: var(--text-inverse);
 }
@@ -963,7 +894,7 @@ onUnmounted(() => {
 }
 
 .pick-name {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-primary);
@@ -983,15 +914,15 @@ onUnmounted(() => {
 .recent-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .recent-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: var(--panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -1012,7 +943,7 @@ onUnmounted(() => {
 .recent-icon {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--primary-gradient);
   display: flex;
   align-items: center;
@@ -1052,10 +983,9 @@ onUnmounted(() => {
 
 .recent-empty {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 20px;
+  gap: 10px;
+  padding: 9px 14px;
   color: var(--text-tertiary);
   font-size: var(--font-size-sm);
   background: var(--content-bg);
@@ -1063,22 +993,28 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
 }
 
+.recent-empty-hint {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-xs);
+}
+
 .recent-empty-action {
-  margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .tools-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .tool-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: var(--panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -1097,10 +1033,10 @@ onUnmounted(() => {
 }
 
 .tool-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: var(--primary-gradient);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1126,7 +1062,7 @@ onUnmounted(() => {
   font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1143,12 +1079,12 @@ onUnmounted(() => {
 .tool-kbd {
   flex-shrink: 0;
   padding: 2px 6px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: calc(10px * var(--font-scale));
   color: var(--text-tertiary);
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .tool-card:hover .tool-kbd,
@@ -1182,46 +1118,48 @@ onUnmounted(() => {
   background: var(--success-color);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1280px) {
   .hero-panel {
     flex-direction: column;
     align-items: stretch;
+    gap: 16px;
   }
 
-  .hero-continue {
-    width: 100%;
+  .hero-stats {
+    flex: none;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > * {
+:is(.hero-stats, .picks-grid, .recent-grid) > * {
   animation: card-in var(--motion-base) var(--motion-ease) backwards;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(1) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(1) {
   animation-delay: 0ms;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(2) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(2) {
   animation-delay: 20ms;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(3) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(3) {
   animation-delay: 40ms;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(4) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(4) {
   animation-delay: 60ms;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(5) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(5) {
   animation-delay: 80ms;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(6) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(6) {
   animation-delay: 100ms;
 }
 
-:is(.stats-grid, .picks-grid, .recent-grid) > :nth-child(n + 7) {
+:is(.hero-stats, .picks-grid, .recent-grid) > :nth-child(n + 7) {
   animation-delay: 120ms;
 }
 
@@ -1249,7 +1187,20 @@ onUnmounted(() => {
   }
 
   .hero-panel {
-    padding: 18px;
+    padding: 16px;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recent-empty {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .recent-empty-action {
+    margin-left: auto;
   }
 
   .dashboard-footer {

@@ -1,0 +1,69 @@
+{
+  "name": "run-command",
+  "version": "1.0.0",
+  "description": "在当前工作区内运行受限的验证命令并返回退出码与输出，用于执行测试、类型检查、lint 和 git 只读查询。命令与参数受白名单约束，不能安装依赖或修改 git 历史；每次调用都必须经用户审批，支持超时终止与输出截断。",
+  "author": "system",
+  "type": "builtin",
+  "category": "code",
+  "tags": ["命令", "执行", "测试", "验证", "lint"],
+  "icon": "terminal",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "type": "string",
+        "enum": [
+          "npm",
+          "pnpm",
+          "yarn",
+          "node",
+          "tsc",
+          "eslint",
+          "prettier",
+          "vitest",
+          "jest",
+          "git",
+          "python",
+          "python3",
+          "pytest",
+          "ruff",
+          "mypy",
+          "cargo",
+          "go",
+          "dotnet"
+        ],
+        "description": "要运行的可执行命令（仅限白名单内的命令行工具）"
+      },
+      "args": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "命令参数数组，例如 [\"test\"] 或 [\"run\", \"lint\"]；不需要引号，工具会自动转义"
+      },
+      "timeout_ms": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 100000,
+        "default": 60000,
+        "description": "超时时间（毫秒），超时后终止整个命令"
+      }
+    },
+    "required": ["command"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "command: npm, args: [\"test\"]",
+      "output": "运行 npm test，返回退出码与测试输出"
+    },
+    {
+      "input": "command: git, args: [\"status\", \"--short\"]",
+      "output": "查看当前工作区的改动状态"
+    },
+    {
+      "input": "command: tsc, args: [\"--noEmit\"]",
+      "output": "运行类型检查并返回错误列表"
+    }
+  ]
+}

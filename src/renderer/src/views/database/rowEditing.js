@@ -1,11 +1,15 @@
-export function quoteIdentifier(name) {
-  return `\`${String(name).replace(/`/g, '``')}\``
+export function quoteIdentifier(name, engine = 'mysql') {
+  const value = String(name)
+  if (engine === 'mysql') return `\`${value.replace(/`/g, '``')}\``
+  return `"${value.replace(/"/g, '""')}"`
 }
 
-export function escapeSqlValue(value) {
+export function escapeSqlValue(value, engine = 'mysql') {
   if (value === null || value === undefined) return 'NULL'
   if (typeof value === 'number' || typeof value === 'bigint') return String(value)
-  return `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`
+  const text = String(value)
+  const escaped = engine === 'mysql' ? text.replace(/\\/g, '\\\\').replace(/'/g, "''") : text.replace(/'/g, "''")
+  return `'${escaped}'`
 }
 
 export function coerceValue(column, raw) {
@@ -53,23 +57,47 @@ export function keysForRow(keys, row) {
   return result
 }
 
-export function buildPendingSql({ database, tableName, rowEdits = {}, rowDeletes = {}, rowInserts = [] }) {
-  const tableRef = `${quoteIdentifier(database)}.${quoteIdentifier(tableName)}`
+function tableRefFor(database, tableName, engine) {
+  const table = quoteIdentifier(tableName, engine)
+  if (engine === 'mysql' && database) {
+    return `${quoteIdentifier(database, engine)}.${table}`
+  }
+  return table
+}
+
+function equalityOperator(engine) {
+  if (engine === 'mysql') return '<=>'
+  if (engine === 'postgres') return 'IS NOT DISTINCT FROM'
+  return 'IS'
+}
+
+export function buildPendingSql({
+  database,
+  tableName,
+  rowEdits = {},
+  rowDeletes = {},
+  rowInserts = [],
+  engine = 'mysql'
+}) {
+  const tableRef = tableRefFor(database, tableName, engine)
+  const equals = equalityOperator(engine)
   const lines = []
 
   for (const entry of Object.values(rowEdits)) {
     const fields = Object.entries(entry.values || {})
     if (!fields.length) continue
-    const setSql = fields.map(([field, value]) => `${quoteIdentifier(field)} = ${escapeSqlValue(value)}`).join(', ')
+    const setSql = fields
+      .map(([field, value]) => `${quoteIdentifier(field, engine)} = ${escapeSqlValue(value, engine)}`)
+      .join(', ')
     const whereSql = Object.entries(entry.keys || {})
-      .map(([field, value]) => `${quoteIdentifier(field)} <=> ${escapeSqlValue(value)}`)
+      .map(([field, value]) => `${quoteIdentifier(field, engine)} ${equals} ${escapeSqlValue(value, engine)}`)
       .join(' AND ')
     lines.push(`UPDATE ${tableRef} SET ${setSql} WHERE ${whereSql};`)
   }
 
   for (const keys of Object.values(rowDeletes)) {
     const whereSql = Object.entries(keys || {})
-      .map(([field, value]) => `${quoteIdentifier(field)} <=> ${escapeSqlValue(value)}`)
+      .map(([field, value]) => `${quoteIdentifier(field, engine)} ${equals} ${escapeSqlValue(value, engine)}`)
       .join(' AND ')
     lines.push(`DELETE FROM ${tableRef} WHERE ${whereSql};`)
   }
@@ -77,13 +105,15 @@ export function buildPendingSql({ database, tableName, rowEdits = {}, rowDeletes
   for (const draft of rowInserts) {
     const fields = Object.entries(draft.values || {}).filter(([, value]) => value !== '' && value !== undefined)
     if (!fields.length) {
-      lines.push(`INSERT INTO ${tableRef} () VALUES ();`)
+      lines.push(
+        engine === 'mysql' ? `INSERT INTO ${tableRef} () VALUES ();` : `INSERT INTO ${tableRef} DEFAULT VALUES;`
+      )
       continue
     }
     lines.push(
-      `INSERT INTO ${tableRef} (${fields.map(([field]) => quoteIdentifier(field)).join(', ')}) VALUES (${fields
-        .map(([, value]) => escapeSqlValue(value))
-        .join(', ')});`
+      `INSERT INTO ${tableRef} (${fields
+        .map(([field]) => quoteIdentifier(field, engine))
+        .join(', ')}) VALUES (${fields.map(([, value]) => escapeSqlValue(value, engine)).join(', ')});`
     )
   }
 

@@ -2,43 +2,27 @@
   <PageLayout tool-path="/clipboard">
     <template #actions>
       <button class="btn btn-secondary btn-sm" @click="togglePause">
-        <svg v-if="paused" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <path d="M8 5v14l11-7z" />
-        </svg>
-        <svg v-else viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
-        </svg>
+        <AppIcon :name="paused ? 'play' : 'pause'" />
         {{ paused ? t('恢复记录') : t('暂停记录') }}
       </button>
       <button class="btn btn-danger btn-sm" :disabled="entries.length === 0" @click="clearVisible = true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-        </svg>
+        <AppIcon name="trash" />
         {{ t('清空历史') }}
       </button>
     </template>
 
     <div class="page-body clipboard-page">
       <div v-if="paused" class="clipboard-banner">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="13" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
+        <AppIcon name="info" />
         {{ t('剪贴板记录已暂停，恢复后才会记录新的复制内容。') }}
       </div>
 
       <div class="clipboard-toolbar">
         <div class="clipboard-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
+          <AppIcon name="search" />
           <input v-model="query" type="text" :placeholder="t('搜索剪贴板内容')" spellcheck="false" />
           <button v-if="query" type="button" class="clipboard-search-clear" :title="t('清除搜索')" @click="query = ''">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
 
@@ -58,6 +42,87 @@
 
         <span class="clipboard-summary">{{ t('共 {count} 条', { count: entries.length }) }}</span>
       </div>
+
+      <section class="clipboard-snippets">
+        <div class="snippet-head">
+          <span class="snippet-title">{{ t('片段') }}</span>
+          <span class="snippet-count">{{ snippets.length }}/{{ SNIPPET_LIMITS.max }}</span>
+          <span class="snippet-hint">{{ t('固定常用文本，点击复制，或发送到任意工具') }}</span>
+          <span class="snippet-spacer" />
+          <button type="button" class="btn btn-secondary btn-sm" @click="openSnippetEditor(null)">
+            <AppIcon name="plus" />
+            {{ t('新建片段') }}
+          </button>
+        </div>
+
+        <div v-if="editorVisible" class="snippet-editor">
+          <div class="snippet-editor-row">
+            <AppInput
+              v-model="editorName"
+              class="snippet-editor-name"
+              :placeholder="t('片段名称（默认取首行）')"
+              spellcheck="false"
+            />
+            <span class="snippet-spacer" />
+            <button type="button" class="btn btn-secondary btn-sm" @click="closeSnippetEditor">{{ t('取消') }}</button>
+            <button type="button" class="btn btn-primary btn-sm" :disabled="!editorText.trim()" @click="saveSnippet">
+              {{ editingId ? t('保存修改') : t('保存片段') }}
+            </button>
+          </div>
+          <AppTextarea
+            v-model="editorText"
+            class="snippet-editor-text"
+            :placeholder="t('片段内容')"
+            spellcheck="false"
+          />
+        </div>
+
+        <div v-if="visibleSnippets.length" class="snippet-list">
+          <article
+            v-for="snippet in visibleSnippets"
+            :key="snippet.id"
+            class="snippet-card"
+            role="button"
+            tabindex="0"
+            :title="t('点击复制片段内容')"
+            @click="copySnippet(snippet)"
+            @keydown.enter.prevent="copySnippet(snippet)"
+          >
+            <div class="snippet-card-body">
+              <span class="snippet-name">{{ snippet.name }}</span>
+              <span class="snippet-text">{{ previewText(snippet.text) }}</span>
+            </div>
+            <div class="snippet-actions" @click.stop>
+              <button type="button" :title="t('复制')" :aria-label="t('复制')" @click="copySnippet(snippet)">
+                <AppIcon name="copy" />
+              </button>
+              <button
+                type="button"
+                :title="t('发送到…')"
+                :aria-label="t('发送到…')"
+                @click="openSendMenu($event, snippetResource(snippet))"
+              >
+                <AppIcon name="shuffle" />
+              </button>
+              <button type="button" :title="t('编辑')" :aria-label="t('编辑')" @click="openSnippetEditor(snippet)">
+                <AppIcon name="edit" />
+              </button>
+              <button
+                type="button"
+                class="danger"
+                :title="t('删除')"
+                :aria-label="t('删除')"
+                @click="removeSnippet(snippet)"
+              >
+                <AppIcon name="trash" />
+              </button>
+            </div>
+          </article>
+        </div>
+        <p v-else-if="!editorVisible" class="snippet-empty">
+          {{ query.trim() ? t('没有匹配的片段') : t('还没有片段，点「新建片段」保存常用文本') }}
+        </p>
+      </section>
 
       <div v-if="visibleEntries.length" class="clipboard-list">
         <article
@@ -86,10 +151,25 @@
 
           <div class="clipboard-actions" @click.stop>
             <button type="button" :title="t('复制')" :aria-label="t('复制')" @click="copyEntry(entry)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="12" height="12" rx="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
+              <AppIcon name="copy" />
+            </button>
+            <button
+              v-if="entry.type === 'text'"
+              type="button"
+              :title="t('发送到…')"
+              :aria-label="t('发送到…')"
+              @click="openSendMenu($event, entryResource(entry))"
+            >
+              <AppIcon name="shuffle" />
+            </button>
+            <button
+              v-if="entry.type === 'text'"
+              type="button"
+              :title="t('保存为片段')"
+              :aria-label="t('保存为片段')"
+              @click="openSnippetEditor(null, entry)"
+            >
+              <AppIcon name="bookmark" />
             </button>
             <button
               type="button"
@@ -98,32 +178,27 @@
               :class="{ active: entry.pinned }"
               @click="togglePin(entry)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 17v5M9 3h6l-1 7 3 3v2H7v-2l3-3z" />
-              </svg>
+              <AppIcon name="pin" />
             </button>
             <button type="button" class="danger" :title="t('删除')" :aria-label="t('删除')" @click="removeEntry(entry)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" />
-              </svg>
+              <AppIcon name="trash" />
             </button>
           </div>
         </article>
       </div>
 
-      <div v-else class="empty-state clipboard-empty">
-        <span class="empty-state-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-            <rect x="9" y="9" width="12" height="12" rx="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-        </span>
-        <p class="empty-state-title">{{ emptyTitle }}</p>
-        <p class="empty-state-hint">{{ emptyHint }}</p>
-      </div>
+      <EmptyState v-else class="clipboard-empty" icon="copy" :title="emptyTitle" :description="emptyHint" />
     </div>
 
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
+    <SendToMenu
+      :visible="sendMenu.show"
+      :x="sendMenu.x"
+      :y="sendMenu.y"
+      :resource="sendResource"
+      exclude-path="/clipboard"
+      @close="sendMenu.show = false"
+      @sent="onSendDone"
+    />
 
     <MessageDialog
       :visible="clearVisible"
@@ -140,7 +215,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
-import Toast from '@/components/Toast.vue'
+import SendToMenu from '@/components/SendToMenu.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
 import { useToast } from '@/composables'
 import { formatRelativeTime } from '@/utils/format'
@@ -155,7 +230,21 @@ import {
   onClipboardChanged
 } from '@/api'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showInfo } = useToast()
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { copyToClipboard } from '@/utils/clipboard'
+import {
+  CLIPBOARD_SNIPPET_LIMITS,
+  createClipboardSnippetId,
+  normalizeClipboardSnippets,
+  sortClipboardSnippets
+} from '@shared/clipboardSnippets'
+const { showSuccess, showError, showInfo, showWarning } = useToast()
+
+const SNIPPETS_KEY = 'ntb_clipboard_snippets'
+const SNIPPET_LIMITS = CLIPBOARD_SNIPPET_LIMITS
 
 const entries = ref([])
 const paused = ref(false)
@@ -163,6 +252,108 @@ const query = ref('')
 const filter = ref('all')
 const clearVisible = ref(false)
 const now = ref(Date.now())
+const sendMenu = ref({ show: false, x: 0, y: 0 })
+const sendResource = ref(null)
+const snippets = ref(loadSnippets())
+const editorVisible = ref(false)
+const editingId = ref('')
+const editorName = ref('')
+const editorText = ref('')
+
+const visibleSnippets = computed(() => {
+  const keyword = query.value.trim().toLowerCase()
+  if (!keyword) return snippets.value
+  return snippets.value.filter(
+    (snippet) => snippet.name.toLowerCase().includes(keyword) || snippet.text.toLowerCase().includes(keyword)
+  )
+})
+
+function entryResource(entry) {
+  if (!entry || entry.type !== 'text') return null
+  return { kind: 'text', title: t('剪贴板文本'), text: entry.text }
+}
+
+function snippetResource(snippet) {
+  return { kind: 'text', title: snippet.name, text: snippet.text }
+}
+
+function openSendMenu(event, resource) {
+  if (!resource) return
+  sendResource.value = resource
+  const rect = event.currentTarget.getBoundingClientRect()
+  sendMenu.value = { show: true, x: rect.right - 252, y: rect.bottom + 6 }
+}
+
+function loadSnippets() {
+  try {
+    return sortClipboardSnippets(normalizeClipboardSnippets(JSON.parse(localStorage.getItem(SNIPPETS_KEY) || '[]')))
+  } catch {
+    return []
+  }
+}
+
+function persistSnippets() {
+  try {
+    localStorage.setItem(SNIPPETS_KEY, JSON.stringify(snippets.value))
+  } catch {
+    // 存储不可用时仅保留内存中的片段
+  }
+}
+
+function openSnippetEditor(snippet, entry = null) {
+  editingId.value = snippet?.id || ''
+  editorName.value = snippet?.name || ''
+  editorText.value = snippet?.text || entry?.text || ''
+  editorVisible.value = true
+}
+
+function closeSnippetEditor() {
+  editorVisible.value = false
+  editingId.value = ''
+  editorName.value = ''
+  editorText.value = ''
+}
+
+function saveSnippet() {
+  const text = editorText.value.slice(0, SNIPPET_LIMITS.textLength)
+  if (!text.trim()) {
+    showWarning(t('请填写片段内容'))
+    return
+  }
+  const name =
+    editorName.value.trim().slice(0, SNIPPET_LIMITS.nameLength) ||
+    text.trim().split('\n')[0].slice(0, SNIPPET_LIMITS.nameLength)
+  if (editingId.value) {
+    const target = snippets.value.find((snippet) => snippet.id === editingId.value)
+    if (target) Object.assign(target, { name, text, updatedAt: Date.now() })
+  } else {
+    if (snippets.value.length >= SNIPPET_LIMITS.max) {
+      showWarning(t('最多保存 {p0} 个片段', { p0: SNIPPET_LIMITS.max }))
+      return
+    }
+    snippets.value.push({ id: createClipboardSnippetId(), name, text, updatedAt: Date.now() })
+  }
+  snippets.value = sortClipboardSnippets(snippets.value)
+  persistSnippets()
+  closeSnippetEditor()
+  showSuccess(t('片段已保存'))
+}
+
+function removeSnippet(snippet) {
+  snippets.value = snippets.value.filter((item) => item.id !== snippet.id)
+  persistSnippets()
+  showInfo(t('已删除片段「{p0}」', { p0: snippet.name }))
+}
+
+async function copySnippet(snippet) {
+  const ok = await copyToClipboard(snippet.text)
+  if (ok) showSuccess(t('已复制片段「{p0}」', { p0: snippet.name }))
+  else showError(t('复制失败'))
+}
+
+function onSendDone(target) {
+  showSuccess(t('已发送到 {name}', { name: t(target.name) }))
+}
 
 const filters = [
   {
@@ -431,7 +622,11 @@ onUnmounted(() => {
 .clipboard-item:focus-visible {
   border-color: var(--accent-color);
   background: var(--surface-hover);
-  outline: none;
+}
+
+.clipboard-item:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
 }
 
 .clipboard-item.pinned {
@@ -486,7 +681,7 @@ onUnmounted(() => {
 
 .clipboard-badge {
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
   color: var(--text-tertiary);
@@ -551,6 +746,171 @@ onUnmounted(() => {
   border-color: rgba(var(--error-rgb), 0.4);
   background: rgba(var(--error-rgb), 0.1);
   color: var(--error-dark);
+}
+
+.clipboard-snippets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.snippet-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.snippet-title {
+  font-size: var(--font-size-dense);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.snippet-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.snippet-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.snippet-spacer {
+  flex: 1;
+}
+
+.snippet-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.snippet-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.snippet-editor-name {
+  flex: 1 1 220px;
+}
+
+.snippet-editor-text {
+  min-height: 90px;
+  font-family: var(--font-mono);
+}
+
+.snippet-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.snippet-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.snippet-card:hover,
+.snippet-card:focus-visible {
+  border-color: var(--accent-color);
+}
+
+.snippet-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.snippet-name {
+  overflow: hidden;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snippet-text {
+  overflow: hidden;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snippet-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+
+.snippet-card:hover .snippet-actions,
+.snippet-card:focus-within .snippet-actions {
+  opacity: 1;
+}
+
+.snippet-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.snippet-actions button svg {
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+}
+
+.snippet-actions button:hover {
+  border-color: var(--border-color);
+  background: var(--surface-hover);
+  color: var(--accent-color);
+}
+
+.snippet-actions button.danger:hover {
+  border-color: rgba(var(--error-rgb), 0.4);
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-dark);
+}
+
+.snippet-empty {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
 }
 
 .clipboard-empty {

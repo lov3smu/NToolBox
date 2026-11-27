@@ -1,5 +1,10 @@
 <template>
-  <div v-if="serverStatusDialog.show" class="dialog-overlay" @click.self="closeServerStatusDialog">
+  <div
+    v-if="serverStatusDialog.show"
+    v-modal-shell="closeServerStatusDialog"
+    class="dialog-overlay"
+    @click.self="closeServerStatusDialog"
+  >
     <div class="dialog dialog-wide server-status-dialog">
       <div class="dialog-header">
         <h3>
@@ -18,10 +23,7 @@
             {{ t('刷新') }}
           </button>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeServerStatusDialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -165,6 +167,7 @@
 import { t } from '@/i18n'
 import { computed, inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
 const databaseStore = inject('database')
 const {
   serverStatusDialog,

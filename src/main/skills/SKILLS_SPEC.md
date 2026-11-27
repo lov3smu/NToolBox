@@ -6,17 +6,17 @@ Skills 是 AI 助手的可扩展工具模块。每个 Skill 就是一条 functio
 
 系统支持三类来源：
 
-| 类型 | 位置 | 说明 |
-|------|------|------|
-| builtin | `src/main/skills/builtin/<name>/` | 随应用打包，只读，不可卸载、不可被同名用户技能覆盖 |
-| market | `src/main/skills/market/<name>/` | 随应用打包的技能市场模板，安装后复制到用户目录 |
-| user | `<userData>/skills/<name>/` | 用户安装或自行开发的技能；开发模式下 userData 固定为 `<appData>/ntoolbox` |
-| remote | ClawHub | 通过远程市场安装，安装方式与 market 相同（临时目录 + rename） |
+| 类型    | 位置                              | 说明                                                                                               |
+| ------- | --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| builtin | `src/main/skills/builtin/<name>/` | 随应用打包，只读，不可卸载、不可被同名用户技能覆盖                                                 |
+| market  | `src/main/skills/market/<name>/`  | 随应用打包的技能市场模板，安装后复制到用户目录                                                     |
+| user    | `<dataDir>/skills/<name>/`        | 用户安装或自行开发的技能；`dataDir` 由 `src/main/utils/appPaths.js` 解析（见 PROJECT.md 存储布局） |
+| remote  | ClawHub                           | 通过远程市场安装，安装方式与 market 相同（临时目录 + rename）                                      |
 
 ## 目录结构
 
 ```
-builtin/                 # 或 market/、<userData>/skills/
+builtin/                 # 或 market/、<dataDir>/skills/
 └── skill-name/
     ├── skill.json       # 必需：工具定义
     ├── handler.js       # 可选：本地执行逻辑（与 promptTemplate 二选一）
@@ -67,27 +67,27 @@ builtin/                 # 或 market/、<userData>/skills/
 
 ### 字段说明
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| name | string | ✓ | 唯一标识，必须匹配 `^[a-z0-9][a-z0-9-]*$` |
-| version | string | ✓ | SemVer，修改行为时递增 |
-| description | string | ✓ | 会原样发送给模型，应简洁说明能力与限制 |
-| author | string | ✓ | 作者或来源 |
-| type | string | - | 运行时以所在目录为准（builtin/user），manifest 中的值会被覆盖 |
-| category | string | - | 展示分类：code/database/document/general/security |
-| tags | array | - | 用于市场搜索与展示 |
-| icon | string | - | 展示图标名，见 `src/renderer/src/utils/skillIcons.js` |
-| parameters | object | ✓ | JSON Schema 子集，见下文 |
-| handler | string | - | 相对 Skill 目录的模块路径 |
-| promptTemplate | string | - | 相对 Skill 目录的模板路径 |
-| examples | array | - | 仅用于扩展管理界面展示，不会发送给模型 |
+| 字段           | 类型   | 必填 | 说明                                                          |
+| -------------- | ------ | ---- | ------------------------------------------------------------- |
+| name           | string | ✓    | 唯一标识，必须匹配 `^[a-z0-9][a-z0-9-]*$`                     |
+| version        | string | ✓    | SemVer，修改行为时递增                                        |
+| description    | string | ✓    | 会原样发送给模型，应简洁说明能力与限制                        |
+| author         | string | ✓    | 作者或来源                                                    |
+| type           | string | -    | 运行时以所在目录为准（builtin/user），manifest 中的值会被覆盖 |
+| category       | string | -    | 展示分类：code/database/document/general/security             |
+| tags           | array  | -    | 用于市场搜索与展示                                            |
+| icon           | string | -    | 展示图标名，见 `src/renderer/src/utils/skillIcons.js`         |
+| parameters     | object | ✓    | JSON Schema 子集，见下文                                      |
+| handler        | string | -    | 相对 Skill 目录的模块路径                                     |
+| promptTemplate | string | -    | 相对 Skill 目录的模板路径                                     |
+| examples       | array  | -    | 仅用于扩展管理界面展示，不会发送给模型                        |
 
 `semantic_rules` 字段已废弃：模型只能看到 `description` 和 `parameters`，路由规则请写入 `description` 或 `chat.js` 的系统提示词。
 
 ### parameters 约定
 
 - 只支持 `type`、`properties`、`required`、`items`、`enum`、`minimum`、`maximum`、`default`、`additionalProperties`。
-- 执行前会由 `src/main/services/skillSchema.js` 统一校验：缺失必填、类型、枚举、数值范围都会返回明确错误。
+- 执行前会由 `src/main/services/extensions/skillSchema.js` 统一校验：缺失必填、类型、枚举、数值范围都会返回明确错误。
 - `default` 会在调用前自动补齐；不要只在 `description` 里写"默认 xxx"。
 - 未知参数会被丢弃，不会传给 handler。
 - 必填参数不要依赖示例或系统提示词补齐；示例只用于界面展示。
@@ -113,17 +113,17 @@ export default async function handler(params, context) {
 
 `context` 包含：
 
-| 字段 | 说明 |
-|------|------|
-| config | 当前配置只读快照 |
-| log | electron-log 实例 |
-| skill | 当前 Skill 定义 |
-| database | 数据库服务（连接、查询、结构等） |
-| getConfig | 获取最新配置 |
-| isPathWithinBase | 路径越界校验函数，处理用户提供的文件路径时必须调用 |
-| generateSQLFile | 生成规范 SQL 脚本 |
-| executeDictionarySql | 字典 SQL 生成 |
-| executeFunctionGroupSql | 功能权限组 SQL 生成 |
+| 字段                    | 说明                                               |
+| ----------------------- | -------------------------------------------------- |
+| config                  | 当前配置只读快照                                   |
+| log                     | electron-log 实例                                  |
+| skill                   | 当前 Skill 定义                                    |
+| database                | 数据库服务（连接、查询、结构等）                   |
+| getConfig               | 获取最新配置                                       |
+| isPathWithinBase        | 路径越界校验函数，处理用户提供的文件路径时必须调用 |
+| generateSQLFile         | 生成规范 SQL 脚本                                  |
+| executeDictionarySql    | 字典 SQL 生成                                      |
+| executeFunctionGroupSql | 功能权限组 SQL 生成                                |
 
 约束：
 
@@ -160,7 +160,7 @@ export default async function handler(params, context) {
 ## 服务 API
 
 ```javascript
-import { initSkills, getSkillsManager, executeSkill, getSkillToolDefinitions } from './skills.js'
+import { initSkills, getSkillsManager, executeSkill, getSkillToolDefinitions } from '../services/extensions/skills.js'
 
 await initSkills()
 const manager = getSkillsManager()
@@ -172,26 +172,26 @@ await executeSkill('code-review', { code }, { provider, model }) // 第三个参
 
 ## 内置 Skills
 
-| 名称 | 执行方式 | 说明 |
-|------|----------|------|
-| db-connect | handler | 列出/测试/建立/断开数据库连接 |
-| db-query | handler | 列出数据库、表，执行只读 SQL |
-| db-schema | handler | 表结构、建表语句、索引、字段详情 |
-| dictionary-sql | handler | 生成字典配置 SQL |
-| function-group-sql | handler | 生成功能权限组 SQL |
-| sql-script | handler | 生成规范命名的 SQL 脚本文件 |
-| sql-optimize | prompt | SQL 性能优化建议 |
-| sql-config | handler | 读取脚本生成配置 |
-| code-review | prompt | 代码质量/安全/性能审查 |
-| code-generate | prompt | 按需求生成代码 |
-| api-design | prompt | 设计 RESTful/GraphQL/RPC API |
-| doc-generate | prompt | 生成行内注释、API 文档或 README |
-| password | handler | 密码学安全随机密码 |
-| timestamp | handler | 时间戳与日期互转，支持时区 |
-| cron | handler | 生成 5 段 Cron 表达式 |
-| file-ops | handler | 在 base_path 内列出、读写、复制、移动、删除、搜索文件 |
-| json-format | handler | 格式化/校验 JSON |
-| yaml-validate | handler | 使用 js-yaml 校验 YAML |
+| 名称               | 执行方式 | 说明                                                  |
+| ------------------ | -------- | ----------------------------------------------------- |
+| db-connect         | handler  | 列出/测试/建立/断开数据库连接                         |
+| db-query           | handler  | 列出数据库、表，执行只读 SQL                          |
+| db-schema          | handler  | 表结构、建表语句、索引、字段详情                      |
+| dictionary-sql     | handler  | 生成字典配置 SQL                                      |
+| function-group-sql | handler  | 生成功能权限组 SQL                                    |
+| sql-script         | handler  | 生成规范命名的 SQL 脚本文件                           |
+| sql-optimize       | prompt   | SQL 性能优化建议                                      |
+| sql-config         | handler  | 读取脚本生成配置                                      |
+| code-review        | prompt   | 代码质量/安全/性能审查                                |
+| code-generate      | prompt   | 按需求生成代码                                        |
+| api-design         | prompt   | 设计 RESTful/GraphQL/RPC API                          |
+| doc-generate       | prompt   | 生成行内注释、API 文档或 README                       |
+| password           | handler  | 密码学安全随机密码                                    |
+| timestamp          | handler  | 时间戳与日期互转，支持时区                            |
+| cron               | handler  | 生成 5 段 Cron 表达式                                 |
+| file-ops           | handler  | 在 base_path 内列出、读写、复制、移动、删除、搜索文件 |
+| json-format        | handler  | 格式化/校验 JSON                                      |
+| yaml-validate      | handler  | 使用 js-yaml 校验 YAML                                |
 
 ## 最佳实践
 

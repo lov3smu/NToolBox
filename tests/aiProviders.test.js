@@ -4,7 +4,7 @@ vi.mock('../src/main/utils/index.js', () => ({
   log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }))
 
-import { getAvailableProviders, PROVIDER_TYPES } from '../src/main/services/ai/index.js'
+import { getAvailableProviders, createProvider, PROVIDER_TYPES } from '../src/main/services/ai/index.js'
 
 describe('AI provider catalog', () => {
   const providers = Object.fromEntries(getAvailableProviders().map((provider) => [provider.type, provider]))
@@ -49,5 +49,43 @@ describe('AI provider catalog', () => {
     expect(zen.inputTypes).toEqual(['text', 'image'])
     expect(providers.opencode.models.every((model) => model.contextWindow > 0)).toBe(true)
     expect(providers.opencode_go.models.find((model) => model.id === 'glm-5.3').thinking).toBe(false)
+  })
+
+  it('registers local Ollama and LM Studio providers without API keys', () => {
+    expect(Object.keys(providers)).toEqual(expect.arrayContaining(['ollama', 'lmstudio']))
+    expect(providers.ollama.defaultBaseUrl).toBe('http://127.0.0.1:11434/v1')
+    expect(providers.ollama.requiresApiKey).toBe(false)
+    expect(providers.ollama.envKey).toBe('')
+    expect(providers.lmstudio.defaultBaseUrl).toBe('http://127.0.0.1:1234/v1')
+    expect(providers.lmstudio.requiresApiKey).toBe(false)
+    expect(providers.openai.requiresApiKey).toBe(true)
+    expect(PROVIDER_TYPES.OLLAMA).toBe('ollama')
+  })
+
+  it('treats local providers as configured only after models or address are saved', () => {
+    const pick = (config) => getAvailableProviders(config).find((provider) => provider.type === 'ollama')
+    expect(pick({ ai: { keys: {}, base_urls: {}, models: {} } }).hasApiKey).toBe(false)
+    expect(pick({ ai: { keys: {}, base_urls: { ollama: 'http://127.0.0.1:11434/v1' }, models: {} } }).hasApiKey).toBe(
+      true
+    )
+
+    const saved = pick({
+      ai: {
+        keys: {},
+        base_urls: {},
+        models: { ollama: { default: 'llama3.2', models: [{ id: 'llama3.2', name: 'Llama 3.2' }] } }
+      }
+    })
+    expect(saved.hasApiKey).toBe(true)
+    expect(saved.models[0].id).toBe('llama3.2')
+    expect(saved.defaultModel).toBe('llama3.2')
+  })
+
+  it('accepts local providers without an api key and omits the auth header', () => {
+    const provider = createProvider('ollama', { apiKey: '' })
+    expect(provider.validateConfig()).toEqual({ valid: true })
+    expect(provider.getHeaders()).not.toHaveProperty('Authorization')
+    expect(createProvider('ollama', { apiKey: 'abc' }).getHeaders().Authorization).toBe('Bearer abc')
+    expect(createProvider('openai', { apiKey: '' }).getHeaders()).not.toHaveProperty('Authorization')
   })
 })

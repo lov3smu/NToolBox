@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isRoutineDdl, splitSqlStatementRanges, splitSqlStatements } from '../src/renderer/src/utils/sqlStatements.js'
+import { isRoutineDdl, splitSqlStatementRanges, splitSqlStatements } from '../src/shared/sqlStatements.js'
 
 describe('splitSqlStatements', () => {
   it('splits plain statements and keeps strings/comments intact', () => {

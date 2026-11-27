@@ -13,10 +13,13 @@ import {
 } from '@/api'
 import { buildPendingSql, coerceValue, keysForRow, rowKeyFor, isSameValue } from './rowEditing'
 import { bindSqlParams, extractSqlParams } from './sqlParams'
+import { matchesAccelerator } from '@/utils/shortcut'
+import { DEFAULT_SHORTCUT_ACTIONS } from '@shared/shortcutActions'
+import { logError, logWarn } from '@/utils/log'
 
 const TAB_STORAGE_KEY = 'ntoolbox-db-tabs'
 
-export function createTabs(state, api) {
+export function createTabs(state, api, options = {}) {
   const {
     activeTabId,
     autoLimit,
@@ -36,13 +39,17 @@ export function createTabs(state, api) {
     transactionConnections
   } = state
 
+  function engineForConnection(connName) {
+    return connections.value?.find((conn) => conn.name === connName)?.engine || 'mysql'
+  }
+
   function handleKeyDown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
-      if (activeTab?.type === 'query' && activeTab.sqlQuery && activeTab.connectionName && !activeTab.executing) {
-        e.preventDefault()
-        executeQueryForTab(activeTab)
-      }
+    const accelerator = options.runShortcut?.value || DEFAULT_SHORTCUT_ACTIONS.database_run
+    if (!matchesAccelerator(e, accelerator)) return
+    const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
+    if (activeTab?.type === 'query' && activeTab.sqlQuery && activeTab.connectionName && !activeTab.executing) {
+      e.preventDefault()
+      executeQueryForTab(activeTab)
     }
   }
 
@@ -475,7 +482,8 @@ export function createTabs(state, api) {
         tableName: source.tableName,
         primaryKeys,
         isUniqueKey: !meta.primaryKeys?.length,
-        columns: meta.columns || []
+        columns: meta.columns || [],
+        engine: engineForConnection(tab.connectionName)
       }
     } catch (error) {
       result.readonlyReason = t('读取来源表结构失败: ') + error.message
@@ -665,7 +673,8 @@ export function createTabs(state, api) {
       tableName: result.editSource.tableName,
       rowEdits: result.rowEdits,
       rowDeletes: result.rowDeletes,
-      rowInserts: result.rowInserts
+      rowInserts: result.rowInserts,
+      engine: result.editSource.engine
     })
     if (!sql) {
       api.showMessage(t('没有待保存的修改'), 'info')
@@ -909,7 +918,7 @@ export function createTabs(state, api) {
 
       tab.queryResult = tab.queryResults[0]
     } catch (error) {
-      console.error('执行查询失败:', error)
+      logError('执行查询失败:', error)
       tab.queryResults = [
         {
           index: 0,
@@ -1117,7 +1126,7 @@ export function createTabs(state, api) {
     try {
       localStorage.setItem(TAB_STORAGE_KEY, JSON.stringify(serializeTabs()))
     } catch (error) {
-      console.warn('保存数据库标签页失败:', error)
+      logWarn('保存数据库标签页失败:', error)
     }
   }
 

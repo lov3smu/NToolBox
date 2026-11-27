@@ -12,8 +12,37 @@ describe('migrateConfig', () => {
   })
 
   it('leaves current-version configs untouched', () => {
-    const raw = { config_version: 2, appearance: { theme: 'dark' } }
+    const raw = { config_version: 3, appearance: { theme: 'dark' } }
     expect(migrateConfig(raw)).toEqual({ config: raw, migrated: false })
+  })
+
+  it('moves sql script fields from app into sql_generator for v2 configs', () => {
+    const { config, migrated } = migrateConfig({
+      config_version: 2,
+      app: {
+        base_path: '/tmp/scripts',
+        developer: { ch_name: '张三', en_name: 'zhangsan' },
+        text_edit_app: 'code',
+        auto_start: false
+      },
+      sql_generator: { databases: ['main_db'], script_types: [{ name: 'DDL' }] }
+    })
+
+    expect(migrated).toBe(true)
+    expect(config).toMatchObject({
+      config_version: 3,
+      app: { auto_start: false },
+      sql_generator: {
+        base_path: '/tmp/scripts',
+        developer: { ch_name: '张三', en_name: 'zhangsan' },
+        text_edit_app: 'code',
+        databases: ['main_db'],
+        script_types: [{ name: 'DDL' }]
+      }
+    })
+    expect(config.app).not.toHaveProperty('base_path')
+    expect(config.app).not.toHaveProperty('developer')
+    expect(config.app).not.toHaveProperty('text_edit_app')
   })
 
   it('maps flat v1 keys into v2 groups', () => {
@@ -79,11 +108,8 @@ describe('migrateConfig', () => {
     })
 
     expect(config).toMatchObject({
-      config_version: 2,
+      config_version: 3,
       app: {
-        base_path: '/tmp/scripts',
-        developer: { ch_name: '张三', en_name: 'zhangsan' },
-        text_edit_app: 'code',
         auto_start: false,
         close_action: 'hide',
         recent_tools_limit: 6,
@@ -102,7 +128,13 @@ describe('migrateConfig', () => {
         operation_log_enabled: false,
         editor: { theme: 'one-dark' }
       },
-      sql_generator: { databases: ['main_db'], script_types: [{ name: 'DDL' }] },
+      sql_generator: {
+        base_path: '/tmp/scripts',
+        developer: { ch_name: '张三', en_name: 'zhangsan' },
+        text_edit_app: 'code',
+        databases: ['main_db'],
+        script_types: [{ name: 'DDL' }]
+      },
       ai: {
         provider: 'deepseek',
         keys: { deepseek: 'sk-test' },

@@ -161,40 +161,10 @@
     flex: 1;
     min-width: 0;
     width: 100%;
-    height: var(--control-height);
-    padding: 0 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background-color: var(--surface);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: var(--font-size-sm);
-    transition: var(--transition-fast);
-  }
-
-  .input-field-inline::placeholder {
-    color: var(--text-tertiary);
-  }
-
-  .input-field-inline:hover {
-    border-color: var(--border-strong);
-  }
-
-  .input-field-inline:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-glow);
   }
 
   select.input-field-inline {
     padding: 0 30px 0 10px;
-  }
-
-  .input-field:disabled,
-  .input-field-inline:disabled {
-    background: var(--surface-muted);
-    color: var(--text-tertiary);
-    cursor: not-allowed;
   }
 
   .input-port {
@@ -411,6 +381,38 @@
     cursor: pointer;
   }
 
+  .mask-preset-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mask-preset-chip {
+    padding: 3px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .mask-preset-chip:hover:not(:disabled) {
+    border-color: var(--accent-color);
+    color: var(--text-primary);
+  }
+
+  .mask-preset-chip.active {
+    border-color: var(--accent-color);
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--accent-color);
+  }
+
+  .mask-preset-chip:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
   .export-hint,
   .transfer-hint {
     margin: 0;
@@ -424,7 +426,6 @@
   }
 
   .data-transfer-dialog {
-    width: min(1180px, calc(100vw - 48px));
     height: min(900px, calc(100vh - 64px));
   }
 
@@ -673,22 +674,8 @@
 
   .transfer-bulk-input {
     min-height: 70px;
-    padding: 8px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
     line-height: 1.5;
-    resize: vertical;
-    box-sizing: border-box;
-  }
-
-  .transfer-bulk-input:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-glow);
   }
 
   .transfer-bulk-actions {
@@ -750,7 +737,7 @@
     gap: 8px;
     min-width: 0;
     padding: 3px 6px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
     color: var(--text-primary);
     cursor: pointer;
@@ -841,7 +828,6 @@
 
   @media (max-width: 860px) {
     .data-transfer-dialog {
-      width: calc(100vw - 24px);
       height: calc(100vh - 32px);
     }
 
@@ -903,24 +889,9 @@
 
   .event-textarea {
     flex: 1;
-    width: 100%;
     min-height: 280px;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
     line-height: 1.6;
-    resize: vertical;
-    box-sizing: border-box;
-  }
-
-  .event-textarea:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-glow);
   }
 
   .event-interval {

@@ -8,26 +8,15 @@
       @drop.prevent="onDropToHeader"
     >
       <h3>
-        <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-        </svg>
+        <AppIcon name="link" class="title-icon" />
         {{ t('我的连接') }}
       </h3>
       <div class="sidebar-header-actions" @click.stop>
         <button class="sidebar-icon-btn" :title="t('导入连接配置')" @click="openConnectionTransferDialog('import')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
+          <AppIcon name="upload" />
         </button>
         <button class="sidebar-icon-btn" :title="t('导出连接配置')" @click="openConnectionTransferDialog('export')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
+          <AppIcon name="download" />
         </button>
       </div>
     </div>
@@ -42,20 +31,13 @@
           @dragleave="onDragLeaveGroup"
           @drop.prevent="onDropToGroup(group.name)"
         >
-          <svg
+          <AppIcon
+            name="chevron-right"
             class="group-arrow"
             :class="{ expanded: searchActive || expandedGroups.includes(group.name) }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
             @click.stop="toggleGroup(group.name)"
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-          <svg class="group-folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          </svg>
+          />
+          <AppIcon name="folder-open" class="group-folder-icon" />
           <span class="group-name">{{ group.name }}</span>
           <span class="group-count">{{ group.connections.length }}</span>
         </div>
@@ -78,26 +60,23 @@
           :filter-keyword="filterKeyword"
         />
       </template>
-      <div v-if="searchActive && !hasSearchMatches" class="empty-list">
-        <p>{{ searchHint }}</p>
-      </div>
-      <div
+      <EmptyState v-if="searchActive && !hasSearchMatches" size="sm" :title="searchHint" />
+      <EmptyState
         v-else-if="!searchActive && connectionGroups.length === 0 && ungroupedConnections.length === 0"
-        class="empty-list"
+        size="sm"
+        :title="t('暂无连接')"
+        :description="t('添加一个数据库连接开始使用')"
       >
-        <p>{{ t('暂无连接') }}</p>
-        <p class="hint">{{ t('添加一个数据库连接开始使用') }}</p>
-        <button type="button" class="btn btn-secondary btn-sm empty-list-action" @click="showAddConnectionModal">
-          {{ t('新建连接') }}
-        </button>
-      </div>
+        <template #actions>
+          <button type="button" class="btn btn-secondary btn-sm" @click="showAddConnectionModal">
+            {{ t('新建连接') }}
+          </button>
+        </template>
+      </EmptyState>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-search" :class="{ 'is-active': searchActive }">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <AppIcon name="search" />
         <input v-model="searchKeyword" type="text" :placeholder="t('搜索库和表')" @keydown.esc="searchKeyword = ''" />
         <button
           v-if="searchKeyword"
@@ -106,10 +85,7 @@
           :title="t('清除搜索')"
           @click="searchKeyword = ''"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
     </div>
@@ -122,6 +98,8 @@ import { t } from '@/i18n'
 import ConnectionTreeItem from './ConnectionTreeItem.vue'
 import { computed, inject, onUnmounted, ref, watch } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
 const databaseStore = inject('database')
 const {
   connectionDatabases,

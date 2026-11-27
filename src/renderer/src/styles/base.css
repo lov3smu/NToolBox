@@ -50,6 +50,9 @@
   --info-darker: #1565c0;
   --info-rgb: 64, 158, 255;
   --info-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --db-engine-mysql: #00618a;
+  --db-engine-postgres: #336791;
+  --db-engine-sqlite: #0f7fcc;
   --neutral-color: #6b7280;
   --neutral-dark: #4b5563;
   --neutral-rgb: 107, 114, 128;
@@ -85,6 +88,7 @@
   --font-size-dense: calc(13px * var(--font-scale));
   --font-size-sm: calc(12px * var(--font-scale));
   --font-size-xs: calc(11px * var(--font-scale));
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
   /* 图标大小系统 */
   --icon-size-xl: 48px;
@@ -100,16 +104,21 @@
   --shadow-lg: 0 12px 32px rgba(20, 20, 24, 0.12);
   --shadow-glow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
   --overlay-bg: rgba(15, 17, 21, 0.45);
+  --scrim-bg: rgba(0, 0, 0, 0.24);
 
   /* 圆角 */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-pill: 999px;
 
   /* 控件尺寸 */
   --control-height: 32px;
-  --control-height-sm: 28px;
+  --control-height-xl: 40px;
   --control-height-lg: 36px;
+  --control-height-sm: 28px;
+  --control-height-xs: 24px;
 
   /* 应用与面板层级 */
   --app-bg: #f4f5f7;
@@ -150,6 +159,12 @@
   --shell-scrollbar: rgba(20, 20, 24, 0.16);
   --shell-shadow: 0 12px 32px rgba(20, 20, 24, 0.14);
 
+  /* 悬浮提示（与主题无关的深色气泡） */
+  --tooltip-bg: #17181c;
+  --tooltip-text: #f5f5f7;
+  --tooltip-border: rgba(255, 255, 255, 0.14);
+  --tooltip-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+
   /* 深色文本安全的强调色 */
   --primary-text: var(--primary-color);
   --slider-fill: var(--primary-color);
@@ -188,6 +203,7 @@
   --motion-base: 160ms;
   --motion-panel: 180ms;
   --motion-slow: 220ms;
+  --motion-pulse: 1400ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
 
   /* 加载指示 */
@@ -195,6 +211,8 @@
   --spinner-sm: 14px;
   --spinner-md: 20px;
   --spinner-duration: 0.8s;
+  --spinner-on-accent-track: rgba(255, 255, 255, 0.38);
+  --spinner-on-accent-head: #ffffff;
 
   color-scheme: light;
 }
@@ -205,6 +223,7 @@
     --motion-base: 1ms;
     --motion-panel: 1ms;
     --motion-slow: 1ms;
+    --motion-pulse: 1ms;
   }
 }
 
@@ -247,6 +266,9 @@
   --info-dark: #93c5fd;
   --info-darker: #bfdbfe;
   --info-rgb: 96, 165, 250;
+  --db-engine-mysql: #6fb3d8;
+  --db-engine-postgres: #7fa9cf;
+  --db-engine-sqlite: #6cc0ea;
 
   --btn-primary-bg: #7b8af0;
   --btn-primary-bg-hover: #94a1ff;
@@ -317,6 +339,11 @@
   --shell-menu-shortcut-hover: rgba(255, 255, 255, 0.6);
   --shell-scrollbar: rgba(255, 255, 255, 0.16);
   --shell-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
+
+  --tooltip-bg: #17181c;
+  --tooltip-text: #f5f5f7;
+  --tooltip-border: rgba(255, 255, 255, 0.14);
+  --tooltip-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 
   --primary-text: #eef0f4;
   --slider-fill: var(--accent-color);
@@ -1069,7 +1096,7 @@ body {
   height: var(--control-height);
   padding: 0 10px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-family: inherit;
   background: var(--surface);
@@ -1078,25 +1105,69 @@ body {
 }
 
 .input-field::placeholder,
-.text-field::placeholder {
+.text-field::placeholder,
+.app-textarea::placeholder {
   color: var(--text-tertiary);
 }
 
 .input-field:hover,
-.text-field:hover {
+.text-field:hover,
+.app-textarea:hover {
   border-color: var(--border-strong);
 }
 
 .input-field:focus,
-.text-field:focus {
+.text-field:focus,
+.app-textarea:focus {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: var(--shadow-glow);
 }
 
-.input-field.error {
+.input-field:disabled,
+.text-field:disabled,
+.app-textarea:disabled {
+  background: var(--surface-muted);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.input-field:read-only,
+.text-field:read-only,
+.app-textarea:read-only {
+  background: var(--surface-muted);
+}
+
+.input-field.error,
+.input-field.is-invalid,
+.input-field[aria-invalid='true'],
+.app-textarea.is-invalid,
+.app-textarea[aria-invalid='true'] {
   border-color: var(--error-color) !important;
   background-color: rgba(var(--error-rgb), 0.05) !important;
+}
+
+.input-field.error:focus,
+.input-field.is-invalid:focus,
+.input-field[aria-invalid='true']:focus,
+.app-textarea.is-invalid:focus,
+.app-textarea[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.14);
+}
+
+.app-textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  line-height: 1.55;
+  background: var(--surface);
+  color: var(--text-primary);
+  resize: vertical;
+  transition: var(--transition-fast);
 }
 
 /* ---------- Select 组件 ---------- */
@@ -1106,7 +1177,7 @@ select,
   height: var(--control-height);
   padding: 0 30px 0 10px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-family: inherit;
   background-color: var(--surface);
@@ -1384,6 +1455,13 @@ input[type='radio']:disabled {
   font-size: var(--font-size-sm);
 }
 
+.field-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
 .setting-hint {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
@@ -1437,6 +1515,36 @@ input[type='radio']:disabled {
   white-space: nowrap;
 }
 
+.help-toggle {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.help-toggle:hover {
+  background: var(--panel);
+}
+
+.help-toggle:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+
+.help-caret {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  margin-left: auto;
+  color: var(--text-tertiary);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.help-caret.open {
+  transform: rotate(180deg);
+}
+
 .panel-body {
   padding: 12px;
 }
@@ -1447,21 +1555,6 @@ input[type='radio']:disabled {
   align-items: center;
   gap: 4px;
   margin-left: auto;
-}
-
-.panel-empty {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 18px 14px;
-  border: 1px dashed var(--border-color);
-  border-radius: var(--radius-md);
-  text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--text-tertiary);
 }
 
 /* 页面内容区：各页面统一内边距，仅保留各自的布局属性 */
@@ -1537,6 +1630,9 @@ input[type='radio']:disabled {
 }
 
 .segmented-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 22px;
   padding: 0 12px;
   border: none;

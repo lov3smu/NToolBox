@@ -32,178 +32,205 @@
           H3
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('粗体 (Ctrl+B)')" @click="applyFormat('bold')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z" />
-          </svg>
+          <AppIcon name="bold" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('斜体 (Ctrl+I)')" @click="applyFormat('italic')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 4h-9M14 20H5M15 4 9 20" />
-          </svg>
+          <AppIcon name="italic" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('删除线')" @click="applyFormat('strike')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              d="M4 12h16M16 6.5C15.2 5.5 13.8 5 12 5 9.2 5 7 6.4 7 8.5c0 2.5 3.5 3 5 3.5M8 17.5c.8 1 2.2 1.5 4 1.5 2.8 0 5-1.4 5-3.5"
-            />
-          </svg>
+          <AppIcon name="strike" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('行内代码 (Ctrl+E)')" @click="applyFormat('code')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="16 18 22 12 16 6" />
-            <polyline points="8 6 2 12 8 18" />
-          </svg>
+          <AppIcon name="code" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('引用')" @click="applyFormat('quote')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              d="M7 7h4v6H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM15 7h4v6h-4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM5 17h4M15 17h4"
-            />
-          </svg>
+          <AppIcon name="quote" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('无序列表')" @click="applyFormat('ul')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 6h12M9 12h12M9 18h12" />
-            <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
-            <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
-            <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
-          </svg>
+          <AppIcon name="list" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('有序列表')" @click="applyFormat('ol')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 6h11M10 12h11M10 18h11M4 5h1v4M3 9h3" />
-          </svg>
+          <AppIcon name="list-ordered" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('任务列表')" @click="applyFormat('task')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="6" height="6" rx="1" />
-            <path d="m4.5 7 1.3 1.3L8 5.6M12 7h9M3 15h6M12 15h9M3 19h6M12 19h9" />
-          </svg>
+          <AppIcon name="task-list" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('插入链接 (Ctrl+K)')" @click="applyFormat('link')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
-            <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
-          </svg>
+          <AppIcon name="link" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('插入图片')" @click="applyFormat('image')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <circle cx="8.5" cy="9.5" r="1.5" />
-            <path d="m4 17 4.5-4.5L12 16l3-3 5 5" />
-          </svg>
+          <AppIcon name="image" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('代码块')" @click="applyFormat('codeblock')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="m8 10-2 2 2 2M16 10l2 2-2 2" />
-          </svg>
+          <AppIcon name="code-block" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('插入表格')" @click="applyFormat('table')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M3 10h18M9 10v10M15 10v10" />
-          </svg>
+          <AppIcon name="table-insert" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('分割线')" @click="applyFormat('hr')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 12h16" />
-          </svg>
+          <AppIcon name="minus" />
+        </button>
+        <button type="button" class="btn-icon btn-sm md-ai-btn" :title="t('AI 处理选中内容')" @click="openInlineAi">
+          <AppIcon name="sparkles" />
         </button>
       </div>
 
       <span class="toolbar-sep" />
 
-      <button class="btn btn-secondary btn-sm" @click="triggerImport">{{ t('导入') }}</button>
-      <button class="btn btn-secondary btn-sm" @click="exportMarkdown">{{ t('导出') }}</button>
+      <div ref="openGroupRef" class="md-open-group">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm md-open-trigger"
+          :title="t('打开 (Ctrl+O)')"
+          @click="toggleOpenMenu"
+        >
+          {{ t('打开') }}
+          <AppIcon name="chevron-down" :size="12" />
+        </button>
+        <div v-if="openMenuVisible" v-clamp-viewport class="md-open-menu">
+          <button type="button" class="md-open-item md-open-action" @click="openDocument">
+            <AppIcon name="folder-open" :size="14" />
+            <span>{{ t('打开文件…') }}</span>
+          </button>
+          <p class="md-open-heading">{{ t('最近打开') }}</p>
+          <p v-if="!recents.length" class="md-open-empty">{{ t('暂无最近文件') }}</p>
+          <button
+            v-for="item in recents"
+            :key="item.path"
+            type="button"
+            class="md-open-item"
+            :title="item.path"
+            @click="openRecent(item)"
+          >
+            <span class="md-open-name">{{ item.name }}</span>
+            <span class="md-open-path">{{ item.path }}</span>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" :title="t('保存 (Ctrl+S)')" @click="saveDocument()">
+        {{ t('保存') }}
+      </button>
+      <button class="btn btn-secondary btn-sm" :title="t('另存为 (Ctrl+Shift+S)')" @click="saveDocument({ as: true })">
+        {{ t('另存为') }}
+      </button>
+      <button
+        class="btn btn-secondary btn-sm"
+        :class="{ 'is-active': outlineVisible }"
+        :title="t('切换大纲')"
+        @click="outlineVisible = !outlineVisible"
+      >
+        {{ t('大纲') }}
+      </button>
       <button class="btn btn-secondary btn-sm" @click="copyHtml">{{ t('复制 HTML') }}</button>
       <button class="btn btn-secondary btn-sm" @click="loadExample">{{ t('示例') }}</button>
       <button class="btn btn-secondary btn-sm" @click="clearVisible = true">{{ t('清空') }}</button>
     </template>
 
     <div class="markdown-page">
-      <div
-        ref="workbenchRef"
-        class="md-workbench"
-        :class="[`mode-${viewMode}`, `split-${splitDirection}`]"
-        :style="{ '--split-ratio': `${splitRatio}%` }"
-      >
-        <section v-show="viewMode !== 'preview'" class="md-pane md-editor-pane">
-          <header class="md-pane-header">
-            <span class="md-pane-title">Markdown</span>
-            <span class="md-pane-stats">{{
-              t('{chars} 字符 · {lines} 行', { chars: stats.chars, lines: stats.lines })
-            }}</span>
-            <span v-if="savedTime" class="md-save-status">{{ t('已自动保存 {time}', { time: savedTime }) }}</span>
+      <div class="md-shell">
+        <aside v-if="outlineVisible" class="md-outline">
+          <header class="md-outline-header">
+            <span>{{ t('大纲') }}</span>
+            <button type="button" class="md-outline-close" :title="t('关闭大纲')" @click="outlineVisible = false">
+              {{ t('关闭') }}
+            </button>
           </header>
-          <div class="md-editor-body">
-            <MarkdownEditor ref="editorRef" v-model="content" @scroll="onEditorScroll" />
-          </div>
-        </section>
-
-        <SplitHandle
-          v-if="viewMode === 'split'"
-          :orientation="splitDirection === 'horizontal' ? 'vertical' : 'horizontal'"
-          :resizing="splitResizing"
-          :label="t('拖动调整编辑与预览大小')"
-          @pointerdown="startSplitResize"
-          @keydown="onSplitKeydown"
-        />
-
-        <section v-show="viewMode !== 'editor'" class="md-pane md-preview-pane">
-          <header class="md-pane-header">
-            <span class="md-pane-title">{{ t('实时预览') }}</span>
-            <span class="md-pane-stats">{{ t('约 {count} 分钟阅读', { count: stats.minutes }) }}</span>
-            <div class="md-preview-controls">
-              <label class="md-control">
-                <span>{{ t('主题') }}</span>
-                <select v-model="prefs.theme" class="select-field-sm">
-                  <option v-for="theme in themes" :key="theme.id" :value="theme.id">{{ t(theme.label) }}</option>
-                </select>
-              </label>
-              <label class="md-control">
-                <span>{{ t('字号') }}</span>
-                <select v-model.number="prefs.fontSize" class="select-field-sm">
-                  <option v-for="size in fontSizes" :key="size" :value="size">{{ size }}px</option>
-                </select>
-              </label>
-              <label class="md-control md-accent-control" :title="t('自定义预览强调色')">
-                <span>{{ t('强调色') }}</span>
-                <input type="color" :value="prefs.accent || '#596bd4'" @input="prefs.accent = $event.target.value" />
-              </label>
-              <button
-                v-if="prefs.accent"
-                type="button"
-                class="md-reset-accent"
-                :title="t('恢复主题强调色')"
-                @click="prefs.accent = ''"
-              >
-                {{ t('重置') }}
-              </button>
+          <div class="md-outline-scroll">
+            <div v-if="frontmatter.length" class="md-outline-meta">
+              <p class="md-outline-heading">{{ t('文档属性') }}</p>
+              <div v-for="item in frontmatter" :key="item.key" class="md-meta-row">
+                <span class="md-meta-key">{{ item.key }}</span>
+                <span class="md-meta-value" :title="item.value">{{ item.value }}</span>
+              </div>
             </div>
-          </header>
-          <div
-            ref="previewScrollRef"
-            class="md-preview-scroll"
-            :data-md-theme="prefs.theme"
-            :style="previewStyle"
-            @click="onPreviewClick"
-          >
-            <article class="md-preview" v-html="previewHtml" />
+            <p class="md-outline-heading">{{ t('标题导航') }}</p>
+            <p v-if="!outline.length" class="md-outline-empty">{{ t('暂无标题') }}</p>
+            <button
+              v-for="(item, index) in outline"
+              :key="`${item.line}-${index}`"
+              type="button"
+              class="md-outline-item"
+              :style="{ paddingLeft: `${8 + (item.level - 1) * 10}px` }"
+              :title="item.text"
+              @click="jumpToHeading(item, index)"
+            >
+              {{ item.text }}
+            </button>
           </div>
-        </section>
+        </aside>
+
+        <div
+          ref="workbenchRef"
+          class="md-workbench"
+          :class="[`mode-${viewMode}`, `split-${splitDirection}`]"
+          :style="{ '--split-ratio': `${splitRatio}%` }"
+        >
+          <section v-show="viewMode !== 'preview'" class="md-pane md-editor-pane">
+            <header class="md-pane-header">
+              <span class="md-pane-title md-doc-title" :title="docPath">
+                {{ docName || 'Markdown' }}
+                <span v-if="dirty" class="md-dirty-dot" />
+              </span>
+              <span class="md-pane-stats">{{
+                t('{chars} 字符 · {lines} 行', { chars: stats.chars, lines: stats.lines })
+              }}</span>
+              <span v-if="saveStatusText" class="md-save-status">{{ saveStatusText }}</span>
+            </header>
+            <div class="md-editor-body">
+              <MarkdownEditor ref="editorRef" v-model="content" @scroll="onEditorScroll" @image="onPastedImage" />
+            </div>
+          </section>
+
+          <SplitHandle
+            v-if="viewMode === 'split'"
+            :orientation="splitDirection === 'horizontal' ? 'vertical' : 'horizontal'"
+            :resizing="splitResizing"
+            :label="t('拖动调整编辑与预览大小')"
+            @pointerdown="startSplitResize"
+            @keydown="onSplitKeydown"
+          />
+
+          <section v-show="viewMode !== 'editor'" class="md-pane md-preview-pane">
+            <header class="md-pane-header">
+              <span class="md-pane-title">{{ t('实时预览') }}</span>
+              <span class="md-pane-stats">{{ t('约 {count} 分钟阅读', { count: stats.minutes }) }}</span>
+              <div class="md-preview-controls">
+                <label class="md-control">
+                  <span>{{ t('主题') }}</span>
+                  <AppSelect v-model="prefs.theme" :options="themeOptions" size="sm" />
+                </label>
+                <label class="md-control">
+                  <span>{{ t('字号') }}</span>
+                  <AppSelect v-model="prefs.fontSize" :options="fontSizeOptions" size="sm" />
+                </label>
+                <label class="md-control md-accent-control" :title="t('自定义预览强调色')">
+                  <span>{{ t('强调色') }}</span>
+                  <input type="color" :value="prefs.accent || '#596bd4'" @input="prefs.accent = $event.target.value" />
+                </label>
+                <button
+                  v-if="prefs.accent"
+                  type="button"
+                  class="md-reset-accent"
+                  :title="t('恢复主题强调色')"
+                  @click="prefs.accent = ''"
+                >
+                  {{ t('重置') }}
+                </button>
+              </div>
+            </header>
+            <div
+              ref="previewScrollRef"
+              class="md-preview-scroll"
+              :data-md-theme="prefs.theme"
+              :style="previewStyle"
+              @click="onPreviewClick"
+            >
+              <article class="md-preview" v-html="previewHtml" />
+            </div>
+          </section>
+        </div>
       </div>
-
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept=".md,.markdown,.txt,text/markdown,text/plain"
-        class="md-hidden-input"
-        @change="onImportFile"
-      />
     </div>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
 
     <MessageDialog
       :visible="clearVisible"
@@ -214,26 +241,48 @@
       @cancel="clearVisible = false"
       @close="clearVisible = false"
     />
+
+    <InlineAiDialog
+      :visible="inlineAiVisible"
+      :text="inlineAiText"
+      context="text"
+      @apply="applyInlineAi"
+      @close="inlineAiVisible = false"
+    />
   </PageLayout>
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
-import Toast from '@/components/Toast.vue'
+import AppSelect from '@/components/AppSelect.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
-import { usePaneResize, useToast } from '@/composables'
+import InlineAiDialog from '@/components/InlineAiDialog.vue'
+import { usePaneResize, useToast, takeSendResource } from '@/composables'
 import { copyToClipboard } from '@/utils/clipboard'
-import { formatDateTime } from '@/utils/format'
-import { openExternal } from '@/api'
+import {
+  draftImport,
+  draftList,
+  draftSave,
+  imageHostUploadData,
+  mdListRecents,
+  mdOpenDocument,
+  mdReadDocument,
+  mdSaveDocument,
+  mdSaveDocumentAs,
+  openExternal
+} from '@/api'
 import { decorateMarkdownPreview, renderMarkdownPreview } from '@/utils/markdownEditor'
 import SplitHandle from '@/components/SplitHandle.vue'
+import { extractMarkdownOutline, splitFrontmatter } from '@shared/markdownDocument'
 import '@/styles/markdown.css'
 import { t } from '@/i18n'
 
 const DRAFT_KEY = 'ntb_markdown_draft'
 const PREFS_KEY = 'ntb_markdown_prefs'
+const DOC_KEY = 'ntb_markdown_doc_path'
 
 const THEMES = [
   {
@@ -329,17 +378,26 @@ const buildExample = () =>
     t('图片语法：`![替代文字](https://example.com/image.png)`。')
   ].join('\n')
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showInfo } = useToast()
+const { showToast, showSuccess, showError, showInfo } = useToast()
 
 const editorRef = ref(null)
 const previewScrollRef = ref(null)
 const previewHtml = ref('')
-const fileInputRef = ref(null)
+const openGroupRef = ref(null)
 const clearVisible = ref(false)
+const inlineAiVisible = ref(false)
+const inlineAiText = ref('')
 const viewMode = ref('split')
 const syncScroll = ref(true)
 const savedAt = ref(0)
 const content = ref('')
+const docPath = ref('')
+const docName = ref('')
+const lastSaved = ref('')
+const recents = ref([])
+const openMenuVisible = ref(false)
+const outlineVisible = ref(false)
+const imageUploading = ref(false)
 
 const workbenchRef = ref(null)
 const splitMedia = window.matchMedia('(max-width: 1100px)')
@@ -366,6 +424,9 @@ function syncSplitDirection() {
 const themes = THEMES
 const fontSizes = FONT_SIZES
 const viewModes = VIEW_MODES
+
+const themeOptions = computed(() => themes.map((theme) => ({ value: theme.id, label: t(theme.label) })))
+const fontSizeOptions = computed(() => fontSizes.map((size) => ({ value: size, label: `${size}px` })))
 
 function currentDefaultTheme() {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'paper'
@@ -413,13 +474,26 @@ const savedTime = computed(() => {
   return new Date(savedAt.value).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 })
 
+const docParts = computed(() => splitFrontmatter(content.value))
+const frontmatter = computed(() => docParts.value.frontmatter)
+const outline = computed(() => extractMarkdownOutline(content.value))
+const dirty = computed(() => Boolean(docPath.value) && content.value !== lastSaved.value)
+const saveStatusText = computed(() => {
+  if (!savedAt.value) return ''
+  if (docPath.value) return t('已保存到文件 {time}', { time: savedTime.value })
+  return t('已自动保存 {time}', { time: savedTime.value })
+})
+
 let renderTimer = null
-let saveTimer = null
+let draftTimer = null
+let fileSaveTimer = null
+let draftReady = false
+let lastSaveErrorAt = 0
 
 function scheduleRender() {
   clearTimeout(renderTimer)
   renderTimer = setTimeout(() => {
-    previewHtml.value = renderMarkdownPreview(content.value)
+    previewHtml.value = renderMarkdownPreview(docParts.value.body)
   }, 80)
 }
 
@@ -429,15 +503,13 @@ watch(
   content,
   () => {
     scheduleRender()
-    clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => {
-      try {
-        localStorage.setItem(DRAFT_KEY, content.value)
-        savedAt.value = Date.now()
-      } catch {
-        // 本地存储不可用时仅保留内存草稿
-      }
+    if (!draftReady) return
+    clearTimeout(draftTimer)
+    draftTimer = setTimeout(async () => {
+      const result = await draftSave('markdown', { id: 'current', content: content.value })
+      if (result?.success && !docPath.value) savedAt.value = Date.now()
     }, 500)
+    scheduleFileSave()
   },
   { immediate: true }
 )
@@ -453,6 +525,210 @@ watch(
   },
   { deep: true }
 )
+
+function scheduleFileSave() {
+  if (!docPath.value) return
+  clearTimeout(fileSaveTimer)
+  fileSaveTimer = setTimeout(() => {
+    void saveFileNow({ silent: true })
+  }, 900)
+}
+
+async function saveFileNow({ silent = true } = {}) {
+  if (!docPath.value) return true
+  if (content.value === lastSaved.value) return true
+  const result = await mdSaveDocument({ path: docPath.value, content: content.value })
+  if (result?.success) {
+    lastSaved.value = content.value
+    if (Array.isArray(result.recents)) recents.value = result.recents
+    savedAt.value = Date.now()
+    return true
+  }
+  const now = Date.now()
+  if (!silent || now - lastSaveErrorAt > 4000) {
+    lastSaveErrorAt = now
+    showError(result?.error || t('保存失败'))
+  }
+  return false
+}
+
+async function flushPendingSave() {
+  if (!docPath.value) return
+  clearTimeout(fileSaveTimer)
+  if (content.value !== lastSaved.value) await saveFileNow({ silent: true })
+}
+
+function rememberDocumentPath(path) {
+  try {
+    if (path) localStorage.setItem(DOC_KEY, path)
+    else localStorage.removeItem(DOC_KEY)
+  } catch {
+    // 忽略本地存储失败
+  }
+}
+
+function applyDocument(doc) {
+  content.value = doc.content ?? ''
+  docPath.value = doc.path || ''
+  docName.value = doc.name || ''
+  lastSaved.value = content.value
+  savedAt.value = Date.now()
+  if (Array.isArray(doc.recents)) recents.value = doc.recents
+  rememberDocumentPath(docPath.value)
+  openMenuVisible.value = false
+  nextTick(() => {
+    scheduleRender()
+    decorateMarkdownPreview(previewScrollRef.value)
+    editorRef.value?.focus()
+  })
+}
+
+function detachDocument() {
+  clearTimeout(fileSaveTimer)
+  docPath.value = ''
+  docName.value = ''
+  lastSaved.value = ''
+  rememberDocumentPath('')
+}
+
+async function openDocument() {
+  openMenuVisible.value = false
+  await flushPendingSave()
+  const result = await mdOpenDocument()
+  if (!result || result.canceled) {
+    if (Array.isArray(result?.recents)) recents.value = result.recents
+    return
+  }
+  if (!result.success) {
+    showError(result.error || t('打开失败'))
+    return
+  }
+  applyDocument(result)
+  showSuccess(t('已打开 {name}', { name: result.name }))
+}
+
+async function openRecent(item) {
+  openMenuVisible.value = false
+  if (!item?.path) return
+  await flushPendingSave()
+  const result = await mdReadDocument(item.path)
+  if (!result?.success) {
+    showError(result?.error || t('打开失败'))
+    const list = await mdListRecents()
+    recents.value = list?.recents || []
+    return
+  }
+  applyDocument(result)
+  showSuccess(t('已打开 {name}', { name: result.name }))
+}
+
+async function saveDocument({ as = false } = {}) {
+  if (!as && docPath.value) {
+    clearTimeout(fileSaveTimer)
+    const ok = await saveFileNow({ silent: false })
+    if (ok) showSuccess(t('已保存到文件 {name}', { name: docName.value }))
+    return
+  }
+  const fallbackName = docPath.value || `${docName.value || t('未命名文档')}.md`
+  const result = await mdSaveDocumentAs({ defaultPath: fallbackName, content: content.value })
+  if (!result || result.canceled) return
+  if (!result.success) {
+    showError(result.error || t('保存失败'))
+    return
+  }
+  docPath.value = result.path || docPath.value
+  docName.value = result.name || docName.value
+  lastSaved.value = content.value
+  savedAt.value = Date.now()
+  if (Array.isArray(result.recents)) recents.value = result.recents
+  rememberDocumentPath(docPath.value)
+  showSuccess(t('已保存到文件 {name}', { name: docName.value }))
+}
+
+function toggleOpenMenu() {
+  openMenuVisible.value = !openMenuVisible.value
+}
+
+function closeOpenMenuOnOutside(event) {
+  if (!openMenuVisible.value) return
+  if (openGroupRef.value?.contains(event.target)) return
+  openMenuVisible.value = false
+}
+
+function jumpToHeading(item, index) {
+  editorRef.value?.scrollToLine(item.line)
+  const headings = previewScrollRef.value?.querySelectorAll(
+    '.md-preview h1, .md-preview h2, .md-preview h3, .md-preview h4, .md-preview h5, .md-preview h6'
+  )
+  if (!headings?.length) return
+  const normalized = (value) =>
+    String(value || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  const matched = Array.from(headings).find((heading) => normalized(heading.textContent) === normalized(item.text))
+  const target = matched || headings[index]
+  target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+async function onPastedImage(file) {
+  if (!file) return
+  if (imageUploading.value) {
+    showInfo(t('图片正在上传，请稍候'))
+    return
+  }
+  imageUploading.value = true
+  try {
+    const buffer = await file.arrayBuffer()
+    const result = await imageHostUploadData({
+      name: file.name || `image-${Date.now()}.png`,
+      mime: file.type || 'image/png',
+      data: new Uint8Array(buffer)
+    })
+    const url = result?.results?.find((entry) => entry?.success)?.url
+    if (!result?.success || !url) {
+      showError(t('图片上传失败：{p0}', { p0: result?.error || '' }))
+      return
+    }
+    editorRef.value?.insertText(`![${t('图片描述')}](${url})`)
+    showSuccess(t('图片已上传并插入'))
+  } catch (error) {
+    showError(t('图片上传失败：{p0}', { p0: error?.message || '' }))
+  } finally {
+    imageUploading.value = false
+  }
+}
+
+function onWindowKeydown(event) {
+  const mod = event.ctrlKey || event.metaKey
+  if (!mod) {
+    if (event.key === 'Escape' && openMenuVisible.value) openMenuVisible.value = false
+    return
+  }
+  if (event.altKey) return
+  const key = String(event.key || '').toLowerCase()
+  if (key === 's') {
+    event.preventDefault()
+    void saveDocument({ as: event.shiftKey })
+  } else if (key === 'o') {
+    event.preventDefault()
+    void openDocument()
+  }
+}
+
+function openInlineAi() {
+  const selected = editorRef.value?.getSelection?.() || ''
+  if (!selected.trim()) {
+    showToast(t('请先在编辑器中选中要处理的文本'), 'warning')
+    return
+  }
+  inlineAiText.value = selected
+  inlineAiVisible.value = true
+}
+
+function applyInlineAi(result) {
+  editorRef.value?.insertText(result)
+  showSuccess(t('已替换选中内容'))
+}
 
 function applyFormat(action) {
   const editor = editorRef.value
@@ -536,66 +812,75 @@ function onPreviewClick(event) {
   if (/^https?:\/\//i.test(href)) openExternal(href)
 }
 
-function triggerImport() {
-  fileInputRef.value?.click()
-}
-
-function onImportFile(event) {
-  const file = event.target.files?.[0]
-  event.target.value = ''
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = () => {
-    content.value = String(reader.result || '')
-    showSuccess(t('已导入 {name}', { name: file.name }))
-  }
-  reader.onerror = () => showError(t('读取文件失败'))
-  reader.readAsText(file)
-}
-
-function exportMarkdown() {
-  if (!content.value.trim()) {
-    showInfo(t('当前没有可导出的内容'))
-    return
-  }
-  const blob = new Blob([content.value], { type: 'text/markdown;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `markdown-${formatDateTime(Date.now(), 'date')}.md`
-  document.body.appendChild(anchor)
-  anchor.click()
-  document.body.removeChild(anchor)
-  setTimeout(() => URL.revokeObjectURL(url), 0)
-  showSuccess(t('已导出 Markdown 文件'))
-}
-
 async function copyHtml() {
-  previewHtml.value = renderMarkdownPreview(content.value)
+  previewHtml.value = renderMarkdownPreview(docParts.value.body)
   const ok = await copyToClipboard(previewHtml.value)
   if (ok) showSuccess(t('已复制渲染后的 HTML'))
   else showError(t('复制失败'))
 }
 
 function loadExample() {
+  detachDocument()
   content.value = buildExample()
   showInfo(t('已加载示例内容'))
 }
 
 function clearContent() {
   clearVisible.value = false
+  detachDocument()
   content.value = ''
   showSuccess(t('已清空编辑内容'))
 }
 
-onMounted(() => {
-  splitMedia.addEventListener('change', syncSplitDirection)
+function readLegacyDraft() {
   try {
-    content.value = localStorage.getItem(DRAFT_KEY) || buildExample()
+    return localStorage.getItem(DRAFT_KEY)
   } catch {
-    content.value = buildExample()
+    return null
   }
+}
+
+onMounted(async () => {
+  splitMedia.addEventListener('change', syncSplitDirection)
+  document.addEventListener('pointerdown', closeOpenMenuOnOutside)
+  window.addEventListener('keydown', onWindowKeydown)
+
+  const list = await mdListRecents()
+  if (Array.isArray(list?.recents)) recents.value = list.recents
+
+  const legacy = readLegacyDraft()
+  let saved = null
+  try {
+    if (legacy !== null) {
+      await draftImport('markdown', [{ id: 'current', content: legacy, updatedAt: Date.now() }])
+      localStorage.removeItem(DRAFT_KEY)
+    }
+    const page = await draftList('markdown', { limit: 1 })
+    saved = page?.items?.[0]?.content ?? null
+  } catch {
+    // 读取失败时回退到旧本地草稿或示例内容
+  }
+  const incoming = takeSendResource('/markdown-editor')
+  let restored = null
+  if (!incoming) {
+    let storedPath = ''
+    try {
+      storedPath = localStorage.getItem(DOC_KEY) || ''
+    } catch {
+      // 忽略本地存储失败
+    }
+    if (storedPath) {
+      const doc = await mdReadDocument(storedPath)
+      if (doc?.success) restored = doc
+      else rememberDocumentPath('')
+    }
+  }
+  if (restored) {
+    applyDocument(restored)
+  } else {
+    content.value = incoming?.kind === 'text' ? incoming.text : (saved ?? legacy ?? buildExample())
+  }
+  draftReady = true
   scheduleRender()
   nextTick(() => {
     decorateMarkdownPreview(previewScrollRef.value)
@@ -605,8 +890,12 @@ onMounted(() => {
 
 onUnmounted(() => {
   splitMedia.removeEventListener('change', syncSplitDirection)
+  document.removeEventListener('pointerdown', closeOpenMenuOnOutside)
+  window.removeEventListener('keydown', onWindowKeydown)
+  void flushPendingSave()
   clearTimeout(renderTimer)
-  clearTimeout(saveTimer)
+  clearTimeout(draftTimer)
+  clearTimeout(fileSaveTimer)
 })
 </script>
 
@@ -623,7 +912,16 @@ onUnmounted(() => {
   }
 }
 
+.md-shell {
+  display: flex;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
 .md-workbench {
+  flex: 1;
+  min-width: 0;
   height: 100%;
   min-height: 0;
   display: flex;
@@ -742,8 +1040,223 @@ onUnmounted(() => {
   background: var(--md-bg);
 }
 
-.md-hidden-input {
-  display: none;
+.md-doc-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 240px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.md-dirty-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-color);
+}
+
+.md-outline {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  width: 200px;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.md-outline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 7px 10px 7px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-muted);
+  font-size: var(--font-size-dense);
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.md-outline-close {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.md-outline-close:hover {
+  color: var(--accent-color);
+}
+
+.md-outline-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.md-outline-heading {
+  margin: 6px 4px 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.md-outline-empty {
+  margin: 4px 4px 8px;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.md-outline-meta {
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.md-meta-row {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 4px;
+  font-size: var(--font-size-xs);
+}
+
+.md-meta-key {
+  flex-shrink: 0;
+  max-width: 50%;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.md-meta-value {
+  overflow: hidden;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.md-outline-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  overflow: hidden;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.md-outline-item:hover {
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--accent-color);
+}
+
+.md-open-group {
+  position: relative;
+  display: inline-flex;
+}
+
+.md-open-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.md-open-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 260px;
+  max-width: 380px;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.md-open-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.md-open-item:hover {
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.md-open-action {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-color);
+}
+
+.md-open-heading {
+  margin: 6px 8px 2px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.md-open-empty {
+  margin: 4px 8px 6px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.md-open-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.md-open-path {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.btn.is-active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .md-format-group {

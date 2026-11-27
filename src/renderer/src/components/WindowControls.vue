@@ -62,22 +62,14 @@
     </button>
 
     <button type="button" class="window-control close" :aria-label="t('关闭')" @click="emit('close')">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m6 6 12 12M18 6 6 18" />
-      </svg>
+      <AppIcon name="close" :stroke-width="1.8" />
       <span class="window-control-tip" aria-hidden="true">{{ t('关闭') }}</span>
     </button>
   </div>
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { onWindowMaximized, windowIsMaximized } from '@/api'
 import { t } from '@/i18n'
@@ -158,13 +150,13 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 6px);
   left: 50%;
-  z-index: 60;
+  z-index: 1200;
   padding: 5px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 6px;
-  background: #17181c;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-  color: #f5f5f7;
+  border: 1px solid var(--tooltip-border);
+  border-radius: var(--radius-sm);
+  background: var(--tooltip-bg);
+  box-shadow: var(--tooltip-shadow);
+  color: var(--tooltip-text);
   font-size: var(--font-size-xs);
   line-height: 1.2;
   white-space: nowrap;

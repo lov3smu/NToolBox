@@ -10,10 +10,22 @@ import {
 } from '@/api'
 import { copyToClipboard } from '@/utils/clipboard'
 import { buildPendingSql, coerceValue, isSameValue, quoteIdentifier, escapeSqlValue } from './rowEditing'
+import { logError } from '@/utils/log'
 
 export function createTableOps(state, api) {
-  const { defaultPageSize, lastExecutedSql, lastExecutedTime, selectedDatabase, sqlPreviewDialog, cellFilterMenu } =
-    state
+  const {
+    connections,
+    defaultPageSize,
+    lastExecutedSql,
+    lastExecutedTime,
+    selectedDatabase,
+    sqlPreviewDialog,
+    cellFilterMenu
+  } = state
+
+  function engineForConnection(connName) {
+    return connections.value?.find((conn) => conn.name === connName)?.engine || 'mysql'
+  }
 
   const TABLE_VIEW_KEY = 'ntoolbox-db-table-views'
   const rowKeyCache = new WeakMap()
@@ -180,7 +192,7 @@ export function createTableOps(state, api) {
       tab.rowDeletes = {}
       tab.rowInserts = []
     } catch (error) {
-      console.error('查询表数据失败:', error)
+      logError('查询表数据失败:', error)
       tab.queryResult = { success: false, error: error.message }
     } finally {
       tab.executing = false
@@ -396,7 +408,8 @@ export function createTableOps(state, api) {
       tableName: tab.tableName,
       rowEdits: tab.rowEdits,
       rowDeletes: tab.rowDeletes,
-      rowInserts: tab.rowInserts
+      rowInserts: tab.rowInserts,
+      engine: engineForConnection(tab.connectionName)
     })
   }
 
@@ -459,7 +472,7 @@ export function createTableOps(state, api) {
       await executeTableQuery(tab, tab.queryResult?.currentPage || 1)
       await api.loadDatabaseObjects(tab.connectionName, tab.database, { force: true })
     } catch (error) {
-      console.error('保存表数据失败:', error)
+      logError('保存表数据失败:', error)
       await api.showMessage(t('保存表数据失败: ') + error.message, 'error')
     } finally {
       tab.executing = false
@@ -881,7 +894,7 @@ export function createTableOps(state, api) {
         await api.showMessage(t('保存文件失败: ') + writeResult.error, 'error')
       }
     } catch (error) {
-      console.error('转储表失败:', error)
+      logError('转储表失败:', error)
       await api.showMessage(t('转储表失败: ') + error.message, 'error')
     }
   }
@@ -938,16 +951,20 @@ export function createTableOps(state, api) {
 
   function buildInsertSqlForRows(tab, rows) {
     if (!rows?.length) return ''
-    const tableRef = `${quoteIdentifier(tab.database)}.${quoteIdentifier(tab.tableName)}`
+    const engine = engineForConnection(tab.connectionName)
+    const tableRef =
+      engine === 'mysql' && tab.database
+        ? `${quoteIdentifier(tab.database, engine)}.${quoteIdentifier(tab.tableName, engine)}`
+        : quoteIdentifier(tab.tableName, engine)
     const fields = tab.fieldOrder?.length ? tab.fieldOrder : (tab.queryResult?.fields || []).map((field) => field.name)
     if (!fields.length) return ''
 
     return rows
       .map((row) => {
-        const values = fields.map((field) => escapeSqlValue(getCellValue(tab, row, field)))
-        return `INSERT INTO ${tableRef} (${fields.map((field) => quoteIdentifier(field)).join(', ')}) VALUES (${values.join(
-          ', '
-        )});`
+        const values = fields.map((field) => escapeSqlValue(getCellValue(tab, row, field), engine))
+        return `INSERT INTO ${tableRef} (${fields
+          .map((field) => quoteIdentifier(field, engine))
+          .join(', ')}) VALUES (${values.join(', ')});`
       })
       .join('\n')
   }

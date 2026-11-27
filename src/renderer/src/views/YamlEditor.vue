@@ -13,9 +13,9 @@
           <div class="panel-header">
             <span class="panel-title">{{ t('YAML 输入') }}</span>
             <div class="panel-actions">
-              <button class="btn btn-secondary btn-xs" @click="clearInput">{{ t('清空') }}</button>
-              <button class="btn btn-secondary btn-xs" @click="loadExample">{{ t('示例') }}</button>
-              <button class="btn btn-secondary btn-xs" @click="loadFromFile">{{ t('文件') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="clearInput">{{ t('清空') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="loadExample">{{ t('示例') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="loadFromFile">{{ t('文件') }}</button>
             </div>
           </div>
           <div class="editor-wrapper">
@@ -25,20 +25,32 @@
                   {{ n }}
                 </div>
               </div>
-              <textarea
-                ref="textareaRef"
-                v-model="yamlInput"
-                class="code-editor"
-                :placeholder="t('请输入 YAML 代码...')"
-                spellcheck="false"
-                @input="onInputChange"
-                @scroll="syncScroll"
-              />
+              <div class="code-stage">
+                <pre
+                  ref="highlightRef"
+                  class="code-highlight"
+                  aria-hidden="true"
+                ><code v-html="highlightedInput"></code></pre>
+                <textarea
+                  ref="textareaRef"
+                  v-model="yamlInput"
+                  class="code-editor"
+                  :class="{ 'is-composing': composing }"
+                  :placeholder="t('请输入 YAML 代码...')"
+                  spellcheck="false"
+                  wrap="off"
+                  @input="onInputChange"
+                  @compositionstart="composing = true"
+                  @compositionend="composing = false"
+                  @scroll="syncScroll"
+                />
+              </div>
             </div>
           </div>
           <div class="input-stats">
             <span>{{ t('行数') }}: {{ inputLines }}</span>
             <span>{{ t('字符') }}: {{ inputChars }}</span>
+            <span v-if="draftSavedTime">{{ t('已自动保存 {time}', { time: draftSavedTime }) }}</span>
           </div>
         </div>
 
@@ -65,7 +77,7 @@
               </button>
             </div>
             <div class="panel-actions">
-              <button class="btn btn-secondary btn-xs" @click="copyOutput">{{ t('复制') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="copyOutput">{{ t('复制') }}</button>
             </div>
           </div>
           <div class="editor-wrapper">
@@ -75,17 +87,25 @@
                   {{ n }}
                 </div>
               </div>
-              <textarea
-                ref="outputTextareaRef"
-                v-model="outputContent"
-                class="code-editor output-editor"
-                readonly
-                spellcheck="false"
-                @scroll="syncOutputScroll"
-              />
+              <div class="code-stage">
+                <pre
+                  ref="outputHighlightRef"
+                  class="code-highlight"
+                  aria-hidden="true"
+                ><code v-html="highlightedOutput"></code></pre>
+                <textarea
+                  ref="outputTextareaRef"
+                  v-model="outputContent"
+                  class="code-editor output-editor"
+                  readonly
+                  spellcheck="false"
+                  wrap="off"
+                  @scroll="syncOutputScroll"
+                />
+              </div>
             </div>
             <div v-else-if="outputType === 'tree'" class="tree-view">
-              <div v-if="!parsedData" class="tree-empty">{{ t('请输入有效的 YAML 内容') }}</div>
+              <EmptyState v-if="!parsedData" size="xs" :title="t('请输入有效的 YAML 内容')" />
               <div v-else class="tree-content" v-html="treeHtml" />
             </div>
           </div>
@@ -107,10 +127,11 @@
       </div>
 
       <div class="panel">
-        <div class="panel-header">
+        <button type="button" class="panel-header help-toggle" :aria-expanded="helpOpen" @click="helpOpen = !helpOpen">
           <span class="panel-title">{{ t('YAML 语法说明') }}</span>
-        </div>
-        <div class="panel-body help-content">
+          <AppIcon name="chevron-down" class="help-caret" :class="{ open: helpOpen }" />
+        </button>
+        <div v-show="helpOpen" class="panel-body help-content">
           <p>
             <strong>{{ t('基本语法：') }}</strong>
           </p>
@@ -140,26 +161,28 @@
         </div>
       </div>
     </div>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { usePaneResize, useToast } from '@/composables'
+import { useAutoDraft, usePaneResize, useSendReceiver, useToast } from '@/composables'
 import * as yaml from 'js-yaml'
-import Toast from '@/components/Toast.vue'
+import hljs from 'highlight.js/lib/common'
 import SplitHandle from '@/components/SplitHandle.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { t } from '@/i18n'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showWarning, showInfo } = useToast()
+const { showSuccess, showError, showWarning, showInfo } = useToast()
 
 const textareaRef = ref(null)
 const lineNumbersRef = ref(null)
+const highlightRef = ref(null)
 const outputTextareaRef = ref(null)
 const outputLineNumbersRef = ref(null)
+const outputHighlightRef = ref(null)
 const editorLayoutRef = ref(null)
 const {
   size: splitRatio,
@@ -177,6 +200,11 @@ const {
 })
 
 const yamlInput = ref('')
+const helpOpen = ref(false)
+const composing = ref(false)
+const { savedTime: draftSavedTime, ready: draftReady } = useAutoDraft('yaml', yamlInput, {
+  onRestore: () => onInputChange()
+})
 const outputContent = ref('')
 const outputType = ref('yaml')
 const parsedData = ref(null)
@@ -193,15 +221,38 @@ const inputLines = computed(() => {
 
 const inputChars = computed(() => yamlInput.value.length)
 
+function highlight(code, language) {
+  if (!code) return ''
+  try {
+    return `${hljs.highlight(code, { language }).value}\n`
+  } catch {
+    return ''
+  }
+}
+
+const highlightedInput = computed(() => highlight(yamlInput.value, 'yaml'))
+
 function syncScroll() {
-  if (textareaRef.value && lineNumbersRef.value) {
-    lineNumbersRef.value.scrollTop = textareaRef.value.scrollTop
+  const textarea = textareaRef.value
+  if (!textarea) return
+  if (lineNumbersRef.value) {
+    lineNumbersRef.value.scrollTop = textarea.scrollTop
+  }
+  if (highlightRef.value) {
+    highlightRef.value.scrollTop = textarea.scrollTop
+    highlightRef.value.scrollLeft = textarea.scrollLeft
   }
 }
 
 function syncOutputScroll() {
-  if (outputTextareaRef.value && outputLineNumbersRef.value) {
-    outputLineNumbersRef.value.scrollTop = outputTextareaRef.value.scrollTop
+  const textarea = outputTextareaRef.value
+  if (!textarea) return
+  if (outputLineNumbersRef.value) {
+    outputLineNumbersRef.value.scrollTop = textarea.scrollTop
+  }
+  if (outputHighlightRef.value) {
+    outputHighlightRef.value.scrollTop = textarea.scrollTop
+    outputHighlightRef.value.scrollLeft = textarea.scrollLeft
   }
 }
 
@@ -211,6 +262,8 @@ const outputLines = computed(() => {
 })
 
 const outputChars = computed(() => outputContent.value.length)
+
+const highlightedOutput = computed(() => highlight(outputContent.value, outputType.value === 'json' ? 'json' : 'yaml'))
 
 function renderTree(data, indent = 0) {
   if (data === null) {
@@ -262,6 +315,117 @@ function renderValueInline(val) {
   return `<span class="${typeClass}">${display}</span>`
 }
 
+// js-yaml 的错误信息为英文，这里映射为中文提示；未覆盖的消息保留原文兜底
+const YAML_REASON_TRANSLATIONS = {
+  'duplication of %YAML directive': () => t('重复的 %YAML 指令'),
+  'YAML directive accepts exactly one argument': () => t('YAML 指令只接受一个参数'),
+  'ill-formed argument of the YAML directive': () => t('YAML 指令的参数格式不正确'),
+  'unacceptable YAML version of the document': () => t('不支持的 YAML 版本'),
+  'TAG directive accepts exactly two arguments': () => t('TAG 指令只接受两个参数'),
+  'ill-formed tag handle (first argument) of the TAG directive': () => t('TAG 指令的标签句柄（第一个参数）格式不正确'),
+  'ill-formed tag prefix (second argument) of the TAG directive': () => t('TAG 指令的标签前缀（第二个参数）格式不正确'),
+  'expected valid JSON character': () => t('期望合法的 JSON 字符'),
+  'the stream contains non-printable characters': () => t('内容包含不可打印字符'),
+  'cannot merge mappings; the provided source object is unacceptable': () => t('无法合并映射：源对象不可接受'),
+  'nested arrays are not supported inside keys': () => t('键中不支持嵌套数组'),
+  'duplicated mapping key': () => t('映射键重复'),
+  'a line break is expected': () => t('此处应换行'),
+  'unexpected end of the document within a single quoted scalar': () => t('单引号字符串意外结束'),
+  'unexpected end of the stream within a single quoted scalar': () => t('单引号字符串未闭合'),
+  'expected hexadecimal character': () => t('期望十六进制字符'),
+  'unknown escape sequence': () => t('未知的转义序列'),
+  'unexpected end of the document within a double quoted scalar': () => t('双引号字符串意外结束'),
+  'unexpected end of the stream within a double quoted scalar': () => t('双引号字符串未闭合'),
+  'missed comma between flow collection entries': () => t('流式集合条目之间缺少逗号'),
+  "expected the node content, but found ','": () => t('期望节点内容，却遇到了 “,”'),
+  'unexpected end of the stream within a flow collection': () => t('流式集合未闭合'),
+  'repeat of a chomping mode identifier': () => t('重复的裁剪模式标识符'),
+  'bad explicit indentation width of a block scalar; it cannot be less than one': () =>
+    t('块标量的显式缩进宽度无效，不能小于 1'),
+  'repeat of an indentation width identifier': () => t('重复的缩进宽度标识符'),
+  'tab characters must not be used in indentation': () => t('缩进中不能使用制表符'),
+  'bad indentation of a sequence entry': () => t('序列条目的缩进不正确'),
+  'incomplete explicit mapping pair; a key node is missed; or followed by a non-tabulated empty line': () =>
+    t('映射键值对不完整：缺少键或值'),
+  'a whitespace character is expected after the key-value separator within a block mapping': () =>
+    t('键值分隔符后需要有空格'),
+  'can not read an implicit mapping pair; a colon is missed': () => t('无法解析映射键值对：缺少冒号'),
+  'can not read a block mapping entry; a multiline key may not be an implicit key': () =>
+    t('无法解析映射条目：多行键不能作为隐式键'),
+  'bad indentation of a mapping entry': () => t('映射条目的缩进不正确'),
+  'duplication of a tag property': () => t('重复的标签属性'),
+  'unexpected end of the stream within a verbatim tag': () => t('标签未闭合（!<...>）'),
+  'named tag handle cannot contain such characters': () => t('命名标签句柄包含非法字符'),
+  'tag suffix cannot contain exclamation marks': () => t('标签后缀不能包含感叹号'),
+  'tag suffix cannot contain flow indicator characters': () => t('标签后缀不能包含流式指示字符'),
+  'duplication of an anchor property': () => t('重复的锚点属性'),
+  'name of an anchor node must contain at least one character': () => t('锚点名称不能为空'),
+  'name of an alias node must contain at least one character': () => t('别名名称不能为空'),
+  'alias node should not have any properties': () => t('别名节点不能带有属性'),
+  'directive name must not be less than one character in length': () => t('指令名不能为空'),
+  'directives end mark is expected': () => t('缺少指令结束标记（---）'),
+  'end of the stream or a document separator is expected': () => t('期望文档结束或文档分隔符（---）'),
+  'null byte is not allowed in input': () => t('内容中不允许出现空字节'),
+  'expected a single document in the stream, but found more': () => t('只允许一个文档，但发现了多个文档'),
+  'code point within a string may not be greater than 0xFFFFFFFF': () => t('字符串中的码点不能大于 0xFFFFFFFF')
+}
+
+const YAML_REASON_PATTERNS = [
+  [
+    /^there is a previously declared suffix for "(.+)" tag handle$/,
+    (match) => t('标签句柄 “{handle}” 已声明过后缀', { handle: match[1] })
+  ],
+  [/^tag prefix is malformed: (.+)$/, (match) => t('标签前缀格式不正确：{prefix}', { prefix: match[1] })],
+  [/^tag name cannot contain such characters: (.+)$/, (match) => t('标签名包含非法字符：{name}', { name: match[1] })],
+  [/^tag name is malformed: (.+)$/, (match) => t('标签名格式不正确：{name}', { name: match[1] })],
+  [/^undeclared tag handle "(.+)"$/, (match) => t('未声明的标签句柄 “{handle}”', { handle: match[1] })],
+  [/^unidentified alias "(.+)"$/, (match) => t('未定义的别名 “{alias}”', { alias: match[1] })],
+  [/^unknown tag !<(.+)>$/, (match) => t('未知标签 !<{tag}>', { tag: match[1] })],
+  [
+    /^unacceptable node kind for !<\?> tag; it should be "(\w+)", not "(\w+)"$/,
+    (match) =>
+      t('标签 !<?> 的节点类型不正确（应为 {expected}，实际为 {actual}）', { expected: match[1], actual: match[2] })
+  ],
+  [
+    /^unacceptable node kind for !<(.+)> tag; it should be "(\w+)", not "(\w+)"$/,
+    (match) =>
+      t('标签 !<{tag}> 的节点类型不正确（应为 {expected}，实际为 {actual}）', {
+        tag: match[1],
+        expected: match[2],
+        actual: match[3]
+      })
+  ],
+  [
+    /^cannot resolve a node with !<(.+)> explicit tag$/,
+    (match) => t('无法解析带 !<{tag}> 显式标签的节点', { tag: match[1] })
+  ],
+  [/^unacceptable kind of an object to dump (.+)$/, (match) => t('无法序列化该对象类型：{kind}', { kind: match[1] })]
+]
+
+function localizeYamlReason(reason) {
+  const text = typeof reason === 'string' ? reason.trim() : ''
+  if (!text) return t('未知错误')
+  const translate = YAML_REASON_TRANSLATIONS[text]
+  if (translate) return translate()
+  for (const [pattern, build] of YAML_REASON_PATTERNS) {
+    const match = pattern.exec(text)
+    if (match) return build(match)
+  }
+  return text
+}
+
+function describeYamlError(error) {
+  const reason = localizeYamlReason(error?.reason || error?.message)
+  if (error?.mark) {
+    return t('第 {line} 行，第 {column} 列: {reason}', {
+      line: error.mark.line + 1,
+      column: error.mark.column + 1,
+      reason
+    })
+  }
+  return reason
+}
+
 function onInputChange() {
   errorDetail.value = ''
   if (!yamlInput.value.trim()) {
@@ -276,7 +440,7 @@ function onInputChange() {
   try {
     parsedData.value = yaml.load(yamlInput.value, {
       onWarning: (warning) => {
-        errorDetail.value = warning.message
+        errorDetail.value = describeYamlError(warning)
       }
     })
 
@@ -314,18 +478,7 @@ function onInputChange() {
     parsedData.value = null
     statusText.value = t('YAML 格式错误')
     statusClass.value = 'status-error'
-
-    let errorMsg = e.message || t('未知错误')
-    if (e.mark) {
-      const lineNum = e.mark.line + 1
-      const colNum = e.mark.column + 1
-      errorMsg = t('第 {line} 行，第 {column} 列: {reason}', {
-        line: lineNum,
-        column: colNum,
-        reason: e.reason || e.message
-      })
-    }
-    errorDetail.value = errorMsg
+    errorDetail.value = describeYamlError(e)
     outputContent.value = ''
     treeHtml.value = ''
   }
@@ -381,7 +534,7 @@ function formatYaml() {
     onInputChange()
     showSuccess(t('格式化成功'))
   } catch (e) {
-    showError(t('格式化失败: {message}', { message: e.message }))
+    showError(t('格式化失败: {message}', { message: describeYamlError(e) }))
   }
 }
 
@@ -404,7 +557,7 @@ function compressYaml() {
     onInputChange()
     showSuccess(t('压缩成功'))
   } catch (e) {
-    showError(t('压缩失败: {message}', { message: e.message }))
+    showError(t('压缩失败: {message}', { message: describeYamlError(e) }))
   }
 }
 
@@ -425,17 +578,7 @@ function validateYaml() {
   } catch (e) {
     statusText.value = t('YAML 格式错误')
     statusClass.value = 'status-error'
-
-    let errorMsg = e.message || t('未知错误')
-    if (e.mark) {
-      const lineNum = e.mark.line + 1
-      const colNum = e.mark.column + 1
-      errorMsg = t('第 {line} 行，第 {column} 列: {reason}', {
-        line: lineNum,
-        column: colNum,
-        reason: e.reason || e.message
-      })
-    }
+    const errorMsg = describeYamlError(e)
     errorDetail.value = errorMsg
     showError(t('校验失败: {message}', { message: errorMsg }))
   }
@@ -453,7 +596,7 @@ function yamlToJson() {
     outputContent.value = JSON.stringify(data, null, 2)
     showSuccess(t('转换成功'))
   } catch (e) {
-    showError(t('转换失败: {message}', { message: e.message }))
+    showError(t('转换失败: {message}', { message: describeYamlError(e) }))
   }
 }
 
@@ -563,18 +706,26 @@ function copyOutput() {
 onMounted(() => {
   loadExample()
 })
+
+useSendReceiver('/yaml-editor', draftReady, (resource) => {
+  yamlInput.value = resource.text
+  onInputChange()
+})
 </script>
 
 <style scoped>
 .page-body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
 }
 
 .editor-layout {
   display: flex;
-  height: 480px;
+  flex: 1;
+  min-height: 360px;
 }
 
 .editor-panel {
@@ -622,7 +773,7 @@ onMounted(() => {
   border-right: 1px solid var(--border-color);
   background: var(--surface-muted);
   color: var(--text-tertiary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 20.8px;
   text-align: right;
@@ -633,19 +784,93 @@ onMounted(() => {
   min-height: 20.8px;
 }
 
-.code-editor {
+.code-stage {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: var(--surface);
+}
+
+.code-highlight {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 12px;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-dense);
+  line-height: 20.8px;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.code-highlight code {
+  font: inherit;
+  white-space: inherit;
+}
+
+.code-highlight :deep(.hljs-attr) {
+  color: var(--accent-color);
+}
+
+.code-highlight :deep(.hljs-string),
+.code-highlight :deep(.hljs-template-variable) {
+  color: var(--success-dark);
+}
+
+.code-highlight :deep(.hljs-number) {
+  color: var(--info-dark);
+}
+
+.code-highlight :deep(.hljs-literal),
+.code-highlight :deep(.hljs-type) {
+  color: var(--warning-dark);
+}
+
+.code-highlight :deep(.hljs-bullet),
+.code-highlight :deep(.hljs-symbol) {
+  color: var(--accent-color);
+}
+
+.code-highlight :deep(.hljs-comment),
+.code-highlight :deep(.hljs-quote) {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.code-highlight :deep(.hljs-meta) {
+  color: var(--text-tertiary);
+}
+
+.code-editor {
+  position: relative;
+  width: 100%;
   height: 100%;
   min-width: 0;
   padding: 12px;
   border: none;
   outline: none;
   resize: none;
-  background: var(--surface);
-  color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text-primary);
+  white-space: pre;
+  overflow: auto;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 20.8px;
+}
+
+.code-editor::selection {
+  background: rgba(var(--accent-rgb), 0.24);
+  color: transparent;
+}
+
+.code-editor.is-composing {
+  color: var(--text-primary);
+  background: var(--surface);
 }
 
 .code-editor::placeholder {
@@ -653,22 +878,16 @@ onMounted(() => {
 }
 
 .output-editor {
-  background: var(--surface);
+  background: transparent;
 }
 
 .tree-view {
   height: 100%;
   padding: 12px;
   overflow-y: auto;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
   line-height: 1.6;
-}
-
-.tree-empty {
-  color: var(--text-tertiary);
-  text-align: center;
-  padding: 20px;
 }
 
 .tree-content {
@@ -748,7 +967,7 @@ onMounted(() => {
   border-radius: var(--radius-sm);
   color: var(--error-dark);
   font-size: var(--font-size-xs);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
 }
 
 .help-content {
@@ -772,9 +991,9 @@ onMounted(() => {
 
 .help-content code {
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--surface-muted);
   color: var(--text-primary);
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: var(--font-mono);
 }
 </style>

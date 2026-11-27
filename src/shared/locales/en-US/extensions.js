@@ -55,7 +55,30 @@ export default {
   '在 AI 助手中生成技能包': 'Generate a skill package in the AI assistant',
   '内置 {builtin} · 已安装 {installed}': 'Built-in {builtin} · Installed {installed}',
   '正在加载扩展…': 'Loading extensions…',
-  '插件包，包含随包安装的技能与连接器。': 'A plugin bundle with skills and connectors.',
+  '插件包，包含随包安装的技能、连接器、命令与模板。':
+    'A plugin bundle with skills, connectors, commands and templates.',
+  '插件包，包含随包安装的技能、连接器、命令、模板与沙箱动作。':
+    'A plugin bundle with skills, connectors, commands, templates and sandbox actions.',
+  沙箱动作: 'Sandbox actions',
+  沙箱权限: 'Sandbox permissions',
+  插件沙箱: 'Plugin sandbox',
+  首次运行需授权: 'Approval required on first run',
+  已授权: 'Approved',
+  插件动作运行失败: 'Failed to run the plugin action',
+  '已运行「{name}」，结果已复制到剪贴板': 'Ran "{name}", result copied to the clipboard',
+  '已运行「{name}」，结果已发送通知': 'Ran "{name}", result sent as a notification',
+  '已运行「{title}」，结果已复制到剪贴板': 'Ran "{title}", result copied to the clipboard',
+  '已运行「{title}」，结果已发送通知': 'Ran "{title}", result sent as a notification',
+  文本与编码工具: 'Text and encoding tools',
+  读取剪贴板文本: 'Read clipboard text',
+  写入剪贴板: 'Write to the clipboard',
+  发送系统通知: 'Send system notifications',
+  读写插件本地数据: 'Read and write plugin-local data',
+  访问插件声明的主机: 'Access plugin-declared hosts',
+  低风险: 'low risk',
+  中风险: 'medium risk',
+  高风险: 'high risk',
+  模板: 'Templates',
   技能已被单独卸载: 'This skill was uninstalled separately',
   连接器已在配置中移除: 'This connector was removed from the config',
   '安装位置：{path}': 'Location: {path}',
@@ -70,8 +93,8 @@ export default {
   编辑描述: 'Edit description',
   导出技能: 'Export skill',
   '更新 v{version}': 'Update to v{version}',
-  '插件把技能与连接器打包在一起，一次安装即可使用全部组件。':
-    'Plugins bundle skills and connectors, so one install gives you every component.',
+  '插件把技能、连接器、命令与模板打包在一起，一次安装即可使用全部组件。':
+    'Plugins bundle skills, connectors, commands and templates, so one install gives you every component.',
   '技能是 AI 助手可调用的指令与脚本，安装后按需触发。':
     'Skills are instructions and scripts the AI assistant can call when needed.',
   '连接器通过 MCP 协议把外部工具与数据接入 AI 助手。':

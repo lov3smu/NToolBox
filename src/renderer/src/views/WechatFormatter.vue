@@ -32,58 +32,31 @@
           H3
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('粗体 (Ctrl+B)')" @click="applyFormat('bold')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z" />
-          </svg>
+          <AppIcon name="bold" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('斜体 (Ctrl+I)')" @click="applyFormat('italic')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 4h-9M14 20H5M15 4 9 20" />
-          </svg>
+          <AppIcon name="italic" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('引用')" @click="applyFormat('quote')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              d="M7 7h4v6H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM15 7h4v6h-4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM5 17h4M15 17h4"
-            />
-          </svg>
+          <AppIcon name="quote" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('无序列表')" @click="applyFormat('ul')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 6h12M9 12h12M9 18h12" />
-            <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
-            <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
-            <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
-          </svg>
+          <AppIcon name="list" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('有序列表')" @click="applyFormat('ol')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 6h11M10 12h11M10 18h11M4 5h1v4M3 9h3" />
-          </svg>
+          <AppIcon name="list-ordered" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('行内代码 (Ctrl+E)')" @click="applyFormat('code')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="16 18 22 12 16 6" />
-            <polyline points="8 6 2 12 8 18" />
-          </svg>
+          <AppIcon name="code" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('插入链接 (Ctrl+K)')" @click="applyFormat('link')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
-            <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
-          </svg>
+          <AppIcon name="link" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('代码块')" @click="applyFormat('codeblock')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="m8 10-2 2 2 2M16 10l2 2-2 2" />
-          </svg>
+          <AppIcon name="code-block" />
         </button>
         <button type="button" class="btn-icon btn-sm" :title="t('插入表格')" @click="applyFormat('table')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M3 10h18M9 10v10M15 10v10" />
-          </svg>
+          <AppIcon name="table-insert" />
         </button>
       </div>
 
@@ -104,47 +77,43 @@
       <span class="toolbar-sep" />
 
       <button class="btn btn-primary btn-sm" @click="copyArticle">{{ t('复制到公众号') }}</button>
-      <button class="btn btn-secondary btn-sm" @click="copyMarkdown">{{ t('复制 Markdown') }}</button>
-      <button class="btn btn-secondary btn-sm" @click="exportHtml">{{ t('导出 HTML') }}</button>
-      <button class="btn btn-secondary btn-sm" @click="triggerImport">{{ t('导入') }}</button>
-      <button class="btn btn-secondary btn-sm" @click="loadExample">{{ t('示例') }}</button>
-      <button class="btn btn-secondary btn-sm" @click="clearVisible = true">{{ t('清空') }}</button>
+      <OverflowMenu :items="moreActions" @select="onMoreAction">
+        <template #trigger="{ open, toggle }">
+          <button
+            class="btn btn-secondary btn-sm wx-more-trigger"
+            aria-haspopup="menu"
+            :aria-expanded="open"
+            @click="toggle"
+          >
+            {{ t('更多') }}
+            <AppIcon name="chevron-down" />
+          </button>
+        </template>
+      </OverflowMenu>
     </template>
 
     <div class="wechat-page">
       <div class="wx-config-bar">
-        <label class="wx-control">
+        <div class="wx-control">
           <span>{{ t('主题') }}</span>
-          <select v-model="prefs.theme">
-            <option v-for="theme in themes" :key="theme.id" :value="theme.id">{{ t(theme.name) }}</option>
-          </select>
-        </label>
-        <label class="wx-control">
+          <AppSelect v-model="prefs.theme" :options="themeOptions" size="sm" />
+        </div>
+        <div class="wx-control">
           <span>{{ t('字号') }}</span>
-          <select v-model.number="prefs.fontSize">
-            <option v-for="size in fontSizes" :key="size" :value="size">{{ size }}px</option>
-          </select>
-        </label>
-        <label class="wx-control">
+          <AppSelect v-model="prefs.fontSize" :options="fontSizeOptions" size="sm" />
+        </div>
+        <div class="wx-control">
           <span>{{ t('行高') }}</span>
-          <select v-model.number="prefs.lineHeight">
-            <option v-for="lineHeight in lineHeights" :key="lineHeight" :value="lineHeight">
-              {{ lineHeight.toFixed(2) }}
-            </option>
-          </select>
-        </label>
-        <label class="wx-control">
+          <AppSelect v-model="prefs.lineHeight" :options="lineHeightOptions" size="sm" />
+        </div>
+        <div class="wx-control">
           <span>{{ t('字体') }}</span>
-          <select v-model="prefs.font">
-            <option v-for="font in fonts" :key="font.id" :value="font.id">{{ t(font.name) }}</option>
-          </select>
-        </label>
-        <label class="wx-control">
+          <AppSelect v-model="prefs.font" :options="fontOptions" size="sm" />
+        </div>
+        <div class="wx-control">
           <span>{{ t('预览') }}</span>
-          <select v-model="prefs.previewWidth">
-            <option v-for="width in previewWidths" :key="width.id" :value="width.id">{{ t(width.name) }}</option>
-          </select>
-        </label>
+          <AppSelect v-model="prefs.previewWidth" :options="previewWidthOptions" size="sm" />
+        </div>
         <label class="wx-control wx-accent-control" :title="t('自定义强调色')">
           <span>{{ t('强调色') }}</span>
           <input type="color" :value="prefs.accent || activeTheme.accent" @input="prefs.accent = $event.target.value" />
@@ -253,236 +222,214 @@
       />
     </div>
 
-    <Transition name="wx-fade">
-      <div v-if="styleVisible" class="wx-overlay wx-drawer-overlay" @click.self="styleVisible = false">
-        <aside class="wx-drawer">
-          <header class="wx-drawer-header">
-            <span>{{ t('样式设置') }}</span>
-            <button type="button" class="wx-drawer-dismiss" @click="styleVisible = false">{{ t('关闭') }}</button>
-          </header>
-          <div class="wx-drawer-body">
-            <section class="wx-field-group">
-              <h3>{{ t('段落与标题') }}</h3>
-              <label class="wx-field">
-                <span>{{ t('段间距') }}</span>
-                <select v-model.number="prefs.blockSpacing">
-                  <option v-for="value in blockSpacings" :key="value" :value="value">{{ value.toFixed(2) }}×</option>
-                </select>
-              </label>
-              <label class="wx-check">
-                <input v-model="prefs.justify" type="checkbox" />
-                <span>{{ t('正文两端对齐') }}</span>
-              </label>
-              <label class="wx-check">
-                <input v-model="prefs.indent" type="checkbox" />
-                <span>{{ t('正文首行缩进') }}</span>
-              </label>
-              <label class="wx-field">
-                <span>{{ t('标题样式') }}</span>
-                <select v-model="prefs.headingStyle">
-                  <option v-for="item in headingStyles" :key="item.id" :value="item.id">{{ t(item.name) }}</option>
-                </select>
-              </label>
-              <label class="wx-field">
-                <span>{{ t('链接颜色') }}</span>
-                <select v-model="prefs.linkColor">
-                  <option v-for="item in linkColors" :key="item.id" :value="item.id">{{ item.name }}</option>
-                </select>
-              </label>
-              <label class="wx-field">
-                <span>{{ t('引用背景') }}</span>
-                <select v-model="prefs.quoteBg">
-                  <option v-for="item in quoteBackgrounds" :key="item.id" :value="item.id">{{ item.name }}</option>
-                </select>
-              </label>
-            </section>
-
-            <section class="wx-field-group">
-              <h3>{{ t('代码块') }}</h3>
-              <label class="wx-field">
-                <span>{{ t('代码主题') }}</span>
-                <select v-model="prefs.codeTheme">
-                  <option v-for="item in codeThemes" :key="item.id" :value="item.id">{{ item.name }}</option>
-                </select>
-              </label>
-              <label class="wx-check">
-                <input v-model="prefs.macCode" type="checkbox" />
-                <span>{{ t('Mac 风格窗口栏') }}</span>
-              </label>
-              <label class="wx-check">
-                <input v-model="prefs.lineNumbers" type="checkbox" />
-                <span>{{ t('显示代码行号') }}</span>
-              </label>
-            </section>
-
-            <section class="wx-field-group">
-              <h3>{{ t('图片与图表') }}</h3>
-              <label class="wx-field">
-                <span>{{ t('图片图注') }}</span>
-                <select v-model="prefs.legend">
-                  <option v-for="item in legends" :key="item.id" :value="item.id">{{ item.name }}</option>
-                </select>
-              </label>
-              <label class="wx-field wx-field-stack">
-                <span>{{ t('PlantUML 服务地址') }}</span>
-                <input
-                  v-model.lazy="prefs.plantUmlServer"
-                  type="url"
-                  placeholder="https://www.plantuml.com/plantuml/svg/"
-                />
-              </label>
-              <p class="wx-field-hint">
-                {{
-                  t(
-                    'PlantUML 图表与网络图片需要联网加载；本地图片以 Base64 内嵌，复制到公众号后若未显示，请改用图片链接。'
-                  )
-                }}
-              </p>
-            </section>
-
-            <section class="wx-field-group">
-              <h3>{{ t('高级') }}</h3>
-              <label class="wx-field">
-                <span>{{ t('预览宽度') }}</span>
-                <select v-model="prefs.previewWidth">
-                  <option v-for="item in previewWidths" :key="item.id" :value="item.id">{{ item.name }}</option>
-                </select>
-              </label>
-              <label class="wx-field wx-field-stack">
-                <span>{{ t('自定义 CSS') }}</span>
-                <textarea
-                  v-model="prefs.customCss"
-                  class="wx-css-input"
-                  rows="8"
-                  maxlength="20000"
-                  placeholder=".wx-article h2 { color: #3b6cf6; }"
-                />
-              </label>
-              <p class="wx-field-hint">
-                {{ t('自定义样式会在排版后内联到匹配元素，不支持伪类、媒体查询与 @ 规则。') }}
-              </p>
-            </section>
-          </div>
-          <footer class="wx-drawer-footer">
-            <button class="btn btn-secondary btn-sm" @click="resetStyles">{{ t('恢复默认样式') }}</button>
-            <button class="btn btn-primary btn-sm" @click="styleVisible = false">{{ t('完成') }}</button>
-          </footer>
-        </aside>
-      </div>
-    </Transition>
-
-    <Transition name="wx-fade">
-      <div v-if="draftsVisible" class="wx-overlay wx-center-overlay" @click.self="draftsVisible = false">
-        <div class="wx-modal wx-drafts-modal">
-          <header class="wx-modal-header">
-            <h2>{{ t('草稿箱') }}</h2>
-            <button type="button" class="wx-close" @click="draftsVisible = false">×</button>
-          </header>
-          <div class="wx-modal-body">
-            <div class="wx-drafts-toolbar">
-              <span class="wx-field-hint">{{
-                t('共 {count} 篇草稿，保存在本机浏览器存储中。', { count: drafts.length })
-              }}</span>
-              <button class="btn btn-primary btn-sm" @click="saveDraft">{{ t('保存当前为新草稿') }}</button>
+    <div v-if="styleVisible" class="wx-overlay wx-drawer-overlay">
+      <aside class="wx-drawer">
+        <header class="wx-drawer-header">
+          <span>{{ t('样式设置') }}</span>
+          <button type="button" class="wx-drawer-dismiss" @click="styleVisible = false">{{ t('关闭') }}</button>
+        </header>
+        <div class="wx-drawer-body">
+          <section class="wx-field-group">
+            <h3>{{ t('段落与标题') }}</h3>
+            <div class="wx-field">
+              <span>{{ t('段间距') }}</span>
+              <AppSelect v-model="prefs.blockSpacing" :options="blockSpacingOptions" />
             </div>
-            <ul v-if="drafts.length" class="wx-draft-list">
-              <li v-for="draft in drafts" :key="draft.id" class="wx-draft-item">
-                <div class="wx-draft-main">
-                  <strong>{{ draft.title }}</strong>
-                  <span>{{
-                    t('{chars} 字 · {time}', { chars: draftChars(draft), time: draftTime(draft.updatedAt) })
-                  }}</span>
-                </div>
-                <div class="wx-draft-actions">
-                  <button class="btn btn-secondary btn-xs" @click="loadDraft(draft)">{{ t('载入') }}</button>
-                  <button class="btn btn-danger btn-xs" @click="deleteDraft(draft.id)">{{ t('删除') }}</button>
-                </div>
-              </li>
-            </ul>
-            <p v-else class="wx-empty-line">{{ t('还没有草稿，点击右上角保存当前内容。') }}</p>
+            <label class="wx-check">
+              <input v-model="prefs.justify" type="checkbox" />
+              <span>{{ t('正文两端对齐') }}</span>
+            </label>
+            <label class="wx-check">
+              <input v-model="prefs.indent" type="checkbox" />
+              <span>{{ t('正文首行缩进') }}</span>
+            </label>
+            <div class="wx-field">
+              <span>{{ t('标题样式') }}</span>
+              <AppSelect v-model="prefs.headingStyle" :options="headingStyleOptions" />
+            </div>
+            <div class="wx-field">
+              <span>{{ t('链接颜色') }}</span>
+              <AppSelect v-model="prefs.linkColor" :options="linkColorOptions" />
+            </div>
+            <div class="wx-field">
+              <span>{{ t('引用背景') }}</span>
+              <AppSelect v-model="prefs.quoteBg" :options="quoteBgOptions" />
+            </div>
+          </section>
+
+          <section class="wx-field-group">
+            <h3>{{ t('代码块') }}</h3>
+            <div class="wx-field">
+              <span>{{ t('代码主题') }}</span>
+              <AppSelect v-model="prefs.codeTheme" :options="codeThemeOptions" />
+            </div>
+            <label class="wx-check">
+              <input v-model="prefs.macCode" type="checkbox" />
+              <span>{{ t('Mac 风格窗口栏') }}</span>
+            </label>
+            <label class="wx-check">
+              <input v-model="prefs.lineNumbers" type="checkbox" />
+              <span>{{ t('显示代码行号') }}</span>
+            </label>
+          </section>
+
+          <section class="wx-field-group">
+            <h3>{{ t('图片与图表') }}</h3>
+            <div class="wx-field">
+              <span>{{ t('图片图注') }}</span>
+              <AppSelect v-model="prefs.legend" :options="legendOptions" />
+            </div>
+            <label class="wx-field wx-field-stack">
+              <span>{{ t('PlantUML 服务地址') }}</span>
+              <input
+                v-model.lazy="prefs.plantUmlServer"
+                type="url"
+                placeholder="https://www.plantuml.com/plantuml/svg/"
+              />
+            </label>
+            <p class="wx-field-hint">
+              {{
+                t(
+                  'PlantUML 图表与网络图片需要联网加载；本地图片以 Base64 内嵌，复制到公众号后若未显示，请改用图片链接。'
+                )
+              }}
+            </p>
+          </section>
+
+          <section class="wx-field-group">
+            <h3>{{ t('高级') }}</h3>
+            <div class="wx-field">
+              <span>{{ t('预览宽度') }}</span>
+              <AppSelect v-model="prefs.previewWidth" :options="previewWidthOptions" />
+            </div>
+            <label class="wx-field wx-field-stack">
+              <span>{{ t('自定义 CSS') }}</span>
+              <AppTextarea
+                v-model="prefs.customCss"
+                class="wx-css-input"
+                rows="8"
+                maxlength="20000"
+                placeholder=".wx-article h2 { color: #3b6cf6; }"
+              />
+            </label>
+            <p class="wx-field-hint">
+              {{ t('自定义样式会在排版后内联到匹配元素，不支持伪类、媒体查询与 @ 规则。') }}
+            </p>
+          </section>
+        </div>
+        <footer class="wx-drawer-footer">
+          <button class="btn btn-secondary btn-sm" @click="resetStyles">{{ t('恢复默认样式') }}</button>
+          <button class="btn btn-primary btn-sm" @click="styleVisible = false">{{ t('完成') }}</button>
+        </footer>
+      </aside>
+    </div>
+
+    <div v-if="draftsVisible" class="wx-overlay wx-center-overlay" @click.self="draftsVisible = false">
+      <div class="wx-modal wx-drafts-modal">
+        <header class="wx-modal-header">
+          <h2>{{ t('草稿箱') }}</h2>
+          <button type="button" class="wx-close" @click="draftsVisible = false">×</button>
+        </header>
+        <div class="wx-modal-body">
+          <div class="wx-drafts-toolbar">
+            <span class="wx-field-hint">{{
+              t('共 {count} 篇草稿，保存在本机数据库中。', { count: drafts.length })
+            }}</span>
+            <button class="btn btn-primary btn-sm" @click="saveDraft">{{ t('保存当前为新草稿') }}</button>
           </div>
+          <ul v-if="drafts.length" class="wx-draft-list">
+            <li v-for="draft in drafts" :key="draft.id" class="wx-draft-item">
+              <div class="wx-draft-main">
+                <strong>{{ draft.title }}</strong>
+                <span>{{
+                  t('{chars} 字 · {time}', { chars: draftChars(draft), time: draftTime(draft.updatedAt) })
+                }}</span>
+              </div>
+              <div class="wx-draft-actions">
+                <button class="btn btn-secondary btn-xs" @click="loadDraft(draft)">{{ t('载入') }}</button>
+                <button class="btn btn-danger btn-xs" @click="deleteDraft(draft.id)">{{ t('删除') }}</button>
+              </div>
+            </li>
+          </ul>
+          <p v-else class="wx-empty-line">{{ t('还没有草稿，点击右上角保存当前内容。') }}</p>
         </div>
       </div>
-    </Transition>
+    </div>
 
-    <Transition name="wx-fade">
-      <div v-if="aiVisible" class="wx-overlay wx-center-overlay" @click.self="closeAi">
-        <div class="wx-modal wx-ai-modal">
-          <header class="wx-modal-header">
-            <h2>{{ t('AI 写作助手') }}</h2>
-            <button type="button" class="wx-close" @click="closeAi">×</button>
-          </header>
-          <div class="wx-modal-body">
-            <div class="wx-ai-row">
-              <span class="wx-ai-label">{{ t('处理范围') }}</span>
-              <div class="segmented wx-ai-seg">
-                <button
-                  type="button"
-                  class="segmented-item"
-                  :class="{ active: aiScope === 'selection' }"
-                  @click="aiScope = 'selection'"
-                >
-                  {{ t('选中内容') }}
-                </button>
-                <button
-                  type="button"
-                  class="segmented-item"
-                  :class="{ active: aiScope === 'full' }"
-                  @click="aiScope = 'full'"
-                >
-                  {{ t('全文') }}
-                </button>
-              </div>
-              <span class="wx-ai-model">{{ aiModelLabel }}</span>
-            </div>
-
-            <div class="wx-ai-actions">
+    <div v-if="aiVisible" class="wx-overlay wx-center-overlay">
+      <div class="wx-modal wx-ai-modal">
+        <header class="wx-modal-header">
+          <h2>{{ t('AI 写作助手') }}</h2>
+          <button type="button" class="wx-close" @click="closeAi">×</button>
+        </header>
+        <div class="wx-modal-body">
+          <div class="wx-ai-row">
+            <span class="wx-ai-label">{{ t('处理范围') }}</span>
+            <div class="segmented wx-ai-seg">
               <button
-                v-for="action in aiActions"
-                :key="action.id"
                 type="button"
-                class="wx-chip"
-                :class="{ active: aiAction === action.id }"
-                @click="aiAction = action.id"
+                class="segmented-item"
+                :class="{ active: aiScope === 'selection' }"
+                @click="aiScope = 'selection'"
               >
-                {{ t(action.label) }}
+                {{ t('选中内容') }}
+              </button>
+              <button
+                type="button"
+                class="segmented-item"
+                :class="{ active: aiScope === 'full' }"
+                @click="aiScope = 'full'"
+              >
+                {{ t('全文') }}
               </button>
             </div>
-
-            <label v-if="aiAction === 'custom'" class="wx-field wx-field-stack">
-              <span>{{ t('自定义指令') }}</span>
-              <textarea v-model="aiInstruction" rows="3" :placeholder="t('例如：把内容改写成更口语化的风格')" />
-            </label>
-            <p v-else class="wx-ai-hint">{{ currentAiAction.instructionPreview || currentAiAction.instruction }}</p>
-
-            <div class="wx-ai-result">
-              <div class="wx-ai-result-head">
-                <span>{{ t('AI 结果') }}</span>
-                <span v-if="aiLoading" class="wx-ai-loading">{{ t('生成中…') }}</span>
-              </div>
-              <textarea v-model="aiResult" rows="10" :placeholder="t('生成结果会显示在这里，可直接编辑后应用')" />
-            </div>
-            <p v-if="aiError" class="wx-ai-error">{{ aiError }}</p>
+            <span class="wx-ai-model">{{ aiModelLabel }}</span>
           </div>
-          <footer class="wx-modal-footer">
-            <button class="btn btn-primary btn-sm wx-ai-run" :disabled="aiLoading" @click="runAi">
-              {{ aiLoading ? t('生成中…') : t('开始生成') }}
-            </button>
-            <button class="btn btn-secondary btn-sm" :disabled="!aiResult.trim()" @click="copyAiResult">
-              {{ t('复制') }}
-            </button>
-            <button class="btn btn-secondary btn-sm" :disabled="!aiResult.trim()" @click="insertAiResult">
-              {{ t('插入') }}
-            </button>
-            <button class="btn btn-primary btn-sm" :disabled="!aiResult.trim()" @click="replaceWithAiResult">
-              {{ t('替换{scope}', { scope: aiScope === 'selection' ? t('选中') : t('全文') }) }}
-            </button>
-          </footer>
-        </div>
-      </div>
-    </Transition>
 
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
+          <div class="wx-ai-actions">
+            <button
+              v-for="action in aiActions"
+              :key="action.id"
+              type="button"
+              class="wx-chip"
+              :class="{ active: aiAction === action.id }"
+              @click="aiAction = action.id"
+            >
+              {{ t(action.label) }}
+            </button>
+          </div>
+
+          <label v-if="aiAction === 'custom'" class="wx-field wx-field-stack">
+            <span>{{ t('自定义指令') }}</span>
+            <AppTextarea v-model="aiInstruction" rows="3" :placeholder="t('例如：把内容改写成更口语化的风格')" />
+          </label>
+          <p v-else class="wx-ai-hint">{{ currentAiAction.instructionPreview || currentAiAction.instruction }}</p>
+
+          <div class="wx-ai-result">
+            <div class="wx-ai-result-head">
+              <span>{{ t('AI 结果') }}</span>
+              <span v-if="aiLoading" class="wx-ai-loading">{{ t('生成中…') }}</span>
+            </div>
+            <AppTextarea v-model="aiResult" rows="10" :placeholder="t('生成结果会显示在这里，可直接编辑后应用')" />
+          </div>
+          <p v-if="aiError" class="wx-ai-error">{{ aiError }}</p>
+        </div>
+        <footer class="wx-modal-footer">
+          <button class="btn btn-primary btn-sm wx-ai-run" :disabled="aiLoading" @click="runAi">
+            {{ aiLoading ? t('生成中…') : t('开始生成') }}
+          </button>
+          <button class="btn btn-secondary btn-sm" :disabled="!aiResult.trim()" @click="copyAiResult">
+            {{ t('复制') }}
+          </button>
+          <button class="btn btn-secondary btn-sm" :disabled="!aiResult.trim()" @click="insertAiResult">
+            {{ t('插入') }}
+          </button>
+          <button class="btn btn-primary btn-sm" :disabled="!aiResult.trim()" @click="replaceWithAiResult">
+            {{ t('替换{scope}', { scope: aiScope === 'selection' ? t('选中') : t('全文') }) }}
+          </button>
+        </footer>
+      </div>
+    </div>
 
     <MessageDialog
       :visible="clearVisible"
@@ -497,13 +444,16 @@
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
-import Toast from '@/components/Toast.vue'
+import OverflowMenu from '@/components/OverflowMenu.vue'
 import MessageDialog from '@/components/MessageDialog.vue'
+import AppSelect from '@/components/AppSelect.vue'
 import { usePaneResize, useToast } from '@/composables'
-import { chat, copyRichText, getConfig, openExternal } from '@/api'
+import { chat, copyRichText, draftImport, draftList, draftRemove, draftSave, getConfig, openExternal } from '@/api'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatDateTime } from '@/utils/format'
 import { renderWechatArticle } from '@/utils/wechatFormatter'
@@ -699,7 +649,23 @@ const EXAMPLE = [
   t('最后，把文章粘贴到公众号后按需微调即可。')
 ].join('\n')
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError, showInfo } = useToast()
+const { showSuccess, showError, showInfo } = useToast()
+
+const moreActions = computed(() => [
+  { key: 'copyMarkdown', label: t('复制 Markdown'), icon: 'copy' },
+  { key: 'exportHtml', label: t('导出 HTML'), icon: 'download' },
+  { key: 'import', label: t('导入'), icon: 'upload' },
+  { key: 'example', label: t('示例'), icon: 'file-text' },
+  { key: 'clear', label: t('清空'), icon: 'trash', danger: true }
+])
+
+function onMoreAction(action) {
+  if (action.key === 'copyMarkdown') copyMarkdown()
+  else if (action.key === 'exportHtml') exportHtml()
+  else if (action.key === 'import') triggerImport()
+  else if (action.key === 'example') loadExample()
+  else if (action.key === 'clear') clearVisible.value = true
+}
 
 const editorRef = ref(null)
 const previewScrollRef = ref(null)
@@ -783,6 +749,18 @@ const currentAiAction = computed(() => aiActions.find((action) => action.id === 
 const widthLabel = computed(() =>
   t(previewWidths.find((item) => item.id === prefs.value.previewWidth)?.name || t('自适应'))
 )
+
+const themeOptions = computed(() => themes.map((theme) => ({ value: theme.id, label: t(theme.name) })))
+const fontSizeOptions = computed(() => fontSizes.map((size) => ({ value: size, label: `${size}px` })))
+const lineHeightOptions = computed(() => lineHeights.map((value) => ({ value, label: value.toFixed(2) })))
+const fontOptions = computed(() => fonts.map((font) => ({ value: font.id, label: t(font.name) })))
+const previewWidthOptions = computed(() => previewWidths.map((item) => ({ value: item.id, label: t(item.name) })))
+const blockSpacingOptions = computed(() => blockSpacings.map((value) => ({ value, label: `${value.toFixed(2)}×` })))
+const headingStyleOptions = computed(() => headingStyles.map((item) => ({ value: item.id, label: t(item.name) })))
+const linkColorOptions = computed(() => linkColors.map((item) => ({ value: item.id, label: item.name })))
+const quoteBgOptions = computed(() => quoteBackgrounds.map((item) => ({ value: item.id, label: item.name })))
+const codeThemeOptions = computed(() => codeThemes.map((item) => ({ value: item.id, label: item.name })))
+const legendOptions = computed(() => legends.map((item) => ({ value: item.id, label: item.name })))
 
 const stats = computed(() => {
   const text = content.value
@@ -874,15 +852,18 @@ function scheduleRender() {
 
 watch([content, prefs], scheduleRender, { deep: true })
 
+let draftReady = false
+
 watch(content, () => {
+  if (!draftReady) return
   clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(DRAFT_KEY, content.value)
-      savedAt.value = Date.now()
-    } catch {
-      // 本地存储不可用时仅保留内存草稿
-    }
+  saveTimer = setTimeout(async () => {
+    const result = await draftSave('wechat', {
+      id: 'current',
+      title: draftTitle(),
+      content: content.value
+    })
+    if (result?.success) savedAt.value = Date.now()
   }, 500)
 })
 
@@ -1139,22 +1120,13 @@ function clearContent() {
 }
 
 function loadDrafts() {
-  try {
-    const list = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]')
-    drafts.value = Array.isArray(list)
-      ? list.filter((draft) => draft && typeof draft.content === 'string' && typeof draft.id === 'string')
-      : []
-  } catch {
-    drafts.value = []
-  }
-}
-
-function persistDrafts() {
-  try {
-    localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts.value))
-  } catch {
-    // 忽略本地存储失败
-  }
+  draftList('wechat-draft', { limit: 50 })
+    .then((page) => {
+      drafts.value = Array.isArray(page?.items) ? page.items : []
+    })
+    .catch(() => {
+      drafts.value = []
+    })
 }
 
 function draftTitle() {
@@ -1191,14 +1163,15 @@ function saveDraft() {
     showInfo(t('当前没有可保存的内容'))
     return
   }
-  drafts.value.unshift({
+  const draft = {
     id: `d_${Date.now()}`,
     title: draftTitle(),
     content: content.value,
     updatedAt: Date.now()
-  })
+  }
+  drafts.value.unshift(draft)
   if (drafts.value.length > 30) drafts.value.length = 30
-  persistDrafts()
+  void draftSave('wechat-draft', draft)
   showSuccess(t('已保存到草稿箱'))
 }
 
@@ -1210,7 +1183,7 @@ function loadDraft(draft) {
 
 function deleteDraft(id) {
   drafts.value = drafts.value.filter((draft) => draft.id !== id)
-  persistDrafts()
+  void draftRemove('wechat-draft', id)
 }
 
 function resetStyles() {
@@ -1310,14 +1283,41 @@ function replaceWithAiResult() {
   showSuccess(t('已应用 AI 结果'))
 }
 
-onMounted(() => {
-  splitMedia.addEventListener('change', syncSplitDirection)
+function readLegacyDrafts() {
   try {
-    const draft = localStorage.getItem(DRAFT_KEY)
-    content.value = draft === null ? EXAMPLE : draft
+    const content = localStorage.getItem(DRAFT_KEY)
+    const raw = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]')
+    return {
+      content,
+      drafts: Array.isArray(raw)
+        ? raw.filter((draft) => draft && typeof draft.content === 'string' && typeof draft.id === 'string')
+        : []
+    }
   } catch {
-    content.value = EXAMPLE
+    return { content: null, drafts: [] }
   }
+}
+
+onMounted(async () => {
+  splitMedia.addEventListener('change', syncSplitDirection)
+  const legacy = readLegacyDrafts()
+  let saved = null
+  try {
+    if (legacy.content !== null) {
+      await draftImport('wechat', [{ id: 'current', content: legacy.content, updatedAt: Date.now() }])
+      localStorage.removeItem(DRAFT_KEY)
+    }
+    if (legacy.drafts.length) {
+      await draftImport('wechat-draft', legacy.drafts)
+      localStorage.removeItem(DRAFTS_KEY)
+    }
+    const page = await draftList('wechat', { limit: 1 })
+    saved = page?.items?.[0]?.content ?? null
+  } catch {
+    // 读取失败时回退到旧本地草稿或示例内容
+  }
+  content.value = saved ?? legacy.content ?? EXAMPLE
+  draftReady = true
   loadDrafts()
   renderNow()
   renderDiagrams()
@@ -1364,7 +1364,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.wx-control select {
+.wx-control .app-select {
   min-width: 74px;
 }
 
@@ -1373,7 +1373,7 @@ onUnmounted(() => {
   height: 24px;
   padding: 0;
   border: 1px solid var(--border-color);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: none;
   cursor: pointer;
 }
@@ -1445,6 +1445,17 @@ onUnmounted(() => {
   border-color: var(--accent-color);
   color: var(--accent-color);
   background: rgba(var(--accent-rgb), 0.08);
+}
+
+.wx-more-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wx-more-trigger svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
 }
 
 .wx-workbench {
@@ -1532,7 +1543,7 @@ onUnmounted(() => {
 .wx-width-badge {
   padding: 1px 8px;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .wx-editor-body {
@@ -1552,7 +1563,7 @@ onUnmounted(() => {
 
 .wx-preview-card {
   margin: 0 auto;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-md);
   transition: max-width 0.2s ease;
@@ -1594,7 +1605,7 @@ onUnmounted(() => {
   position: absolute;
   top: 42px;
   left: 12px;
-  z-index: 6;
+  z-index: 1200;
   width: 230px;
   max-height: calc(100% - 56px);
   display: flex;
@@ -1629,7 +1640,7 @@ onUnmounted(() => {
   display: block;
   width: 100%;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: none;
   padding: 5px 8px;
   text-align: left;
@@ -1661,7 +1672,7 @@ onUnmounted(() => {
 .wx-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 9999;
   background: var(--overlay-bg);
   display: flex;
 }
@@ -1724,7 +1735,7 @@ onUnmounted(() => {
 
 .wx-drawer-dismiss {
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   padding: 3px 12px;
   font-size: var(--font-size-sm);
@@ -1784,7 +1795,8 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.wx-field select {
+.wx-field .app-select {
+  flex: 1;
   min-width: 140px;
 }
 
@@ -1938,7 +1950,7 @@ onUnmounted(() => {
 .wx-chip {
   padding: 5px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   font-size: var(--font-size-dense);
   color: var(--text-secondary);
@@ -1996,41 +2008,33 @@ onUnmounted(() => {
   margin-right: auto;
 }
 
-.wx-fade-enter-active,
-.wx-fade-leave-active {
-  transition: opacity var(--motion-base) var(--motion-ease);
+/* 入场动画只作用于抽屉/卡片：遮罩层始终不透明，动画帧被节流时也不会留下不可见却拦截点击的全屏层 */
+.wx-drawer {
+  animation: wx-drawer-in var(--motion-slow) var(--motion-ease);
 }
 
-.wx-fade-enter-active .wx-drawer,
-.wx-fade-leave-active .wx-drawer {
-  transition: transform var(--motion-slow) var(--motion-ease);
+.wx-modal {
+  animation: wx-modal-in var(--motion-panel) var(--motion-ease);
 }
 
-.wx-fade-enter-active .wx-modal,
-.wx-fade-leave-active .wx-modal {
-  transition:
-    transform var(--motion-panel) var(--motion-ease),
-    opacity var(--motion-panel) var(--motion-ease);
+@keyframes wx-drawer-in {
+  from {
+    transform: translateX(16px);
+  }
 }
 
-.wx-fade-enter-from,
-.wx-fade-leave-to {
-  opacity: 0;
+@keyframes wx-modal-in {
+  from {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
 }
 
-.wx-fade-enter-from .wx-drawer,
-.wx-fade-leave-to .wx-drawer {
-  transform: translateX(16px);
-}
-
-.wx-fade-enter-from .wx-modal {
-  transform: scale(0.97);
-  opacity: 0;
-}
-
-.wx-fade-leave-to .wx-modal {
-  transform: scale(0.98);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .wx-drawer,
+  .wx-modal {
+    animation: none;
+  }
 }
 
 @media (max-width: 1100px) {

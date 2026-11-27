@@ -1,0 +1,177 @@
+/* 系统工具：监听端口与 SSL 证书检查 */
+
+.sys-filter {
+  max-width: 280px;
+}
+
+.sys-table-wrap {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.sys-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.sys-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.sys-table tbody td {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.sys-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sys-table tbody tr:hover td {
+  background: var(--surface-hover);
+}
+
+.sys-port {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sys-address {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono, monospace);
+}
+
+.sys-process {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sys-ssl-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.sys-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sys-field-host {
+  flex: 1 1 260px;
+}
+
+.sys-field-port {
+  flex: 0 0 110px;
+}
+
+.sys-field-sni {
+  flex: 0 1 220px;
+}
+
+.sys-cert {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sys-cert-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sys-cert-host {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sys-status {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.sys-status.is-success {
+  color: var(--success-dark);
+  background: rgba(var(--success-rgb), 0.14);
+}
+
+.sys-status.is-warning {
+  color: var(--warning-darker);
+  background: rgba(var(--warning-rgb), 0.18);
+}
+
+.sys-status.is-danger {
+  color: var(--text-inverse);
+  background: var(--danger-bg);
+}
+
+.sys-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+}
+
+.sys-cert-row {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+}
+
+.sys-cert-label {
+  flex: 0 0 88px;
+  color: var(--text-tertiary);
+}
+
+.sys-cert-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.sys-cert-value.is-mono {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 820px) {
+  .sys-cert-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

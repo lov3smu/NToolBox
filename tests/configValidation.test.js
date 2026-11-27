@@ -1,14 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { validateConfig, normalizeShortcuts, VALID_SHORTCUT_KEYS } from '../src/main/services/configValidation.js'
-import { tools } from '../src/shared/tools.js'
+import { tools } from '../src/shared/navTools.js'
+import { SHORTCUT_ACTION_KEYS } from '../src/shared/shortcutActions.js'
 
 function createConfig(overrides = {}) {
   return {
-    config_version: 2,
+    config_version: 3,
     app: {
-      base_path: '/tmp/scripts',
-      developer: { ch_name: '张三', en_name: 'zhangsan' },
-      text_edit_app: '',
       auto_start: true,
       close_action: 'ask',
       shortcuts: { settings: 'CmdOrCtrl+,' }
@@ -17,7 +15,13 @@ function createConfig(overrides = {}) {
     update: { auto_update: true },
     network: {},
     database: {},
-    sql_generator: { databases: ['main_db'], script_types: [{ name: 'DDL' }] },
+    sql_generator: {
+      base_path: '/tmp/scripts',
+      developer: { ch_name: '张三', en_name: 'zhangsan' },
+      text_edit_app: '',
+      databases: ['main_db'],
+      script_types: [{ name: 'DDL' }]
+    },
     ai: { provider: 'bailian', keys: {} },
     extensions: {},
     notifications: {},
@@ -28,6 +32,10 @@ function createConfig(overrides = {}) {
 
 function withApp(overrides = {}) {
   return { app: { ...createConfig().app, ...overrides } }
+}
+
+function withSqlGenerator(overrides = {}) {
+  return { sql_generator: { ...createConfig().sql_generator, ...overrides } }
 }
 
 function withAi(overrides = {}) {
@@ -77,21 +85,27 @@ describe('validateConfig', () => {
   })
 
   it('validates required app fields', () => {
-    expect(validateConfig(createConfig(withApp({ base_path: 1 })))).toBe('app.base_path 必须是字符串')
-    expect(validateConfig(createConfig(withApp({ developer: {} })))).toBe('app.developer.ch_name 必须是字符串')
-    expect(validateConfig(createConfig(withApp({ text_edit_app: 1 })))).toBe('app.text_edit_app 必须是字符串')
     expect(validateConfig(createConfig(withApp({ auto_start: 'yes' })))).toBe('app.auto_start 必须是布尔值')
     expect(validateConfig(createConfig(withApp({ recent_tools_limit: 999 })))).toBe('app.recent_tools_limit 值不合法')
   })
 
   it('validates required sql_generator fields', () => {
-    expect(validateConfig(createConfig({ sql_generator: { databases: 'main_db' } }))).toBe(
+    expect(validateConfig(createConfig(withSqlGenerator({ base_path: 1 })))).toBe(
+      'sql_generator.base_path 必须是字符串'
+    )
+    expect(validateConfig(createConfig(withSqlGenerator({ developer: {} })))).toBe(
+      'sql_generator.developer.ch_name 必须是字符串'
+    )
+    expect(validateConfig(createConfig(withSqlGenerator({ text_edit_app: 1 })))).toBe(
+      'sql_generator.text_edit_app 必须是字符串'
+    )
+    expect(validateConfig(createConfig(withSqlGenerator({ databases: 'main_db' })))).toBe(
       'sql_generator.databases 必须是数组'
     )
-    expect(validateConfig(createConfig({ sql_generator: { databases: [1] } }))).toBe(
+    expect(validateConfig(createConfig(withSqlGenerator({ databases: [1] })))).toBe(
       'sql_generator.databases 中的每项必须是字符串'
     )
-    expect(validateConfig(createConfig({ sql_generator: { script_types: [{ name: 1 }] } }))).toBe(
+    expect(validateConfig(createConfig(withSqlGenerator({ script_types: [{ name: 1 }] })))).toBe(
       'sql_generator.script_types.name 必须是字符串'
     )
   })
@@ -143,6 +157,18 @@ describe('validateConfig', () => {
     )
     expect(validateConfig(createConfig(withShortcuts({ settings: 1 })))).toBe('app.shortcuts.settings 必须是字符串')
     expect(validateConfig(createConfig(withShortcuts([])))).toBe('app.shortcuts 必须是对象')
+  })
+
+  it('accepts generic shortcut actions', () => {
+    expect(VALID_SHORTCUT_KEYS).toEqual(
+      expect.arrayContaining(['settings', 'chat_send', 'database_run', 'global_search'])
+    )
+    expect(
+      validateConfig(createConfig(withShortcuts({ chat_send: 'Enter', database_run: '', global_search: 'F2' })))
+    ).toBeNull()
+    expect(normalizeShortcuts({ chat_send: 'Ctrl+Enter', unknown: 'F2' }, { chat_send: 'Enter' })).toEqual({
+      chat_send: 'Ctrl+Enter'
+    })
   })
 
   it('validates ai.models shape', () => {
@@ -221,15 +247,11 @@ describe('validateConfig', () => {
 
   it('validates fallback model settings', () => {
     expect(validateConfig(createConfig(withAi({ fallback: { enabled: true } })))).toBeNull()
-    expect(
-      validateConfig(createConfig(withAi({ fallback: { models: ['deepseek:deepseek-chat'] } })))
-    ).toBeNull()
+    expect(validateConfig(createConfig(withAi({ fallback: { models: ['deepseek:deepseek-chat'] } })))).toBeNull()
     expect(validateConfig(createConfig(withAi({ fallback: { enabled: 'yes' } })))).toBe(
       'ai.fallback.enabled 必须是布尔值'
     )
-    expect(validateConfig(createConfig(withAi({ fallback: 'deepseek:deepseek-chat' })))).toBe(
-      'ai.fallback 必须是对象'
-    )
+    expect(validateConfig(createConfig(withAi({ fallback: 'deepseek:deepseek-chat' })))).toBe('ai.fallback 必须是对象')
     expect(validateConfig(createConfig(withAi({ fallback: { models: 'deepseek:deepseek-chat' } })))).toBe(
       'ai.fallback.models 必须是数组'
     )
@@ -288,8 +310,9 @@ describe('validateConfig', () => {
       'notifications.unknown 不是有效的通知项'
     )
     expect(validateConfig(createConfig({ notifications: { upload_done: 'yes' } }))).toBe(
-      'notifications.upload_done 必须是布尔值'
+      'notifications.upload_done 必须是布尔值或通知方式'
     )
+    expect(validateConfig(createConfig({ notifications: { upload_done: 'panel', backup_done: 'off' } }))).toBeNull()
     expect(validateConfig(createConfig({ clipboard_history: { persist: false, max_entries: 50 } }))).toBeNull()
     expect(validateConfig(createConfig({ clipboard_history: { persist: false, max_entries: 200 } }))).toBeNull()
     expect(validateConfig(createConfig({ clipboard_history: 'nope' }))).toBe('clipboard_history 必须是对象')
@@ -307,9 +330,9 @@ describe('validateConfig', () => {
     expect(validateConfig(createConfig({ memory: { auto_capture: 'yes' } }))).toBe('memory.auto_capture 必须是布尔值')
   })
 
-  it('keeps every valid shortcut key aligned with the shared tool registry', () => {
+  it('keeps every valid shortcut key aligned with the shared contracts', () => {
     const configurableKeys = tools.filter((tool) => tool.shortcutKey).map((tool) => tool.shortcutKey)
-    expect(VALID_SHORTCUT_KEYS).toEqual(configurableKeys)
+    expect(VALID_SHORTCUT_KEYS).toEqual([...configurableKeys, ...SHORTCUT_ACTION_KEYS])
   })
 
   it('validates MCP server settings', () => {
@@ -386,9 +409,7 @@ describe('validateConfig', () => {
       validateConfig(createConfig({ network: { market_sources: { clawhub: 'https://mirror.example.com' } } }))
     ).toBeNull()
     expect(validateConfig(createConfig({ network: { market_sources: {} } }))).toBeNull()
-    expect(validateConfig(createConfig({ network: { market_sources: [] } }))).toBe(
-      'network.market_sources 必须是对象'
-    )
+    expect(validateConfig(createConfig({ network: { market_sources: [] } }))).toBe('network.market_sources 必须是对象')
     expect(validateConfig(createConfig({ network: { market_sources: { unknown: '' } } }))).toBe(
       'network.market_sources.unknown 不是有效的配置项'
     )
@@ -401,9 +422,7 @@ describe('validateConfig', () => {
   })
 
   it('validates database transfer batch size and history limit', () => {
-    expect(
-      validateConfig(createConfig(withDatabase({ transfer_batch_size: 2000, history_limit: 500 })))
-    ).toBeNull()
+    expect(validateConfig(createConfig(withDatabase({ transfer_batch_size: 2000, history_limit: 500 })))).toBeNull()
     expect(validateConfig(createConfig(withDatabase({ transfer_batch_size: 1 })))).toBe(
       'database.transfer_batch_size 值不合法'
     )
@@ -428,6 +447,21 @@ describe('validateConfig', () => {
       'database.audit.rules.bogus 不是有效的审核规则'
     )
     expect(validateConfig(createConfig(withDatabase({ safe_mode: 'yes' })))).toBe('database.safe_mode 必须是布尔值')
+  })
+
+  it('validates connection engines', () => {
+    const conn = (overrides) => withDatabase({ connections: [{ name: 'main', ...overrides }] })
+    expect(validateConfig(createConfig(conn({ engine: 'postgres', host: 'db', database: 'app' })))).toBeNull()
+    expect(validateConfig(createConfig(conn({ engine: 'sqlite', filePath: '/tmp/app.db' })))).toBeNull()
+    expect(validateConfig(createConfig(conn({ engine: 'oracle' })))).toBe(
+      'database.connections.main 的数据库类型不合法'
+    )
+    expect(validateConfig(createConfig(conn({ engine: 'sqlite' })))).toBe(
+      'database.connections.main 缺少 SQLite 文件路径'
+    )
+    expect(validateConfig(createConfig(conn({ engine: 'sqlite', filePath: '/tmp/app.db', host: 'db' })))).toBe(
+      'database.connections.main 的 SQLite 连接不能填写主机'
+    )
   })
 })
 

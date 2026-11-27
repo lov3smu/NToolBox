@@ -10,6 +10,7 @@ import OpencodeGoProvider from './providers/OpencodeGoProvider.js'
 import OpenAIProvider from './providers/OpenAIProvider.js'
 import GoogleProvider from './providers/GoogleProvider.js'
 import AnthropicProvider from './providers/AnthropicProvider.js'
+import { OllamaProvider, LmStudioProvider } from './providers/LocalProviders.js'
 
 // 新增服务商只需在此登记一条：元数据、能力、自动降级顺序和构造器都在这里
 export const PROVIDER_REGISTRY = {
@@ -154,6 +155,32 @@ export const PROVIDER_REGISTRY = {
     requiresEndpointId: false,
     autoPriority: 12,
     Provider: OpencodeGoProvider
+  },
+  ollama: {
+    name: 'Ollama（本地）',
+    description: '本地运行的 Ollama 模型服务',
+    docsUrl: 'https://ollama.com/download',
+    envKey: '',
+    defaultBaseUrl: 'http://127.0.0.1:11434/v1',
+    requiresGroupId: false,
+    requiresEndpointId: false,
+    requiresApiKey: false,
+    autoPriority: 13,
+    contextWindow: 32768,
+    Provider: OllamaProvider
+  },
+  lmstudio: {
+    name: 'LM Studio（本地）',
+    description: '本地运行的 LM Studio 模型服务',
+    docsUrl: 'https://lmstudio.ai/',
+    envKey: '',
+    defaultBaseUrl: 'http://127.0.0.1:1234/v1',
+    requiresGroupId: false,
+    requiresEndpointId: false,
+    requiresApiKey: false,
+    autoPriority: 14,
+    contextWindow: 32768,
+    Provider: LmStudioProvider
   }
 }
 
@@ -170,6 +197,7 @@ export const PROVIDER_INFO = Object.freeze(
         description: entry.description,
         requiresGroupId: entry.requiresGroupId,
         requiresEndpointId: entry.requiresEndpointId,
+        requiresApiKey: entry.requiresApiKey !== false,
         docsUrl: entry.docsUrl,
         envKey: entry.envKey,
         defaultBaseUrl: entry.defaultBaseUrl

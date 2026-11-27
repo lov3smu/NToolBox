@@ -19,9 +19,12 @@
               :key="tool.path"
               type="button"
               class="nav-item"
-              :class="{ active: isActive(tool) }"
+              :class="navItemClass(tool)"
               :title="toolTitle(tool)"
               @click="navigate(tool)"
+              @dragover="onToolDragOver($event, tool)"
+              @dragleave="onToolDragLeave(tool)"
+              @drop="onToolDrop($event, tool)"
             >
               <span class="nav-icon" v-html="tool.icon" />
               <span class="nav-label">{{ t(tool.name) }}</span>
@@ -35,9 +38,12 @@
             :key="tool.path"
             type="button"
             class="nav-item"
-            :class="{ active: isActive(tool) }"
+            :class="navItemClass(tool)"
             :title="t(tool.name)"
             @click="navigate(tool)"
+            @dragover="onToolDragOver($event, tool)"
+            @dragleave="onToolDragLeave(tool)"
+            @drop="onToolDrop($event, tool)"
           >
             <span class="nav-icon" v-html="tool.icon" />
             <span class="nav-label">{{ t(tool.name) }}</span>
@@ -68,9 +74,9 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { openSettings as openSettingsWindow, platform } from '@/api'
-import { SETTINGS_PATH, addToRecent, getToolsByMenuGroup, tools } from '@shared/tools'
-import { usePaneResize } from '@/composables/usePaneResize'
-import { useSidebar } from '@/composables/useSidebar'
+import { SETTINGS_PATH, addToRecent, getToolsByMenuGroup, tools } from '@shared/navTools'
+import { canSendResourceTo, parseSendResource, SEND_TRANSFER_TYPE } from '@shared/sendTo'
+import { draggingKind, sendResourceTo, usePaneResize, useSidebar } from '@/composables'
 import { t } from '@/i18n'
 import SplitHandle from '@/components/SplitHandle.vue'
 import AppTitleBar from './AppTitleBar.vue'
@@ -120,12 +126,48 @@ const sections = computed(() => {
     { title: t('概览'), tools: home },
     { title: t('核心'), tools: getToolsByMenuGroup('primary') },
     ...(fileTools.length ? [{ title: t('文件'), tools: fileTools }] : []),
-    { title: t('实用工具'), tools: getToolsByMenuGroup('utilities') }
+    { title: t('开发工具'), tools: getToolsByMenuGroup('dev') },
+    { title: t('文本与内容'), tools: getToolsByMenuGroup('content') },
+    { title: t('系统与资源'), tools: getToolsByMenuGroup('system') }
   ].filter((section) => section.tools.length > 0)
 })
 
 function isActive(tool) {
   return route.path === tool.path
+}
+
+const dropTargetPath = ref('')
+
+function canDropOn(tool) {
+  return Boolean(draggingKind.value && canSendResourceTo(tool.path, draggingKind.value))
+}
+
+function navItemClass(tool) {
+  return {
+    active: isActive(tool),
+    'can-drop': canDropOn(tool),
+    'drop-hover': dropTargetPath.value === tool.path
+  }
+}
+
+function onToolDragOver(event, tool) {
+  if (!canDropOn(tool)) return
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'copy'
+  dropTargetPath.value = tool.path
+}
+
+function onToolDragLeave(tool) {
+  if (dropTargetPath.value === tool.path) dropTargetPath.value = ''
+}
+
+function onToolDrop(event, tool) {
+  if (!canDropOn(tool)) return
+  event.preventDefault()
+  const serialized = event.dataTransfer.getData(SEND_TRANSFER_TYPE) || event.dataTransfer.getData('text/plain')
+  dropTargetPath.value = ''
+  const resource = parseSendResource(serialized)
+  if (resource && sendResourceTo(resource, tool.path)) addToRecent(tool)
 }
 
 function toolTitle(tool) {
@@ -206,7 +248,7 @@ function openSettings() {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);
   flex-shrink: 0;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   object-fit: contain;
 }
 
@@ -238,7 +280,7 @@ function openSettings() {
 
 .nav-scroll::-webkit-scrollbar-thumb {
   background: var(--shell-scrollbar);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .nav-section + .nav-section {
@@ -285,6 +327,17 @@ function openSettings() {
 .nav-item.active {
   background: var(--shell-active-bg);
   color: var(--shell-active-text);
+}
+
+.nav-item.can-drop {
+  outline: 1px dashed var(--accent-color);
+  outline-offset: -1px;
+}
+
+.nav-item.drop-hover {
+  background: var(--shell-active-bg);
+  color: var(--shell-active-text);
+  outline-style: solid;
 }
 
 .nav-icon {

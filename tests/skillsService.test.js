@@ -26,7 +26,7 @@ vi.mock('../src/main/utils/index.js', () => ({
 vi.mock('../src/main/services/config', () => ({
   getConfig: vi.fn(() => ({
     ai: { provider: 'bailian' },
-    app: { base_path: testFileBase },
+    sql_generator: { base_path: testFileBase },
     extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} }
   }))
 }))
@@ -36,15 +36,15 @@ vi.mock('../src/main/services/ai/index.js', () => ({
   resolveProviderRuntimeConfig: vi.fn(() => ({}))
 }))
 
-vi.mock('../src/main/services/templateGenerator.js', () => ({
+vi.mock('../src/main/services/templates/sqlGenerator.js', () => ({
   generateDictionarySql: vi.fn(),
   generateDictionarySqlBatch: vi.fn(),
   generateFunctionGroupSql: vi.fn()
 }))
 
-vi.mock('../src/main/services/database.js', () => ({}))
-vi.mock('../src/main/services/generator.js', () => ({ generateSQLFile: vi.fn() }))
-vi.mock('../src/main/services/clawhub.js', () => ({
+vi.mock('../src/main/services/database/index.js', () => ({}))
+vi.mock('../src/main/services/templates/sqlScriptFile.js', () => ({ generateSQLFile: vi.fn() }))
+vi.mock('../src/main/services/extensions/clawhub.js', () => ({
   fetchClawHubMarket: vi.fn(),
   fetchClawHubSkillDetail: vi.fn(),
   normalizeSkillName: vi.fn(),
@@ -67,7 +67,7 @@ beforeAll(async () => {
     })
   )
 
-  skills = await import('../src/main/services/skills.js')
+  skills = await import('../src/main/services/extensions/skills.js')
   await skills.initSkills()
 })
 

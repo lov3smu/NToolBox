@@ -1,7 +1,8 @@
 import { t } from '@/i18n'
 
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { finalizeContent, normalizeLegacyThinking } from '@/utils/chatContent'
+import { chatDeleteSession, chatImportSessions, chatLoadSessions, chatSaveSession } from '@/api'
+import { ensureMessageIds, finalizeContent, normalizeLegacyThinking } from '@/views/chat/chatContent'
 
 const VIEW_STATE_KEY = 'chat_view_state'
 const PENDING_STREAM_KEY = 'chat_pending_stream'
@@ -175,18 +176,31 @@ export function useChatSessions({
     }
   }
 
-  function loadSessions() {
+  async function loadSessions() {
+    let legacy = []
     try {
       const saved = localStorage.getItem(SESSIONS_KEY)
       if (saved) {
-        sessions.value = JSON.parse(saved)
-        for (const session of sessions.value) {
-          if (typeof session.workspace !== 'string') session.workspace = ''
-          for (const message of session.messages || []) normalizeLegacyThinking(message)
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length) {
+          legacy = parsed
+          await chatImportSessions(parsed)
         }
+        localStorage.removeItem(SESSIONS_KEY)
       }
     } catch {
-      sessions.value = []
+      // 旧版本数据损坏时忽略，避免阻塞启动
+    }
+    try {
+      const loaded = await chatLoadSessions()
+      sessions.value = Array.isArray(loaded) ? loaded : []
+    } catch {
+      sessions.value = legacy
+    }
+    for (const session of sessions.value) {
+      if (typeof session.workspace !== 'string') session.workspace = ''
+      ensureMessageIds(session.messages)
+      for (const message of session.messages || []) normalizeLegacyThinking(message)
     }
     const savedId = viewState.value.activeSessionId
     const active = sessions.value.find((session) => session.id === savedId) || sessions.value[0]
@@ -194,11 +208,40 @@ export function useChatSessions({
     viewState.value.activeSessionId = currentSessionId.value
   }
 
-  function saveSessions() {
+  function serializeSession(session) {
     try {
-      localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions.value))
+      return JSON.parse(JSON.stringify(session))
     } catch {
-      showError(t('会话保存失败：附件体积过大，请删除部分图片后重试'))
+      return null
+    }
+  }
+
+  async function persistSession(session) {
+    const payload = serializeSession(session)
+    if (!payload) return false
+    try {
+      const ok = await chatSaveSession(payload)
+      return ok !== false
+    } catch {
+      return false
+    }
+  }
+
+  function saveSessions(id = '') {
+    const targets = id ? sessions.value.filter((session) => session.id === id) : sessions.value.slice()
+    if (targets.length === 0) return Promise.resolve(true)
+    return Promise.all(targets.map((session) => persistSession(session))).then((results) => {
+      const ok = results.every(Boolean)
+      if (!ok) showError(t('会话保存失败，请稍后重试'))
+      return ok
+    })
+  }
+
+  function deleteSessions(ids) {
+    for (const id of ids) {
+      chatDeleteSession(id).catch(() => {
+        showError(t('会话删除失败，请稍后重试'))
+      })
     }
   }
 
@@ -271,7 +314,7 @@ export function useChatSessions({
     const session = sessions.value.find((item) => item.id === id)
     if (!session) return
     session.pinned = !session.pinned
-    saveSessions()
+    saveSessions(id)
     showSuccess(t(session.pinned ? '会话已置顶' : '已取消置顶'))
   }
 
@@ -298,7 +341,7 @@ export function useChatSessions({
     if (session.context) fork.context = { ...session.context }
     const index = sessions.value.findIndex((item) => item.id === id)
     sessions.value.splice(index + 1, 0, fork)
-    saveSessions()
+    saveSessions(fork.id)
     selectSession(fork.id)
     showSuccess(t('已创建分叉会话'))
   }
@@ -337,7 +380,7 @@ export function useChatSessions({
         persistViewState()
       }
     }
-    saveSessions()
+    saveSessions(id)
     showSuccess(t(archiving ? '会话已归档' : '已取消归档'))
   }
 
@@ -364,16 +407,16 @@ export function useChatSessions({
 
   function recoverStreamState() {
     loadPendingStream()
-    let changed = false
+    const changedSessions = []
     for (const session of sessions.value) {
       const streamingMessages = (session.messages || []).filter((message) => message.isStreaming)
       if (streamingMessages.length === 0) continue
       const resumable = pendingStream.value && pendingStream.value.sessionId === session.id
       if (resumable) continue
       for (const message of streamingMessages) markStreamInterrupted(message)
-      changed = true
+      changedSessions.push(session)
     }
-    if (changed) saveSessions()
+    for (const session of changedSessions) saveSessions(session.id)
   }
 
   function createNewChat(workspace = '') {
@@ -381,9 +424,7 @@ export function useChatSessions({
     saveScroll()
     const newSession = {
       id: generateId(),
-      get title() {
-        return t('新会话')
-      },
+      title: '',
       messages: [],
       workspace: typeof workspace === 'string' ? workspace : '',
       provider: selectedProvider.value,
@@ -397,7 +438,7 @@ export function useChatSessions({
     viewState.value.activeSessionId = newSession.id
     currentSessionId.value = newSession.id
     applyDraft(newSession.id)
-    saveSessions()
+    saveSessions(newSession.id)
   }
 
   function selectSession(id) {
@@ -413,7 +454,7 @@ export function useChatSessions({
     if (session) {
       if (session.unread) {
         session.unread = false
-        saveSessions()
+        saveSessions(id)
       }
       const providerType = session.provider || selectedProvider.value
       if (providerType) {
@@ -463,7 +504,7 @@ export function useChatSessions({
       viewState.value.activeSessionId = currentSessionId.value
     }
     persistViewState()
-    saveSessions()
+    deleteSessions([id])
   }
 
   function startEditTitle(id, title) {
@@ -485,7 +526,7 @@ export function useChatSessions({
     if (session && editingTitle.value.trim()) {
       session.title = editingTitle.value.trim()
       session.updatedAt = Date.now()
-      saveSessions()
+      saveSessions(id)
     }
     editingSessionId.value = ''
     editingTitle.value = ''

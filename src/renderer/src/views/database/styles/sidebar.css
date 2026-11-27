@@ -225,9 +225,13 @@
   }
 
   .connection-type-icon {
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
-    color: var(--info-dark);
+    flex-shrink: 0;
+  }
+
+  .connection-color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
     flex-shrink: 0;
   }
 
@@ -414,6 +418,15 @@
     gap: 6px;
   }
 
+  .connection-item:focus-visible,
+  .connection-databases .database-item:focus-visible,
+  .category-header:focus-visible,
+  .object-item:focus-visible,
+  .object-more:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
+  }
+
   .object-icon {
     width: var(--icon-size-xs);
     height: var(--icon-size-xs);
@@ -460,7 +473,7 @@
   .connection-readonly-badge {
     flex-shrink: 0;
     padding: 0 5px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     border: 1px solid rgba(var(--warning-rgb), 0.45);
     background: rgba(var(--warning-rgb), 0.12);
     color: var(--warning-darker);
@@ -482,26 +495,6 @@
     background: var(--success-color);
     opacity: 1;
     box-shadow: 0 0 0 3px rgba(var(--success-rgb), 0.16);
-  }
-
-  .empty-list {
-    text-align: center;
-    padding: 20px;
-    color: var(--text-tertiary);
-  }
-
-  .empty-list p {
-    margin: 0;
-    font-size: var(--font-size-dense);
-  }
-
-  .empty-list .hint {
-    font-size: var(--font-size-xs);
-    margin-top: 8px;
-  }
-
-  .empty-list-action {
-    margin-top: 12px;
   }
 
   .sidebar-footer {

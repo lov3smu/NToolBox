@@ -1,7 +1,7 @@
 import { app, Menu, Tray, nativeImage } from 'electron'
 import fs from 'fs'
 import { log, getIconPath } from '../utils'
-import { SETTINGS_PATH, getToolByPath } from '../../shared/tools'
+import { SETTINGS_PATH, getToolByPath } from '../../shared/navTools'
 import { IPC_EVENTS } from '../../shared/ipc'
 import { t } from '../services/i18n.js'
 

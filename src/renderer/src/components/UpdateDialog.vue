@@ -1,338 +1,299 @@
 <template>
   <Teleport to="body">
-    <Transition name="update-dialog">
-      <div v-if="center.visible" class="update-overlay" @click.self="closeUpdateCenter">
-        <section class="update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-dialog-title">
-          <header class="update-header">
-            <div class="update-header-title">
-              <h2 id="update-dialog-title">{{ t('更新中心') }}</h2>
-              <span v-if="badgeText" class="update-badge" :class="`update-badge-${badgeTone}`">{{ badgeText }}</span>
-            </div>
-            <button type="button" class="update-close" :aria-label="t('关闭')" @click="closeUpdateCenter">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </header>
+    <div v-if="center.visible" class="update-overlay" @click.self="closeUpdateCenter">
+      <section class="update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-dialog-title">
+        <header class="update-header">
+          <div class="update-header-title">
+            <h2 id="update-dialog-title">{{ t('更新中心') }}</h2>
+            <span v-if="badgeText" class="update-badge" :class="`update-badge-${badgeTone}`">{{ badgeText }}</span>
+          </div>
+          <button type="button" class="update-close" :aria-label="t('关闭')" @click="closeUpdateCenter">
+            <AppIcon name="close" />
+          </button>
+        </header>
 
-          <nav class="update-tabs" role="tablist" :aria-label="t('更新中心视图')">
-            <button
-              id="update-tab-app"
-              type="button"
-              role="tab"
-              class="update-tab"
-              :class="{ active: activeTab === 'app' }"
-              :aria-selected="activeTab === 'app'"
-              aria-controls="update-panel-app"
-              @click="activeTab = 'app'"
-            >
-              {{ center.appName }}
-            </button>
-            <button
-              id="update-tab-changelog"
-              type="button"
-              role="tab"
-              class="update-tab"
-              :class="{ active: activeTab === 'changelog' }"
-              :aria-selected="activeTab === 'changelog'"
-              aria-controls="update-panel-changelog"
-              @click="activeTab = 'changelog'"
-            >
-              {{ t('更新日志') }}
-            </button>
-          </nav>
-
-          <div
-            v-if="activeTab === 'app'"
-            id="update-panel-app"
-            class="update-body"
-            role="tabpanel"
-            aria-labelledby="update-tab-app"
+        <nav class="update-tabs" role="tablist" :aria-label="t('更新中心视图')">
+          <button
+            id="update-tab-app"
+            type="button"
+            role="tab"
+            class="update-tab"
+            :class="{ active: activeTab === 'app' }"
+            :aria-selected="activeTab === 'app'"
+            aria-controls="update-panel-app"
+            @click="activeTab = 'app'"
           >
-            <div v-if="center.phase === 'checking'" class="update-state">
-              <span class="update-spinner" aria-hidden="true" />
-              <div>
-                <p class="update-state-title">{{ t('正在检查更新') }}</p>
-                <p class="update-state-text">{{ t('正在连接更新服务器，请稍候...') }}</p>
-              </div>
-            </div>
+            {{ center.appName }}
+          </button>
+          <button
+            id="update-tab-changelog"
+            type="button"
+            role="tab"
+            class="update-tab"
+            :class="{ active: activeTab === 'changelog' }"
+            :aria-selected="activeTab === 'changelog'"
+            aria-controls="update-panel-changelog"
+            @click="activeTab = 'changelog'"
+          >
+            {{ t('更新日志') }}
+          </button>
+        </nav>
 
-            <div v-else-if="center.phase === 'dev-environment'" class="update-state">
-              <svg class="update-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-              <div>
-                <p class="update-state-title">{{ t('开发环境无法检查更新') }}</p>
-                <p class="update-state-text">
-                  {{ t('请在打包后的应用中测试更新功能，下方仍可查看历史版本。') }}
-                </p>
-              </div>
+        <div
+          v-if="activeTab === 'app'"
+          id="update-panel-app"
+          class="update-body"
+          role="tabpanel"
+          aria-labelledby="update-tab-app"
+        >
+          <div v-if="center.phase === 'checking'" class="update-state">
+            <span class="update-spinner" aria-hidden="true" />
+            <div>
+              <p class="update-state-title">{{ t('正在检查更新') }}</p>
+              <p class="update-state-text">{{ t('正在连接更新服务器，请稍候...') }}</p>
             </div>
+          </div>
 
-            <div v-else-if="center.phase === 'not-available'" class="update-state">
-              <svg
-                class="update-state-icon update-state-icon-success"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="9 12 12 15 16 9" />
-              </svg>
-              <div>
-                <p class="update-state-title">
-                  {{ latestVersionText }}
-                </p>
-                <p class="update-state-text">{{ t('已是最新正式版本，历史版本可在下方展开查看。') }}</p>
-              </div>
-            </div>
-
-            <div v-else-if="center.phase === 'error'" class="update-state">
-              <svg
-                class="update-state-icon update-state-icon-error"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
-              </svg>
-              <div>
-                <p class="update-state-title">{{ t('检查更新失败') }}</p>
-                <p class="update-state-text">{{ center.error || t('无法连接更新服务器，请稍后重试。') }}</p>
-              </div>
-            </div>
-
-            <template v-else-if="hasUpdate">
-              <p class="update-version-line">
-                <span>{{ t('发现新版本') }}</span>
-                <strong class="update-version-latest">v{{ center.latestVersion }}</strong>
-                <span v-if="center.currentVersion" class="update-version-current">{{
-                  t('当前 v{version}', { version: center.currentVersion })
-                }}</span>
+          <div v-else-if="center.phase === 'dev-environment'" class="update-state">
+            <AppIcon name="info" class="update-state-icon" />
+            <div>
+              <p class="update-state-title">{{ t('开发环境无法检查更新') }}</p>
+              <p class="update-state-text">
+                {{ t('请在打包后的应用中测试更新功能，下方仍可查看历史版本。') }}
               </p>
-              <p v-if="center.phase === 'available'" class="update-state-text">
-                {{ t('完整更新内容可在「更新日志」中查看。') }}
+            </div>
+          </div>
+
+          <div v-else-if="center.phase === 'not-available'" class="update-state">
+            <AppIcon name="check-circle" class="update-state-icon update-state-icon-success" />
+            <div>
+              <p class="update-state-title">
+                {{ latestVersionText }}
               </p>
+              <p class="update-state-text">{{ t('已是最新正式版本，历史版本可在下方展开查看。') }}</p>
+            </div>
+          </div>
 
-              <div v-if="center.phase === 'downloading'" class="update-progress">
-                <div class="update-progress-track">
-                  <div class="update-progress-bar" :style="{ width: `${progressValue}%` }" />
-                </div>
-                <div class="update-progress-meta">
-                  <span>{{ t('正在下载更新') }}</span>
-                  <span class="update-progress-value">{{ progressValue }}%</span>
-                </div>
-                <p class="update-state-text">{{ t('可以关闭此窗口，下载会在后台继续。') }}</p>
+          <div v-else-if="center.phase === 'error'" class="update-state">
+            <AppIcon name="x-circle" class="update-state-icon update-state-icon-error" />
+            <div>
+              <p class="update-state-title">{{ t('检查更新失败') }}</p>
+              <p class="update-state-text">{{ center.error || t('无法连接更新服务器，请稍后重试。') }}</p>
+            </div>
+          </div>
+
+          <template v-else-if="hasUpdate">
+            <p class="update-version-line">
+              <span>{{ t('发现新版本') }}</span>
+              <strong class="update-version-latest">v{{ center.latestVersion }}</strong>
+              <span v-if="center.currentVersion" class="update-version-current">{{
+                t('当前 v{version}', { version: center.currentVersion })
+              }}</span>
+            </p>
+            <p v-if="center.phase === 'available'" class="update-state-text">
+              {{ t('完整更新内容可在「更新日志」中查看。') }}
+            </p>
+
+            <div v-if="center.phase === 'downloading'" class="update-progress">
+              <div class="update-progress-track">
+                <div class="update-progress-bar" :style="{ width: `${progressValue}%` }" />
               </div>
-
-              <div v-else-if="center.phase === 'downloaded'" class="update-ready">
-                <svg
-                  class="update-state-icon update-state-icon-success"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="9 12 12 15 16 9" />
-                </svg>
-                <span>{{ t('更新已下载完成，重启应用即可安装。') }}</span>
+              <div class="update-progress-meta">
+                <span>{{ t('正在下载更新') }}</span>
+                <span class="update-progress-value">{{ progressValue }}%</span>
               </div>
-
-              <div v-else-if="center.phase === 'installing'" class="update-state">
-                <span class="update-spinner" aria-hidden="true" />
-                <span class="update-state-text">{{ t('正在准备安装，应用即将重启...') }}</span>
-              </div>
-            </template>
-
-            <div v-else class="update-state">
-              <span class="update-spinner" aria-hidden="true" />
-              <span class="update-state-text">{{ t('正在准备更新...') }}</span>
+              <p class="update-state-text">{{ t('可以关闭此窗口，下载会在后台继续。') }}</p>
             </div>
 
-            <section class="update-history">
-              <button
-                type="button"
-                class="update-history-toggle"
-                :class="{ open: historyOpen }"
-                :aria-expanded="historyOpen"
-                aria-controls="update-history-panel"
-                @click="historyOpen = !historyOpen"
-              >
-                <span class="update-history-toggle-title">{{ t('历史版本') }}</span>
-                <span v-if="historyReleases.length" class="update-history-count">{{ historyReleases.length }}</span>
-                <svg class="update-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
+            <div v-else-if="center.phase === 'downloaded'" class="update-ready">
+              <AppIcon name="check-circle" class="update-state-icon update-state-icon-success" />
+              <span>{{ t('更新已下载完成，重启应用即可安装。') }}</span>
+            </div>
 
-              <div id="update-history-panel" class="update-history-collapse" :class="{ open: historyOpen }">
-                <div class="update-history-inner">
-                  <p class="update-history-hint">
-                    {{ t('回退到旧版本前请先备份数据，旧版本可能无法读取新版本创建的数据或凭据。') }}
-                  </p>
+            <div v-else-if="center.phase === 'installing'" class="update-state">
+              <span class="update-spinner" aria-hidden="true" />
+              <span class="update-state-text">{{ t('正在准备安装，应用即将重启...') }}</span>
+            </div>
+          </template>
 
-                  <div v-if="center.historyLoading" class="update-history-state">
-                    <span class="update-spinner" aria-hidden="true" />
-                    <span>{{ t('正在加载历史版本...') }}</span>
-                  </div>
+          <div v-else class="update-state">
+            <span class="update-spinner" aria-hidden="true" />
+            <span class="update-state-text">{{ t('正在准备更新...') }}</span>
+          </div>
 
-                  <div v-else-if="center.historyError" class="update-history-state">
-                    <span>{{ t(center.historyError) }}</span>
-                    <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
-                      {{ t('重试') }}
+          <section class="update-history">
+            <button
+              type="button"
+              class="update-history-toggle"
+              :class="{ open: historyOpen }"
+              :aria-expanded="historyOpen"
+              aria-controls="update-history-panel"
+              @click="historyOpen = !historyOpen"
+            >
+              <span class="update-history-toggle-title">{{ t('历史版本') }}</span>
+              <span v-if="historyReleases.length" class="update-history-count">{{ historyReleases.length }}</span>
+              <AppIcon name="chevron-down" class="update-chevron" />
+            </button>
+
+            <div id="update-history-panel" class="update-history-collapse" :class="{ open: historyOpen }">
+              <div class="update-history-inner">
+                <p class="update-history-hint">
+                  {{ t('回退到旧版本前请先备份数据，旧版本可能无法读取新版本创建的数据或凭据。') }}
+                </p>
+
+                <div v-if="center.historyLoading" class="update-history-state">
+                  <span class="update-spinner" aria-hidden="true" />
+                  <span>{{ t('正在加载历史版本...') }}</span>
+                </div>
+
+                <div v-else-if="center.historyError" class="update-history-state">
+                  <span>{{ t(center.historyError) }}</span>
+                  <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
+                    {{ t('重试') }}
+                  </button>
+                </div>
+
+                <p v-else-if="historyReleases.length === 0" class="update-history-state">
+                  {{ t('暂无历史版本。') }}
+                </p>
+
+                <template v-else>
+                  <ul class="update-history-list">
+                    <li
+                      v-for="release in visibleHistory"
+                      :key="release.tag || release.version"
+                      class="update-history-item"
+                    >
+                      <span class="update-history-version">v{{ release.version }}</span>
+                      <span class="update-history-date">{{ formatReleaseDate(release.publishedAt) }}</span>
+                      <button
+                        type="button"
+                        class="update-history-link"
+                        :disabled="!release.htmlUrl"
+                        @click="openRelease(release.htmlUrl)"
+                      >
+                        {{ t('打开下载页') }}
+                      </button>
+                    </li>
+                  </ul>
+
+                  <div v-if="hasMoreHistory" class="update-load-more">
+                    <button type="button" class="update-load-more-btn" @click="loadMoreHistory">
+                      {{ t('加载更多') }}
+                      <span class="update-load-more-count">{{
+                        t('剩余 {count}', { count: historyReleases.length - visibleHistory.length })
+                      }}</span>
                     </button>
                   </div>
-
-                  <p v-else-if="historyReleases.length === 0" class="update-history-state">
-                    {{ t('暂无历史版本。') }}
-                  </p>
-
-                  <template v-else>
-                    <ul class="update-history-list">
-                      <li
-                        v-for="release in visibleHistory"
-                        :key="release.tag || release.version"
-                        class="update-history-item"
-                      >
-                        <span class="update-history-version">v{{ release.version }}</span>
-                        <span class="update-history-date">{{ formatReleaseDate(release.publishedAt) }}</span>
-                        <button
-                          type="button"
-                          class="update-history-link"
-                          :disabled="!release.htmlUrl"
-                          @click="openRelease(release.htmlUrl)"
-                        >
-                          {{ t('打开下载页') }}
-                        </button>
-                      </li>
-                    </ul>
-
-                    <div v-if="hasMoreHistory" class="update-load-more">
-                      <button type="button" class="update-load-more-btn" @click="loadMoreHistory">
-                        {{ t('加载更多') }}
-                        <span class="update-load-more-count">{{
-                          t('剩余 {count}', { count: historyReleases.length - visibleHistory.length })
-                        }}</span>
-                      </button>
-                    </div>
-                  </template>
-                </div>
+                </template>
               </div>
-            </section>
+            </div>
+          </section>
+        </div>
+
+        <div
+          v-else
+          id="update-panel-changelog"
+          class="update-body update-changelog"
+          role="tabpanel"
+          aria-labelledby="update-tab-changelog"
+        >
+          <div v-if="center.historyLoading" class="update-history-state">
+            <span class="update-spinner" aria-hidden="true" />
+            <span>{{ t('正在加载更新日志...') }}</span>
           </div>
 
-          <div
-            v-else
-            id="update-panel-changelog"
-            class="update-body update-changelog"
-            role="tabpanel"
-            aria-labelledby="update-tab-changelog"
+          <div v-else-if="center.historyError" class="update-history-state">
+            <span>{{ t(center.historyError) }}</span>
+            <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
+              {{ t('重试') }}
+            </button>
+          </div>
+
+          <template v-else-if="changelogEntries.length">
+            <article v-for="entry in visibleChangelogEntries" :key="entry.key" class="update-changelog-entry">
+              <header class="update-changelog-head">
+                <span class="update-changelog-version">v{{ entry.version }}</span>
+                <span v-if="entry.isLatest" class="update-changelog-new">NEW</span>
+                <span v-if="entry.publishedLabel" class="update-changelog-date">{{ entry.publishedLabel }}</span>
+              </header>
+              <div v-if="entry.html" class="update-notes-content" @click="handleNotesClick" v-html="entry.html" />
+              <p v-else class="update-state-text">{{ t('该版本暂无更新说明。') }}</p>
+            </article>
+
+            <div v-if="hasMoreChangelog" class="update-load-more">
+              <button type="button" class="update-load-more-btn" @click="loadMoreChangelog">
+                {{ t('加载更多') }}
+                <span class="update-load-more-count">{{
+                  t('剩余 {count}', { count: changelogEntries.length - visibleChangelogEntries.length })
+                }}</span>
+              </button>
+            </div>
+          </template>
+
+          <p v-else class="update-state-text">{{ t('暂无更新日志。') }}</p>
+        </div>
+
+        <footer class="update-footer">
+          <button type="button" class="btn btn-secondary btn-sm" @click="openUpdateReleasePage">
+            {{ t('打开下载页') }}
+          </button>
+          <span class="update-footer-spacer" />
+
+          <template v-if="center.phase === 'available'">
+            <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+              {{ t('稍后') }}
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" @click="startUpdateDownload">
+              {{ t('立即下载') }}
+            </button>
+          </template>
+
+          <template v-else-if="center.phase === 'downloading'">
+            <button type="button" class="btn btn-secondary btn-sm" @click="cancelUpdateDownloadNow">
+              {{ t('取消下载') }}
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" disabled>
+              {{ t('下载中 {percent}%', { percent: progressValue }) }}
+            </button>
+          </template>
+
+          <template v-else-if="center.phase === 'downloaded'">
+            <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+              {{ t('稍后') }}
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" @click="installUpdateNow">
+              {{ t('立即重启安装') }}
+            </button>
+          </template>
+
+          <button v-else-if="center.phase === 'installing'" type="button" class="btn btn-primary btn-sm" disabled>
+            {{ t('正在安装...') }}
+          </button>
+
+          <template v-else-if="center.phase === 'error' || center.phase === 'not-available'">
+            <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+              {{ t('关闭') }}
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" @click="openUpdateCenter">
+              {{ t('重新检查') }}
+            </button>
+          </template>
+
+          <button
+            v-else-if="center.phase === 'dev-environment'"
+            type="button"
+            class="btn btn-primary btn-sm"
+            @click="closeUpdateCenter"
           >
-            <div v-if="center.historyLoading" class="update-history-state">
-              <span class="update-spinner" aria-hidden="true" />
-              <span>{{ t('正在加载更新日志...') }}</span>
-            </div>
-
-            <div v-else-if="center.historyError" class="update-history-state">
-              <span>{{ t(center.historyError) }}</span>
-              <button type="button" class="update-history-retry" @click="loadUpdateReleases(true)">
-                {{ t('重试') }}
-              </button>
-            </div>
-
-            <template v-else-if="changelogEntries.length">
-              <article v-for="entry in visibleChangelogEntries" :key="entry.key" class="update-changelog-entry">
-                <header class="update-changelog-head">
-                  <span class="update-changelog-version">v{{ entry.version }}</span>
-                  <span v-if="entry.isLatest" class="update-changelog-new">NEW</span>
-                  <span v-if="entry.publishedLabel" class="update-changelog-date">{{ entry.publishedLabel }}</span>
-                </header>
-                <div v-if="entry.html" class="update-notes-content" @click="handleNotesClick" v-html="entry.html" />
-                <p v-else class="update-state-text">{{ t('该版本暂无更新说明。') }}</p>
-              </article>
-
-              <div v-if="hasMoreChangelog" class="update-load-more">
-                <button type="button" class="update-load-more-btn" @click="loadMoreChangelog">
-                  {{ t('加载更多') }}
-                  <span class="update-load-more-count">{{
-                    t('剩余 {count}', { count: changelogEntries.length - visibleChangelogEntries.length })
-                  }}</span>
-                </button>
-              </div>
-            </template>
-
-            <p v-else class="update-state-text">{{ t('暂无更新日志。') }}</p>
-          </div>
-
-          <footer class="update-footer">
-            <button type="button" class="btn btn-secondary btn-sm" @click="openUpdateReleasePage">
-              {{ t('打开下载页') }}
-            </button>
-            <span class="update-footer-spacer" />
-
-            <template v-if="center.phase === 'available'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
-                {{ t('稍后') }}
-              </button>
-              <button type="button" class="btn btn-primary btn-sm" @click="startUpdateDownload">
-                {{ t('立即下载') }}
-              </button>
-            </template>
-
-            <template v-else-if="center.phase === 'downloading'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="cancelUpdateDownloadNow">
-                {{ t('取消下载') }}
-              </button>
-              <button type="button" class="btn btn-primary btn-sm" disabled>
-                {{ t('下载中 {percent}%', { percent: progressValue }) }}
-              </button>
-            </template>
-
-            <template v-else-if="center.phase === 'downloaded'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
-                {{ t('稍后') }}
-              </button>
-              <button type="button" class="btn btn-primary btn-sm" @click="installUpdateNow">
-                {{ t('立即重启安装') }}
-              </button>
-            </template>
-
-            <button v-else-if="center.phase === 'installing'" type="button" class="btn btn-primary btn-sm" disabled>
-              {{ t('正在安装...') }}
-            </button>
-
-            <template v-else-if="center.phase === 'error' || center.phase === 'not-available'">
-              <button type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
-                {{ t('关闭') }}
-              </button>
-              <button type="button" class="btn btn-primary btn-sm" @click="openUpdateCenter">
-                {{ t('重新检查') }}
-              </button>
-            </template>
-
-            <button
-              v-else-if="center.phase === 'dev-environment'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="closeUpdateCenter"
-            >
-              {{ t('知道了') }}
-            </button>
-            <button v-else type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
-              {{ t('取消') }}
-            </button>
-          </footer>
-        </section>
-      </div>
-    </Transition>
+            {{ t('知道了') }}
+          </button>
+          <button v-else type="button" class="btn btn-secondary btn-sm" @click="closeUpdateCenter">
+            {{ t('取消') }}
+          </button>
+        </footer>
+      </section>
+    </div>
   </Teleport>
 </template>
 
@@ -352,6 +313,7 @@ import {
 import { renderMarkdown } from '@/utils/markdown'
 import { t, getLocale } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
 const { updateCenter: center } = useUpdateCenter()
 
 const activeTab = ref('app')
@@ -562,6 +524,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   max-width: calc(100vw - 32px);
   max-height: min(720px, calc(100vh - 48px));
   overflow: hidden;
+  animation: update-dialog-in var(--motion-panel) var(--motion-ease);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -595,7 +558,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .update-badge {
   flex-shrink: 0;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   font-weight: 600;
   line-height: 1.5;
@@ -679,7 +642,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   bottom: -1px;
   left: 10px;
   height: 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: transparent;
   transition: background var(--motion-fast) var(--motion-ease);
 }
@@ -807,7 +770,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   min-width: 18px;
   height: 18px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-hover);
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
@@ -963,7 +926,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .update-changelog-new {
   flex-shrink: 0;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--success-rgb), 0.14);
   color: var(--success-dark);
   font-size: var(--font-size-xs);
@@ -984,7 +947,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   gap: 8px;
   padding: 5px 14px;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
@@ -1106,7 +1069,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .update-progress-track {
   height: 8px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(var(--accent-rgb), 0.14);
 }
 
@@ -1169,26 +1132,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   min-width: 8px;
 }
 
-.update-dialog-enter-active,
-.update-dialog-leave-active {
-  transition: opacity var(--motion-base) var(--motion-ease);
+/* 入场动画只作用于卡片：遮罩层始终不透明，动画帧被节流时也不会留下不可见却拦截点击的全屏层 */
+@keyframes update-dialog-in {
+  from {
+    transform: scale(0.97) translateY(4px);
+    opacity: 0.85;
+  }
 }
 
-.update-dialog-enter-active .update-dialog,
-.update-dialog-leave-active .update-dialog {
-  transition:
-    transform var(--motion-panel) var(--motion-ease),
-    opacity var(--motion-panel) var(--motion-ease);
-}
-
-.update-dialog-enter-from,
-.update-dialog-leave-to {
-  opacity: 0;
-}
-
-.update-dialog-enter-from .update-dialog,
-.update-dialog-leave-to .update-dialog {
-  transform: scale(0.97) translateY(4px);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .update-dialog {
+    animation: none;
+  }
 }
 </style>

@@ -1,4 +1,4 @@
-import { getMemoryOverview, addMemory, updateMemory, removeMemory } from '../../../services/memory.js'
+import { getMemoryOverview, addMemory, updateMemory, removeMemory } from '../../../services/agent/memory.js'
 
 function summarize(text, limit = 120) {
   const value = String(text || '')

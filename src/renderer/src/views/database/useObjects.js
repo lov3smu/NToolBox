@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
-import { dbExecuteQuery, dbGetTableStructure, dbGetObjectDefinition } from '@/api'
+import { dbGetDatabaseInfo, dbGetObjectDefinition, dbGetTableDetails, dbGetTableInfo, dbGetTableStructure } from '@/api'
+import { logError } from '@/utils/log'
 export function createObjects(state, api) {
   const {
     activeTabId,
@@ -24,24 +25,9 @@ export function createObjects(state, api) {
     if (!connName || !dbName) return
 
     try {
-      const result = await dbExecuteQuery(
-        connName,
-        `SELECT 
-        TABLE_NAME as name,
-        TABLE_ROWS as rows,
-        DATA_LENGTH + INDEX_LENGTH as dataSize,
-        ENGINE as engine,
-        UPDATE_TIME as modified,
-        TABLE_COMMENT as comment
-      FROM information_schema.TABLES 
-      WHERE TABLE_SCHEMA = '${dbName}'
-      ORDER BY TABLE_NAME`,
-        [],
-        { autoLimit: false }
-      )
-
-      if (result.success && result.rows) {
-        objectTableDetails.value = result.rows.map((row) => ({
+      const result = await dbGetTableDetails(connName, dbName)
+      if (result.success && result.details) {
+        objectTableDetails.value = result.details.map((row) => ({
           name: row.name,
           rows: row.rows || 0,
           dataSize: row.dataSize || 0,
@@ -51,7 +37,7 @@ export function createObjects(state, api) {
         }))
       }
     } catch (error) {
-      console.error('加载表详情失败:', error)
+      logError('加载表详情失败:', error)
     }
   }
 
@@ -61,19 +47,16 @@ export function createObjects(state, api) {
     if (!connName || !dbName || !tableName) return
 
     try {
-      const result = await dbGetTableStructure(connName, dbName, tableName)
-      if (result.success) {
-        tableStructure.value = result.fields || []
+      const [structureResult, ddlResult] = await Promise.all([
+        dbGetTableStructure(connName, dbName, tableName),
+        dbGetObjectDefinition(connName, dbName, 'table', tableName)
+      ])
+      if (structureResult.success) {
+        tableStructure.value = structureResult.fields || []
       }
-
-      const ddlResult = await dbExecuteQuery(connName, `SHOW CREATE TABLE \`${dbName}\`.\`${tableName}\``, [], {
-        autoLimit: false
-      })
-      if (ddlResult.success && ddlResult.rows && ddlResult.rows.length > 0) {
-        tableDDL.value = ddlResult.rows[0]['Create Table'] || t('无法获取DDL')
-      }
+      tableDDL.value = (ddlResult.success && ddlResult.ddl) || t('无法获取DDL')
     } catch (error) {
-      console.error('加载表结构失败:', error)
+      logError('加载表结构失败:', error)
     }
   }
 
@@ -82,18 +65,10 @@ export function createObjects(state, api) {
     if (!connName || !dbName || !viewName) return
 
     try {
-      const result = await dbExecuteQuery(
-        connName,
-        `SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${viewName}'`,
-        [],
-        { autoLimit: false }
-      )
-
-      if (result.success && result.rows && result.rows.length > 0) {
-        viewDefinition.value = result.rows[0].VIEW_DEFINITION || t('无法获取视图定义')
-      }
+      const result = await dbGetObjectDefinition(connName, dbName, 'view', viewName)
+      viewDefinition.value = (result.success && result.ddl) || t('无法获取视图定义')
     } catch (error) {
-      console.error('加载视图定义失败:', error)
+      logError('加载视图定义失败:', error)
       viewDefinition.value = t('加载失败')
     }
   }
@@ -103,18 +78,12 @@ export function createObjects(state, api) {
     if (!connName || !dbName || !funcName) return
 
     try {
-      const result = await dbExecuteQuery(
-        connName,
-        `SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = '${dbName}' AND ROUTINE_NAME = '${funcName}' AND ROUTINE_TYPE = 'FUNCTION'`,
-        [],
-        { autoLimit: false }
-      )
-
-      if (result.success && result.rows && result.rows.length > 0) {
-        functionDefinition.value = result.rows[0].ROUTINE_DEFINITION || t('无法获取函数定义')
-      }
+      const result = await dbGetObjectDefinition(connName, dbName, 'function', funcName)
+      functionDefinition.value = result.success
+        ? result.ddl || t('无法获取函数定义')
+        : result.error || t('加载函数定义失败')
     } catch (error) {
-      console.error('加载函数定义失败:', error)
+      logError('加载函数定义失败:', error)
       functionDefinition.value = t('加载失败')
     }
   }
@@ -141,21 +110,16 @@ export function createObjects(state, api) {
 
   async function loadDatabaseInfo(connName, dbName) {
     try {
-      const result = await dbExecuteQuery(
-        connName,
-        `SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = '${dbName}'`,
-        [],
-        { autoLimit: false }
-      )
-      if (result.success && result.rows && result.rows.length > 0) {
+      const result = await dbGetDatabaseInfo(connName, dbName)
+      if (result.success && result.info) {
         databaseInfo.value = {
-          name: result.rows[0].SCHEMA_NAME,
-          charset: result.rows[0].DEFAULT_CHARACTER_SET_NAME,
-          collation: result.rows[0].DEFAULT_COLLATION_NAME
+          name: result.info.name,
+          charset: result.info.charset,
+          collation: result.info.collation
         }
       }
     } catch (err) {
-      console.error('获取数据库信息失败:', err)
+      logError('获取数据库信息失败:', err)
     }
   }
 
@@ -180,17 +144,12 @@ export function createObjects(state, api) {
 
   async function loadTableInfo(connName, dbName, tableName) {
     try {
-      const result = await dbExecuteQuery(
-        connName,
-        `SELECT TABLE_NAME, TABLE_ROWS, ENGINE, AUTO_INCREMENT, ROW_FORMAT, TABLE_COLLATION, CREATE_TIME, UPDATE_TIME, CHECK_TIME, INDEX_LENGTH, DATA_LENGTH, MAX_DATA_LENGTH, DATA_FREE, CREATE_OPTIONS, TABLE_COMMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}'`,
-        [],
-        { autoLimit: false }
-      )
-      if (result.success && result.rows && result.rows.length > 0) {
-        tableInfo.value = result.rows[0]
+      const result = await dbGetTableInfo(connName, dbName, tableName)
+      if (result.success && result.info) {
+        tableInfo.value = result.info
       }
     } catch (err) {
-      console.error('获取表信息失败:', err)
+      logError('获取表信息失败:', err)
     }
   }
 
@@ -206,7 +165,7 @@ export function createObjects(state, api) {
         ? result.ddl || t('无法获取对象定义')
         : result.error || t('加载对象定义失败')
     } catch (error) {
-      console.error('加载对象定义失败:', error)
+      logError('加载对象定义失败:', error)
       objectDefinition.value = t('加载失败')
     }
   }

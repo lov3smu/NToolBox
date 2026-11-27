@@ -37,7 +37,7 @@ vi.mock('../src/main/services/config.js', () => ({
     },
     database: { connections: [] },
     extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} },
-    app: { base_path: '', text_edit_app: '' },
+    sql_generator: { base_path: '', text_edit_app: '' },
     network: { market_sources: {} },
     update: { auto_update: false, check_interval: 24 },
     appearance: { theme: 'system' },
@@ -82,7 +82,7 @@ vi.mock('../src/main/services/ai/index.js', () => ({
   PROVIDER_INFO: { deepseek: { name: 'DeepSeek' } }
 }))
 
-vi.mock('../src/main/services/skills.js', () => ({
+vi.mock('../src/main/services/extensions/skills.js', () => ({
   initSkills: vi.fn(async () => {}),
   getSkillsManager: () => ({
     getToolDefinitions: () => [
@@ -100,7 +100,7 @@ vi.mock('../src/main/services/skills.js', () => ({
   })
 }))
 
-const { chatStream, compressChatContext } = await import('../src/main/services/chat.js')
+const { chatStream, compressChatContext } = await import('../src/main/services/agent/chat.js')
 
 function planResult(plan) {
   return { success: true, content: JSON.stringify(plan) }

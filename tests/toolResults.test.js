@@ -13,7 +13,7 @@ vi.mock('../src/main/utils/index.js', () => ({
   log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }))
 
-const { createToolResultStore, readToolResult } = await import('../src/main/services/toolResults.js')
+const { createToolResultStore, readToolResult } = await import('../src/main/services/agent/toolResults.js')
 
 beforeAll(() => {
   fs.mkdirSync(testUserData, { recursive: true })

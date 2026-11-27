@@ -9,8 +9,29 @@
         <div v-if="resolvedSubtitle" class="page-subtitle">{{ resolvedSubtitle }}</div>
       </div>
 
-      <div v-if="$slots['header-extra']" class="page-extra">
+      <div v-if="canSplit || secondaryPane || $slots['header-extra']" class="page-extra">
+        <SplitPicker v-if="canSplit" />
         <slot name="header-extra" />
+        <div v-if="secondaryPane" class="pane-actions">
+          <button
+            type="button"
+            class="pane-action"
+            :title="t('左右交换')"
+            :aria-label="t('左右交换')"
+            @click="secondaryPane.swap()"
+          >
+            <AppIcon name="swap-horizontal" />
+          </button>
+          <button
+            type="button"
+            class="pane-action"
+            :title="t('关闭分屏')"
+            :aria-label="t('关闭分屏')"
+            @click="secondaryPane.close()"
+          >
+            <AppIcon name="close" />
+          </button>
+        </div>
       </div>
     </header>
 
@@ -25,9 +46,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { getToolByPath } from '@shared/tools'
+import AppIcon from '@/components/AppIcon.vue'
+import { computed, inject } from 'vue'
+import { getToolByPath, isSplitTool } from '@shared/navTools'
+import { SPLIT_SECONDARY_KEY } from '@/composables'
 import { t } from '@/i18n'
+import SplitPicker from '@/components/SplitPicker.vue'
 
 const props = defineProps({
   toolPath: { type: String, default: '' },
@@ -37,7 +61,9 @@ const props = defineProps({
   pageClass: { type: String, default: '' }
 })
 
+const secondaryPane = inject(SPLIT_SECONDARY_KEY, null)
 const tool = computed(() => (props.toolPath ? getToolByPath(props.toolPath) : null))
+const canSplit = computed(() => !secondaryPane && isSplitTool(props.toolPath))
 const resolvedTitle = computed(() => props.title || (tool.value ? t(tool.value.name) : ''))
 const resolvedSubtitle = computed(() => props.subtitle || (tool.value ? t(tool.value.description) : ''))
 const resolvedMaxWidth = computed(() => {
@@ -94,7 +120,7 @@ const resolvedMaxWidth = computed(() => {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--primary-gradient);
   color: var(--text-inverse);
 }
@@ -126,6 +152,47 @@ const resolvedMaxWidth = computed(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-color);
+}
+
+.pane-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.pane-action:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.pane-action:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 1px;
+}
+
+.pane-action svg {
+  width: 14px;
+  height: 14px;
 }
 
 .page-toolbar {

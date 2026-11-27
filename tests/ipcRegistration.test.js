@@ -24,21 +24,38 @@ vi.mock('../src/main/utils/sanitize.js', () => ({
   isPathWithinBase: vi.fn(async () => true)
 }))
 
-vi.mock('../src/main/services/index.js', () => ({
-  getConfig: vi.fn(() => ({ app: { base_path: '/tmp/scripts' } })),
-  getPublicConfig: vi.fn(() => ({ app: { base_path: '/tmp/scripts' } })),
+vi.mock('../src/main/services/config.js', () => ({
+  getConfig: vi.fn(() => ({ sql_generator: { base_path: '/tmp/scripts' } })),
+  getPublicConfig: vi.fn(() => ({ sql_generator: { base_path: '/tmp/scripts' } })),
   saveConfig: vi.fn(async () => true),
-  loadConfig: vi.fn(async () => ({})),
-  generateSQLFile: vi.fn(async () => ({})),
-  openFile: vi.fn(),
-  openFolder: vi.fn(),
-  setAutoStart: vi.fn(),
-  getAutoStart: vi.fn(),
-  checkForUpdates: vi.fn(),
-  getUpdateReleases: vi.fn(async () => ({ success: true, releases: [] }))
+  patchConfig: vi.fn(async () => true),
+  loadConfig: vi.fn(async () => ({}))
 }))
 
-vi.mock('../src/main/services/chat.js', () => ({
+vi.mock('../src/main/services/templates/sqlScriptFile.js', () => ({
+  generateSQLFile: vi.fn(async () => ({}))
+}))
+
+vi.mock('../src/main/services/fileOpener.js', () => ({
+  openFile: vi.fn(),
+  openFolder: vi.fn()
+}))
+
+vi.mock('../src/main/services/autostart.js', () => ({
+  setAutoStart: vi.fn(),
+  getAutoStart: vi.fn()
+}))
+
+vi.mock('../src/main/services/updater.js', () => ({
+  checkForUpdates: vi.fn(),
+  startAutoUpdateCheck: vi.fn(),
+  getUpdateReleases: vi.fn(async () => ({ success: true, releases: [] })),
+  downloadUpdate: vi.fn(),
+  cancelUpdateDownload: vi.fn(),
+  installUpdate: vi.fn()
+}))
+
+vi.mock('../src/main/services/agent/chat.js', () => ({
   chat: vi.fn(async () => ({ success: true })),
   chatStream: vi.fn(async () => ({ success: true })),
   validateApiKey: vi.fn(),
@@ -46,7 +63,7 @@ vi.mock('../src/main/services/chat.js', () => ({
   getProviderModels: vi.fn(() => [])
 }))
 
-vi.mock('../src/main/services/skills.js', () => ({
+vi.mock('../src/main/services/extensions/skills.js', () => ({
   initSkills: vi.fn(),
   getSkills: vi.fn(() => []),
   getSkill: vi.fn(),
@@ -59,7 +76,7 @@ vi.mock('../src/main/services/skills.js', () => ({
   getUserSkillsDirectory: vi.fn(() => '/tmp/skills')
 }))
 
-vi.mock('../src/main/services/database.js', () => ({
+vi.mock('../src/main/services/database/index.js', () => ({
   testConnection: vi.fn(),
   createConnection: vi.fn(),
   closeConnection: vi.fn(),
@@ -91,8 +108,8 @@ vi.mock('../src/main/ui/index.js', () => ({
 import { ipcMain, BrowserWindow } from 'electron'
 import { setupIPCHandlers } from '../src/main/ipc/index.js'
 import { getMainWindow, getSettingsWindow } from '../src/main/windows/index.js'
-import { getPublicConfig } from '../src/main/services/index.js'
-import { chat } from '../src/main/services/chat.js'
+import { getPublicConfig } from '../src/main/services/config.js'
+import { chat } from '../src/main/services/agent/chat.js'
 
 function getHandler(channel) {
   const entry = ipcMain.handle.mock.calls.find(([registered]) => registered === channel)

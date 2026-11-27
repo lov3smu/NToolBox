@@ -14,7 +14,7 @@ const routes = [
   {
     path: '/market',
     name: 'Market',
-    component: () => import('@/views/Market.vue')
+    component: () => import('@/views/ExtensionMarket.vue')
   },
   {
     path: '/settings',
@@ -25,6 +25,11 @@ const routes = [
     path: '/password-manager',
     name: 'PasswordManager',
     component: () => import('@/views/PasswordManager.vue')
+  },
+  {
+    path: '/profiles',
+    name: 'Profiles',
+    component: () => import('@/views/Profiles.vue')
   },
   {
     path: '/cron',
@@ -72,6 +77,21 @@ const routes = [
     component: () => import('@/views/Clipboard.vue')
   },
   {
+    path: '/staging',
+    name: 'Staging',
+    component: () => import('@/views/Staging.vue')
+  },
+  {
+    path: '/recipes',
+    name: 'Recipes',
+    component: () => import('@/views/Recipes.vue')
+  },
+  {
+    path: '/scheduled-tasks',
+    name: 'ScheduledTasks',
+    component: () => import('@/views/ScheduledTasks.vue')
+  },
+  {
     path: '/json-parser',
     name: 'JsonParser',
     component: () => import('@/views/JsonParser.vue')
@@ -82,6 +102,46 @@ const routes = [
     component: () => import('@/views/HtmlViewer.vue')
   },
   {
+    path: '/text-toolbox',
+    name: 'TextToolbox',
+    component: () => import('@/views/TextToolbox.vue')
+  },
+  {
+    path: '/text-diff',
+    name: 'TextDiff',
+    component: () => import('@/views/TextDiff.vue')
+  },
+  {
+    path: '/regex-tester',
+    name: 'RegexTester',
+    component: () => import('@/views/RegexTester.vue')
+  },
+  {
+    path: '/codec',
+    name: 'Codec',
+    component: () => import('@/views/Codec.vue')
+  },
+  {
+    path: '/http-client',
+    name: 'HttpClient',
+    component: () => import('@/views/HttpClient.vue')
+  },
+  {
+    path: '/activity',
+    name: 'ActivityTimeline',
+    component: () => import('@/views/ActivityTimeline.vue')
+  },
+  {
+    path: '/system-tools',
+    name: 'SystemTools',
+    component: () => import('@/views/SystemTools.vue')
+  },
+  {
+    path: '/template-center',
+    name: 'TemplateCenter',
+    component: () => import('@/views/TemplateCenter.vue')
+  },
+  {
     path: '/chat',
     name: 'Chat',
     component: () => import('@/views/Chat.vue')
@@ -89,7 +149,7 @@ const routes = [
   {
     path: '/memory',
     name: 'Memory',
-    component: () => import('@/views/Memory.vue')
+    component: () => import('@/views/KnowledgeSources.vue')
   },
   {
     path: '/database',

@@ -3,6 +3,7 @@ import shell from './shell.js'
 import settings from './settings.js'
 import extensions from './extensions.js'
 import tools from './tools.js'
+import devTools from './devTools.js'
 import pages from './pages.js'
 import chat from './chat.js'
 import database from './database.js'
@@ -15,6 +16,7 @@ export default {
   ...settings,
   ...extensions,
   ...tools,
+  ...devTools,
   ...pages,
   ...chat,
   ...database,

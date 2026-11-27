@@ -25,18 +25,7 @@
               @click="toggleInstallMenu"
             >
               {{ t('安装插件') }}
-              <svg
-                class="ext-install-caret"
-                :class="{ open: installMenuOpen }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+              <AppIcon name="chevron-down" class="ext-install-caret" :class="{ open: installMenuOpen }" />
             </button>
             <Transition name="ext-install-pop">
               <div v-if="installMenuOpen" v-clamp-viewport class="ext-install-menu" role="menu">
@@ -78,18 +67,7 @@
               @click="toggleInstallMenu"
             >
               {{ t('安装技能') }}
-              <svg
-                class="ext-install-caret"
-                :class="{ open: installMenuOpen }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+              <AppIcon name="chevron-down" class="ext-install-caret" :class="{ open: installMenuOpen }" />
             </button>
             <Transition name="ext-install-pop">
               <div v-if="installMenuOpen" v-clamp-viewport class="ext-install-menu" role="menu">
@@ -151,10 +129,7 @@
 
       <section class="ext-toolbar">
         <div class="ext-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
+          <AppIcon name="search" />
           <input v-model="search" type="text" :placeholder="searchPlaceholder" />
         </div>
         <div v-if="category === 'skills'" class="ext-tabs">
@@ -176,10 +151,12 @@
         <span class="ext-spinner" />
         {{ t('正在加载扩展…') }}
       </div>
-      <div v-else-if="category === 'plugins' && !filteredPlugins.length" class="ext-state">
-        <p>{{ emptyTitle }}</p>
-        <span>{{ emptyHint }}</span>
-      </div>
+      <EmptyState
+        v-else-if="category === 'plugins' && !filteredPlugins.length"
+        class="ext-empty"
+        :title="emptyTitle"
+        :description="emptyHint"
+      />
       <section v-else-if="category === 'plugins'" class="ext-grid">
         <article v-for="plugin in filteredPlugins" :key="plugin.name" class="ext-card">
           <div class="ext-card-head">
@@ -197,7 +174,7 @@
           </p>
 
           <p class="ext-desc">
-            {{ plugin.description || t('插件包，包含随包安装的技能与连接器。') }}
+            {{ plugin.description || t('插件包，包含随包安装的技能、连接器、命令、模板与沙箱动作。') }}
           </p>
 
           <div class="ext-plugin-parts">
@@ -227,6 +204,44 @@
                 {{ name }}
               </span>
             </div>
+            <div class="ext-plugin-part">
+              <span class="ext-plugin-part-label">{{ t('命令') }}</span>
+              <span v-if="!plugin.commands.length" class="ext-plugin-part-empty">{{ t('无') }}</span>
+              <span v-for="command in plugin.commands" :key="command.id" class="ext-tag" :title="command.title">
+                {{ command.title }}
+              </span>
+            </div>
+            <div class="ext-plugin-part">
+              <span class="ext-plugin-part-label">{{ t('模板') }}</span>
+              <span v-if="!plugin.templates.length" class="ext-plugin-part-empty">{{ t('无') }}</span>
+              <span v-for="template in plugin.templates" :key="template.id" class="ext-tag" :title="template.name">
+                {{ template.name }}
+              </span>
+            </div>
+            <div class="ext-plugin-part">
+              <span class="ext-plugin-part-label">{{ t('沙箱动作') }}</span>
+              <span v-if="!plugin.sandbox?.actions?.length" class="ext-plugin-part-empty">{{ t('无') }}</span>
+              <button
+                v-for="action in plugin.sandbox?.actions || []"
+                :key="action.id"
+                type="button"
+                class="ext-tag ext-sandbox-action"
+                :title="action.description || action.title"
+                :disabled="busyAction === `${plugin.name}:${action.id}`"
+                @click="runSandboxAction(plugin, action)"
+              >
+                {{ action.title }}
+              </button>
+            </div>
+            <div v-if="plugin.sandbox?.permissions?.length" class="ext-plugin-part">
+              <span class="ext-plugin-part-label">{{ t('沙箱权限') }}</span>
+              <span v-for="permission in plugin.sandbox.permissions" :key="permission" class="ext-tag ext-tag-muted">
+                {{ sandboxPermissionLabel(permission) }}
+              </span>
+              <span class="ext-plugin-part-empty">
+                {{ plugin.sandboxApproved ? t('已授权') : t('首次运行需授权') }}
+              </span>
+            </div>
           </div>
 
           <div class="ext-meta">
@@ -249,10 +264,7 @@
           </div>
         </article>
       </section>
-      <div v-else-if="!filteredSkills.length" class="ext-state">
-        <p>{{ emptyTitle }}</p>
-        <span>{{ emptyHint }}</span>
-      </div>
+      <EmptyState v-else-if="!filteredSkills.length" class="ext-empty" :title="emptyTitle" :description="emptyHint" />
       <section v-else class="ext-grid">
         <article
           v-for="skill in filteredSkills"
@@ -284,13 +296,13 @@
 
           <template v-if="editingName === skill.name">
             <div class="ext-desc-editor">
-              <textarea
+              <AppTextarea
                 v-model="descriptionDraft"
                 rows="3"
                 spellcheck="false"
                 :placeholder="t('输入技能描述')"
                 :disabled="busyName === `desc:${skill.name}`"
-              ></textarea>
+              />
               <div class="ext-desc-actions">
                 <button
                   type="button"
@@ -361,10 +373,7 @@
               {{ t('卸载') }}
             </button>
             <span v-else class="ext-lock">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="4" y="11" width="16" height="10" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
+              <AppIcon name="lock" />
               {{ t('不可卸载') }}
             </span>
           </div>
@@ -416,8 +425,6 @@
       @close="installDialogVisible = false"
       @installed="onBundleInstalled"
     />
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
@@ -433,6 +440,7 @@ import {
   pluginsInstallFromFolder,
   pluginsList,
   pluginsOpenDirectory,
+  pluginsRunAction,
   pluginsUninstall,
   patchConfig,
   skillsExport,
@@ -444,16 +452,18 @@ import { useToast } from '@/composables'
 import { getSkillIcon } from '@/utils/skillIcons'
 import { getCategoryLabel } from '@/utils/skillMeta'
 import { normalizeDisabledSkills, normalizeSkillOverrides } from '@shared/skillOverrides'
+import { getSandboxPermission } from '@shared/pluginSandbox'
 import { t } from '@/i18n'
 import MessageDialog from '@/components/MessageDialog.vue'
 import PluginInstallDialog from '@/components/PluginInstallDialog.vue'
 import SkillDetailDialog from '@/components/SkillDetailDialog.vue'
 import McpSettingsPanel from '@/components/settings/McpSettingsPanel.vue'
-import Toast from '@/components/Toast.vue'
+import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 import '@/styles/extensions.css'
 
 const toast = useToast()
-const { toastVisible, toastMessage, toastType } = toast
 
 const props = defineProps({
   initialCategory: { type: String, default: 'plugins' },
@@ -473,6 +483,7 @@ const loading = ref(true)
 const search = ref('')
 const filter = ref('all')
 const busyName = ref('')
+const busyAction = ref('')
 const detailVisible = ref(false)
 const detailSkill = ref(null)
 const pendingUninstall = ref(null)
@@ -526,7 +537,7 @@ const categories = computed(() => [
 
 const CATEGORY_HINTS = {
   get plugins() {
-    return t('插件把技能与连接器打包在一起，一次安装即可使用全部组件。')
+    return t('插件把技能、连接器、命令与模板打包在一起，一次安装即可使用全部组件。')
   },
   get skills() {
     return t('技能是 AI 助手可调用的指令与脚本，安装后按需触发。')
@@ -570,11 +581,23 @@ const filteredPlugins = computed(() => {
   const keyword = search.value.trim().toLowerCase()
   if (!keyword) return plugins.value
   return plugins.value.filter((plugin) =>
-    [plugin.name, plugin.description, plugin.author, ...(plugin.skills || []), ...(plugin.connectors || [])]
+    [
+      plugin.name,
+      plugin.description,
+      plugin.author,
+      ...(plugin.skills || []),
+      ...(plugin.connectors || []),
+      ...(plugin.sandbox?.actions || []).map((action) => action.title)
+    ]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(keyword))
   )
 })
+
+function sandboxPermissionLabel(id) {
+  const permission = getSandboxPermission(id)
+  return permission ? t(permission.label) : id
+}
 
 const filteredSkills = computed(() => {
   const keyword = search.value.trim().toLowerCase()
@@ -935,6 +958,27 @@ async function confirmUninstall() {
 function requestPluginUninstall(plugin) {
   pendingPlugin.value = plugin
   pluginConfirmVisible.value = true
+}
+
+async function runSandboxAction(plugin, action) {
+  const key = `${plugin.name}:${action.id}`
+  if (busyAction.value) return
+  busyAction.value = key
+  try {
+    const result = await pluginsRunAction(plugin.name, action.id)
+    if (!result?.success) {
+      if (!result?.canceled) toast.showError(result?.error || t('插件动作运行失败'))
+      return
+    }
+    toast.showSuccess(
+      result.outputMode === 'notification'
+        ? t('已运行「{name}」，结果已发送通知', { name: action.title })
+        : t('已运行「{name}」，结果已复制到剪贴板', { name: action.title })
+    )
+    await load({ silent: true })
+  } finally {
+    busyAction.value = ''
+  }
 }
 
 function cancelPluginUninstall() {

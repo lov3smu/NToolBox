@@ -19,7 +19,7 @@ import {
   normalizeRecentToolsLimit,
   setRecentToolsLimit,
   getRecentToolsLimit
-} from '../src/shared/tools.js'
+} from '../src/shared/navTools.js'
 
 const ROUTER_FILE = path.join(process.cwd(), 'src/renderer/src/router/index.js')
 const routerSource = fs.readFileSync(ROUTER_FILE, 'utf8')
@@ -32,7 +32,7 @@ describe('tool registry', () => {
       expect(tool.description).toBeTruthy()
       expect(tool.path.startsWith('/')).toBe(true)
       expect(tool.icon).toContain('<svg')
-      expect(['file', 'primary', 'utilities', 'settings', 'extensions']).toContain(tool.menuGroup)
+      expect(['file', 'primary', 'dev', 'content', 'system', 'settings', 'extensions']).toContain(tool.menuGroup)
     }
   })
 
@@ -67,7 +67,7 @@ describe('tool registry', () => {
       expect(getToolsByMenuGroup(tool.menuGroup).some((item) => item.path === tool.path)).toBe(false)
       expect(searchTools(tool.name).some((item) => item.path === tool.path)).toBe(false)
     }
-    expect(getToolByPath('/memory')?.name).toBe('记忆与知识库')
+    expect(getToolByPath('/memory')?.name).toBe('外挂知识库')
   })
 
   it('derives menu, tray and lookup collections from the registry', () => {
@@ -77,6 +77,10 @@ describe('tool registry', () => {
     expect(getTrayTools().every((tool) => tool.trayGroup === 'tools')).toBe(true)
     expect(getToolsByMenuGroup('extensions').map((tool) => tool.path)).toEqual(['/market'])
     expect(searchTools('JSON').map((tool) => tool.path)).toContain('/json-parser')
+    expect(searchTools('json 美化').map((tool) => tool.path)).toContain('/json-parser')
+    expect(searchTools('password').map((tool) => tool.path)).toContain('/password-manager')
+    expect(searchTools('开发工具').map((tool) => tool.path)).toContain('/regex-tester')
+    expect(searchTools('开发工具').map((tool) => tool.path)).not.toContain('/markdown-editor')
     expect(getToolAccelerator(getToolByPath('/chat'))).toBeUndefined()
     expect(getToolAccelerator(getToolByPath('/database'))).toBeUndefined()
     expect(getToolAccelerator({ shortcutKey: 'settings', accelerator: 'CmdOrCtrl+,' }, { settings: 'Alt+S' })).toBe(

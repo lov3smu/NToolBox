@@ -8,7 +8,7 @@ vi.mock('../src/main/utils/index.js', () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }))
 
-vi.mock('../src/main/services/skills.js', () => ({
+vi.mock('../src/main/services/extensions/skills.js', () => ({
   initSkills: vi.fn(),
   installSkill: vi.fn()
 }))
@@ -21,7 +21,7 @@ import {
   normalizeRegistry,
   parsePluginSource,
   sanitizeArchivePath
-} from '../src/main/services/pluginInstaller.js'
+} from '../src/main/services/extensions/pluginInstaller.js'
 
 function octal(value, length) {
   return `${value.toString(8).padStart(length - 1, '0')}\0`

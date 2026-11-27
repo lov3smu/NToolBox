@@ -37,7 +37,7 @@ vi.mock('../src/main/services/config.js', () => ({
     },
     database: { connections: [] },
     extensions: { mcp_servers: [], disabled_skills: [], skill_overrides: {} },
-    app: { base_path: '', text_edit_app: '' },
+    sql_generator: { base_path: '', text_edit_app: '' },
     network: { market_sources: {} },
     update: { auto_update: false, check_interval: 24 },
     appearance: { theme: 'system' },
@@ -93,7 +93,7 @@ const TOOL_DEFINITIONS = [
   }
 ]
 
-vi.mock('../src/main/services/skills.js', () => ({
+vi.mock('../src/main/services/extensions/skills.js', () => ({
   initSkills: vi.fn(async () => {}),
   getSkillsManager: () => ({
     getToolDefinitions: () => TOOL_DEFINITIONS,
@@ -102,7 +102,7 @@ vi.mock('../src/main/services/skills.js', () => ({
   })
 }))
 
-const { chatStream } = await import('../src/main/services/chat.js')
+const { chatStream } = await import('../src/main/services/agent/chat.js')
 
 function planResult() {
   return { success: true, content: JSON.stringify({ complexity: 'simple', goal: '', steps: [] }) }

@@ -1,0 +1,39 @@
+{
+  "name": "code-exec",
+  "version": "1.0.0",
+  "description": "在临时沙箱中执行 JavaScript（Node.js）代码并返回输出，可用于数据处理、计算与验证脚本。使用 Node 权限模型限制文件写入与子进程，工作区目录只读；执行需用户审批，超时自动终止。",
+  "author": "system",
+  "type": "builtin",
+  "category": "code",
+  "tags": ["代码", "执行", "沙箱", "计算", "数据处理"],
+  "icon": "terminal",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "要执行的 JavaScript 代码（CommonJS），通过 console.log 输出结果"
+      },
+      "timeout_ms": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 20000,
+        "default": 8000,
+        "description": "超时时间（毫秒）"
+      }
+    },
+    "required": ["code"],
+    "additionalProperties": false
+  },
+  "handler": "handler.js",
+  "examples": [
+    {
+      "input": "code: console.log([1,2,3].reduce((a,b)=>a+b,0))",
+      "output": "输出 6"
+    },
+    {
+      "input": "code: const fs=require('fs'); fs.writeFileSync('out.txt','hi'); console.log(fs.readFileSync('out.txt','utf8'))",
+      "output": "在沙箱目录写入并读取 out.txt，返回 hi"
+    }
+  ]
+}

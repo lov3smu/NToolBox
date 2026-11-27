@@ -7,12 +7,18 @@ import { IPC_EVENTS } from '../../shared/ipc'
 import { normalizeClipboardHistoryConfig } from '../../shared/clipboardSettings.js'
 import { getConfig } from './config.js'
 import { imageFilePathsFromText } from './clipboardPaths.js'
+import { mergeHistoryEntry, normalizeStoredHistory, trimHistory } from './clipboardHistory.js'
 import {
-  CLIPBOARD_HISTORY_VERSION,
-  mergeHistoryEntry,
-  normalizeStoredHistory,
-  trimHistory
-} from './clipboardHistory.js'
+  clearClipboardEntries,
+  getClipboardPausedState,
+  listClipboardEntries,
+  loadClipboardEntries,
+  pruneClipboardEntries,
+  removeClipboardEntry as removeClipboardEntryRow,
+  replaceClipboardEntries,
+  saveClipboardEntry,
+  setClipboardPausedState
+} from './sqlite/clipboardRepository.js'
 
 const POLL_INTERVAL = 800
 const SAVE_DELAY = 500
@@ -27,6 +33,8 @@ let saveTimer = null
 let polling = false
 let lastSignature = ''
 let staleHistoryRemoved = false
+let dirtyIds = new Set()
+let removedIds = new Set()
 
 function getHistoryPath() {
   return path.join(app.getPath('userData'), 'clipboard-history.json')
@@ -50,8 +58,12 @@ async function removeHistoryFile() {
 
 async function syncPersistenceState(settings) {
   if (settings.persist) {
-    staleHistoryRemoved = false
+    if (staleHistoryRemoved) {
+      staleHistoryRemoved = false
+      await persistAll()
+    }
   } else if (!staleHistoryRemoved) {
+    await clearClipboardEntries().catch(() => {})
     await removeHistoryFile()
     staleHistoryRemoved = true
   }
@@ -83,23 +95,36 @@ function broadcast() {
   }
 }
 
-function serializeHistory() {
-  return JSON.stringify({ version: CLIPBOARD_HISTORY_VERSION, paused, entries })
+async function persistAll() {
+  const settings = clipboardSettings()
+  if (!settings.persist) return
+  dirtyIds = new Set()
+  removedIds = new Set()
+  try {
+    await replaceClipboardEntries(entries, settings.max_entries)
+    await setClipboardPausedState(paused)
+  } catch (error) {
+    log.warn('保存剪贴板历史失败:', error.message)
+  }
 }
 
-async function persistNow() {
+async function flushPersistence() {
   const settings = clipboardSettings()
   if (!settings.persist) {
-    await syncPersistenceState(settings)
+    await clearClipboardEntries().catch(() => {})
+    await removeHistoryFile()
     return
   }
 
-  staleHistoryRemoved = false
-  const file = getHistoryPath()
-  const temp = `${file}.tmp`
+  const changed = entries.filter((entry) => dirtyIds.has(entry.id))
+  const removed = [...removedIds]
+  dirtyIds = new Set()
+  removedIds = new Set()
   try {
-    await fs.promises.writeFile(temp, serializeHistory(), { mode: 0o600 })
-    await fs.promises.rename(temp, file)
+    for (const entry of changed) await saveClipboardEntry(entry)
+    for (const id of removed) await removeClipboardEntryRow(id)
+    await pruneClipboardEntries(settings.max_entries)
+    await setClipboardPausedState(paused)
   } catch (error) {
     log.warn('保存剪贴板历史失败:', error.message)
   }
@@ -109,28 +134,41 @@ function persistSoon() {
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     saveTimer = null
-    void persistNow()
+    void flushPersistence()
   }, SAVE_DELAY)
 }
 
-function persistSync() {
-  if (!clipboardSettings().persist) {
-    try {
-      fs.rmSync(getHistoryPath(), { force: true })
-    } catch (error) {
-      log.warn('删除剪贴板历史文件失败:', error.message)
-    }
+async function migrateLegacyHistory(settings) {
+  let raw
+  try {
+    raw = JSON.parse(await fs.promises.readFile(getHistoryPath(), 'utf8'))
+  } catch (error) {
+    if (error.code !== 'ENOENT') log.warn('读取剪贴板历史失败:', error.message)
     return
   }
-
   try {
-    fs.writeFileSync(getHistoryPath(), serializeHistory(), { mode: 0o600 })
+    const existing = await listClipboardEntries({ limit: 1 })
+    if (existing.total === 0) {
+      const stored = normalizeStoredHistory(raw, settings.max_entries)
+      await replaceClipboardEntries(stored.entries, settings.max_entries)
+      await setClipboardPausedState(stored.paused)
+    }
+    await removeHistoryFile()
   } catch (error) {
-    log.warn('保存剪贴板历史失败:', error.message)
+    log.warn('迁移剪贴板历史失败:', error.message)
   }
 }
 
 function updateEntries(next) {
+  const previous = new Map(entries.map((entry) => [entry.id, entry]))
+  const nextIds = new Set()
+  for (const entry of next) {
+    nextIds.add(entry.id)
+    if (previous.get(entry.id) !== entry) dirtyIds.add(entry.id)
+  }
+  for (const entry of entries) {
+    if (!nextIds.has(entry.id)) removedIds.add(entry.id)
+  }
   entries = next
   persistSoon()
   broadcast()
@@ -144,12 +182,9 @@ function readClipboardImage() {
   const buffer = clipboard.readBuffer(imageFormat)
   if (!buffer || buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) return null
 
-  const image = clipboard.readImage()
-  if (image.isEmpty()) return null
-
   return {
     type: 'image',
-    image: image.toDataURL(),
+    buffer,
     fingerprint: digest('image', buffer),
     size: buffer.length
   }
@@ -161,18 +196,26 @@ async function readImageFile(filePath) {
     if (!stat.isFile() || stat.size === 0 || stat.size > MAX_IMAGE_BYTES) return null
 
     const buffer = await fs.promises.readFile(filePath)
-    const image = nativeImage.createFromBuffer(buffer)
-    if (image.isEmpty()) return null
+    if (buffer.length === 0) return null
 
     return {
       type: 'image',
-      image: image.toDataURL(),
+      buffer,
       fingerprint: digest('image', buffer),
       size: buffer.length
     }
   } catch {
     return null
   }
+}
+
+// PNG 编码开销大，只在指纹变化后才执行，避免每轮轮询阻塞主线程
+function encodeImageSnapshot(snapshot) {
+  const image = nativeImage.createFromBuffer(snapshot.buffer)
+  if (image.isEmpty()) return null
+  const encoded = { ...snapshot, image: image.toDataURL() }
+  delete encoded.buffer
+  return encoded
 }
 
 async function readCurrentSnapshots() {
@@ -244,7 +287,9 @@ async function pollClipboard() {
 
     const now = Date.now()
     for (const snapshot of snapshots) {
-      next = mergeHistoryEntry(next, toHistoryEntry(snapshot, now), settings.max_entries)
+      const resolved = snapshot.type === 'image' ? encodeImageSnapshot(snapshot) : snapshot
+      if (!resolved) continue
+      next = mergeHistoryEntry(next, toHistoryEntry(resolved, now), settings.max_entries)
     }
     if (next !== entries) updateEntries(next)
   } catch (error) {
@@ -260,13 +305,13 @@ export async function initClipboardHistory() {
 
   const settings = clipboardSettings()
   if (settings.persist) {
+    await migrateLegacyHistory(settings)
     try {
-      const raw = JSON.parse(await fs.promises.readFile(getHistoryPath(), 'utf8'))
-      const stored = normalizeStoredHistory(raw, settings.max_entries)
-      entries = stored.entries
-      paused = stored.paused
+      const stored = await loadClipboardEntries(settings.max_entries)
+      entries = trimHistory(stored, settings.max_entries)
+      paused = await getClipboardPausedState()
     } catch (error) {
-      if (error.code !== 'ENOENT') log.warn('读取剪贴板历史失败:', error.message)
+      log.warn('读取剪贴板历史失败:', error.message)
     }
   } else {
     await syncPersistenceState(settings)
@@ -283,7 +328,7 @@ export function stopClipboardHistory() {
   pollTimer = null
   clearTimeout(saveTimer)
   saveTimer = null
-  persistSync()
+  void flushPersistence()
 }
 
 export function copyClipboardEntry(id) {
@@ -314,8 +359,7 @@ export function removeClipboardEntry(id) {
 export function toggleClipboardPin(id) {
   const entry = entries.find((item) => item.id === id)
   if (!entry) return false
-  entry.pinned = !entry.pinned
-  updateEntries(entries)
+  updateEntries(entries.map((item) => (item.id === id ? { ...item, pinned: !item.pinned } : item)))
   return true
 }
 

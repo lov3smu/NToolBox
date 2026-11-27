@@ -1,54 +1,76 @@
 <template>
   <div
     v-if="cellFilterMenu.show"
+    ref="menuRef"
     v-clamp-viewport
     class="context-menu"
+    role="menu"
     :style="{ left: cellFilterMenu.x + 'px', top: cellFilterMenu.y + 'px' }"
     @click.stop
+    @keydown="onMenuKeydown"
   >
     <div class="menu-title">
       <span class="menu-title-field">{{ cellFilterMenu.fieldName }}</span>
       <span class="menu-title-value">{{ filterMenuValue }}</span>
     </div>
-    <div class="menu-item" :class="{ disabled: isNullValue }" @click="apply('=')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="5" y1="9" x2="19" y2="9" />
-        <line x1="5" y1="15" x2="19" y2="15" />
-      </svg>
+    <div
+      role="menuitem"
+      class="menu-item"
+      :class="{ disabled: isNullValue }"
+      :aria-disabled="isNullValue ? 'true' : undefined"
+      @click="apply('=')"
+    >
+      <AppIcon name="equal" />
       {{ t('等于此值') }}
     </div>
-    <div class="menu-item" :class="{ disabled: isNullValue }" @click="apply('!=')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="5" y1="9" x2="19" y2="9" />
-        <line x1="5" y1="15" x2="19" y2="15" />
-        <line x1="16" y1="5" x2="8" y2="19" />
-      </svg>
+    <div
+      role="menuitem"
+      class="menu-item"
+      :class="{ disabled: isNullValue }"
+      :aria-disabled="isNullValue ? 'true' : undefined"
+      @click="apply('!=')"
+    >
+      <AppIcon name="not-equal" />
       {{ t('不等于此值') }}
     </div>
-    <div class="menu-item" :class="{ disabled: isNullValue }" @click="apply('LIKE')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="7" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
+    <div
+      role="menuitem"
+      class="menu-item"
+      :class="{ disabled: isNullValue }"
+      :aria-disabled="isNullValue ? 'true' : undefined"
+      @click="apply('LIKE')"
+    >
+      <AppIcon name="search" />
       {{ t('包含此值') }}
     </div>
-    <div class="menu-divider" />
-    <div class="menu-item" @click="apply('IS NULL')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="9" />
-        <line x1="5" y1="19" x2="19" y2="5" />
-      </svg>
+    <div class="menu-divider" role="separator" />
+    <div role="menuitem" class="menu-item" @click="apply('IS NULL')">
+      <AppIcon name="circle-slash" />
       {{ t('仅看空值') }}
     </div>
   </div>
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { t } from '@/i18n'
-import { computed, inject } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
+import { focusFirstMenuItem, handleMenuKeydown } from '@/utils/menuKeyboard'
 
 const databaseStore = inject('database')
-const { applyCellFilter, cellFilterMenu } = databaseStore
+const { applyCellFilter, cellFilterMenu, hideCellFilterMenu } = databaseStore
+const menuRef = ref(null)
+
+watch(
+  () => cellFilterMenu.value.show,
+  (show) => {
+    if (show) nextTick(() => focusFirstMenuItem(menuRef.value))
+  }
+)
+
+function onMenuKeydown(event) {
+  handleMenuKeydown(event, menuRef.value, hideCellFilterMenu)
+}
 
 const filterMenuValue = computed(() => {
   const value = cellFilterMenu.value.value

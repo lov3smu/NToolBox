@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { computeLineDiff } from '../../../utils/textDiff.js'
+import { formatBytes } from '../../../../shared/format.js'
 
 const SEARCH_MAX_DEPTH = 8
 const SEARCH_MAX_SCAN = 5000
@@ -19,7 +20,7 @@ function resolveBasePath(context) {
   }
 
   const config = typeof context.getConfig === 'function' ? context.getConfig() : context.config
-  const basePath = typeof config?.app?.base_path === 'string' ? config.app.base_path.trim() : ''
+  const basePath = typeof config?.sql_generator?.base_path === 'string' ? config.sql_generator.base_path.trim() : ''
 
   if (!basePath) {
     return { error: '未配置工作区或脚本基础目录（base_path），请先选择工作区或在设置中配置' }
@@ -52,9 +53,7 @@ function displayPath(basePath, target) {
 
 function formatSize(size) {
   if (!Number.isFinite(size)) return ''
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / 1024 / 1024).toFixed(1)} MB`
+  return formatBytes(size, { decimals: 1, trimZeros: true })
 }
 
 function isBinary(buffer) {
@@ -75,6 +74,19 @@ async function readHead(target, maxBytes) {
 const PREVIEW_MAX_BYTES = 512 * 1024
 const PREVIEW_MAX_ITEMS = 50
 const PREVIEW_MAX_SCAN = 5000
+const EDIT_MAX_BYTES = 1024 * 1024
+
+function countOccurrences(text, search, limit = 1000) {
+  let count = 0
+  let index = 0
+  while (count < limit) {
+    index = text.indexOf(search, index)
+    if (index === -1) break
+    count += 1
+    index += search.length
+  }
+  return count
+}
 
 async function collectDeletePreview(target, basePath) {
   const items = []
@@ -383,6 +395,86 @@ export default async function handler(params, context) {
         }
       }
 
+      case 'edit': {
+        if (typeof params.old_string !== 'string' || params.old_string.length === 0) {
+          return { success: false, error: 'edit 需要非空的 old_string 参数' }
+        }
+        if (typeof params.new_string !== 'string') {
+          return { success: false, error: 'edit 需要 new_string 参数（可为空字符串）' }
+        }
+
+        const stat = await fs.promises.stat(target).catch(() => null)
+        if (!stat?.isFile()) {
+          return { success: false, error: `文件不存在或不是普通文件：${relativePath}` }
+        }
+        if (stat.size > EDIT_MAX_BYTES) {
+          return {
+            success: false,
+            error: `文件超过局部编辑上限（${formatSize(EDIT_MAX_BYTES)}）：${relativePath}；请先用 search 定位后分段编辑`
+          }
+        }
+
+        const buffer = await fs.promises.readFile(target)
+        if (isBinary(buffer)) {
+          return { success: false, error: `文件疑似二进制内容，无法编辑：${relativePath}` }
+        }
+
+        const oldContent = buffer.toString('utf8')
+        const replaceAll = params.replace_all === true
+        const matches = countOccurrences(oldContent, params.old_string)
+        if (matches === 0) {
+          return {
+            success: false,
+            error: `未找到要替换的内容：${relativePath}；old_string 需与文件文本完全一致（含缩进）`
+          }
+        }
+        if (matches > 1 && !replaceAll) {
+          return {
+            success: false,
+            error: `old_string 在文件中匹配 ${matches} 处，无法确定替换目标：${relativePath}；请补充上下文使其唯一，或设置 replace_all=true`
+          }
+        }
+
+        const nextContent = replaceAll
+          ? oldContent.split(params.old_string).join(params.new_string)
+          : oldContent.replace(params.old_string, params.new_string)
+        const replacements = replaceAll ? matches : 1
+
+        if (context.dryRun) {
+          const diff = computeLineDiff(oldContent, nextContent)
+          return {
+            success: true,
+            preview: {
+              kind: 'diff',
+              path: relativePath,
+              added: diff.added,
+              removed: diff.removed,
+              truncated: diff.truncated,
+              approximate: diff.approximate,
+              lines: diff.lines,
+              oldSize: stat.size,
+              newSize: Buffer.byteLength(nextContent, 'utf8')
+            }
+          }
+        }
+
+        const snapshots = await recordSnapshots(context, [target])
+        await fs.promises.writeFile(target, nextContent, 'utf8')
+
+        const nextStat = await fs.promises.stat(target)
+        return {
+          success: true,
+          content: `已替换 ${replacements} 处：${relativePath}（${formatSize(nextStat.size)}）`,
+          metadata: {
+            action,
+            path: relativePath,
+            replacements,
+            size: nextStat.size,
+            snapshots: snapshots.length
+          }
+        }
+      }
+
       case 'write':
       case 'append': {
         if (typeof params.content !== 'string') {
@@ -636,7 +728,11 @@ export default async function handler(params, context) {
 
       case 'search': {
         if (typeof params.pattern !== 'string' || !params.pattern.trim()) {
-          return { success: false, error: 'search 需要非空的 pattern 参数' }
+          return {
+            success: false,
+            error:
+              'search 需要非空的 pattern 参数作为文件名关键字（例如 "ToolboxView"）；如需按文件内容查找，另传 content_match'
+          }
         }
 
         const stat = await fs.promises.stat(target)

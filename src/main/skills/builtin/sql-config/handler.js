@@ -12,7 +12,7 @@ export default function handler(params, context) {
     content: `配置信息：
 数据库列表：${databases.join(', ') || '无'}
 脚本类型：${scriptTypes.map((st) => st.name).join(', ') || '无'}
-开发者：${config.app.developer.ch_name} (${config.app.developer.en_name})`,
+开发者：${config.sql_generator.developer.ch_name} (${config.sql_generator.developer.en_name})`,
     metadata: {
       databases,
       script_types: scriptTypes,
@@ -22,8 +22,8 @@ export default function handler(params, context) {
         { name: 'QUERY', description: '查询脚本' }
       ],
       developer: {
-        ch_name: config.app.developer.ch_name,
-        en_name: config.app.developer.en_name
+        ch_name: config.sql_generator.developer.ch_name,
+        en_name: config.sql_generator.developer.en_name
       }
     }
   }

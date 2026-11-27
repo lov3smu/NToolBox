@@ -2,7 +2,7 @@ import { BrowserWindow, dialog, app, nativeTheme } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { log, getWindowIcon, getAssetsDir } from '../utils'
-import { getConfig, saveConfig } from '../services'
+import { getConfig, saveConfig } from '../services/config.js'
 import { t } from '../services/i18n'
 import { IPC_EVENTS } from '../../shared/ipc'
 
@@ -35,6 +35,8 @@ function getTitleBarOptions() {
 
 // 自绘窗口控制按钮，DevTools 固定底部停靠以保持既有布局
 const DEVTOOLS_MODE = 'bottom'
+// --hidden：CLI 伴生等后台启动场景，窗口就绪但不显示，由 ntb open 再唤起
+const startHidden = process.argv.includes('--hidden')
 
 export function toggleDevTools(win) {
   if (!win || win.isDestroyed()) return
@@ -141,6 +143,10 @@ function createMainWindow() {
 
     setTimeout(async () => {
       closeSplashWindow()
+      if (startHidden) {
+        log.info('主窗口已在后台就绪')
+        return
+      }
       mainWindow.show()
 
       if (process.platform === 'linux') {
@@ -296,7 +302,7 @@ export function getSettingsWindow() {
 }
 
 export function initWindows() {
-  createSplashWindow()
+  if (!startHidden) createSplashWindow()
   return {
     mainWindow: createMainWindow(),
     createSettingsWindow,

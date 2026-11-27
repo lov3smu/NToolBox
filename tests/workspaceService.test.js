@@ -11,10 +11,10 @@ const state = vi.hoisted(() => ({
 }))
 
 vi.mock('../src/main/services/config', () => ({
-  getConfig: vi.fn(() => ({ app: { base_path: state.basePath, text_edit_app: 'code' } }))
+  getConfig: vi.fn(() => ({ sql_generator: { base_path: state.basePath, text_edit_app: 'code' } }))
 }))
 
-vi.mock('../src/main/services/generator.js', () => ({
+vi.mock('../src/main/services/fileOpener.js', () => ({
   openFile: state.openFile,
   openFolder: state.openFolder
 }))
@@ -50,7 +50,7 @@ describe('workspace service', () => {
     fs.writeFileSync(path.join(repo, 'app.js'), 'console.log(2)\n')
     fs.writeFileSync(path.join(repo, 'new.txt'), 'draft\n')
     state.basePath = root
-    service = await import('../src/main/services/workspace.js')
+    service = await import('../src/main/services/agent/workspace.js')
   })
 
   afterAll(() => {

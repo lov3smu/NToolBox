@@ -13,7 +13,7 @@ vi.mock('../src/main/utils/index.js', () => ({
   log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }))
 
-const { createSnapshotStore, restoreSnapshot } = await import('../src/main/services/snapshots.js')
+const { createSnapshotStore, restoreSnapshot } = await import('../src/main/services/agent/snapshots.js')
 
 function buildWorkspace(name) {
   const workspace = path.join(testUserData, name)

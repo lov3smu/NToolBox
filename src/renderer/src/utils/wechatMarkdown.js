@@ -1,5 +1,6 @@
 import { Marked } from 'marked'
 import DOMPurify from 'dompurify'
+import { logError, logWarn } from '@/utils/log'
 
 const marked = new Marked()
 marked.setOptions({ gfm: true, breaks: true })
@@ -675,7 +676,7 @@ export function renderWechatMarkdown(source) {
   try {
     html = marked.parse(markdown, { async: false })
   } catch (error) {
-    console.error('[wechat] Markdown 解析失败:', error)
+    logError('[wechat] Markdown 解析失败:', error)
     html = `<p>${escapeHtml(source)}</p>`
   }
   return { html: sanitizeWechatHtml(html), state }
@@ -860,7 +861,7 @@ export async function ensureDiagramsRendered(diagrams, dark) {
     try {
       await renderMermaidSvg(diagram.code, dark)
     } catch (error) {
-      console.warn('[wechat] Mermaid 渲染失败:', error)
+      logWarn('[wechat] Mermaid 渲染失败:', error)
       mermaidCache.set(diagramCacheKey(diagram.code, dark), '')
     }
   }

@@ -1,13 +1,13 @@
 import { BrowserWindow, Menu, app } from 'electron'
 import { log } from '../utils'
-import { getConfig } from '../services'
+import { getConfig } from '../services/config.js'
 import { destroyTray } from './tray'
 import { toggleDevTools } from '../windows'
-import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '../../shared/tools'
+import { SETTINGS_PATH, getToolAccelerator, getToolByPath } from '../../shared/navTools'
 import { IPC_EVENTS } from '../../shared/ipc'
 import { t } from '../services/i18n.js'
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 const isMac = process.platform === 'darwin'
 
 function showAboutDialog(mainWindow) {

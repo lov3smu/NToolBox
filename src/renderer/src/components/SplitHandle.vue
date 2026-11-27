@@ -29,7 +29,11 @@ defineProps({
   flex: 0 0 auto;
   z-index: 5;
   touch-action: none;
-  outline: none;
+}
+
+.split-handle:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
 }
 
 .split-handle.is-vertical {
@@ -45,7 +49,7 @@ defineProps({
 .split-handle::before {
   content: '';
   position: absolute;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--border-color);
   transition:
     background 0.15s ease,

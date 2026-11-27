@@ -119,8 +119,6 @@ describe('image host settings', () => {
   it('validates image_hosting config shape', () => {
     const baseConfig = {
       app: {
-        base_path: '/tmp/scripts',
-        developer: { ch_name: '张三', en_name: 'zhangsan' },
         auto_start: true,
         shortcuts: {}
       },
@@ -128,7 +126,12 @@ describe('image host settings', () => {
       update: { auto_update: true },
       network: {},
       database: {},
-      sql_generator: { databases: [], script_types: [] },
+      sql_generator: {
+        base_path: '/tmp/scripts',
+        developer: { ch_name: '张三', en_name: 'zhangsan' },
+        databases: [],
+        script_types: []
+      },
       ai: { keys: {} },
       extensions: {},
       notifications: {},

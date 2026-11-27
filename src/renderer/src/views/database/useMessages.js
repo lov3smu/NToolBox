@@ -1,47 +1,29 @@
 export function createMessages(state) {
-  const { messageDialog, promptDialog, promptInputRef } = state
+  const { messageDialog } = state
 
   function showPrompt(title, defaultValue = '') {
-    promptDialog.value = {
+    messageDialog.value = {
       visible: true,
+      prompt: true,
+      type: 'confirm',
       title,
-      value: defaultValue,
-      defaultValue,
+      message: '',
+      inputValue: defaultValue,
       resolve: null
     }
-
-    setTimeout(() => {
-      if (promptInputRef.value) {
-        promptInputRef.value.focus()
-        promptInputRef.value.select()
-      }
-    }, 100)
-
     return new Promise((resolve) => {
-      promptDialog.value.resolve = resolve
+      messageDialog.value.resolve = resolve
     })
-  }
-
-  function onPromptConfirm() {
-    if (promptDialog.value.resolve) {
-      promptDialog.value.resolve(promptDialog.value.value)
-    }
-    promptDialog.value.visible = false
-  }
-
-  function onPromptCancel() {
-    if (promptDialog.value.resolve) {
-      promptDialog.value.resolve(null)
-    }
-    promptDialog.value.visible = false
   }
 
   function showMessage(message, type = 'info', title = '') {
     messageDialog.value = {
       visible: true,
+      prompt: false,
       type,
       title,
       message,
+      inputValue: '',
       resolve: null
     }
     return new Promise((resolve) => {
@@ -52,9 +34,11 @@ export function createMessages(state) {
   function showConfirm(message, title = '') {
     messageDialog.value = {
       visible: true,
+      prompt: false,
       type: 'confirm',
       title,
       message,
+      inputValue: '',
       resolve: null
     }
     return new Promise((resolve) => {
@@ -64,17 +48,17 @@ export function createMessages(state) {
 
   function onMessageConfirm() {
     if (messageDialog.value.resolve) {
-      messageDialog.value.resolve(true)
+      messageDialog.value.resolve(messageDialog.value.prompt ? messageDialog.value.inputValue : true)
     }
     messageDialog.value.visible = false
   }
 
   function onMessageCancel() {
     if (messageDialog.value.resolve) {
-      messageDialog.value.resolve(false)
+      messageDialog.value.resolve(messageDialog.value.prompt ? null : false)
     }
     messageDialog.value.visible = false
   }
 
-  return { showPrompt, onPromptConfirm, onPromptCancel, showMessage, showConfirm, onMessageConfirm, onMessageCancel }
+  return { showPrompt, showMessage, showConfirm, onMessageConfirm, onMessageCancel }
 }

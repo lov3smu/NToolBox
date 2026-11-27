@@ -1,87 +1,82 @@
 <template>
   <Teleport to="body">
-    <Transition name="fade">
-      <div v-if="visible && skill" class="skill-dialog-overlay" @click.self="$emit('close')">
-        <div class="skill-dialog">
-          <header class="skill-dialog-header">
-            <span class="skill-dialog-icon" v-html="getSkillIcon(skill.icon, skill.category)" />
-            <div class="skill-dialog-heading">
-              <div class="skill-dialog-title-row">
-                <h2>{{ skill.name }}</h2>
-                <span v-if="skill.version" class="skill-dialog-version">v{{ skill.version }}</span>
-                <span v-if="badgeText" class="skill-badge" :class="badgeTone">{{ badgeText }}</span>
-              </div>
-              <p>{{ skill.description }}</p>
+    <div v-if="visible && skill" class="skill-dialog-overlay" @click.self="$emit('close')">
+      <div class="skill-dialog">
+        <header class="skill-dialog-header">
+          <span class="skill-dialog-icon" v-html="getSkillIcon(skill.icon, skill.category)" />
+          <div class="skill-dialog-heading">
+            <div class="skill-dialog-title-row">
+              <h2>{{ skill.name }}</h2>
+              <span v-if="skill.version" class="skill-dialog-version">v{{ skill.version }}</span>
+              <span v-if="badgeText" class="skill-badge" :class="badgeTone">{{ badgeText }}</span>
             </div>
-            <button type="button" class="skill-dialog-close" :title="t('关闭')" @click="$emit('close')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </header>
+            <p>{{ skill.description }}</p>
+          </div>
+          <button type="button" class="skill-dialog-close" :title="t('关闭')" @click="$emit('close')">
+            <AppIcon name="close" />
+          </button>
+        </header>
 
-          <div class="skill-dialog-body">
-            <div class="skill-dialog-meta">
-              <div class="meta-item">
-                <span class="meta-label">{{ t('作者') }}</span>
-                <span class="meta-value">{{ skill.author || t('未知') }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">{{ t('分类') }}</span>
-                <span class="meta-value">{{ t(getCategoryLabel(skill.category)) }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">{{ t('来源') }}</span>
-                <span class="meta-value">{{ t(sourceLabel(skill)) }}</span>
-              </div>
-              <div v-if="skill.changelog" class="meta-item">
-                <span class="meta-label">{{ t('更新说明') }}</span>
-                <span class="meta-value">{{ skill.changelog }}</span>
-              </div>
+        <div class="skill-dialog-body">
+          <div class="skill-dialog-meta">
+            <div class="meta-item">
+              <span class="meta-label">{{ t('作者') }}</span>
+              <span class="meta-value">{{ skill.author || t('未知') }}</span>
             </div>
-
-            <div v-if="skill.tags?.length" class="skill-dialog-tags">
-              <span v-for="tag in skill.tags" :key="tag" class="skill-tag">{{ tag }}</span>
+            <div class="meta-item">
+              <span class="meta-label">{{ t('分类') }}</span>
+              <span class="meta-value">{{ t(getCategoryLabel(skill.category)) }}</span>
             </div>
-
-            <section v-if="parameterEntries.length" class="skill-dialog-section">
-              <h3>{{ t('参数') }}</h3>
-              <div class="parameter-list">
-                <div v-for="[name, schema] in parameterEntries" :key="name" class="parameter-item">
-                  <div class="parameter-name">
-                    <code>{{ name }}</code>
-                    <span v-if="requiredParams.has(name)" class="parameter-required">{{ t('必填') }}</span>
-                  </div>
-                  <p>{{ schema.description || schema.type || t('无描述') }}</p>
-                </div>
-              </div>
-            </section>
-
-            <section v-if="skill.examples?.length" class="skill-dialog-section">
-              <h3>{{ t('示例') }}</h3>
-              <div class="example-list">
-                <pre v-for="(example, index) in skill.examples" :key="index" class="example-item">{{
-                  formatExample(example)
-                }}</pre>
-              </div>
-            </section>
-
-            <section v-if="skill.path" class="skill-dialog-section">
-              <h3>{{ t('安装位置') }}</h3>
-              <code class="skill-dialog-path">{{ skill.path }}</code>
-            </section>
+            <div class="meta-item">
+              <span class="meta-label">{{ t('来源') }}</span>
+              <span class="meta-value">{{ t(sourceLabel(skill)) }}</span>
+            </div>
+            <div v-if="skill.changelog" class="meta-item">
+              <span class="meta-label">{{ t('更新说明') }}</span>
+              <span class="meta-value">{{ skill.changelog }}</span>
+            </div>
           </div>
 
-          <footer class="skill-dialog-footer">
-            <button type="button" class="btn btn-secondary" @click="$emit('close')">
-              {{ t('关闭') }}
-            </button>
-            <slot name="actions" />
-          </footer>
+          <div v-if="skill.tags?.length" class="skill-dialog-tags">
+            <span v-for="tag in skill.tags" :key="tag" class="skill-tag">{{ tag }}</span>
+          </div>
+
+          <section v-if="parameterEntries.length" class="skill-dialog-section">
+            <h3>{{ t('参数') }}</h3>
+            <div class="parameter-list">
+              <div v-for="[name, schema] in parameterEntries" :key="name" class="parameter-item">
+                <div class="parameter-name">
+                  <code>{{ name }}</code>
+                  <span v-if="requiredParams.has(name)" class="parameter-required">{{ t('必填') }}</span>
+                </div>
+                <p>{{ schema.description || schema.type || t('无描述') }}</p>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="skill.examples?.length" class="skill-dialog-section">
+            <h3>{{ t('示例') }}</h3>
+            <div class="example-list">
+              <pre v-for="(example, index) in skill.examples" :key="index" class="example-item">{{
+                formatExample(example)
+              }}</pre>
+            </div>
+          </section>
+
+          <section v-if="skill.path" class="skill-dialog-section">
+            <h3>{{ t('安装位置') }}</h3>
+            <code class="skill-dialog-path">{{ skill.path }}</code>
+          </section>
         </div>
+
+        <footer class="skill-dialog-footer">
+          <button type="button" class="btn btn-secondary" @click="$emit('close')">
+            {{ t('关闭') }}
+          </button>
+          <slot name="actions" />
+        </footer>
       </div>
-    </Transition>
+    </div>
   </Teleport>
 </template>
 
@@ -91,6 +86,7 @@ import { getSkillIcon } from '@/utils/skillIcons'
 import { formatExample, getCategoryLabel } from '@/utils/skillMeta'
 import { t } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
 const props = defineProps({
   visible: { type: Boolean, default: false },
   skill: { type: Object, default: null },
@@ -115,7 +111,7 @@ function sourceLabel(skill) {
 .skill-dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,6 +131,7 @@ function sourceLabel(skill) {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  animation: skill-dialog-in var(--motion-panel) var(--motion-ease);
 }
 
 .skill-dialog-header {
@@ -198,7 +195,7 @@ function sourceLabel(skill) {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   font-weight: 600;
   background: var(--surface-muted);
@@ -288,7 +285,7 @@ function sourceLabel(skill) {
 
 .skill-tag {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent-color);
@@ -382,26 +379,17 @@ function sourceLabel(skill) {
   background: var(--surface-muted);
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--motion-base) var(--motion-ease);
+/* 入场动画只作用于卡片：遮罩层始终不透明，动画帧被节流时也不会留下不可见却拦截点击的全屏层 */
+@keyframes skill-dialog-in {
+  from {
+    transform: scale(0.97) translateY(4px);
+    opacity: 0.85;
+  }
 }
 
-.fade-enter-active .skill-dialog,
-.fade-leave-active .skill-dialog {
-  transition:
-    transform var(--motion-panel) var(--motion-ease),
-    opacity var(--motion-panel) var(--motion-ease);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.fade-enter-from .skill-dialog,
-.fade-leave-to .skill-dialog {
-  transform: scale(0.97) translateY(4px);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .skill-dialog {
+    animation: none;
+  }
 }
 </style>

@@ -1,10 +1,10 @@
 <template>
-  <div ref="rootRef" class="setting-combo" :class="{ 'is-open': open }">
+  <div ref="rootRef" class="setting-combo" :class="[`is-${sizeClass}`, { 'is-open': open }]">
     <div class="setting-combo-control">
-      <input
+      <AppInput
         ref="inputRef"
         :value="modelValue"
-        class="input-field setting-combo-input"
+        class="setting-combo-input"
         type="text"
         spellcheck="false"
         :placeholder="t(placeholder)"
@@ -22,18 +22,7 @@
         @mousedown.prevent
         @click="togglePanel"
       >
-        <svg
-          class="setting-combo-chevron"
-          :class="{ open }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <AppIcon name="chevron-down" class="setting-combo-chevron" :class="{ open }" />
       </button>
     </div>
     <Teleport to="body">
@@ -50,18 +39,7 @@
           @mousemove="highlighted = index"
         >
           <span class="setting-combo-option-label">{{ t(option.label) }}</span>
-          <svg
-            v-if="option.value === modelValue"
-            class="setting-combo-check"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <AppIcon v-if="option.value === modelValue" name="check" :stroke-width="2.4" class="setting-combo-check" />
         </button>
         <div v-if="!visibleOptions.length" class="setting-combo-empty">
           {{ t('没有匹配的模型，可直接输入 provider:model') }}
@@ -75,10 +53,15 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '@/i18n'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
+const SIZES = ['xl', 'lg', 'md', 'sm', 'xs']
+
 const props = defineProps({
   modelValue: { type: String, default: '' },
   options: { type: Array, default: () => [] },
-  placeholder: { type: String, default: '' }
+  placeholder: { type: String, default: '' },
+  size: { type: String, default: 'md' }
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -90,6 +73,7 @@ const open = ref(false)
 const query = ref('')
 const highlighted = ref(0)
 const panelStyle = ref({})
+const sizeClass = computed(() => (SIZES.includes(props.size) ? props.size : 'md'))
 
 const visibleOptions = computed(() => {
   const keyword = query.value.trim().toLowerCase()
@@ -232,6 +216,42 @@ onBeforeUnmount(closePanel)
   flex: 1 1 auto;
 }
 
+.setting-combo.is-xl {
+  --control-height: var(--control-height-xl);
+  --combo-font: var(--font-size-base);
+  --combo-toggle-width: 34px;
+  --combo-chevron: var(--icon-size-sm);
+  --combo-option-pad-y: 9px;
+  --combo-option-pad-x: 10px;
+  --combo-option-font: var(--font-size-base);
+}
+
+.setting-combo.is-lg {
+  --control-height: var(--control-height-lg);
+  --combo-font: var(--font-size-base);
+  --combo-toggle-width: 32px;
+  --combo-chevron: var(--icon-size-xs);
+  --combo-option-pad-y: 8px;
+  --combo-option-pad-x: 9px;
+  --combo-option-font: var(--font-size-base);
+}
+
+.setting-combo.is-sm {
+  --control-height: var(--control-height-sm);
+  --combo-toggle-width: 26px;
+  --combo-option-pad-y: 6px;
+}
+
+.setting-combo.is-xs {
+  --control-height: var(--control-height-xs);
+  --combo-font: var(--font-size-xs);
+  --combo-toggle-width: 22px;
+  --combo-chevron: var(--icon-size-2xs);
+  --combo-option-pad-y: 5px;
+  --combo-option-pad-x: 6px;
+  --combo-option-font: var(--font-size-xs);
+}
+
 .setting-combo-control {
   position: relative;
   display: flex;
@@ -239,7 +259,8 @@ onBeforeUnmount(closePanel)
 }
 
 .setting-combo-input {
-  padding-right: 30px;
+  font-size: var(--combo-font, var(--font-size-sm));
+  padding-right: var(--combo-toggle-width, 30px);
 }
 
 .setting-combo.is-open .setting-combo-input {
@@ -252,7 +273,7 @@ onBeforeUnmount(closePanel)
   right: 1px;
   top: 1px;
   bottom: 1px;
-  width: 28px;
+  width: var(--combo-toggle-width, 28px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,8 +289,8 @@ onBeforeUnmount(closePanel)
 }
 
 .setting-combo-chevron {
-  width: 14px;
-  height: 14px;
+  width: var(--combo-chevron, var(--icon-size-2xs));
+  height: var(--combo-chevron, var(--icon-size-2xs));
   transition: transform 0.15s ease;
 }
 
@@ -294,12 +315,12 @@ onBeforeUnmount(closePanel)
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 8px;
+  padding: var(--combo-option-pad-y, 7px) var(--combo-option-pad-x, 8px);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--combo-option-font, var(--font-size-sm));
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -322,8 +343,8 @@ onBeforeUnmount(closePanel)
 }
 
 .setting-combo-check {
-  width: 14px;
-  height: 14px;
+  width: var(--combo-chevron, var(--icon-size-2xs));
+  height: var(--combo-chevron, var(--icon-size-2xs));
   flex-shrink: 0;
   color: var(--accent-color);
 }

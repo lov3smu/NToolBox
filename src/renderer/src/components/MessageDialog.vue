@@ -1,60 +1,60 @@
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
-      <div v-if="visible" class="message-overlay" @click.self="close">
-        <div class="message-dialog" :class="type">
-          <div class="message-icon">
-            <svg v-if="type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="9 12 12 15 16 9" />
-            </svg>
-            <svg v-else-if="type === 'error'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-            <svg v-else-if="type === 'warning'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <svg v-else-if="type === 'confirm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
+  <ModalLayer :visible="visible" :close-on-outside="!prompt" @close="close">
+    <div class="message-overlay">
+      <div class="message-dialog" :class="[type, `is-${sizeClass}`]">
+        <div class="message-icon">
+          <AppIcon v-if="type === 'success'" name="check-circle" />
+          <AppIcon v-else-if="type === 'error'" name="x-circle" />
+          <AppIcon v-else-if="type === 'warning'" name="alert-circle" />
+          <AppIcon v-else-if="type === 'confirm'" name="alert-circle" />
+          <AppIcon v-else name="info" />
+        </div>
+        <div class="message-content">
+          <div v-if="title" class="message-title">
+            {{ title }}
           </div>
-          <div class="message-content">
-            <div v-if="title" class="message-title">
-              {{ title }}
-            </div>
-            <div class="message-text">
-              {{ message }}
-            </div>
+          <div v-if="message" class="message-text">
+            {{ message }}
           </div>
-          <div class="message-actions">
-            <button v-if="type === 'confirm'" class="btn btn-secondary" @click="cancel">{{ t('取消') }}</button>
-            <button class="btn btn-primary" @click="confirm">{{ t('确定') }}</button>
-          </div>
+          <AppInput
+            v-if="prompt"
+            ref="inputRef"
+            class="message-input"
+            type="text"
+            :placeholder="placeholder"
+            :value="inputValue"
+            @input="emit('update:inputValue', $event.target.value)"
+            @keydown.enter.prevent="confirm"
+          />
+        </div>
+        <div class="message-actions">
+          <button v-if="prompt || type === 'confirm'" class="btn btn-secondary" @click="cancel">
+            {{ t('取消') }}
+          </button>
+          <button class="btn btn-primary" @click="confirm">{{ t('确定') }}</button>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </ModalLayer>
 </template>
 
 <script setup>
-import { watch, onUnmounted } from 'vue'
+import AppIcon from '@/components/AppIcon.vue'
+import ModalLayer from '@/components/ModalLayer.vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { t } from '@/i18n'
+import AppInput from '@/components/AppInput.vue'
+
+const SIZES = ['xl', 'lg', 'md', 'sm', 'xs']
 
 const props = defineProps({
   visible: {
     type: Boolean,
     default: false
+  },
+  size: {
+    type: String,
+    default: 'md'
   },
   type: {
     type: String,
@@ -67,10 +67,25 @@ const props = defineProps({
   message: {
     type: String,
     default: ''
+  },
+  prompt: {
+    type: Boolean,
+    default: false
+  },
+  inputValue: {
+    type: String,
+    default: ''
+  },
+  placeholder: {
+    type: String,
+    default: ''
   }
 })
 
-const emit = defineEmits(['close', 'confirm', 'cancel'])
+const emit = defineEmits(['close', 'confirm', 'cancel', 'update:inputValue'])
+
+const inputRef = ref(null)
+const sizeClass = computed(() => (SIZES.includes(props.size) ? props.size : 'md'))
 
 function close() {
   emit('close')
@@ -86,24 +101,17 @@ function cancel() {
   close()
 }
 
-function handleKeydown(event) {
-  if (event.key !== 'Escape') return
-  event.stopPropagation()
-  cancel()
-}
-
 watch(
   () => props.visible,
   (visible) => {
-    if (visible) window.addEventListener('keydown', handleKeydown, true)
-    else window.removeEventListener('keydown', handleKeydown, true)
+    if (!visible || !props.prompt) return
+    nextTick(() => {
+      inputRef.value?.focus()
+      inputRef.value?.select()
+    })
   },
   { immediate: true }
 )
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown, true)
-})
 </script>
 
 <style scoped>
@@ -123,7 +131,14 @@ onUnmounted(() => {
 }
 
 .message-dialog {
-  width: 420px;
+  --dialog-width: 420px;
+  --dialog-padding: 24px;
+  --dialog-gap: 16px;
+  --dialog-icon-box: 48px;
+  --dialog-icon-glyph: var(--icon-size-md);
+  --dialog-title-size: var(--font-size-md);
+  --dialog-text-size: var(--font-size-base);
+  width: var(--dialog-width);
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
   overflow-y: auto;
@@ -131,16 +146,54 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: 24px;
+  padding: var(--dialog-padding);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: var(--dialog-gap);
+  animation: message-dialog-in var(--motion-panel) var(--motion-ease);
+}
+
+.message-dialog.is-xl {
+  --dialog-width: 480px;
+  --dialog-padding: 28px;
+  --dialog-gap: 18px;
+  --dialog-icon-box: 60px;
+  --dialog-icon-glyph: var(--icon-size-lg);
+  --dialog-title-size: var(--font-size-lg);
+  --dialog-text-size: var(--font-size-md);
+}
+
+.message-dialog.is-lg {
+  --dialog-width: 450px;
+  --dialog-padding: 26px;
+  --dialog-icon-box: 54px;
+  --dialog-icon-glyph: var(--icon-size-lg);
+}
+
+.message-dialog.is-sm {
+  --dialog-width: 380px;
+  --dialog-padding: 20px;
+  --dialog-gap: 14px;
+  --dialog-icon-box: 40px;
+  --dialog-icon-glyph: var(--icon-size-sm);
+  --dialog-title-size: var(--font-size-base);
+  --dialog-text-size: var(--font-size-sm);
+}
+
+.message-dialog.is-xs {
+  --dialog-width: 340px;
+  --dialog-padding: 16px;
+  --dialog-gap: 12px;
+  --dialog-icon-box: 34px;
+  --dialog-icon-glyph: var(--icon-size-xs);
+  --dialog-title-size: var(--font-size-sm);
+  --dialog-text-size: var(--font-size-xs);
 }
 
 .message-icon {
-  width: 48px;
-  height: 48px;
+  width: var(--dialog-icon-box);
+  height: var(--dialog-icon-box);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,8 +201,8 @@ onUnmounted(() => {
 }
 
 .message-icon svg {
-  width: var(--icon-size-md);
-  height: var(--icon-size-md);
+  width: var(--dialog-icon-glyph);
+  height: var(--dialog-icon-glyph);
 }
 
 .message-dialog.success .message-icon {
@@ -178,20 +231,27 @@ onUnmounted(() => {
 }
 
 .message-content {
+  width: 100%;
   text-align: center;
 }
 
 .message-title {
-  font-size: var(--font-size-md);
+  font-size: var(--dialog-title-size);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .message-text {
-  font-size: var(--font-size-base);
+  font-size: var(--dialog-text-size);
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.message-input {
+  width: 100%;
+  margin-top: 12px;
+  text-align: left;
 }
 
 .message-actions {
@@ -206,26 +266,17 @@ onUnmounted(() => {
   min-width: 88px;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--motion-base) var(--motion-ease);
+/* 入场动画只作用于卡片：遮罩层始终不透明，即使动画帧被节流也不会留下不可见却拦截点击的全屏层 */
+@keyframes message-dialog-in {
+  from {
+    transform: scale(0.97) translateY(4px);
+    opacity: 0.85;
+  }
 }
 
-.fade-enter-active .message-dialog,
-.fade-leave-active .message-dialog {
-  transition:
-    transform var(--motion-panel) var(--motion-ease),
-    opacity var(--motion-panel) var(--motion-ease);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.fade-enter-from .message-dialog,
-.fade-leave-to .message-dialog {
-  transform: scale(0.97) translateY(4px);
-  opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .message-dialog {
+    animation: none;
+  }
 }
 </style>

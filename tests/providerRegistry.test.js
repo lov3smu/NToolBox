@@ -29,7 +29,9 @@ describe('Provider 注册表', () => {
       'google',
       'anthropic',
       'opencode',
-      'opencode_go'
+      'opencode_go',
+      'ollama',
+      'lmstudio'
     ])
     const priorities = Object.values(PROVIDER_REGISTRY).map((entry) => entry.autoPriority)
     expect(new Set(priorities).size).toBe(priorities.length)

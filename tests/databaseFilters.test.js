@@ -8,7 +8,7 @@ vi.mock('../src/main/utils/index.js', () => ({
   log: { info: () => {}, warn: () => {}, error: () => {} }
 }))
 
-const { buildWhereClause } = await import('../src/main/services/database.js')
+const { buildWhereClause } = await import('../src/main/services/database/index.js')
 
 const columns = [{ name: 'status' }, { name: 'name' }, { name: 'amount' }]
 

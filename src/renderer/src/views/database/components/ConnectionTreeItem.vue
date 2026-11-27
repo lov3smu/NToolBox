@@ -9,34 +9,33 @@
         }
       ]"
       draggable="true"
+      role="button"
+      tabindex="0"
+      :aria-expanded="conn.active ? expandedConnections.includes(conn.name) : undefined"
       @dragstart="onDragStartConnection(conn)"
       @dragend="onDragEndConnection"
       @click="selectConnection(conn)"
       @dblclick="handleConnectionDoubleClick(conn)"
+      @keydown.enter.prevent="handleConnectionDoubleClick(conn)"
+      @keydown.space.prevent="selectConnection(conn)"
+      @keydown="
+        handleExpandKeys($event, expandedConnections.includes(conn.name), () => toggleConnectionDatabases(conn.name))
+      "
       @contextmenu.prevent.stop="showContextMenu($event, 'connection', conn)"
     >
       <span class="connection-expand-placeholder">
-        <svg
+        <AppIcon
+          name="chevron-right"
           class="connection-expand-icon"
           :class="{ expanded: expandedConnections.includes(conn.name) }"
           :style="{
             visibility: conn.active ? 'visible' : 'hidden'
           }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
           @click.stop="toggleConnectionDatabases(conn.name)"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        />
       </span>
-      <svg class="connection-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-        <line x1="6" y1="6" x2="6.01" y2="6" />
-        <line x1="6" y1="18" x2="6.01" y2="18" />
-      </svg>
+      <EngineLogo :engine="conn.engine" size="xs" class="connection-type-icon" />
+      <span v-if="conn.color" class="connection-color-dot" :style="{ background: conn.color }" />
       <span class="connection-name">{{ conn.name }}</span>
       <span v-if="conn.readOnly" class="connection-readonly-badge" :title="t('只读连接')">{{ t('只读') }}</span>
       <span
@@ -57,35 +56,37 @@
                 selectedObject?.name === db
             }
           ]"
+          role="button"
+          tabindex="0"
+          :aria-expanded="
+            openedDatabases.includes(`${conn.name}_${db}`)
+              ? expandedDatabases.includes(`${conn.name}_${db}`)
+              : undefined
+          "
           @click.stop="handleSelectConnectionDatabase(conn, db)"
           @dblclick="openDatabaseFromSidebar(conn, db)"
+          @keydown.enter.prevent="openDatabaseFromSidebar(conn, db)"
+          @keydown.space.prevent="handleSelectConnectionDatabase(conn, db)"
+          @keydown="
+            handleExpandKeys($event, expandedDatabases.includes(`${conn.name}_${db}`), () =>
+              toggleDatabaseObjects(conn.name, db)
+            )
+          "
           @contextmenu.prevent.stop="showContextMenu($event, 'database', { connection: conn, database: db })"
         >
           <span class="db-expand-placeholder">
-            <svg
+            <AppIcon
               v-if="openedDatabases.includes(`${conn.name}_${db}`)"
+              name="chevron-right"
               class="db-expand-icon"
               :class="{ expanded: filtering || expandedDatabases.includes(`${conn.name}_${db}`) }"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
               @click.stop="toggleDatabaseObjects(conn.name, db)"
-            >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            />
           </span>
-          <svg
+          <AppIcon
+            name="database"
             :class="['db-icon', openedDatabases.includes(`${conn.name}_${db}`) ? 'opened' : '']"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-          </svg>
+          />
           <span class="db-name">{{ db }}</span>
           <span v-if="openedDatabases.includes(`${conn.name}_${db}`)" class="db-status-dot" :title="t('已打开')" />
         </div>
@@ -93,7 +94,11 @@
           <div v-if="!filtering || tablesFor(db).length" class="object-category">
             <div
               class="category-header"
+              role="button"
+              tabindex="0"
+              :aria-expanded="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_tables`)"
               @click.stop="selectCategory(conn, db, 'tables')"
+              @keydown="onCategoryKey($event, conn, db, 'tables')"
               @contextmenu.prevent.stop="
                 showContextMenu($event, 'category', {
                   connection: conn,
@@ -102,24 +107,15 @@
                 })
               "
             >
-              <svg
+              <AppIcon
+                name="chevron-right"
                 class="category-icon"
                 :class="{
                   expanded: filtering || expandedObjectCategories.includes(`${conn.name}_${db}_tables`)
                 }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
                 @click.stop="toggleObjectCategory(conn.name, db, 'tables')"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <svg class="category-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <line x1="3" y1="9" x2="21" y2="9" />
-                <line x1="9" y1="21" x2="9" y2="9" />
-              </svg>
+              />
+              <AppIcon name="table" class="category-type-icon" />
               <span class="category-name">{{ t('表') }}</span>
               <span class="category-count">{{ categoryCount(db, 'tables') }}</span>
             </div>
@@ -137,8 +133,12 @@
                     active: selectedObject?.type === 'table' && selectedObject?.name === table
                   }
                 ]"
+                role="button"
+                tabindex="0"
                 @click="handleSelectConnectionDatabaseTable(conn, db, table)"
                 @dblclick.stop="openTable({ connection: conn, database: db, table })"
+                @keydown.enter.prevent="openTable({ connection: conn, database: db, table })"
+                @keydown.space.prevent="handleSelectConnectionDatabaseTable(conn, db, table)"
                 @contextmenu.prevent.stop="
                   showContextMenu($event, 'table', {
                     connection: conn,
@@ -147,20 +147,18 @@
                   })
                 "
               >
-                <svg
-                  class="object-icon table-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="3" y1="9" x2="21" y2="9" />
-                  <line x1="9" y1="21" x2="9" y2="9" />
-                </svg>
+                <AppIcon name="table" class="object-icon table-icon" />
                 <span class="object-name">{{ table }}</span>
               </div>
-              <div v-if="remainingFor(db, 'tables')" class="object-more" @click.stop="loadMore(db, 'tables')">
+              <div
+                v-if="remainingFor(db, 'tables')"
+                class="object-more"
+                role="button"
+                tabindex="0"
+                @click.stop="loadMore(db, 'tables')"
+                @keydown.enter.prevent="loadMore(db, 'tables')"
+                @keydown.space.prevent="loadMore(db, 'tables')"
+              >
                 {{ t('还有') }} {{ remainingFor(db, 'tables') }} {{ t('项，点击加载') }}
               </div>
             </div>
@@ -168,7 +166,11 @@
           <div v-if="!filtering || viewsFor(db).length" class="object-category">
             <div
               class="category-header"
+              role="button"
+              tabindex="0"
+              :aria-expanded="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_views`)"
               @click.stop="selectCategory(conn, db, 'views')"
+              @keydown="onCategoryKey($event, conn, db, 'views')"
               @contextmenu.prevent.stop="
                 showContextMenu($event, 'category', {
                   connection: conn,
@@ -177,23 +179,15 @@
                 })
               "
             >
-              <svg
+              <AppIcon
+                name="chevron-right"
                 class="category-icon"
                 :class="{
                   expanded: filtering || expandedObjectCategories.includes(`${conn.name}_${db}_views`)
                 }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
                 @click.stop="toggleObjectCategory(conn.name, db, 'views')"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <svg class="category-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
+              />
+              <AppIcon name="eye" class="category-type-icon" />
               <span class="category-name">{{ t('视图') }}</span>
               <span class="category-count">{{ categoryCount(db, 'views') }}</span>
             </div>
@@ -211,30 +205,37 @@
                     active: selectedObject?.type === 'view' && selectedObject?.name === view
                   }
                 ]"
+                role="button"
+                tabindex="0"
                 @click="handleSelectConnectionDatabaseView(conn, db, view)"
                 @dblclick.stop="openTable({ connection: conn, database: db, table: view, isView: true })"
+                @keydown.enter.prevent="openTable({ connection: conn, database: db, table: view, isView: true })"
+                @keydown.space.prevent="handleSelectConnectionDatabaseView(conn, db, view)"
               >
-                <svg
-                  class="object-icon view-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <AppIcon name="eye" class="object-icon view-icon" />
                 <span class="object-name">{{ view }}</span>
               </div>
-              <div v-if="remainingFor(db, 'views')" class="object-more" @click.stop="loadMore(db, 'views')">
+              <div
+                v-if="remainingFor(db, 'views')"
+                class="object-more"
+                role="button"
+                tabindex="0"
+                @click.stop="loadMore(db, 'views')"
+                @keydown.enter.prevent="loadMore(db, 'views')"
+                @keydown.space.prevent="loadMore(db, 'views')"
+              >
                 {{ t('还有') }} {{ remainingFor(db, 'views') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
-          <div v-if="!filtering" class="object-category">
+          <div v-if="!filtering && supports('routines')" class="object-category">
             <div
               class="category-header"
+              role="button"
+              tabindex="0"
+              :aria-expanded="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_functions`)"
               @click.stop="selectCategory(conn, db, 'functions')"
+              @keydown="onCategoryKey($event, conn, db, 'functions')"
               @contextmenu.prevent.stop="
                 showContextMenu($event, 'category', {
                   connection: conn,
@@ -243,19 +244,14 @@
                 })
               "
             >
-              <svg
+              <AppIcon
+                name="chevron-right"
                 class="category-icon"
                 :class="{
                   expanded: expandedObjectCategories.includes(`${conn.name}_${db}_functions`)
                 }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
                 @click.stop="toggleObjectCategory(conn.name, db, 'functions')"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              />
               <svg class="category-type-icon function-icon" viewBox="0 0 32 18" fill="currentColor" stroke="none">
                 <text x="0" y="14" font-size="12" font-style="italic" font-weight="600">f</text>
                 <text x="14" y="17" font-size="8">(x)</text>
@@ -274,7 +270,11 @@
                     active: selectedObject?.type === 'function' && selectedObject?.name === func
                   }
                 ]"
+                role="button"
+                tabindex="0"
                 @click="handleSelectConnectionDatabaseFunction(conn, db, func)"
+                @keydown.enter.prevent="handleSelectConnectionDatabaseFunction(conn, db, func)"
+                @keydown.space.prevent="handleSelectConnectionDatabaseFunction(conn, db, func)"
               >
                 <svg class="object-icon function-icon" viewBox="0 0 32 18" fill="currentColor" stroke="none">
                   <text x="0" y="14" font-size="12" font-style="italic" font-weight="600">f</text>
@@ -282,15 +282,27 @@
                 </svg>
                 <span class="object-name">{{ func }}</span>
               </div>
-              <div v-if="remainingFor(db, 'functions')" class="object-more" @click.stop="loadMore(db, 'functions')">
+              <div
+                v-if="remainingFor(db, 'functions')"
+                class="object-more"
+                role="button"
+                tabindex="0"
+                @click.stop="loadMore(db, 'functions')"
+                @keydown.enter.prevent="loadMore(db, 'functions')"
+                @keydown.space.prevent="loadMore(db, 'functions')"
+              >
                 {{ t('还有') }} {{ remainingFor(db, 'functions') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
-          <div v-if="!filtering" class="object-category">
+          <div v-if="!filtering && supports('routines')" class="object-category">
             <div
               class="category-header"
+              role="button"
+              tabindex="0"
+              :aria-expanded="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_procedures`)"
               @click.stop="selectCategory(conn, db, 'procedures')"
+              @keydown="onCategoryKey($event, conn, db, 'procedures')"
               @contextmenu.prevent.stop="
                 showContextMenu($event, 'category', {
                   connection: conn,
@@ -299,29 +311,15 @@
                 })
               "
             >
-              <svg
+              <AppIcon
+                name="chevron-right"
                 class="category-icon"
                 :class="{
                   expanded: expandedObjectCategories.includes(`${conn.name}_${db}_procedures`)
                 }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
                 @click.stop="toggleObjectCategory(conn.name, db, 'procedures')"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <svg
-                class="category-type-icon procedure-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="3" y="4" width="18" height="16" rx="2" />
-                <polygon points="10 9 15 12 10 15" />
-              </svg>
+              />
+              <AppIcon name="procedure" class="category-type-icon procedure-icon" />
               <span class="category-name">{{ t('存储过程') }}</span>
               <span class="category-count">{{ categoryCount(db, 'procedures') }}</span>
             </div>
@@ -336,30 +334,37 @@
                     active: selectedObject?.type === 'procedure' && selectedObject?.name === proc
                   }
                 ]"
+                role="button"
+                tabindex="0"
                 @click="handleSelectConnectionDatabaseProcedure(conn, db, proc)"
                 @dblclick.stop="previewProcedureInQuery({ connection: conn, database: db, procedure: proc })"
+                @keydown.enter.prevent="previewProcedureInQuery({ connection: conn, database: db, procedure: proc })"
+                @keydown.space.prevent="handleSelectConnectionDatabaseProcedure(conn, db, proc)"
               >
-                <svg
-                  class="object-icon procedure-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="4" width="18" height="16" rx="2" />
-                  <polygon points="10 9 15 12 10 15" />
-                </svg>
+                <AppIcon name="procedure" class="object-icon procedure-icon" />
                 <span class="object-name">{{ proc }}</span>
               </div>
-              <div v-if="remainingFor(db, 'procedures')" class="object-more" @click.stop="loadMore(db, 'procedures')">
+              <div
+                v-if="remainingFor(db, 'procedures')"
+                class="object-more"
+                role="button"
+                tabindex="0"
+                @click.stop="loadMore(db, 'procedures')"
+                @keydown.enter.prevent="loadMore(db, 'procedures')"
+                @keydown.space.prevent="loadMore(db, 'procedures')"
+              >
                 {{ t('还有') }} {{ remainingFor(db, 'procedures') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
-          <div v-if="!filtering" class="object-category">
+          <div v-if="!filtering && supports('triggers')" class="object-category">
             <div
               class="category-header"
+              role="button"
+              tabindex="0"
+              :aria-expanded="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_triggers`)"
               @click.stop="selectCategory(conn, db, 'triggers')"
+              @keydown="onCategoryKey($event, conn, db, 'triggers')"
               @contextmenu.prevent.stop="
                 showContextMenu($event, 'category', {
                   connection: conn,
@@ -368,28 +373,15 @@
                 })
               "
             >
-              <svg
+              <AppIcon
+                name="chevron-right"
                 class="category-icon"
                 :class="{
                   expanded: expandedObjectCategories.includes(`${conn.name}_${db}_triggers`)
                 }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
                 @click.stop="toggleObjectCategory(conn.name, db, 'triggers')"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <svg
-                class="category-type-icon trigger-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
+              />
+              <AppIcon name="zap" class="category-type-icon trigger-icon" />
               <span class="category-name">{{ t('触发器') }}</span>
               <span class="category-count">{{ categoryCount(db, 'triggers') }}</span>
             </div>
@@ -404,28 +396,36 @@
                     active: selectedObject?.type === 'trigger' && selectedObject?.name === trigger
                   }
                 ]"
+                role="button"
+                tabindex="0"
                 @click="handleSelectConnectionDatabaseTrigger(conn, db, trigger)"
+                @keydown.enter.prevent="handleSelectConnectionDatabaseTrigger(conn, db, trigger)"
+                @keydown.space.prevent="handleSelectConnectionDatabaseTrigger(conn, db, trigger)"
               >
-                <svg
-                  class="object-icon trigger-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
+                <AppIcon name="zap" class="object-icon trigger-icon" />
                 <span class="object-name">{{ trigger }}</span>
               </div>
-              <div v-if="remainingFor(db, 'triggers')" class="object-more" @click.stop="loadMore(db, 'triggers')">
+              <div
+                v-if="remainingFor(db, 'triggers')"
+                class="object-more"
+                role="button"
+                tabindex="0"
+                @click.stop="loadMore(db, 'triggers')"
+                @keydown.enter.prevent="loadMore(db, 'triggers')"
+                @keydown.space.prevent="loadMore(db, 'triggers')"
+              >
                 {{ t('还有') }} {{ remainingFor(db, 'triggers') }} {{ t('项，点击加载') }}
               </div>
             </div>
           </div>
-          <div v-if="!filtering" class="object-category">
+          <div v-if="!filtering && supports('events')" class="object-category">
             <div
               class="category-header"
+              role="button"
+              tabindex="0"
+              :aria-expanded="filtering || expandedObjectCategories.includes(`${conn.name}_${db}_events`)"
               @click.stop="selectCategory(conn, db, 'events')"
+              @keydown="onCategoryKey($event, conn, db, 'events')"
               @contextmenu.prevent.stop="
                 showContextMenu($event, 'category', {
                   connection: conn,
@@ -434,29 +434,15 @@
                 })
               "
             >
-              <svg
+              <AppIcon
+                name="chevron-right"
                 class="category-icon"
                 :class="{
                   expanded: expandedObjectCategories.includes(`${conn.name}_${db}_events`)
                 }"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
                 @click.stop="toggleObjectCategory(conn.name, db, 'events')"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <svg
-                class="category-type-icon event-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
+              />
+              <AppIcon name="history" class="category-type-icon event-icon" />
               <span class="category-name">{{ t('事件') }}</span>
               <span class="category-count">{{ categoryCount(db, 'events') }}</span>
             </div>
@@ -471,22 +457,25 @@
                     active: selectedObject?.type === 'event' && selectedObject?.name === event
                   }
                 ]"
+                role="button"
+                tabindex="0"
                 @click="handleSelectConnectionDatabaseEvent(conn, db, event)"
                 @dblclick.stop="openEventDialog({ connection: conn, database: db, event })"
+                @keydown.enter.prevent="openEventDialog({ connection: conn, database: db, event })"
+                @keydown.space.prevent="handleSelectConnectionDatabaseEvent(conn, db, event)"
               >
-                <svg
-                  class="object-icon event-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
+                <AppIcon name="history" class="object-icon event-icon" />
                 <span class="object-name">{{ event }}</span>
               </div>
-              <div v-if="remainingFor(db, 'events')" class="object-more" @click.stop="loadMore(db, 'events')">
+              <div
+                v-if="remainingFor(db, 'events')"
+                class="object-more"
+                role="button"
+                tabindex="0"
+                @click.stop="loadMore(db, 'events')"
+                @keydown.enter.prevent="loadMore(db, 'events')"
+                @keydown.space.prevent="loadMore(db, 'events')"
+              >
                 {{ t('还有') }} {{ remainingFor(db, 'events') }} {{ t('项，点击加载') }}
               </div>
             </div>
@@ -499,8 +488,11 @@
 
 <script setup>
 import { t } from '@/i18n'
+import { getEngineCapabilities } from '@shared/databaseEngines'
 import { computed, inject, ref } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import EngineLogo from './EngineLogo.vue'
 const databaseStore = inject('database')
 const {
   connectionDatabases,
@@ -543,6 +535,11 @@ const props = defineProps({
 
 const filtering = computed(() => props.filterKeyword.length > 0)
 const keyword = computed(() => props.filterKeyword.toLowerCase())
+const engineCapabilities = computed(() => getEngineCapabilities(props.conn.engine))
+
+function supports(feature) {
+  return engineCapabilities.value[feature] === true
+}
 
 function matches(name) {
   return String(name || '')
@@ -620,6 +617,23 @@ function loadMore(db, category) {
   renderLimits.value = {
     ...renderLimits.value,
     [renderLimitKey(db, category)]: renderLimit(db, category) + OBJECT_RENDER_STEP
+  }
+}
+
+function handleExpandKeys(event, expanded, toggle) {
+  if ((event.key === 'ArrowRight' && !expanded) || (event.key === 'ArrowLeft' && expanded)) {
+    event.preventDefault()
+    toggle()
+  }
+}
+
+function onCategoryKey(event, conn, db, category) {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    toggleObjectCategory(conn.name, db, category)
+  } else if (event.key === ' ') {
+    event.preventDefault()
+    selectCategory(conn, db, category)
   }
 }
 </script>

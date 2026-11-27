@@ -1,5 +1,10 @@
 <template>
-  <div v-if="sessionDialog.show" class="dialog-overlay" @click.self="closeSessionDialog">
+  <div
+    v-if="sessionDialog.show"
+    v-modal-shell="closeSessionDialog"
+    class="dialog-overlay"
+    @click.self="closeSessionDialog"
+  >
     <div class="dialog dialog-wide session-dialog">
       <div class="dialog-header">
         <h3>
@@ -9,10 +14,7 @@
         <div class="session-header-meta">
           <span v-if="sessionDialog.version" class="session-version">MySQL {{ sessionDialog.version }}</span>
           <button class="btn-icon btn-sm" :title="t('关闭')" @click="closeSessionDialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <AppIcon name="close" />
           </button>
         </div>
       </div>
@@ -35,10 +37,10 @@
       <div class="dialog-content session-body">
         <div class="session-toolbar">
           <template v-if="sessionDialog.tab === 'sessions'">
-            <input
+            <AppInput
               v-model="sessionDialog.keyword"
               type="text"
-              class="input-field session-search"
+              class="session-search"
               :placeholder="t('搜索用户 / 来源 / 数据库 / 语句')"
             />
             <select v-model="sessionDialog.command" class="select-field session-command">
@@ -294,6 +296,8 @@
 import { t } from '@/i18n'
 import { inject } from 'vue'
 
+import AppIcon from '@/components/AppIcon.vue'
+import AppInput from '@/components/AppInput.vue'
 const databaseStore = inject('database')
 const {
   closeSessionDialog,

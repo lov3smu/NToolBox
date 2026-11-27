@@ -8,9 +8,7 @@
       :title="t('筛选和排序')"
       @click="toggleFilterSort"
     >
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="22 3 2 3 10 12.46 10 19 14 17 14 12.46 22 3" />
-      </svg>
+      <AppIcon name="filter" class="toolbar-btn-icon" />
       <span class="toolbar-btn-text">{{ t('筛选排序') }}</span>
       <span v-if="activeFilterCount > 0" class="toolbar-badge">{{ activeFilterCount }}</span>
     </button>
@@ -21,20 +19,12 @@
       :title="t('列显示、列宽与冻结')"
       @click="showColumnPanel = !showColumnPanel"
     >
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <line x1="9" y1="4" x2="9" y2="20" />
-        <line x1="15" y1="4" x2="15" y2="20" />
-      </svg>
+      <AppIcon name="columns" class="toolbar-btn-icon" />
       <span class="toolbar-btn-text">{{ t('列') }}</span>
       <span v-if="hiddenFieldCount > 0" class="toolbar-badge">{{ hiddenFieldCount }}</span>
     </button>
     <button class="toolbar-btn" :disabled="tab.executing" :title="t('刷新')" @click="refreshTableData(tab)">
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="23 4 23 10 17 10" />
-        <polyline points="1 20 1 14 7 14" />
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-      </svg>
+      <AppIcon name="refresh" class="toolbar-btn-icon" />
       <span class="toolbar-btn-text">{{ t('刷新') }}</span>
     </button>
     <div class="toolbar-divider" />
@@ -44,10 +34,7 @@
       :title="canEditTable(tab) ? t('新增行') : t('视图或没有主键的表不支持直接编辑')"
       @click="addRow(tab)"
     >
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19" />
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
+      <AppIcon name="plus" class="toolbar-btn-icon" />
       <span class="toolbar-btn-text">{{ t('新增行') }}</span>
     </button>
     <button
@@ -56,23 +43,8 @@
       :title="canEditTable(tab) ? t('删除选中行') : t('视图或没有主键的表不支持直接编辑')"
       @click="deleteSelectedRows(tab)"
     >
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6" />
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      </svg>
+      <AppIcon name="trash" class="toolbar-btn-icon" />
       <span class="toolbar-btn-text">{{ t('删除') }}</span>
-    </button>
-    <button
-      class="toolbar-btn"
-      :disabled="tab.executing"
-      :title="t('复制选中行为 INSERT 语句')"
-      @click="copyRowsAsInsert(tab)"
-    >
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-      </svg>
-      <span class="toolbar-btn-text">{{ t('复制 SQL') }}</span>
     </button>
     <div class="toolbar-divider" />
     <div class="table-toolbar-menu">
@@ -81,30 +53,66 @@
         :class="{ active: structureMenuOpen }"
         :disabled="tab.executing"
         :title="t('查看结构、设计表、ER 图')"
-        @click.stop="structureMenuOpen = !structureMenuOpen"
+        aria-haspopup="menu"
+        :aria-expanded="structureMenuOpen"
+        @click.stop="toggleStructureMenu"
       >
-        <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-        </svg>
+        <AppIcon name="table" class="toolbar-btn-icon" />
         <span class="toolbar-btn-text">{{ t('结构') }}</span>
-        <svg class="toolbar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <AppIcon name="chevron-down" class="toolbar-caret" />
       </button>
-      <div v-if="structureMenuOpen" v-clamp-viewport class="toolbar-dropdown" @click.stop>
-        <button class="toolbar-dropdown-item" @click="runStructureAction(openStructureDialog, tab)">
+      <div
+        v-if="structureMenuOpen"
+        ref="structureMenuRef"
+        v-clamp-viewport
+        class="toolbar-dropdown"
+        role="menu"
+        @click.stop
+        @keydown="onStructureMenuKeydown"
+      >
+        <button
+          type="button"
+          role="menuitem"
+          class="toolbar-dropdown-item"
+          @click="runStructureAction(openStructureDialog, tab)"
+        >
           {{ t('查看表结构') }}
         </button>
-        <button class="toolbar-dropdown-item" @click="runStructureAction(openTableDesigner, tab)">
+        <button
+          v-if="currentCapabilities.tableDesigner"
+          type="button"
+          role="menuitem"
+          class="toolbar-dropdown-item"
+          @click="runStructureAction(openTableDesigner, tab)"
+        >
           {{ t('可视化设计表') }}
         </button>
-        <button class="toolbar-dropdown-item" @click="runStructureAction(openErDialog, tab)">
+        <button
+          type="button"
+          role="menuitem"
+          class="toolbar-dropdown-item"
+          @click="runStructureAction(openErDialog, tab)"
+        >
           {{ t('数据库 ER 图') }}
         </button>
       </div>
     </div>
+    <OverflowMenu :items="moreActions" @select="onMoreAction">
+      <template #trigger="{ open, toggle }">
+        <button
+          class="toolbar-btn"
+          aria-haspopup="menu"
+          :aria-expanded="open"
+          :disabled="tab.executing"
+          :title="t('更多')"
+          @click.stop="toggle"
+        >
+          <AppIcon name="more" class="toolbar-btn-icon" />
+          <span class="toolbar-btn-text">{{ t('更多') }}</span>
+          <AppIcon name="chevron-down" class="toolbar-caret" />
+        </button>
+      </template>
+    </OverflowMenu>
     <div class="toolbar-spacer" />
     <div class="table-search-group">
       <input
@@ -115,34 +123,12 @@
         @keyup.enter="searchTableData(tab)"
       />
       <button class="toolbar-icon-btn" :title="t('搜索')" @click="searchTableData(tab)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <AppIcon name="search" />
       </button>
       <button v-if="tab.searchKeyword" class="toolbar-icon-btn" :title="t('清除搜索')" @click="clearSearch(tab)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
+        <AppIcon name="close" />
       </button>
     </div>
-    <button class="toolbar-btn" :disabled="tab.executing" :title="t('导入数据')" @click="importData(tab)">
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="17 8 12 3 7 8" />
-        <line x1="12" y1="3" x2="12" y2="15" />
-      </svg>
-      <span class="toolbar-btn-text">{{ t('导入') }}</span>
-    </button>
-    <button class="toolbar-btn" :disabled="tab.executing" :title="t('导出数据')" @click="exportData(tab)">
-      <svg class="toolbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="7 10 12 15 17 10" />
-        <line x1="12" y1="15" x2="12" y2="3" />
-      </svg>
-      <span class="toolbar-btn-text">{{ t('导出') }}</span>
-    </button>
   </div>
 
   <div v-if="tableToolbarState.filterSortActive" class="table-filter-panel">
@@ -195,10 +181,7 @@
           :title="t('移除条件')"
           @click="removeTableFilter(tab, index)"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
       <div class="table-filter-actions">
@@ -250,10 +233,7 @@
           </button>
         </div>
         <button class="toolbar-icon-btn" :title="t('移除该排序')" @click="removeTableSort(tab, sortItem.field)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <AppIcon name="close" />
         </button>
       </div>
     </div>
@@ -363,11 +343,7 @@
                             :title="t('排序')"
                             @click.stop="showFieldSortMenu($event, tab, fieldName)"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <circle cx="12" cy="12" r="1" />
-                              <circle cx="12" cy="5" r="1" />
-                              <circle cx="12" cy="19" r="1" />
-                            </svg>
+                            <AppIcon name="more-vertical" />
                           </div>
                         </div>
                         <span
@@ -447,10 +423,7 @@
                           :title="t('撤销删除')"
                           @click="restoreDeletedRow(tab, rowView.row)"
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="1 4 1 10 7 10" />
-                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-                          </svg>
+                          <AppIcon name="refresh" />
                         </button>
                         <template v-else>
                           <button
@@ -458,32 +431,21 @@
                             :title="t('复制为新行')"
                             @click="duplicateRow(tab, rowView.row)"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
+                            <AppIcon name="copy" />
                           </button>
                           <button
                             class="row-action-btn"
                             :title="t('复制为 INSERT 语句')"
                             @click="copyRowAsInsert(tab, rowView.row)"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <polyline points="16 18 22 12 16 6" />
-                              <polyline points="8 6 2 12 8 18" />
-                            </svg>
+                            <AppIcon name="code" />
                           </button>
                           <button
                             class="row-action-btn danger"
                             :title="t('删除行')"
                             @click="deleteRow(tab, rowView.row)"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path
-                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                              />
-                            </svg>
+                            <AppIcon name="trash" />
                           </button>
                         </template>
                       </td>
@@ -512,10 +474,7 @@
                           :title="t('移除新增行')"
                           @click="removeNewRow(tab, index)"
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
+                          <AppIcon name="close" />
                         </button>
                       </td>
                     </tr>
@@ -584,10 +543,7 @@
               :title="t('首页')"
               @click="firstPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="11 17 6 12 11 7" />
-                <polyline points="18 17 13 12 18 7" />
-              </svg>
+              <AppIcon name="chevrons-left" />
             </button>
             <button
               class="pagination-btn"
@@ -595,9 +551,7 @@
               :title="t('上一页')"
               @click="prevPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
+              <AppIcon name="chevron-left" />
             </button>
             <input
               v-model.number="tab.queryResult.jumpPage"
@@ -616,9 +570,7 @@
               :title="t('下一页')"
               @click="nextPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <AppIcon name="chevron-right" />
             </button>
             <button
               class="pagination-btn"
@@ -626,10 +578,7 @@
               :title="t('末页')"
               @click="lastPage(tab)"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="13 17 18 12 13 7" />
-                <polyline points="6 17 11 12 6 7" />
-              </svg>
+              <AppIcon name="chevrons-right" />
             </button>
           </div>
         </div>
@@ -649,8 +598,12 @@
 <script setup>
 import { t } from '@/i18n'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { getEngineCapabilities } from '@shared/databaseEngines'
 import { formatBytes, formatCellInput, isBinaryColumn, isBinaryValue } from '../cellFormat'
+import { focusFirstMenuItem, handleMenuKeydown } from '@/utils/menuKeyboard'
 
+import AppIcon from '@/components/AppIcon.vue'
+import OverflowMenu from '@/components/OverflowMenu.vue'
 const databaseStore = inject('database')
 const {
   addRow,
@@ -660,6 +613,7 @@ const {
   canEditTable,
   changeTableSortField,
   changeTableSortOrder,
+  connections,
   copyRowAsInsert,
   copyRowsAsInsert,
   defaultFilterOperator,
@@ -721,6 +675,10 @@ const props = defineProps({
   tab: { type: Object, required: true }
 })
 
+const currentCapabilities = computed(() =>
+  getEngineCapabilities(connections.value.find((conn) => conn.name === props.tab.connectionName)?.engine)
+)
+
 const TEXT_OPERATORS = ['=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'BETWEEN', 'IS NULL', 'IS NOT NULL']
 const COMPARISON_OPERATORS = ['=', '!=', '>', '>=', '<', '<=', 'IN', 'NOT IN', 'BETWEEN', 'IS NULL', 'IS NOT NULL']
 
@@ -744,6 +702,18 @@ const pageSizeOptions = [50, 100, 200, 500]
 
 const showColumnPanel = ref(false)
 const structureMenuOpen = ref(false)
+
+const moreActions = computed(() => [
+  { key: 'copySql', label: t('复制 SQL'), icon: 'copy', disabled: props.tab.executing },
+  { key: 'import', label: t('导入'), icon: 'upload', disabled: props.tab.executing },
+  { key: 'export', label: t('导出'), icon: 'download', disabled: props.tab.executing }
+])
+
+function onMoreAction(action) {
+  if (action.key === 'copySql') copyRowsAsInsert(props.tab)
+  else if (action.key === 'import') importData(props.tab)
+  else if (action.key === 'export') exportData(props.tab)
+}
 const editingCell = ref(null)
 const cellEditorEl = ref(null)
 const freezeOptions = [0, 1, 2, 3, 4, 5]
@@ -751,6 +721,19 @@ const DEFAULT_COLUMN_WIDTH = 150
 
 function closeStructureMenu() {
   structureMenuOpen.value = false
+}
+
+const structureMenuRef = ref(null)
+
+async function toggleStructureMenu() {
+  structureMenuOpen.value = !structureMenuOpen.value
+  if (!structureMenuOpen.value) return
+  await nextTick()
+  focusFirstMenuItem(structureMenuRef.value)
+}
+
+function onStructureMenuKeydown(event) {
+  handleMenuKeydown(event, structureMenuRef.value, closeStructureMenu)
 }
 
 onMounted(() => document.addEventListener('click', closeStructureMenu))

@@ -38,6 +38,10 @@
     overflow: hidden;
   }
 
+  .status-sql > * {
+    flex-shrink: 0;
+  }
+
   .status-item {
     display: flex;
     align-items: center;
@@ -72,8 +76,10 @@
   }
 
   .sql-preview {
+    flex: 0 1 auto;
+    min-width: 0;
     color: var(--text-tertiary);
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: var(--font-mono);
     font-size: var(--font-size-sm);
     font-weight: 400;
     white-space: nowrap;
@@ -83,11 +89,12 @@
   }
 
   .copy-btn {
+    flex: none;
     width: var(--icon-size-sm);
     height: var(--icon-size-sm);
     padding: 2px;
     border: none;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
@@ -103,8 +110,8 @@
   }
 
   .copy-btn svg {
-    width: var(--icon-size-2xs);
-    height: var(--icon-size-2xs);
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
   }
 
   .sql-time {
@@ -113,7 +120,7 @@
     font-weight: 400;
     padding: 3px 8px;
     background: var(--inset-bg);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
   }
 
   .status-right {

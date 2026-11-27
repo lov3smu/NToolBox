@@ -37,6 +37,14 @@
       }}
     </p>
 
+    <div class="mcp-presets">
+      <span class="mcp-presets-label">{{ t('常用连接器') }}</span>
+      <button type="button" class="mcp-preset" :disabled="busy" @click="addPreset('slack')">Slack</button>
+      <button type="button" class="mcp-preset" :disabled="busy" @click="addPreset('mail')">
+        {{ t('邮件 IMAP/SMTP') }}
+      </button>
+    </div>
+
     <div v-if="loading" class="mcp-empty">{{ t('正在读取连接器配置…') }}</div>
     <div v-else-if="servers.length === 0" class="mcp-empty">
       <p>{{ t('尚未配置任何 MCP 连接器') }}</p>
@@ -46,15 +54,10 @@
     <article v-for="(server, index) in servers" :key="server.key" class="mcp-server">
       <div class="mcp-server-head">
         <span class="mcp-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22v-5" />
-            <path d="M9 8V2" />
-            <path d="M15 8V2" />
-            <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
-          </svg>
+          <AppIcon name="plug" />
         </span>
         <div class="mcp-server-title">
-          <input v-model="server.name" class="input-field mcp-name" :placeholder="t('连接器名称')" spellcheck="false" />
+          <AppInput v-model="server.name" class="mcp-name" :placeholder="t('连接器名称')" spellcheck="false" />
           <span v-if="server.status" class="mcp-status" :class="`is-${server.status}`">
             {{ statusLabel(server) }}
           </span>
@@ -64,21 +67,25 @@
           <span>{{ server.enabled ? t('启用') : t('停用') }}</span>
         </label>
       </div>
-      <input v-model="server.command" class="input-field" :placeholder="t('启动命令，如 npx')" spellcheck="false" />
-      <textarea
+      <AppInput
+        v-model="server.command"
+        :placeholder="t('启动命令，如 npx（也可填完整命令行，保存时自动拆分）')"
+        spellcheck="false"
+      />
+      <AppTextarea
         v-model="server.argsText"
-        class="input-field mcp-input"
+        class="mcp-input"
         rows="2"
         spellcheck="false"
         :placeholder="t('参数，每行一个')"
-      ></textarea>
-      <textarea
+      />
+      <AppTextarea
         v-model="server.envText"
-        class="input-field mcp-input"
+        class="mcp-input"
         rows="2"
         spellcheck="false"
         :placeholder="t('环境变量，每行一个 KEY=VALUE')"
-      ></textarea>
+      />
       <p v-if="server.error" class="mcp-error">{{ server.error }}</p>
       <p v-if="server.testMessage" class="mcp-test-result" :class="{ success: server.testSuccess }">
         {{ server.testMessage }}
@@ -94,20 +101,20 @@
     <button type="button" class="mcp-add" :disabled="servers.length >= 16" @click="addServer">
       {{ t('+ 添加连接器') }}
     </button>
-
-    <Toast :visible="toastVisible" :message="toastMessage" :type="toastType" />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { getConfig, mcpReload, mcpStatus, mcpTest, patchConfig } from '@/api'
+import AppIcon from '@/components/AppIcon.vue'
 import { useToast } from '@/composables'
-import { MCP_SERVER_NAME_PATTERN, normalizeMcpServers } from '@shared/mcp'
+import { MCP_SERVER_NAME_PATTERN, normalizeMcpServers, splitCommandLine } from '@shared/mcp'
 import { t } from '@/i18n'
-import Toast from '@/components/Toast.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 
-const { toastVisible, toastMessage, toastType, showSuccess, showError } = useToast()
+const { showSuccess, showError } = useToast()
 
 const servers = ref([])
 const loading = ref(true)
@@ -117,6 +124,30 @@ const testingKey = ref('')
 let keySeed = 0
 
 const enabledCount = computed(() => servers.value.filter((server) => server.enabled).length)
+
+const PRESETS = {
+  slack: {
+    name: 'slack',
+    command: 'npx',
+    args: ['-y', '@modelcontextprotocol/server-slack'],
+    env: { SLACK_BOT_TOKEN: '', SLACK_TEAM_ID: '' }
+  },
+  mail: {
+    name: 'mail',
+    command: 'npx',
+    args: ['-y', 'mcp-mail-server'],
+    env: {
+      IMAP_HOST: '',
+      IMAP_PORT: '993',
+      IMAP_SECURE: 'true',
+      SMTP_HOST: '',
+      SMTP_PORT: '587',
+      SMTP_SECURE: 'false',
+      EMAIL_USER: '',
+      EMAIL_PASS: ''
+    }
+  }
+}
 
 function createServer(server = {}) {
   keySeed += 1
@@ -195,13 +226,28 @@ function addServer() {
   servers.value.push(createServer())
 }
 
+function addPreset(key) {
+  const preset = PRESETS[key]
+  if (!preset) return
+  if (servers.value.some((server) => server.name.trim().toLowerCase() === preset.name)) {
+    showError(t('该连接器已存在：{name}', { name: preset.name }))
+    return
+  }
+  if (servers.value.length >= 16) {
+    showError(t('最多配置 16 个 MCP 连接器'))
+    return
+  }
+  servers.value.push(createServer(preset))
+}
+
 function removeServer(index) {
   servers.value.splice(index, 1)
 }
 
 function serializeServer(server) {
   const name = server.name.trim().toLowerCase()
-  const command = server.command.trim()
+  const split = splitCommandLine(server.command)
+  const command = split.command
   if (!name && !command) return { skip: true }
 
   if (!MCP_SERVER_NAME_PATTERN.test(name)) {
@@ -209,10 +255,13 @@ function serializeServer(server) {
   }
   if (!command) return { error: t('连接器 {name} 缺少启动命令', { name }) }
 
-  const args = server.argsText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+  const args = [
+    ...split.args,
+    ...server.argsText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+  ]
   if (args.length > 64) return { error: t('连接器 {name} 的参数过多（最多 64 个）', { name }) }
 
   const env = {}
@@ -225,6 +274,11 @@ function serializeServer(server) {
       return { error: t('连接器 {name} 的环境变量格式无效：{text}（应为 KEY=VALUE）', { name, text }) }
     }
     env[key] = text.slice(separator + 1).trim()
+  }
+
+  if (split.args.length) {
+    server.command = command
+    server.argsText = args.join('\n')
   }
 
   return { value: { name, command, args, env, enabled: server.enabled } }
@@ -323,7 +377,7 @@ onMounted(load)
 
 .mcp-panel-tag {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-muted);
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
@@ -347,6 +401,40 @@ onMounted(load)
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
   line-height: 1.5;
+}
+
+.mcp-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mcp-presets-label {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.mcp-preset {
+  padding: 4px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.mcp-preset:hover:not(:disabled) {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(var(--accent-rgb), 0.06);
+}
+
+.mcp-preset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .mcp-empty {
@@ -436,7 +524,7 @@ onMounted(load)
 
 .mcp-status {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   background: var(--surface-muted);
   color: var(--text-tertiary);
@@ -466,7 +554,7 @@ onMounted(load)
 
 .mcp-input {
   resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-dense);
 }
 

@@ -1,6 +1,7 @@
 import { t } from '@/i18n'
+import { formatBytes } from '@shared/format'
 import { formatCellText } from './cellFormat'
-import { splitSqlStatements } from '@/utils/sqlStatements'
+import { splitSqlStatements } from '@shared/sqlStatements'
 
 export function createFormat(state, api) {
   const { databaseObjectsMap, selectedCategory, selectedConnection, selectedGroup, selectedInfoType, selectedObject } =
@@ -22,15 +23,7 @@ export function createFormat(state, api) {
   }
 
   function formatSize(bytes) {
-    if (!bytes || bytes === 0) return '--'
-    const units = ['B', 'KB', 'MB', 'GB', 'TB']
-    let size = bytes
-    let unitIndex = 0
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024
-      unitIndex++
-    }
-    return `${size.toFixed(2)} ${units[unitIndex]}`
+    return formatBytes(bytes, { zero: '--' })
   }
 
   function formatDate(time) {

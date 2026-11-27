@@ -1,7 +1,7 @@
 {
   "name": "file-ops",
   "version": "1.0.0",
-  "description": "安全读写本地文件：列出、读取、写入、追加、建目录、复制、移动、删除、搜索和查看属性。路径限制在设置中的脚本根目录（base_path，与文件管理器一致）内。",
+  "description": "安全读写本地文件：列出、读取、精确替换、写入、追加、建目录、复制、移动、删除、搜索和查看属性。修改已有文件优先用 edit 做局部替换，避免整文件重写。路径限制在设置中的脚本根目录（base_path，与文件管理器一致）内。",
   "author": "system",
   "type": "builtin",
   "category": "general",
@@ -12,7 +12,7 @@
     "properties": {
       "action": {
         "type": "string",
-        "enum": ["list", "read", "write", "append", "mkdir", "copy", "move", "delete", "search", "stat"],
+        "enum": ["list", "read", "edit", "write", "append", "mkdir", "copy", "move", "delete", "search", "stat"],
         "description": "操作类型"
       },
       "path": {
@@ -27,6 +27,19 @@
       "content": {
         "type": "string",
         "description": "write/append 写入的文本内容"
+      },
+      "old_string": {
+        "type": "string",
+        "description": "edit 要替换的原文本，必须与文件内容完全一致（含缩进），默认要求全文件唯一"
+      },
+      "new_string": {
+        "type": "string",
+        "description": "edit 替换后的新文本"
+      },
+      "replace_all": {
+        "type": "boolean",
+        "default": false,
+        "description": "edit 时允许替换所有匹配项；默认只在唯一匹配时替换"
       },
       "pattern": {
         "type": "string",
@@ -86,6 +99,10 @@
     {
       "input": "action: write, path: out/result.json, content: {}, create_dirs: true",
       "output": "覆盖写入文件并返回相对路径"
+    },
+    {
+      "input": "action: edit, path: src/config.js, old_string: \"timeout: 5000\", new_string: \"timeout: 10000\"",
+      "output": "唯一匹配时替换该片段并返回替换次数"
     },
     {
       "input": "action: search, pattern: sql, content_match: CREATE TABLE",
